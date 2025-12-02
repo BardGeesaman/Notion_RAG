@@ -78,35 +78,40 @@ Whenever we update the code and create a new zip, this file should be kept rough
 - [x] Fixed classifier outputs and Targets vs Lipids separation.
 - [x] Confirmed ingestion + query still work after initial refactors.
 
-### ⏭️ Next refactor steps (incremental)
+### ✅ Completed Refactoring Phases 1-5 (December 2025)
 
-**Short-term (safe, small moves):**
+**Phase 1-2: Ingestion Pipeline Cleanup**
+- [x] Moved Notion-specific helpers to `ingestion/notion_pages.py`:
+  - `ensure_literature_page`, `update_literature_page`, `create_rag_chunk_page`
+  - `fetch_not_embedded_emails`, `extract_page_content`, `update_email_page`
+- [x] Moved semantic metadata helpers to `ingestion/metadata_semantic.py`:
+  - `get_literature_semantic_metadata`, `get_email_semantic_metadata`
+- [x] Consolidated Pinecone idempotency in `ingestion/pinecone_utils.py`:
+  - `attachment_already_ingested`, `note_already_ingested` (already there)
+- [x] Modularized `email_ingestion.py` using shared helpers
+- [x] Removed ~200 lines of duplicate code
 
-- [ ] Move Notion-specific helpers from `zotero_item.py` into `ingestion/notion_pages.py`:
-  - `ensure_literature_page` / `_ensure_literature_page`
-  - `update_literature_page`
-  - `create_rag_chunk_page`
-
-- [ ] Move Pinecone idempotency from `zotero_item.py` into `ingestion/pinecone_utils.py`:
-  - `attachment_already_ingested`
-  - `note_already_ingested`
-  - Any direct `index.delete()`/filter logic
-
-- [ ] Move literature semantic metadata loader into `ingestion/metadata_semantic.py` and ensure `ingest_zotero_item()` imports it:
-  - `get_literature_semantic_metadata` equivalents.
-
-- [ ] Gradually slim `zotero_item.py` until it becomes either:
-  - a thin wrapper; or
-  - obsolete (all orchestration handled by `zotero_ingest.py` and helpers).
-
-**Mid-term:**
-
-- [ ] Apply similar modularization to `email_ingestion.py`.
-- [ ] Split query engine into:
-  - `query/pinecone_query.py` (embed + raw search)
+**Phase 3: Query Engine Refactoring**
+- [x] Split query engine into:
+  - `query/pinecone_query.py` (embed + raw Pinecone search)
   - `query/rag_engine.py` (filtering + answer synthesis)
+  - `query/rag_query_engine.py` (compatibility wrapper)
+- [x] Maintained 100% backward compatibility
 
-- [ ] Split classifier module further:
+**Phase 4: Logging & Error Handling**
+- [x] Normalized logging with consistent prefixes ([INGEST][ZOTERO], [NOTION], [PINECONE], [RAG])
+- [x] Replaced all `print()` statements with structured logger calls
+- [x] Added error logging for all external API calls with proper exception handling
+
+**Phase 5: Code Hygiene**
+- [x] Removed unused imports
+- [x] Verified consistent formatting
+- [x] Config now uses environment variables (secure)
+
+### Optional Future Enhancements
+
+- [ ] Remove legacy `zotero_item.py` file (marked as LEGACY, functionality migrated)
+- [ ] Consider splitting classifier module further:
   - `metadata/notion_utils.py`
   - `metadata/classifier_base.py`
   - `metadata/classify_literature.py`
