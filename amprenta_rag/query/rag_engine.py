@@ -93,31 +93,26 @@ def summarize_match(raw_match: Any) -> MatchSummary:
 
 def filter_matches(
     matches: List[MatchSummary],
-    source_type: Optional[str] = None,
     tag: Optional[str] = None,
 ) -> List[MatchSummary]:
     """
-    Apply optional source_type and tag filters to matches.
+    Apply optional tag filter to matches.
+    
+    Note: Source type filtering is now handled at the Pinecone query level.
     
     Args:
         matches: List of MatchSummary objects to filter
-        source_type: Optional source type to filter by (e.g., "Literature", "Email")
         tag: Optional tag substring to filter by
         
     Returns:
         Filtered list of MatchSummary objects
     """
-    def _matches_type(m: MatchSummary) -> bool:
-        if not source_type:
-            return True
-        return m.source.lower() == source_type.lower()
-
     def _has_tag(m: MatchSummary) -> bool:
         if not tag:
             return True
         return any(tag.lower() in t.lower() for t in m.tags)
 
-    return [m for m in matches if _matches_type(m) and _has_tag(m)]
+    return [m for m in matches if _has_tag(m)]
 
 
 def collect_chunks(matches: List[MatchSummary]) -> List[str]:
@@ -193,7 +188,7 @@ def query_rag(
     user_query: str,
     *,
     top_k: int = 10,
-    source_type: Optional[str] = None,
+    source_types: Optional[List[str]] = None,
     tag: Optional[str] = None,
     generate_answer: bool = True,
     disease: Optional[str] = None,
@@ -206,7 +201,7 @@ def query_rag(
 
     This function orchestrates the full RAG pipeline:
     1. Builds metadata filter from query constraints
-    2. Queries Pinecone for matches
+    2. Queries Pinecone for matches (with source type filtering)
     3. Summarizes and filters matches
     4. Retrieves chunk text from Notion
     5. Synthesizes answer using OpenAI (if enabled)
@@ -214,7 +209,7 @@ def query_rag(
     Args:
         user_query: User's query text
         top_k: Number of results to retrieve from Pinecone
-        source_type: Optional source type filter (e.g., "Literature", "Email")
+        source_types: Optional list of source types to filter by (e.g., ["Literature", "Experiment"])
         tag: Optional tag substring filter
         generate_answer: Whether to synthesize an answer (default: True)
         disease: Optional disease filter
@@ -233,7 +228,12 @@ def query_rag(
         signature=signature,
     )
 
-    raw_matches = query_pinecone(user_query, top_k=top_k, meta_filter=meta_filter)    
+    raw_matches = query_pinecone(
+        user_query,
+        top_k=top_k,
+        meta_filter=meta_filter,
+        source_types=source_types,
+    )    
     if not raw_matches:
         return RAGQueryResult(
             query=user_query,
@@ -244,7 +244,7 @@ def query_rag(
         )
 
     matches = [summarize_match(m) for m in raw_matches]
-    filtered = filter_matches(matches, source_type=source_type, tag=tag)
+    filtered = filter_matches(matches, tag=tag)
 
     if not filtered:
         return RAGQueryResult(
@@ -252,7 +252,7 @@ def query_rag(
             matches=matches,
             filtered_matches=[],
             context_chunks=[],
-            answer="No matches left after filtering (source_type/tag).",
+            answer="No matches left after filtering (tag).",
         )
 
     chunks = collect_chunks(filtered)
@@ -275,11 +275,25 @@ def query_rag(
         )
 
     answer = synthesize_answer(user_query, chunks)
+    
+    # Add provenance summary
+    source_counts: Dict[str, int] = {}
+    for m in filtered:
+        src = m.metadata.get("source_type") or m.metadata.get("source") or "Unknown"
+        source_counts[src] = source_counts.get(src, 0) + 1
+    
+    provenance_lines = [
+        "\nSources used:",
+        *[f"- {src}: {cnt} chunk(s)" for src, cnt in sorted(source_counts.items())],
+    ]
+    
+    answer_with_provenance = answer + "\n\n" + "\n".join(provenance_lines)
+    
     return RAGQueryResult(
         query=user_query,
         matches=matches,
         filtered_matches=filtered,
         context_chunks=chunks,
-        answer=answer,
+        answer=answer_with_provenance,
     )
 

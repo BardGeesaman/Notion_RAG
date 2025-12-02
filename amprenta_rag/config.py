@@ -3,30 +3,67 @@
 """
 Central configuration for the Amprenta RAG engine.
 All IDs and constants are hard-coded for stability.
-Only API keys must be filled in manually.
+API keys are loaded from environment variables or .env file.
 
-This replaces the environment-variable system for simplicity.
+This module automatically loads .env file if python-dotenv is installed.
+Otherwise, it falls back to environment variables.
 """
 
 from __future__ import annotations
 from dataclasses import dataclass
 
-
-# ---------------------------------------------------------
-#  🔐 REQUIRED: Set these as environment variables
-# ---------------------------------------------------------
 import os
 
+# Load .env file if python-dotenv is installed (optional dependency)
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    # If dotenv is not installed, silently ignore; env vars still work.
+    pass
+
+
+# ---------------------------------------------------------
+#  🔐 REQUIRED: API Keys (from environment or .env file)
+# ---------------------------------------------------------
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+if not OPENAI_API_KEY:
+    raise RuntimeError(
+        "OPENAI_API_KEY is not set. "
+        "Please define it in your environment or in a .env file. "
+        "See .env.example for a template."
+    )
+
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")
+if not PINECONE_API_KEY:
+    raise RuntimeError(
+        "PINECONE_API_KEY is not set. "
+        "Please define it in your environment or in a .env file. "
+        "See .env.example for a template."
+    )
+
 NOTION_API_KEY = os.getenv("NOTION_API_KEY", "")
+if not NOTION_API_KEY:
+    raise RuntimeError(
+        "NOTION_API_KEY is not set. "
+        "Please define it in your environment or in a .env file. "
+        "See .env.example for a template."
+    )
+
 ZOTERO_API_KEY = os.getenv("ZOTERO_API_KEY", "")
+if not ZOTERO_API_KEY:
+    raise RuntimeError(
+        "ZOTERO_API_KEY is not set. "
+        "Please define it in your environment or in a .env file. "
+        "See .env.example for a template."
+    )
 
 # Database IDs (no dashes)
 NOTION_EMAIL_DB_ID = "2b7adf6142ab80878ccce09b0067db60"  # Email & Notes Inbox
-NOTION_RAG_DB_ID = "2bbadf6142ab8076a5fbed30f2cfcbfb"
-
-  # RAG Engine
+NOTION_RAG_DB_ID = "2bbadf6142ab8076a5fbed30f2cfcbfb"  # RAG Engine
+NOTION_EXP_DATA_DB_ID = os.getenv("NOTION_EXP_DATA_DB_ID", "")  # Experimental Data Assets
 
 
 
@@ -87,6 +124,7 @@ class NotionConfig:
     email_db_id: str = NOTION_EMAIL_DB_ID
     rag_db_id: str = NOTION_RAG_DB_ID
     parent_page_id: str = NOTION_PARENT_PAGE_ID
+    exp_data_db_id: str = NOTION_EXP_DATA_DB_ID
 
 
 @dataclass(frozen=True)

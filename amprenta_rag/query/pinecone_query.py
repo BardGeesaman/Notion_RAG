@@ -92,6 +92,7 @@ def query_pinecone(
     user_query: str,
     top_k: int = 10,
     meta_filter: Optional[Dict[str, Any]] = None,
+    source_types: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Execute a raw Pinecone query and return the matches list.
@@ -106,6 +107,7 @@ def query_pinecone(
         top_k: Number of results to retrieve
         meta_filter: Optional Pinecone metadata filter, e.g.:
             {"diseases": {"$in": ["ALS"]}, "lipid_signatures": {"$in": ["ALS-CSF-Core-6Ceramides"]}}
+        source_types: Optional list of source types to filter by (e.g., ["Literature", "Experiment"])
             
     Returns:
         List of match dictionaries with metadata from Pinecone
@@ -114,14 +116,23 @@ def query_pinecone(
     vector = embed_query(user_query)
     cfg = get_config()
 
+    # Build combined filter
+    combined_filter: Dict[str, Any] = {}
+    if meta_filter:
+        combined_filter.update(meta_filter)
+    
+    # Add source type filtering if specified
+    if source_types:
+        combined_filter["source_type"] = {"$in": source_types}
+
     kwargs: Dict[str, Any] = {
         "vector": vector,
         "top_k": top_k,
         "include_metadata": True,
         "namespace": cfg.pinecone.namespace,  # use same namespace as upserts
     }
-    if meta_filter:
-        kwargs["filter"] = meta_filter
+    if combined_filter:
+        kwargs["filter"] = combined_filter
 
     try:
         res = index.query(**kwargs)

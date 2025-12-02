@@ -402,6 +402,7 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
         "lipid_signatures": semantic_meta.get("lipid_signatures", []),
         "lipid_signature_role": semantic_meta.get("lipid_signature_role", []),
         "phenotype_axes": semantic_meta.get("phenotype_axes", []),
+        "signature_ownership": semantic_meta.get("signature_ownership", []),
         "matrix": semantic_meta.get("matrix", []),
         "treatment_arms": semantic_meta.get("treatment_arms", []),
     }    

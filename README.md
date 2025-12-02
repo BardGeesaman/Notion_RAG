@@ -8,7 +8,7 @@ This system ingests content from **Zotero** and **Notion** (emails/notes), embed
 
 ## Architecture
 
-- **Data Sources**: Zotero (literature PDFs/notes), Notion (emails/notes)
+- **Data Sources**: Zotero (literature PDFs/notes), Notion (emails/notes/experiments/datasets), Metabolomics Workbench (lipidomics studies)
 - **Vector Store**: Pinecone
 - **Embeddings**: OpenAI `text-embedding-3-large`
 - **Query/Answer**: OpenAI GPT models
@@ -35,9 +35,14 @@ amprenta_rag/
 └── tests/           # Unit tests
 
 scripts/              # Command-line scripts
-├── ingest_collection.py    # Ingest Zotero collection
-├── ingest_email.py         # Ingest Notion emails/notes
-├── rag_query.py            # Query the RAG system
+├── ingest_collection.py         # Ingest Zotero collection
+├── ingest_email.py              # Ingest Notion emails/notes
+├── ingest_experiment.py         # Ingest Notion experiments
+├── ingest_dataset.py            # Ingest Notion datasets
+├── harvest_mw_studies.py        # Harvest MW studies → Notion
+├── convert_mwtab_to_csv.py      # Convert mwTab to CSV
+├── scan_ceramides_in_mwtab_csv.py  # Scan CSV for ceramides
+├── rag_query.py                 # Query the RAG system
 └── ...
 ```
 
@@ -69,7 +74,24 @@ pip install openai pinecone requests pypdf
 
 ### 3. Configuration
 
-Set environment variables for API keys:
+#### Option 1: Use .env file (Recommended)
+
+Copy the example file and fill in your API keys:
+
+```bash
+cp .env.example .env
+# Edit .env with your actual API keys
+```
+
+The `.env` file is automatically loaded by `amprenta_rag.config` if `python-dotenv` is installed. Install it with:
+
+```bash
+pip install python-dotenv
+```
+
+#### Option 2: Environment Variables
+
+Alternatively, set environment variables:
 
 ```bash
 export OPENAI_API_KEY="your_openai_key"
@@ -78,23 +100,7 @@ export NOTION_API_KEY="your_notion_key"
 export ZOTERO_API_KEY="your_zotero_key"
 ```
 
-Or create a `.env` file (already in `.gitignore`):
-
-```bash
-OPENAI_API_KEY=your_openai_key
-PINECONE_API_KEY=your_pinecone_key
-NOTION_API_KEY=your_notion_key
-ZOTERO_API_KEY=your_zotero_key
-```
-
-Then load it with `python-dotenv` (optional):
-
-```python
-from dotenv import load_dotenv
-load_dotenv()
-```
-
-**Note**: The `config.py` file also contains hardcoded database IDs and other constants that may need to be updated for your workspace.
+**Note**: The `.env` file is already in `.gitignore` and will not be committed. The `config.py` file also contains hardcoded database IDs and other constants that may need to be updated for your workspace.
 
 ## Usage
 
@@ -122,27 +128,132 @@ python scripts/ingest_email.py
 
 This processes all emails/notes in your Notion Email DB that have `Embedding Status = "Not Embedded"`.
 
+### Ingest Experiments from Notion
+
+```bash
+python scripts/ingest_experiment.py --experiment-page-id YOUR_EXPERIMENT_PAGE_ID
+```
+
+Ingests a single experiment page from the Notion "Experiments" database into Pinecone with full metadata and signature awareness.
+
+### Ingest Datasets from Notion
+
+```bash
+python scripts/ingest_dataset.py --dataset-page-id YOUR_DATASET_PAGE_ID
+```
+
+Ingests a single dataset page from the Notion "Experimental Data Assets" database into Pinecone.
+
+### Harvest Metabolomics Workbench Studies
+
+The MW harvester fetches lipidomics studies from Metabolomics Workbench and creates/updates Dataset pages in Notion.
+
+#### Discover Studies by Keyword
+
+```bash
+python scripts/harvest_mw_studies.py \
+  --search-keyword ALS \
+  --search-keyword amyotrophic \
+  --max-search-results 50 \
+  --dry-run
+```
+
+Searches MW for studies matching keywords in title/summary/disease fields. Use `--dry-run` to preview results without creating pages.
+
+#### Harvest Specific Studies
+
+```bash
+python scripts/harvest_mw_studies.py \
+  --study-id ST004396 \
+  --create-notion \
+  --ingest
+```
+
+This will:
+1. Fetch study metadata from MW
+2. Fetch mwTab data
+3. Create/update a Dataset page in Notion
+4. Embed mwTab content as code blocks
+5. Optionally trigger dataset ingestion into Pinecone (`--ingest`)
+
+#### Filter by Lipid Content (Future)
+
+```bash
+python scripts/harvest_mw_studies.py \
+  --search-keyword ALS \
+  --lipid-filter Ceramide \
+  --create-notion \
+  --ingest
+```
+
+Note: Lipid filtering requires specific RefMet names. Generic names like "Ceramide" may not match MW's metabolite database.
+
+### Convert mwTab to CSV
+
+```bash
+python scripts/convert_mwtab_to_csv.py --study-id ST004396
+```
+
+Downloads mwTab content from MW and extracts tabular metabolite data to CSV format. Saves to `data/mwtab/<study_id>.csv` by default.
+
+```bash
+# Custom output directory
+python scripts/convert_mwtab_to_csv.py \
+  --study-id ST004396 \
+  --output-dir data/mwtab_export
+```
+
+**Note**: Some studies may have JSON-only mwTab format without tab-separated sections. The script will report if no tabular data is found.
+
+### Scan CSV for Ceramides
+
+```bash
+python scripts/scan_ceramides_in_mwtab_csv.py --study-id ST004396
+```
+
+Scans a CSV file (from `convert_mwtab_to_csv.py`) for ceramide-like metabolites and produces a summary of hits.
+
+```bash
+# Scan specific CSV file
+python scripts/scan_ceramides_in_mwtab_csv.py \
+  --csv-path data/mwtab/ST004396.csv
+
+# Generate a report file
+python scripts/scan_ceramides_in_mwtab_csv.py \
+  --study-id ST004396 \
+  --output-report data/mwtab/ST004396_ceramide_report.txt
+```
+
 ### Query the RAG System
 
 ```bash
+# Single source type
 python scripts/rag_query.py \
   --query "ceramide dysregulation and neurodegeneration" \
   --top-k 5 \
   --source-type Literature \
   --disease ALS \
   --signature "ALS-CSF-Core-6Ceramides"
+
+# Multiple source types
+python scripts/rag_query.py \
+  --query "ALS ceramide signature" \
+  --top-k 10 \
+  --source-type Literature Experiment Dataset \
+  --signature "ALS-CSF-Core-6Ceramides"
 ```
 
 Options:
 - `--query`: Your search query
 - `--top-k`: Number of results (default: 10)
-- `--source-type`: Filter by source ("Literature", "Email", "Note")
+- `--source-type`: Filter by source type(s). Can specify multiple: `Literature`, `Email`, `Experiment`, `Dataset` (default: `Literature`)
 - `--disease`: Filter by disease (e.g., "ALS", "AD")
 - `--target`: Filter by molecular target (e.g., "SPTLC1")
 - `--lipid`: Filter by lipid species
-- `--signature`: Filter by lipid signature
+- `--signature`: Filter by lipid signature (Short ID)
 - `--tag`: Filter by tag
 - `--show-context`: Show context chunks used
+- `--raw-json`: Output raw JSON response
 - `--no-answer`: Skip answer synthesis (faster)
 
 ### Classify Literature Metadata
@@ -172,11 +283,19 @@ Uses OpenAI to classify papers into semantic metadata (diseases, targets, lipid 
 - **Semantic**: diseases, molecular targets, modality, stage
 - **Lipid-specific**: lipid species, lipid signatures, phenotype axes
 - **Source tracking**: Zotero item keys, Notion page IDs
+- **Dataset-specific**: MW Study ID, data origin, sample type, matrix, model systems
+
+### Multi-Source RAG
+- Query across multiple source types: Literature, Email, Experiments, Datasets
+- Unified filtering by disease, target, lipid, signature across all sources
+- Provenance tracking showing which sources contributed to results
 
 ### Structured Logging
 All modules use consistent logging prefixes:
 - `[INGEST][ZOTERO]` - Zotero ingestion
 - `[INGEST][EMAIL]` - Email/note ingestion
+- `[INGEST][DATASET]` - Dataset ingestion
+- `[MW]` - Metabolomics Workbench operations
 - `[NOTION]` - Notion API operations
 - `[PINECONE]` - Pinecone operations
 - `[RAG]` - Query/RAG operations

@@ -52,9 +52,16 @@ def main() -> None:
     parser.add_argument("--top-k", type=int, default=10, help="Number of results to retrieve from Pinecone.")
     parser.add_argument(
         "--source-type",
-        choices=["Email", "Note", "Literature", "Unknown"],
-        default=None,
-        help="Optional source_type filter.",
+        dest="source_types",
+        nargs="*",
+        choices=["Literature", "Email", "Experiment", "Dataset"],
+        default=["Literature"],
+        help=(
+            "Optional source type filter(s). "
+            "You can pass multiple values, e.g. "
+            "--source-type Literature Experiment Dataset. "
+            "Defaults to ['Literature']."
+        ),
     )
     parser.add_argument(
         "--tag",
@@ -95,7 +102,7 @@ def main() -> None:
     parser.add_argument(
         "--signature",
         default=None,
-        help="Optional lipid signature filter (e.g. 'ALS-CSF-Core-6Ceramides'). Matches 'lipid_signatures' metadata.",
+        help="Optional lipid signature filter (Short ID). Matches 'lipid_signatures' metadata.",
     )    
 
     args = parser.parse_args()
@@ -103,7 +110,7 @@ def main() -> None:
     result = query_rag(
         user_query=args.query,
         top_k=args.top_k,
-        source_type=args.source_type,
+        source_types=args.source_types,
         tag=args.tag,
         generate_answer=not args.no_answer,
         disease=args.disease,

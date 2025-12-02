@@ -8,6 +8,8 @@ from .email_ingestion import (
     delete_email_and_chunks,
     cleanup_orphaned_chunks,
 )
+from .experiments_ingestion import ingest_experiment
+from .dataset_ingestion import ingest_dataset
 
 __all__ = [
     "ingest_zotero_item",
@@ -17,4 +19,6 @@ __all__ = [
     "batch_ingest_emails",
     "delete_email_and_chunks",
     "cleanup_orphaned_chunks",
+    "ingest_experiment",
+    "ingest_dataset",
 ]
