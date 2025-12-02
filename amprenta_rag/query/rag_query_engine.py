@@ -1,0 +1,36 @@
+# amprenta_rag/query/rag_query_engine.py
+
+"""
+Compatibility wrapper for the refactored query engine.
+
+This module maintains backward compatibility by re-exporting all public APIs
+from the new modular structure (pinecone_query.py and rag_engine.py).
+
+Scripts and other code importing from rag_query_engine.py will continue to work
+without changes.
+"""
+
+from __future__ import annotations
+
+# Re-export dataclasses and main query function from rag_engine
+from amprenta_rag.query.rag_engine import (
+    MatchSummary,
+    RAGQueryResult,
+    query_rag,
+)
+
+# Re-export Pinecone query functions from pinecone_query
+from amprenta_rag.query.pinecone_query import (
+    build_meta_filter,
+    embed_query,
+    query_pinecone,
+)
+
+__all__ = [
+    "MatchSummary",
+    "RAGQueryResult",
+    "query_rag",
+    "build_meta_filter",
+    "embed_query",
+    "query_pinecone",
+]

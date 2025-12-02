@@ -1,0 +1,463 @@
+# amprenta_rag/ingestion/zotero_ingest.py
+
+from __future__ import annotations
+
+from typing import Dict, Any, List
+
+import hashlib
+import textwrap
+from datetime import datetime, timezone
+
+from amprenta_rag.config import get_config
+from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
+from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.ingestion.zotero_api import (
+    fetch_zotero_item,
+    fetch_zotero_attachments,
+    fetch_zotero_notes,
+    download_zotero_file,
+    ZoteroItem,
+)
+from amprenta_rag.ingestion.text_extraction import (
+    extract_text_from_attachment_bytes,
+    html_to_text,
+    is_boilerplate,
+)
+from amprenta_rag.ingestion.notion_pages import (
+    ensure_literature_page,
+    create_rag_chunk_page,
+    update_literature_page,
+)
+from amprenta_rag.ingestion.metadata_semantic import get_literature_semantic_metadata
+from amprenta_rag.ingestion.pinecone_utils import (
+    sanitize_metadata,
+    attachment_already_ingested,
+    note_already_ingested,
+)
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
+
+def _embed_texts(texts: List[str], batch_size: int = 64) -> List[List[float]]:
+    """
+    Embed texts in batches using the configured embedding model.
+    """
+    if not texts:
+        return []
+
+    client = get_openai_client()
+    _, embed_model = get_default_models()
+    all_embeddings: List[List[float]] = []
+
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i : i + batch_size]
+        try:
+            resp = client.embeddings.create(
+                model=embed_model,
+                input=batch,
+            )
+            all_embeddings.extend(d.embedding for d in resp.data)  # type: ignore[attr-defined]
+        except Exception as e:
+            logger.error(
+                "[INGEST][ZOTERO] OpenAI embedding error for batch %d-%d: %r",
+                i,
+                min(i + batch_size, len(texts)),
+                e,
+            )
+            raise
+
+    return all_embeddings
+
+
+def _chunk_text(text: str, max_chars: int = 2000) -> List[str]:
+    """
+    Paragraph-aware, character-limited chunking.
+    """
+    text = text.strip()
+    if not text:
+        return []
+
+    paras = [p.strip() for p in text.split("\n") if p.strip()]
+    chunks: List[str] = []
+    buf = ""
+
+    for p in paras:
+        if buf and len(buf) + len(p) + 1 > max_chars:
+            chunks.append(buf.strip())
+            buf = p
+        else:
+            if buf:
+                buf += "\n" + p
+            else:
+                buf = p
+
+    if buf:
+        chunks.append(buf.strip())
+    return chunks
+
+
+def ingest_zotero_item(
+    item_key: str,
+    parent_type: str = "Literature",
+    force: bool = False,
+) -> None:
+    """
+    Ingest a single Zotero item into Notion + Pinecone, with
+    attachment-level and note-level idempotency.
+
+    For each attachment OR note on the Zotero item:
+      - Skip if already ingested with same content (md5 / hash) unless force=True
+      - Attachments: download file, extract text (PDF or text/*)
+      - Notes: HTML → text
+      - Chunk + embed
+      - Create RAG chunk pages in Notion
+      - Upsert vectors with rich metadata
+
+    If all attachments/notes are up to date, this is a no-op.
+    """
+    logger.info("[INGEST][ZOTERO] Ingesting Zotero item %s", item_key)
+    cfg = get_config()
+    index = get_pinecone_index()
+
+    # 1) Item metadata
+    try:
+        item: ZoteroItem = fetch_zotero_item(item_key)
+    except Exception as e:
+        logger.error("[INGEST][ZOTERO] Zotero API error fetching item %s: %r", item_key, e)
+        raise
+
+    # 2) Ensure Literature page exists
+    try:
+        parent_page_id = ensure_literature_page(item, parent_type)
+    except Exception as e:
+        logger.error(
+            "[INGEST][ZOTERO] Notion API error ensuring literature page for item %s: %r",
+            item_key,
+            e,
+        )
+        raise
+
+    # 2b) Read semantic + lipid metadata from the Literature page
+    try:
+        base_meta = get_literature_semantic_metadata(parent_page_id, item)
+    except Exception as e:
+        logger.error(
+            "[INGEST][ZOTERO] Error reading semantic metadata for page %s: %r",
+            parent_page_id,
+            e,
+        )
+        raise
+
+    # 3) Fetch children
+    try:
+        attachments = fetch_zotero_attachments(item_key)
+        notes = fetch_zotero_notes(item_key)
+    except Exception as e:
+        logger.error(
+            "[INGEST][ZOTERO] Zotero API error fetching children for item %s: %r",
+            item_key,
+            e,
+        )
+        raise
+
+    if not attachments and not notes:
+        logger.info(
+            "[INGEST][ZOTERO] No attachments or notes for %s; nothing to ingest.",
+            item_key,
+        )
+        return
+
+    logger.info(
+        "[INGEST][ZOTERO] Found %d attachment(s) and %d note(s) for Zotero item %s",
+        len(attachments),
+        len(notes),
+        item_key,
+    )
+
+    now = datetime.now(timezone.utc).isoformat()
+    any_ingested = False
+
+    # ---------------- Attachments ---------------- #
+    for att in attachments:
+        att_key = att.get("key")
+        if not att_key:
+            continue
+
+        filename = att.get("filename") or ""
+        content_type = att.get("contentType")
+        att_md5 = att.get("md5")
+
+        logger.info(
+            "[INGEST][ZOTERO] Processing attachment %s (%s)",
+            att_key,
+            filename or "unnamed",
+        )
+
+        # Skip Zotero HTML snapshots
+        title = att.get("title", "") or ""
+        if "snapshot" in filename.lower() or "snapshot" in title.lower():
+            logger.info("[INGEST][ZOTERO] Skipping Snapshot attachment %s", att_key)
+            continue
+        if content_type and content_type.lower().startswith("text/html"):
+            logger.info("[INGEST][ZOTERO] Skipping HTML snapshot attachment %s", att_key)
+            continue
+
+        if not force and attachment_already_ingested(
+            item_key=item_key,
+            attachment_key=att_key,
+            current_md5=att_md5,
+        ):
+            logger.info(
+                "[INGEST][ZOTERO] Already ingested with matching md5; skipping attachment %s",
+                att_key,
+            )
+            continue
+
+        try:
+            data = download_zotero_file(att_key)
+        except Exception as e:
+            logger.error(
+                "[INGEST][ZOTERO] Zotero API error downloading attachment %s: %r",
+                att_key,
+                e,
+            )
+            raise
+
+        text = extract_text_from_attachment_bytes(content_type, data, filename=filename)
+        if not text or len(text.strip()) < 100:
+            logger.info(
+                "[INGEST][ZOTERO] Attachment text is empty or very short; skipping %s",
+                att_key,
+            )
+            continue
+
+        header = item.title + "\n"
+        if item.journal:
+            header += f"{item.journal}\n"
+        if item.doi:
+            header += f"DOI: {item.doi}\n"
+        header += f"[Attachment: {filename}]\n\n"
+        full_text = header + text
+
+        chunks = _chunk_text(full_text)
+        chunks = [c for c in chunks if not is_boilerplate(c)]
+        if not chunks:
+            logger.info(
+                "[INGEST][ZOTERO] No usable chunks produced; skipping attachment %s",
+                att_key,
+            )
+            continue
+
+        logger.info(
+            "[INGEST][ZOTERO] Generated %d chunk(s) for attachment %s",
+            len(chunks),
+            att_key,
+        )
+        logger.info("[INGEST][ZOTERO] Embedding chunks with OpenAI for attachment %s", att_key)
+        embeddings = _embed_texts(chunks)
+
+        vectors: List[Dict[str, Any]] = []
+        for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
+            chunk_id = f"{parent_page_id}_{att_key}_chunk_{order:03d}"
+
+            try:
+                chunk_page_id = create_rag_chunk_page(
+                    chunk_id=chunk_id,
+                    chunk_text=chunk,
+                    parent_type=parent_type,
+                    parent_page_id=parent_page_id,
+                    order=order,
+                    when_iso=now,
+                )
+            except Exception as e:
+                logger.error(
+                    "[INGEST][ZOTERO] Notion API error creating chunk page %s: %r",
+                    chunk_id,
+                    e,
+                )
+                raise
+
+            snippet = textwrap.shorten(chunk, width=300)
+
+            meta: Dict[str, Any] = {
+                **base_meta,
+                "chunk_id": chunk_id,
+                "chunk_index": order,
+                "snippet": snippet,
+                "zotero_item_key": item.key,
+                "attachment_key": att_key,
+                "attachment_filename": filename,
+                "attachment_content_type": content_type,
+                "attachment_md5": att_md5,
+                "notion_chunk_page_id": chunk_page_id,
+                "source": "Literature",
+                "source_type": parent_type,
+                "title": item.title,
+                "zotero_tags": item.tags,
+                "item_type": item.item_type,
+            }
+            if item.doi:
+                meta["doi"] = item.doi
+            if item.url:
+                meta["url"] = item.url
+            if item.date:
+                meta["date"] = item.date
+
+            vectors.append(
+                {
+                    "id": chunk_id,
+                    "values": emb,
+                    "metadata": sanitize_metadata(meta),
+                }
+            )
+
+        if vectors:
+            logger.info(
+                "[INGEST][ZOTERO] Upserting %d vectors into Pinecone for attachment %s",
+                len(vectors),
+                att_key,
+            )
+            try:
+                index.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
+            except Exception as e:
+                logger.error(
+                    "[INGEST][ZOTERO] Pinecone API error upserting vectors for attachment %s: %r",
+                    att_key,
+                    e,
+                )
+                raise
+            any_ingested = True
+
+    # ---------------- Notes ---------------- #
+    for note in notes:
+        note_key = note.get("key")
+        if not note_key:
+            continue
+
+        raw_html = note.get("note") or ""
+        text = html_to_text(raw_html)
+        if not text or len(text.strip()) < 50:
+            continue
+
+        note_hash = hashlib.md5(text.encode("utf-8", errors="ignore")).hexdigest()
+        logger.info("[INGEST][ZOTERO] Processing note %s (hash=%s)", note_key, note_hash)
+
+        if not force and note_already_ingested(
+            item_key=item_key,
+            note_key=note_key,
+            note_hash=note_hash,
+        ):
+            logger.info(
+                "[INGEST][ZOTERO] Note already ingested with same hash; skipping %s",
+                note_key,
+            )
+            continue
+
+        header = f"{item.title}\n[Zotero Note]\n\n"
+        full_text = header + text
+
+        chunks = _chunk_text(full_text)
+        chunks = [c for c in chunks if not is_boilerplate(c)]
+        if not chunks:
+            logger.info("[INGEST][ZOTERO] No usable chunks for note; skipping %s", note_key)
+            continue
+
+        logger.info(
+            "[INGEST][ZOTERO] Generated %d chunk(s) for note %s",
+            len(chunks),
+            note_key,
+        )
+        logger.info("[INGEST][ZOTERO] Embedding note chunks with OpenAI for note %s", note_key)
+        embeddings = _embed_texts(chunks)
+
+        note_vectors: List[Dict[str, Any]] = []
+        for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
+            chunk_id = f"{parent_page_id}_{note_key}_note_{order:03d}"
+
+            try:
+                chunk_page_id = create_rag_chunk_page(
+                    chunk_id=chunk_id,
+                    chunk_text=chunk,
+                    parent_type=parent_type,
+                    parent_page_id=parent_page_id,
+                    order=order,
+                    when_iso=now,
+                )
+            except Exception as e:
+                logger.error(
+                    "[INGEST][ZOTERO] Notion API error creating chunk page %s: %r",
+                    chunk_id,
+                    e,
+                )
+                raise
+
+            snippet = textwrap.shorten(chunk, width=300)
+
+            note_meta: Dict[str, Any] = {
+                **base_meta,
+                "chunk_id": chunk_id,
+                "chunk_index": order,
+                "snippet": snippet,
+                "zotero_item_key": item.key,
+                "note_key": note_key,
+                "note_hash": note_hash,
+                "notion_chunk_page_id": chunk_page_id,
+                "source": "Literature",
+                "source_type": parent_type,
+                "title": item.title,
+                "zotero_tags": item.tags,
+                "item_type": item.item_type,
+            }
+            if item.doi:
+                meta["doi"] = item.doi
+            if item.url:
+                meta["url"] = item.url
+            if item.date:
+                note_meta["date"] = item.date
+
+            note_vectors.append(
+                {
+                    "id": chunk_id,
+                    "values": emb,
+                    "metadata": sanitize_metadata(note_meta),
+                }
+            )
+
+        if note_vectors:
+            logger.info(
+                "[INGEST][ZOTERO] Upserting %d vectors into Pinecone for note %s",
+                len(note_vectors),
+                note_key,
+            )
+            try:
+                index.upsert(vectors=note_vectors, namespace=cfg.pinecone.namespace)
+            except Exception as e:
+                logger.error(
+                    "[INGEST][ZOTERO] Pinecone API error upserting vectors for note %s: %r",
+                    note_key,
+                    e,
+                )
+                raise
+            any_ingested = True
+
+    if any_ingested:
+        logger.info(
+            "[INGEST][ZOTERO] Updating Literature page status in Notion for item %s",
+            item_key,
+        )
+        try:
+            update_literature_page(parent_page_id, now)
+        except Exception as e:
+            logger.error(
+                "[INGEST][ZOTERO] Notion API error updating literature page %s: %r",
+                parent_page_id,
+                e,
+            )
+            raise
+        logger.info("[INGEST][ZOTERO] Ingestion complete for item %s", item_key)
+    else:
+        logger.info(
+            "[INGEST][ZOTERO] No new or changed attachments/notes; nothing ingested for item %s",
+            item_key,
+        )
