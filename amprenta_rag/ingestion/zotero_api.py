@@ -1,5 +1,14 @@
 # amprenta_rag/ingestion/zotero_api.py
 
+"""
+Zotero API client functions.
+
+This module provides:
+- ZoteroItem dataclass for structured item representation
+- Functions to fetch Zotero items, attachments, and notes
+- File download functionality
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -1,5 +1,18 @@
 # amprenta_rag/ingestion/zotero_ingest.py
 
+"""
+Zotero item ingestion pipeline.
+
+This module orchestrates the complete ingestion of Zotero items:
+1. Fetch Zotero item metadata and attachments/notes
+2. Extract text from PDFs and notes
+3. Chunk and embed text using OpenAI
+4. Create Notion pages for literature items and chunks
+5. Upsert vectors to Pinecone with rich metadata
+
+The pipeline is idempotent - unchanged attachments/notes are skipped.
+"""
+
 from __future__ import annotations
 
 from typing import Dict, Any, List

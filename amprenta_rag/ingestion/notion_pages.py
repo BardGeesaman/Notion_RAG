@@ -1,5 +1,15 @@
 # amprenta_rag/ingestion/notion_pages.py
 
+"""
+Notion API helpers for page creation and management.
+
+This module provides functions for:
+- Creating and updating Literature DB pages
+- Creating RAG chunk pages
+- Fetching and extracting content from Notion pages
+- Email/Note specific Notion operations
+"""
+
 from __future__ import annotations
 
 from typing import Dict, Any, Optional, List

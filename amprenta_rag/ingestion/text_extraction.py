@@ -1,5 +1,14 @@
 # amprenta_rag/ingestion/text_extraction.py
 
+"""
+Text extraction utilities for various file formats.
+
+This module provides:
+- PDF text extraction
+- HTML to text conversion
+- Boilerplate detection and filtering
+"""
+
 from __future__ import annotations
 
 from io import BytesIO

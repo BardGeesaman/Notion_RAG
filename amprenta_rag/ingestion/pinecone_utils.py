@@ -1,5 +1,14 @@
 # amprenta_rag/ingestion/pinecone_utils.py
 
+"""
+Pinecone utility functions.
+
+This module provides:
+- Metadata sanitization for Pinecone compatibility
+- Idempotency checks (attachment/note already ingested)
+- Query helpers for Pinecone operations
+"""
+
 from __future__ import annotations
 
 from typing import Dict, Any, List, Optional
