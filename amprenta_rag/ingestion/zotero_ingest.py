@@ -37,6 +37,7 @@ from amprenta_rag.ingestion.pinecone_utils import (attachment_already_ingested,
                                                    sanitize_metadata)
 from amprenta_rag.ingestion.signature_integration import \
     detect_and_ingest_signatures_from_content
+from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.ingestion.text_extraction import (
     extract_text_from_attachment_bytes, html_to_text, is_boilerplate)
 from amprenta_rag.ingestion.zotero_api import (ZoteroItem,
@@ -49,62 +50,6 @@ from amprenta_rag.logging_utils import get_logger
 logger = get_logger(__name__)
 
 
-def _embed_texts(texts: List[str], batch_size: int = 64) -> List[List[float]]:
-    """
-    Embed texts in batches using the configured embedding model.
-    """
-    if not texts:
-        return []
-
-    client = get_openai_client()
-    _, embed_model = get_default_models()
-    all_embeddings: List[List[float]] = []
-
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i : i + batch_size]
-        try:
-            resp = client.embeddings.create(
-                model=embed_model,
-                input=batch,
-            )
-            all_embeddings.extend(d.embedding for d in resp.data)  # type: ignore[attr-defined]
-        except Exception as e:
-            logger.error(
-                "[INGEST][ZOTERO] OpenAI embedding error for batch %d-%d: %r",
-                i,
-                min(i + batch_size, len(texts)),
-                e,
-            )
-            raise
-
-    return all_embeddings
-
-
-def _chunk_text(text: str, max_chars: int = 2000) -> List[str]:
-    """
-    Paragraph-aware, character-limited chunking.
-    """
-    text = text.strip()
-    if not text:
-        return []
-
-    paras = [p.strip() for p in text.split("\n") if p.strip()]
-    chunks: List[str] = []
-    buf = ""
-
-    for p in paras:
-        if buf and len(buf) + len(p) + 1 > max_chars:
-            chunks.append(buf.strip())
-            buf = p
-        else:
-            if buf:
-                buf += "\n" + p
-            else:
-                buf = p
-
-    if buf:
-        chunks.append(buf.strip())
-    return chunks
 
 
 def ingest_zotero_item(
@@ -260,7 +205,7 @@ def ingest_zotero_item(
         # Collect text for feature extraction
         all_text_parts.append(text)
 
-        chunks = _chunk_text(full_text)
+        chunks = chunk_text(full_text)
         chunks = [c for c in chunks if not is_boilerplate(c)]
         if not chunks:
             logger.info(
@@ -277,7 +222,7 @@ def ingest_zotero_item(
         logger.info(
             "[INGEST][ZOTERO] Embedding chunks with OpenAI for attachment %s", att_key
         )
-        embeddings = _embed_texts(chunks)
+        embeddings = embed_texts(chunks)
 
         vectors: List[Dict[str, Any]] = []
         for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
@@ -384,7 +329,7 @@ def ingest_zotero_item(
         header = f"{item.title}\n[Zotero Note]\n\n"
         full_text = header + text
 
-        chunks = _chunk_text(full_text)
+        chunks = chunk_text(full_text)
         chunks = [c for c in chunks if not is_boilerplate(c)]
         if not chunks:
             logger.info(
@@ -400,7 +345,7 @@ def ingest_zotero_item(
         logger.info(
             "[INGEST][ZOTERO] Embedding note chunks with OpenAI for note %s", note_key
         )
-        embeddings = _embed_texts(chunks)
+        embeddings = embed_texts(chunks)
 
         note_vectors: List[Dict[str, Any]] = []
         for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):

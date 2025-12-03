@@ -25,9 +25,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.dataset_ingestion import (
-    _extract_metadata_from_mwtab, _extract_mwtab_from_page_content,
-    _update_experimental_data_asset_metadata)
+from amprenta_rag.ingestion.dataset_notion_utils import (
+    update_dataset_scientific_metadata)
+from amprenta_rag.ingestion.mwtab_extraction import (
+    extract_metadata_from_mwtab, extract_mwtab_from_page_content)
 from amprenta_rag.ingestion.notion_pages import extract_page_content
 from amprenta_rag.logging_utils import get_logger
 
@@ -113,13 +114,13 @@ def process_page(page_id: str, dry_run: bool = False) -> bool:
             return False
 
         # Extract mwTab data
-        mwtab_data = _extract_mwtab_from_page_content(page_content)
+        mwtab_data = extract_mwtab_from_page_content(page_content)
         if not mwtab_data:
             logger.info("No mwTab data found for page %s", page_id)
             return False
 
         # Extract metadata
-        metadata = _extract_metadata_from_mwtab(mwtab_data)
+        metadata = extract_metadata_from_mwtab(mwtab_data)
 
         # Check if we have any metadata to set
         has_metadata = any(
@@ -147,7 +148,7 @@ def process_page(page_id: str, dry_run: bool = False) -> bool:
             return True
         else:
             # Update page
-            _update_experimental_data_asset_metadata(
+            update_dataset_scientific_metadata(
                 page_id=page_id,
                 metadata=metadata,
             )

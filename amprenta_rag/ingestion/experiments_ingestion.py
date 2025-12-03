@@ -23,7 +23,7 @@ from amprenta_rag.ingestion.notion_pages import extract_page_content
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
 from amprenta_rag.ingestion.signature_integration import \
     detect_and_ingest_signatures_from_content
-from amprenta_rag.ingestion.zotero_ingest import _chunk_text, _embed_texts
+from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -119,7 +119,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
         raise
 
     # Chunk and embed
-    chunks = _chunk_text(full_text)
+    chunks = chunk_text(full_text)
     if not chunks:
         logger.info(
             "[INGEST][EXPERIMENT] No chunks produced for %s; skipping.", exp_page_id
@@ -133,7 +133,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
     )
 
     try:
-        embeddings = _embed_texts(chunks)
+        embeddings = embed_texts(chunks)
     except Exception as e:
         logger.error(
             "[INGEST][EXPERIMENT] Error embedding chunks for %s: %r",

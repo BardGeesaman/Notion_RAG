@@ -1,341 +1,258 @@
-# Refactoring, Cleanup, Testing & Documentation Plan
+# Refactoring Plan: Breaking Down Large Files
 
-**Date**: December 2, 2025  
-**Current State**: Feature-complete, production-ready, but needs polish  
-**Goal**: Improve code quality, test coverage, documentation, and maintainability
+## Overview
+This plan outlines how to refactor the three largest ingestion modules into smaller, more maintainable components while preserving functionality and backward compatibility.
 
----
+## Current State
 
-## 📊 **CURRENT STATE ASSESSMENT**
+### File Sizes
+- `dataset_ingestion.py`: **1,132 lines** (6 functions)
+- `signature_ingestion.py`: **1,109 lines** (12 functions)
+- `email_ingestion.py`: **676 lines** (6 functions)
 
-### Codebase Statistics:
-- **Python Files**: 38 files
-- **Total Lines**: ~9,400 lines
-- **Test Files**: 3 tests (minimal coverage)
-- **Functions/Classes**: 93+ in ingestion module alone
-- **Documentation**: Inconsistent (some modules well-documented, others sparse)
-
-### Test Coverage:
-- ✅ **3 tests passing**: `test_sanitize_metadata`, `test_build_meta_filter` (2 tests)
-- ❌ **Coverage**: Very low (~5-10% estimated)
-- ❌ **Missing**: Tests for ingestion pipelines, signature matching, scoring, etc.
-
-### Documentation Status:
-- ✅ **Some modules**: Good docstrings (e.g., `signature_matching.py`)
-- ⚠️ **Many modules**: Minimal or missing docstrings
-- ⚠️ **README**: Exists but could be more comprehensive
-- ❌ **API Documentation**: Missing
-
-### Code Quality:
-- ✅ **Structure**: Well-organized into modules
-- ⚠️ **Duplication**: Some shared logic could be extracted
-- ⚠️ **Error Handling**: Inconsistent patterns
-- ⚠️ **Type Hints**: Partial (some functions have them, others don't)
+### Goals
+1. Reduce file sizes to <500 lines each
+2. Improve separation of concerns
+3. Enhance testability
+4. Maintain backward compatibility
+5. Improve code reusability
 
 ---
 
-## 🎯 **REFACTORING PRIORITIES**
+## Refactoring Strategy
 
-### Phase 1: Code Cleanup & Organization (High Priority)
+### 1. `dataset_ingestion.py` → Split into 3 modules
 
-#### 1.1 Remove Dead Code
-- [ ] Search for unused imports
-- [ ] Remove commented-out code blocks
-- [ ] Remove unused functions/classes
-- [ ] Clean up temporary test files
+#### **Current Structure:**
+- `_extract_mwtab_from_page_content()` - 90 lines
+- `_extract_metadata_from_mwtab()` - 213 lines
+- `_update_experimental_data_asset_metadata()` - 120 lines
+- `_fetch_notion_page()` - 22 lines
+- `_update_notion_page_with_embeddings()` - 74 lines
+- `ingest_dataset()` - 565 lines (main orchestration)
 
-#### 1.2 Standardize Code Style
-- [ ] Run black formatter across all files
-- [ ] Fix line length issues
-- [ ] Standardize import ordering (isort)
-- [ ] Consistent naming conventions
+#### **Proposed Split:**
 
-#### 1.3 Extract Common Patterns
-- [ ] **Notion API calls**: Create shared wrapper for common patterns
-- [ ] **Error handling**: Standardize try/except patterns
-- [ ] **Logging**: Ensure consistent logging patterns
-- [ ] **Batch processing**: Extract batching logic to shared utility
+**A. `amprenta_rag/ingestion/mwtab_extraction.py`** (~300 lines)
+- `extract_mwtab_from_page_content()` (public)
+- `extract_metadata_from_mwtab()` (public)
+- `extract_study_id_from_page_properties()` (helper)
+- `fetch_mwtab_from_api()` (helper - MW API fallback)
 
-#### 1.4 Type Hints
-- [ ] Add type hints to all public functions
-- [ ] Add type hints to module-level functions
-- [ ] Use `typing` module consistently
-- [ ] Add return type annotations
+**B. `amprenta_rag/ingestion/dataset_notion_utils.py`** (~200 lines)
+- `update_dataset_embedding_metadata()` (public)
+- `update_dataset_scientific_metadata()` (public)
+- `fetch_dataset_page()` (public)
 
----
+**C. `amprenta_rag/ingestion/dataset_ingestion.py`** (~450 lines)
+- `ingest_dataset()` (main orchestration)
+- Imports from `mwtab_extraction` and `dataset_notion_utils`
 
-### Phase 2: Documentation (High Priority)
-
-#### 2.1 Module-Level Docstrings
-- [ ] Add docstrings to all modules explaining purpose
-- [ ] Document module-level constants
-- [ ] Add usage examples where appropriate
-
-#### 2.2 Function/Class Docstrings
-- [ ] Add docstrings to all public functions
-- [ ] Add docstrings to all classes
-- [ ] Use Google/NumPy docstring style consistently
-- [ ] Document parameters, return values, exceptions
-
-#### 2.3 Inline Comments
-- [ ] Add comments to complex logic
-- [ ] Explain "why" not just "what"
-- [ ] Document algorithm choices
-- [ ] Add TODO comments for future improvements
-
-#### 2.4 API Documentation
-- [ ] Create API reference documentation
-- [ ] Document public interfaces
-- [ ] Add usage examples
-- [ ] Document configuration options
+**Benefits:**
+- mwTab logic isolated and testable
+- Notion operations separated
+- Main orchestration cleaner
 
 ---
 
-### Phase 3: Testing (High Priority)
+### 2. `signature_ingestion.py` → Split into 4 modules
 
-#### 3.1 Unit Tests
-- [ ] **Ingestion Modules**:
-  - [ ] `dataset_ingestion.py`: Test mwTab extraction, chunking, embedding
-  - [ ] `zotero_ingest.py`: Test attachment processing, metadata extraction
-  - [ ] `email_ingestion.py`: Test email parsing, chunking
-  - [ ] `experiments_ingestion.py`: Test experiment data extraction
-  - [ ] `signature_ingestion.py`: Test signature loading, component creation
-  - [ ] `signature_matching.py`: Test matching logic, scoring
-  - [ ] `signature_detection.py`: Test detection algorithms
-  - [ ] `feature_extraction.py`: Test metabolite extraction
+#### **Current Structure:**
+- `_generate_short_id()` - 20 lines
+- `_find_or_create_signature_page()` - 150 lines
+- `_update_signature_page_if_needed()` - 95 lines
+- `_find_or_create_component_page()` - 150 lines
+- `_find_or_create_lipid_species_page()` - 140 lines
+- `_update_lipid_species_synonyms()` - 45 lines
+- `_link_component_to_lipid_species()` - 60 lines
+- `ingest_signature_from_file()` - 170 lines
+- `link_signature_to_source()` - 80 lines
+- `link_component_to_metabolite_feature()` - 45 lines
+- `embed_signature()` - 95 lines
+- `_fetch_notion_page_helper()` - 7 lines
 
-- [ ] **Query Modules**:
-  - [ ] `rag_engine.py`: Test query orchestration
-  - [ ] `pinecone_query.py`: Test filtering, embedding
+#### **Proposed Split:**
 
-- [ ] **Signature Modules**:
-  - [ ] `signature_scoring.py`: Test scoring algorithms
-  - [ ] `species_matching.py`: Test matching logic
-  - [ ] `signature_loader.py`: Test loading from various formats
+**A. `amprenta_rag/ingestion/signature_notion_crud.py`** (~400 lines)
+- `find_or_create_signature_page()` (public)
+- `update_signature_page_if_needed()` (public)
+- `find_or_create_component_page()` (public)
+- `find_or_create_lipid_species_page()` (public)
+- `update_lipid_species_synonyms()` (public)
+- `generate_signature_short_id()` (public)
 
-- [ ] **Utility Modules**:
-  - [ ] `metadata_semantic.py`: Test metadata extraction
-  - [ ] `notion_pages.py`: Test Notion API helpers
-  - [ ] `pinecone_utils.py`: Test metadata sanitization
-  - [ ] `text_extraction.py`: Test text extraction
+**B. `amprenta_rag/ingestion/signature_linking.py`** (~200 lines)
+- `link_component_to_lipid_species()` (public)
+- `link_signature_to_source()` (public)
+- `link_component_to_metabolite_feature()` (public)
 
-#### 3.2 Integration Tests
-- [ ] End-to-end ingestion pipeline tests
-- [ ] Signature matching integration tests
-- [ ] RAG query integration tests
-- [ ] Notion API integration tests (mocked)
+**C. `amprenta_rag/ingestion/signature_embedding.py`** (~100 lines)
+- `embed_signature()` (public)
 
-#### 3.3 Test Infrastructure
-- [ ] Set up pytest fixtures for common test data
-- [ ] Create mock Notion API responses
-- [ ] Create mock Pinecone responses
-- [ ] Set up test data files
-- [ ] Configure test coverage reporting
+**D. `amprenta_rag/ingestion/signature_ingestion.py`** (~400 lines)
+- `ingest_signature_from_file()` (main orchestration)
+- Imports from `signature_notion_crud`, `signature_linking`, `signature_embedding`
 
----
-
-### Phase 4: Code Refactoring (Medium Priority)
-
-#### 4.1 Extract Shared Utilities
-- [ ] **Notion API Wrapper**: Centralize all Notion API calls
-- [ ] **Pinecone Operations**: Centralize Pinecone operations
-- [ ] **Batch Processing**: Extract batching logic
-- [ ] **Error Handling**: Standardize error handling patterns
-
-#### 4.2 Reduce Duplication
-- [ ] **Text Chunking**: Already shared, verify consistency
-- [ ] **Embedding**: Already shared, verify consistency
-- [ ] **Metadata Extraction**: Check for duplication
-- [ ] **Notion Page Creation**: Standardize patterns
-
-#### 4.3 Improve Error Handling
-- [ ] Consistent exception types
-- [ ] Better error messages
-- [ ] Proper exception chaining
-- [ ] Graceful degradation where appropriate
-
-#### 4.4 Configuration Management
-- [ ] Validate configuration on startup
-- [ ] Better error messages for missing config
-- [ ] Configuration documentation
-- [ ] Environment variable validation
+**Benefits:**
+- CRUD operations isolated
+- Linking logic separated
+- Embedding logic isolated
+- Main orchestration cleaner
 
 ---
 
-### Phase 5: Performance & Optimization (Low Priority)
+### 3. `email_ingestion.py` → Split into 2 modules
 
-#### 5.1 Performance Improvements
-- [ ] Profile slow operations
-- [ ] Optimize batch sizes
-- [ ] Cache expensive operations
-- [ ] Parallel processing where appropriate
+#### **Current Structure:**
+- `cleanup_orphaned_chunks()` - 150 lines
+- `delete_email_and_chunks()` - 135 lines
+- `ingest_email()` - 260 lines
+- `batch_ingest_emails()` - 50 lines
+- Helper functions: `_notion_base_url()`, `_rag_db_id()`
 
-#### 5.2 Resource Management
-- [ ] Connection pooling for APIs
-- [ ] Rate limiting handling
-- [ ] Memory optimization for large datasets
+#### **Proposed Split:**
 
----
+**A. `amprenta_rag/ingestion/email_cleanup.py`** (~200 lines)
+- `cleanup_orphaned_chunks()` (public)
+- `delete_email_and_chunks()` (public)
+- Helper functions moved here
 
-## 📋 **DETAILED TASK BREAKDOWN**
+**B. `amprenta_rag/ingestion/email_ingestion.py`** (~450 lines)
+- `ingest_email()` (main ingestion)
+- `batch_ingest_emails()` (batch orchestration)
+- Imports cleanup functions from `email_cleanup`
 
-### Immediate Actions (This Week)
-
-#### Day 1: Code Cleanup
-1. Run linters (flake8, pylint, mypy)
-2. Fix all linting errors
-3. Remove unused imports
-4. Remove commented code
-5. Run black formatter
-
-#### Day 2: Documentation
-1. Add module docstrings to all ingestion modules
-2. Add function docstrings to public APIs
-3. Document configuration options
-4. Update README with examples
-
-#### Day 3: Testing Foundation
-1. Set up pytest configuration
-2. Create test fixtures
-3. Create mock helpers
-4. Write tests for core utilities (5-10 tests)
-
-#### Day 4-5: Core Tests
-1. Write tests for signature matching (5-10 tests)
-2. Write tests for metadata extraction (5-10 tests)
-3. Write tests for text processing (3-5 tests)
-4. Write integration tests (2-3 tests)
-
-### Short-term (Next 2 Weeks)
-
-1. Complete unit test coverage for all ingestion modules
-2. Add integration tests for end-to-end workflows
-3. Complete API documentation
-4. Refactor shared utilities
-5. Improve error handling
-
-### Long-term (Next Month)
-
-1. Achieve 70%+ test coverage
-2. Complete all documentation
-3. Performance optimization
-4. Advanced refactoring
+**Benefits:**
+- Cleanup logic isolated
+- Main ingestion focused
+- Easier to test cleanup separately
 
 ---
 
-## 🛠️ **TOOLS & SETUP**
+## Implementation Plan
 
-### Linting & Formatting:
-```bash
-# Install tools
-pip install black isort flake8 pylint mypy pytest pytest-cov
+### Phase 1: Extract Utilities (Low Risk)
+1. Create `mwtab_extraction.py` from `dataset_ingestion.py`
+2. Create `signature_notion_crud.py` from `signature_ingestion.py`
+3. Create `email_cleanup.py` from `email_ingestion.py`
+4. Update imports in original files
+5. Run tests to verify
 
-# Format code
-black amprenta_rag/ scripts/
-isort amprenta_rag/ scripts/
+### Phase 2: Extract Linking/Embedding (Medium Risk)
+1. Create `signature_linking.py`
+2. Create `signature_embedding.py`
+3. Create `dataset_notion_utils.py`
+4. Update imports
+5. Run tests
 
-# Lint
-flake8 amprenta_rag/ scripts/
-pylint amprenta_rag/
+### Phase 3: Refactor Main Orchestration (Low Risk)
+1. Clean up main orchestration functions
+2. Remove duplicate helpers
+3. Update all imports across codebase
+4. Run full test suite
 
-# Type checking
-mypy amprenta_rag/
-```
-
-### Testing:
-```bash
-# Run tests
-pytest amprenta_rag/tests -v
-
-# With coverage
-pytest amprenta_rag/tests --cov=amprenta_rag --cov-report=html
-
-# Specific test
-pytest amprenta_rag/tests/test_signature_matching.py -v
-```
-
-### Documentation:
-```bash
-# Generate API docs (if using Sphinx)
-sphinx-build -b html docs/ docs/_build/
-```
-
----
-
-## 📊 **SUCCESS METRICS**
-
-### Code Quality:
-- ✅ Zero linting errors
-- ✅ 100% type hint coverage for public APIs
-- ✅ Consistent code style (black-formatted)
-- ✅ No duplicate code patterns
-
-### Documentation:
-- ✅ All modules have docstrings
-- ✅ All public functions have docstrings
-- ✅ README is comprehensive
-- ✅ API documentation exists
-
-### Testing:
-- ✅ 70%+ test coverage
-- ✅ All critical paths tested
-- ✅ Integration tests for main workflows
-- ✅ Tests run in < 30 seconds
-
-### Maintainability:
-- ✅ Clear module boundaries
-- ✅ Minimal code duplication
-- ✅ Consistent error handling
-- ✅ Easy to add new features
-
----
-
-## 🎯 **RECOMMENDED STARTING POINT**
-
-### Option A: Quick Wins (Recommended)
-Start with **Phase 1.1-1.2** (Code Cleanup):
-1. Run black formatter
-2. Remove unused imports
-3. Fix linting errors
-4. Add basic docstrings
-
-**Time**: 2-4 hours  
-**Impact**: Immediate code quality improvement
-
-### Option B: Testing First
-Start with **Phase 3.1** (Unit Tests):
-1. Set up test infrastructure
-2. Write tests for core utilities
-3. Write tests for signature matching
-4. Achieve 30%+ coverage
-
-**Time**: 1-2 days  
-**Impact**: Prevents regressions, enables confident refactoring
-
-### Option C: Documentation First
-Start with **Phase 2** (Documentation):
+### Phase 4: Documentation & Cleanup
 1. Add module docstrings
-2. Add function docstrings
-3. Update README
-4. Document configuration
-
-**Time**: 1-2 days  
-**Impact**: Improves developer experience, onboarding
+2. Update README if needed
+3. Verify all scripts still work
+4. Commit changes
 
 ---
 
-## 💡 **RECOMMENDATION**
+## Backward Compatibility Strategy
 
-**Start with Option A (Quick Wins)**:
-1. Run formatters and fix style issues (1 hour)
-2. Add basic docstrings to key modules (2-3 hours)
-3. Then move to testing (Option B)
+### Import Aliases
+Keep original function names available via `__all__` exports:
 
-This gives immediate visible improvements while setting up for more substantial work.
+```python
+# In new modules
+__all__ = [
+    "extract_mwtab_from_page_content",
+    "extract_metadata_from_mwtab",
+    # ...
+]
+
+# In original files (temporary)
+from amprenta_rag.ingestion.mwtab_extraction import (
+    extract_mwtab_from_page_content as _extract_mwtab_from_page_content,
+    extract_metadata_from_mwtab as _extract_metadata_from_mwtab,
+)
+```
+
+### Deprecation Warnings (Optional)
+Add deprecation warnings to old function locations pointing to new modules.
 
 ---
 
-**Status**: Ready to begin  
-**Estimated Total Time**: 1-2 weeks for comprehensive cleanup  
-**Priority**: High (improves maintainability and developer experience)
+## Testing Strategy
 
+### Unit Tests
+- Test each extracted module independently
+- Mock Notion/Pinecone API calls
+- Test error handling paths
+
+### Integration Tests
+- Test full ingestion pipelines
+- Verify Notion writebacks
+- Verify Pinecone upserts
+
+### Regression Tests
+- Run existing test suite after each phase
+- Verify all scripts still work
+- Check for import errors
+
+---
+
+## File Size Targets
+
+### After Refactoring:
+- `dataset_ingestion.py`: ~450 lines ✅
+- `signature_ingestion.py`: ~400 lines ✅
+- `email_ingestion.py`: ~450 lines ✅
+- `mwtab_extraction.py`: ~300 lines ✅
+- `signature_notion_crud.py`: ~400 lines ✅
+- `signature_linking.py`: ~200 lines ✅
+- `signature_embedding.py`: ~100 lines ✅
+- `dataset_notion_utils.py`: ~200 lines ✅
+- `email_cleanup.py`: ~200 lines ✅
+
+**Total:** ~2,700 lines (vs ~2,900 lines before)
+**Benefit:** Better organization, easier maintenance, improved testability
+
+---
+
+## Risk Assessment
+
+### Low Risk:
+- Extracting utility functions
+- Creating new modules
+- Adding import statements
+
+### Medium Risk:
+- Changing function signatures
+- Moving shared helpers
+- Updating all import statements
+
+### Mitigation:
+- Implement in phases
+- Keep original files working during transition
+- Comprehensive testing after each phase
+- Git commits after each successful phase
+
+---
+
+## Next Steps
+
+1. **Review this plan** - Confirm approach and priorities
+2. **Start with Phase 1** - Extract utilities (safest first step)
+3. **Test thoroughly** - Ensure nothing breaks
+4. **Iterate** - Continue with subsequent phases
+
+---
+
+## Questions to Consider
+
+1. Should we maintain backward compatibility indefinitely or deprecate old imports?
+2. Do we want to add type hints to all extracted functions?
+3. Should we create a `__init__.py` that re-exports everything for convenience?
+4. Are there any other large files (>500 lines) that should be refactored?
