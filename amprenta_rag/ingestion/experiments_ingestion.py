@@ -41,22 +41,196 @@ def _fetch_notion_page(page_id: str) -> Dict[str, Any]:
         raise
 
 
-def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None:
+def _build_experiment_text_representation(
+    page: Dict[str, Any], full_text: str
+) -> str:
+    """
+    Build a structured text representation of an experiment ELN page.
+
+    Includes properties and body content in a coherent format.
+
+    Args:
+        page: Notion page dictionary
+        full_text: Full text content from blocks
+
+    Returns:
+        Structured text representation
+    """
+    props = page.get("properties", {}) or {}
+
+    # Extract title
+    title_prop = props.get("Name", {})
+    title_parts = title_prop.get("title", []) or []
+    exp_name = (
+        title_parts[0].get("plain_text", "").strip()
+        if title_parts
+        else "(untitled experiment)"
+    )
+
+    text_parts = [f"Experiment: {exp_name}"]
+
+    # Extract properties
+    type_prop = props.get("Type", {})
+    if type_prop.get("select"):
+        text_parts.append(f"Type: {type_prop['select'].get('name', '')}")
+
+    disease_prop = props.get("Disease", {})
+    if disease_prop.get("multi_select"):
+        diseases = [d.get("name", "") for d in disease_prop["multi_select"]]
+        if diseases:
+            text_parts.append(f"Disease: {', '.join(diseases)}")
+
+    matrix_prop = props.get("Matrix", {})
+    if matrix_prop.get("multi_select"):
+        matrices = [m.get("name", "") for m in matrix_prop["multi_select"]]
+        if matrices:
+            text_parts.append(f"Matrix: {', '.join(matrices)}")
+
+    model_systems_prop = props.get("Model Systems", {})
+    if model_systems_prop.get("multi_select"):
+        models = [m.get("name", "") for m in model_systems_prop["multi_select"]]
+        if models:
+            text_parts.append(f"Model Systems: {', '.join(models)}")
+
+    programs_prop = props.get("Related Programs", {})
+    if programs_prop.get("relation"):
+        program_count = len(programs_prop["relation"])
+        if program_count > 0:
+            text_parts.append(f"Programs: {program_count} program(s) linked")
+
+    signatures_prop = props.get("Readout Signatures", {})
+    if signatures_prop.get("relation"):
+        sig_count = len(signatures_prop["relation"])
+        if sig_count > 0:
+            text_parts.append(f"Readout Signatures: {sig_count} signature(s) linked")
+
+    datasets_prop = props.get("Related Datasets", {})
+    if datasets_prop.get("relation"):
+        dataset_count = len(datasets_prop["relation"])
+        if dataset_count > 0:
+            text_parts.append(f"Related Datasets: {dataset_count} dataset(s) linked")
+
+    text_parts.append("")  # Blank line separator
+
+    # Add body content
+    if full_text:
+        text_parts.append(full_text)
+
+    return "\n".join(text_parts)
+
+
+def _update_experiment_embedding_metadata(
+    page_id: str,
+    embedding_ids: List[str],
+    embedding_count: int,
+) -> None:
+    """
+    Update the Experiment page with embedding metadata after successful Pinecone upsert.
+
+    Args:
+        page_id: Notion page ID (with or without dashes)
+        embedding_ids: List of all vector/embedding IDs
+        embedding_count: Number of chunks/vectors created
+    """
+    from datetime import datetime, timezone
+    import requests
+    from amprenta_rag.clients.notion_client import notion_headers
+    from amprenta_rag.config import get_config
+
+    cfg = get_config()
+
+    # Format embedding IDs (same logic as dataset)
+    max_chars = 1900
+    if len(embedding_ids) == 0:
+        embedding_ids_text = "No embeddings created"
+    elif len(embedding_ids) <= 10:
+        embedding_ids_text = (
+            f"Total: {embedding_count} embeddings\n\n" + "\n".join(embedding_ids)
+        )
+    else:
+        sample_ids = embedding_ids[:5]
+        sample_text = "\n".join(sample_ids)
+        remaining = len(embedding_ids) - 5
+        summary = (
+            f"Total: {embedding_count} embeddings\n\nFirst 5 IDs:\n{sample_text}\n\n"
+            f"... and {remaining} more (all IDs stored in Pinecone)"
+        )
+
+        if len(summary) > max_chars:
+            embedding_ids_text = (
+                f"Total: {embedding_count} embeddings created. "
+                f"All IDs stored in Pinecone (namespace: {cfg.pinecone.namespace})."
+            )
+        else:
+            embedding_ids_text = summary
+
+    last_embedded_iso = datetime.now(timezone.utc).isoformat()
+
+    props: Dict[str, Any] = {
+        "Embedding IDs": {
+            "rich_text": [
+                {
+                    "type": "text",
+                    "text": {"content": embedding_ids_text},
+                }
+            ]
+        },
+        "Last Embedded": {
+            "date": {"start": last_embedded_iso},
+        },
+    }
+
+    payload = {"properties": props}
+    url = f"{cfg.notion.base_url}/pages/{page_id}"
+
+    try:
+        resp = requests.patch(
+            url,
+            headers=notion_headers(),
+            json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        logger.info(
+            "[INGEST][EXPERIMENT] Updated Notion page %s with %d embedding IDs.",
+            page_id,
+            embedding_count,
+        )
+    except Exception as e:
+        if hasattr(e, "response") and e.response is not None:
+            logger.warning(
+                "[INGEST][EXPERIMENT] Error updating embedding metadata for page %s: %s - Response: %s",
+                page_id,
+                str(e),
+                e.response.text,
+            )
+        else:
+            logger.warning(
+                "[INGEST][EXPERIMENT] Error updating embedding metadata for page %s: %r",
+                page_id,
+                e,
+            )
+        # Don't raise - embedding succeeded, metadata update is non-critical
+
+
+def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment", force: bool = False) -> None:
     """
     Ingest a single Experiment page from Notion into Pinecone.
 
     This function performs the complete experiment ingestion pipeline:
     1. Fetches the experiment page from Notion
-    2. Extracts full text content
+    2. Extracts full text content and builds structured representation
     3. Extracts semantic metadata (diseases, matrix, signatures, etc.)
     4. Chunks and embeds the text
     5. Upserts vectors to Pinecone with metadata
-    6. Extracts metabolite features and links them
-    7. Detects and ingests signatures from content
+    6. Updates Embedding IDs and Last Embedded on Experiment page
+    7. Extracts metabolite features and links them
+    8. Detects and ingests signatures from content
 
     Args:
         exp_page_id: Notion page ID (with or without dashes)
         parent_type: Type label for the experiment (default: "Experiment")
+        force: If True, bypass any caching logic (for future use)
 
     Raises:
         Exception: If ingestion fails at any step
@@ -95,12 +269,21 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
             e,
         )
         raise
-    if not full_text or len(full_text.strip()) < 50:
+    # Build structured text representation with properties
+    structured_text = _build_experiment_text_representation(page, full_text)
+
+    if not structured_text or len(structured_text.strip()) < 50:
         logger.info(
             "[INGEST][EXPERIMENT] Experiment %s has very little text; skipping.",
             exp_page_id,
         )
         return
+
+    logger.info(
+        "[INGEST][EXPERIMENT] Extracted %d characters of text from experiment %s",
+        len(structured_text),
+        exp_page_id,
+    )
 
     # Semantic + signature metadata
     try:
@@ -118,8 +301,8 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
         )
         raise
 
-    # Chunk and embed
-    chunks = chunk_text(full_text)
+    # Chunk and embed structured text
+    chunks = chunk_text(structured_text)
     if not chunks:
         logger.info(
             "[INGEST][EXPERIMENT] No chunks produced for %s; skipping.", exp_page_id
@@ -146,8 +329,11 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
     cfg = get_config()
 
     vectors: List[Dict[str, Any]] = []
+    canonical_page_id = page.get("id", exp_page_id)
+    page_id_clean = canonical_page_id.replace("-", "")
+    
     for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
-        chunk_id = f"{exp_page_id}_chunk_{order:03d}"
+        chunk_id = f"{page_id_clean}_exp_chunk_{order:03d}"
 
         snippet = textwrap.shorten(chunk, width=300)
 
@@ -190,17 +376,39 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
         )
         raise
 
+    # Update Experiment page with embedding metadata
+    canonical_page_id = page.get("id", exp_page_id)
+    embedding_ids = [v["id"] for v in vectors]
+    try:
+        _update_experiment_embedding_metadata(
+            page_id=canonical_page_id,
+            embedding_ids=embedding_ids,
+            embedding_count=len(embedding_ids),
+        )
+    except Exception as e:
+        logger.warning(
+            "[INGEST][EXPERIMENT] Error updating embedding metadata (non-critical): %r",
+            e,
+        )
+
+    logger.info(
+        "[INGEST][EXPERIMENT] Created %d chunk(s), upserted to Pinecone",
+        len(chunks),
+    )
+    logger.info(
+        "[INGEST][EXPERIMENT] Updated Embedding IDs and Last Embedded for Experiment %s",
+        exp_page_id,
+    )
+
     # Extract and link metabolite features from experiment content
     try:
-        feature_names = extract_features_from_text(full_text)
+        feature_names = extract_features_from_text(structured_text)
         if feature_names:
             logger.info(
                 "[INGEST][EXPERIMENT] Extracted %d metabolite feature(s) from experiment %s",
                 len(feature_names),
                 exp_page_id,
             )
-            # Use canonical page ID with dashes from fetched page
-            canonical_page_id = page.get("id", exp_page_id)
             link_features_to_notion_items(
                 feature_names=feature_names,
                 item_page_id=canonical_page_id,
@@ -233,9 +441,8 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
 
         attachment_paths: List[Path] = []
 
-        canonical_page_id = page.get("id", exp_page_id)
         detect_and_ingest_signatures_from_content(
-            all_text_content=full_text,
+            all_text_content=structured_text,
             attachment_paths=attachment_paths,
             source_page_id=canonical_page_id,
             source_type="experiment",
