@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+
 from amprenta_rag.ingestion.dataset_ingestion import ingest_dataset
 
 
@@ -15,4 +16,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

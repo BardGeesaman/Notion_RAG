@@ -13,7 +13,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from amprenta_rag.clients.openai_client import get_openai_client, get_default_models
+from amprenta_rag.clients.openai_client import (get_default_models,
+                                                get_openai_client)
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
@@ -24,10 +25,10 @@ logger = get_logger(__name__)
 def embed_query(text: str) -> List[float]:
     """
     Embed a user query using the configured OpenAI embedding model.
-    
+
     Args:
         text: User query text to embed
-        
+
     Returns:
         Embedding vector as a list of floats
     """
@@ -59,13 +60,13 @@ def build_meta_filter(
       - targets
       - lipids (canonical IDs) OR lipids_raw (fall back)
       - lipid_signatures
-    
+
     Args:
         disease: Optional disease name to filter by
         target: Optional molecular target to filter by
         lipid: Optional lipid (canonical ID or raw label) to filter by
         signature: Optional lipid signature to filter by
-        
+
     Returns:
         Pinecone metadata filter dict, or None if no filters specified
     """
@@ -96,19 +97,19 @@ def query_pinecone(
 ) -> List[Dict[str, Any]]:
     """
     Execute a raw Pinecone query and return the matches list.
-    
+
     This function:
     1. Embeds the user query
     2. Queries Pinecone with the embedding, top_k, and optional metadata filter
     3. Returns the raw matches list from the API response
-    
+
     Args:
         user_query: User query text
         top_k: Number of results to retrieve
         meta_filter: Optional Pinecone metadata filter, e.g.:
             {"diseases": {"$in": ["ALS"]}, "lipid_signatures": {"$in": ["ALS-CSF-Core-6Ceramides"]}}
         source_types: Optional list of source types to filter by (e.g., ["Literature", "Experiment"])
-            
+
     Returns:
         List of match dictionaries with metadata from Pinecone
     """
@@ -120,7 +121,7 @@ def query_pinecone(
     combined_filter: Dict[str, Any] = {}
     if meta_filter:
         combined_filter.update(meta_filter)
-    
+
     # Add source type filtering if specified
     if source_types:
         combined_filter["source_type"] = {"$in": source_types}
@@ -146,4 +147,3 @@ def query_pinecone(
         raise
     matches = getattr(res, "matches", None) or res.get("matches", [])
     return matches
-

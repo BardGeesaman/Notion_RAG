@@ -12,17 +12,16 @@ This module provides functions for:
 
 from __future__ import annotations
 
-from typing import Dict, Any, Optional, List
-
 import json
 import re
 import time
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 import requests
 
-from amprenta_rag.config import get_config
 from amprenta_rag.clients.notion_client import notion_headers
+from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.zotero_api import ZoteroItem
 from amprenta_rag.logging_utils import get_logger
 
@@ -63,7 +62,9 @@ def ensure_literature_page(item: ZoteroItem, parent_type: str) -> str:
     }
 
     try:
-        resp = requests.post(query_url, headers=notion_headers(), json=payload)
+        resp = requests.post(
+            query_url, headers=notion_headers(), json=payload, timeout=30
+        )
         if resp.status_code >= 300:
             logger.warning(
                 "[NOTION] Literature query error for item %s: %s %s",
@@ -130,6 +131,7 @@ def ensure_literature_page(item: ZoteroItem, parent_type: str) -> str:
             f"{cfg.base_url}/pages",
             headers=notion_headers(),
             json=create_payload,
+            timeout=30,
         )
         if resp.status_code >= 300:
             logger.error(
@@ -170,9 +172,14 @@ def update_literature_page(parent_page_id: str, when_iso: Optional[str] = None) 
             f"{cfg.base_url}/pages/{parent_page_id}",
             headers=notion_headers(),
             data=json.dumps(payload),
+            timeout=30,
         )
         if resp.status_code >= 300:
-            logger.warning("[NOTION] Literature update error for page %s: %s", parent_page_id, resp.text)
+            logger.warning(
+                "[NOTION] Literature update error for page %s: %s",
+                parent_page_id,
+                resp.text,
+            )
     except Exception as e:
         logger.error(
             "[NOTION] Notion API error updating literature page %s: %r",
@@ -228,7 +235,8 @@ def create_rag_chunk_page(
         "Parent Type": {"select": {"name": parent_type}},
         parent_relation_key: {"relation": [{"id": parent_page_id}]},
         "Order": {"number": order},
-        "Embedding Vector ID": {"rich_text": [{"text": {"content": chunk_id}}],
+        "Embedding Vector ID": {
+            "rich_text": [{"text": {"content": chunk_id}}],
         },
         "Last Embedded": {"date": {"start": when_iso}},
     }
@@ -243,6 +251,7 @@ def create_rag_chunk_page(
             f"{cfg.base_url}/pages",
             headers=notion_headers(),
             data=json.dumps(payload),
+            timeout=30,
         )
 
         if resp.status_code >= 300:
@@ -271,14 +280,14 @@ def create_rag_chunk_page(
 def fetch_not_embedded_emails() -> List[Dict[str, Any]]:
     """
     Fetch all email/note pages from the Email DB whose 'Embedding Status' is 'Not Embedded'.
-    
+
     Returns:
         List of Notion page objects from the Email DB
     """
     cfg = get_config().notion
     if not cfg.email_db_id:
         raise RuntimeError("Notion Email DB ID is not configured in config.py")
-    
+
     db_id = cfg.email_db_id
     query_url = f"{cfg.base_url}/databases/{db_id}/query"
 
@@ -301,7 +310,9 @@ def fetch_not_embedded_emails() -> List[Dict[str, Any]]:
             body["start_cursor"] = next_cursor
 
         try:
-            resp = requests.post(query_url, headers=notion_headers(), json=body)
+            resp = requests.post(
+                query_url, headers=notion_headers(), json=body, timeout=30
+            )
             if resp.status_code >= 300:
                 logger.error("[NOTION] Error querying Email DB: %s", resp.text)
                 resp.raise_for_status()
@@ -325,17 +336,19 @@ def fetch_not_embedded_emails() -> List[Dict[str, Any]]:
 
 def extract_page_content(page_id: str) -> str:
     """
-    Fetch the full page content (blocks) from Notion and extract text.
-    
-    Extracts text from various Notion block types (paragraphs, headings, lists, etc.)
-    and returns a plain text representation. This is email/note-specific as it
-    operates on Notion page blocks rather than file attachments.
-    
+    Extract plain text content from a Notion page.
+
+    Fetches all child blocks of the page and concatenates their plain text.
+    Used for extracting full text content from dataset, experiment, and other pages.
+
     Args:
-        page_id: Notion page ID (without dashes) to extract content from
-        
+        page_id: Notion page ID (without dashes)
+
     Returns:
-        Plain text representation of the page content
+        Concatenated plain text from all page blocks
+
+    Raises:
+        Exception: If page fetch fails
     """
     cfg = get_config().notion
     url = f"{cfg.base_url}/blocks/{page_id}/children"
@@ -348,7 +361,9 @@ def extract_page_content(page_id: str) -> str:
             params["start_cursor"] = next_cursor
 
         try:
-            resp = requests.get(url, headers=notion_headers(), params=params or None)
+            resp = requests.get(
+                url, headers=notion_headers(), params=params or None, timeout=30
+            )
             resp.raise_for_status()
         except Exception as e:
             logger.error(
@@ -360,10 +375,10 @@ def extract_page_content(page_id: str) -> str:
         data = resp.json()
 
         blocks = data.get("results", [])
-        for block in blocks:
-            block_type = block.get("type")
+        for block_item in blocks:
+            block_type = block_item.get("type")
 
-            def _plain(key: str) -> str:
+            def _plain(key: str, block: Dict[str, Any] = block_item) -> str:
                 rich = block.get(key, {}).get("rich_text", []) or []
                 return "".join(t.get("plain_text", "") for t in rich)
 
@@ -396,10 +411,10 @@ def extract_page_content(page_id: str) -> str:
 def update_email_page(parent_page_id: str, when_iso: str) -> None:
     """
     Update email/note page status after successful ingestion.
-    
+
     Sets Embedding Status to 'Embedded' and updates Last Embedded timestamp.
     This marks the email/note as successfully processed in the RAG system.
-    
+
     Args:
         parent_page_id: Notion page ID of the email/note (without dashes)
         when_iso: ISO timestamp string for when embedding occurred
@@ -417,6 +432,7 @@ def update_email_page(parent_page_id: str, when_iso: str) -> None:
             f"{cfg.base_url}/pages/{parent_page_id}",
             headers=notion_headers(),
             data=json.dumps(payload),
+            timeout=30,
         )
 
         if resp.status_code >= 300:

@@ -6,7 +6,6 @@ from openai import OpenAI
 
 from amprenta_rag.config import get_config
 
-
 _client: OpenAI | None = None
 
 

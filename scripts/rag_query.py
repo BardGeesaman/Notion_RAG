@@ -5,7 +5,8 @@ import argparse
 import json
 from dataclasses import asdict
 
-from amprenta_rag.query.rag_query_engine import query_rag, MatchSummary, RAGQueryResult
+from amprenta_rag.query.rag_query_engine import (MatchSummary, RAGQueryResult,
+                                                 query_rag)
 
 
 def format_match_for_cli(m: MatchSummary) -> str:
@@ -49,7 +50,12 @@ def print_result_cli(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Query the Amprenta RAG engine.")
     parser.add_argument("--query", required=True, help="User query text.")
-    parser.add_argument("--top-k", type=int, default=10, help="Number of results to retrieve from Pinecone.")
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=10,
+        help="Number of results to retrieve from Pinecone.",
+    )
     parser.add_argument(
         "--source-type",
         dest="source_types",
@@ -103,7 +109,7 @@ def main() -> None:
         "--signature",
         default=None,
         help="Optional lipid signature filter (Short ID). Matches 'lipid_signatures' metadata.",
-    )    
+    )
 
     args = parser.parse_args()
 
@@ -118,7 +124,7 @@ def main() -> None:
         lipid=args.lipid,
         signature=args.signature,
     )
-    
+
     if args.raw_json:
         print(json.dumps(asdict(result), indent=2))
         return

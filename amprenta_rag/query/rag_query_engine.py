@@ -12,19 +12,12 @@ without changes.
 
 from __future__ import annotations
 
-# Re-export dataclasses and main query function from rag_engine
-from amprenta_rag.query.rag_engine import (
-    MatchSummary,
-    RAGQueryResult,
-    query_rag,
-)
-
 # Re-export Pinecone query functions from pinecone_query
-from amprenta_rag.query.pinecone_query import (
-    build_meta_filter,
-    embed_query,
-    query_pinecone,
-)
+from amprenta_rag.query.pinecone_query import (build_meta_filter, embed_query,
+                                               query_pinecone)
+# Re-export dataclasses and main query function from rag_engine
+from amprenta_rag.query.rag_engine import (MatchSummary, RAGQueryResult,
+                                           query_rag)
 
 __all__ = [
     "MatchSummary",

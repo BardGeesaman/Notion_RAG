@@ -6,7 +6,7 @@ This script creates a new Notion database with the required schema for metabolit
 
 Usage:
     python scripts/create_metabolite_features_db.py --parent-page-id <parent_page_id>
-    
+
 After creation, the database ID will be printed. Add it to your .env file:
     NOTION_METABOLITE_FEATURES_DB_ID=<database_id>
 """
@@ -19,8 +19,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import requests
-from amprenta_rag.config import get_config
+
 from amprenta_rag.clients.notion_client import notion_headers
+from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -29,24 +30,22 @@ logger = get_logger(__name__)
 def create_metabolite_features_database(parent_page_id: str) -> str:
     """
     Create the Metabolite Features database in Notion.
-    
+
     Args:
         parent_page_id: Notion page ID (with or without dashes) where database will be created
-        
+
     Returns:
         Database ID (without dashes)
     """
     cfg = get_config()
-    
+
     # Normalize parent page ID (remove dashes)
     parent_page_id_clean = parent_page_id.replace("-", "")
-    
+
     url = f"{cfg.notion.base_url}/databases"
-    
+
     properties = {
-        "Name": {
-            "title": {}
-        },
+        "Name": {"title": {}},
         "Class": {
             "select": {
                 "options": [
@@ -60,19 +59,11 @@ def create_metabolite_features_database(parent_page_id: str) -> str:
                 ]
             }
         },
-        "Synonyms": {
-            "rich_text": {}
-        },
-        "Notes": {
-            "rich_text": {}
-        },
-        "Pathways": {
-            "multi_select": {
-                "options": []
-            }
-        },
+        "Synonyms": {"rich_text": {}},
+        "Notes": {"rich_text": {}},
+        "Pathways": {"multi_select": {"options": []}},
     }
-    
+
     # Add relations to databases we have IDs for
     if cfg.notion.exp_data_db_id:
         properties["Datasets"] = {
@@ -81,7 +72,7 @@ def create_metabolite_features_database(parent_page_id: str) -> str:
                 "type": "dual_property",
             }
         }
-    
+
     if cfg.notion.lit_db_id:
         properties["Literature Mentions"] = {
             "relation": {
@@ -89,7 +80,7 @@ def create_metabolite_features_database(parent_page_id: str) -> str:
                 "type": "dual_property",
             }
         }
-    
+
     if cfg.notion.email_db_id:
         properties["Emails / Notes"] = {
             "relation": {
@@ -97,10 +88,10 @@ def create_metabolite_features_database(parent_page_id: str) -> str:
                 "type": "dual_property",
             }
         }
-    
+
     # Note: Experiments, Lipid Species, and Lipid Signature Components relations
     # should be added manually in Notion UI or via API update once those DB IDs are available
-    
+
     payload = {
         "parent": {
             "type": "page_id",
@@ -114,7 +105,7 @@ def create_metabolite_features_database(parent_page_id: str) -> str:
         ],
         "properties": properties,
     }
-    
+
     try:
         resp = requests.post(
             url,
@@ -123,25 +114,25 @@ def create_metabolite_features_database(parent_page_id: str) -> str:
             timeout=30,
         )
         resp.raise_for_status()
-        
+
         database = resp.json()
         db_id = database.get("id", "")
-        
+
         # Remove dashes for consistency with other DB IDs
         db_id_clean = db_id.replace("-", "")
-        
+
         logger.info(
             "[FEATURES] Created Metabolite Features database: %s (clean: %s)",
             db_id,
             db_id_clean,
         )
-        
+
         return db_id_clean
     except Exception as e:
         logger.error(
             "[FEATURES] Error creating database: %r - Response: %s",
             e,
-            e.response.text if hasattr(e, 'response') else "N/A",
+            e.response.text if hasattr(e, "response") else "N/A",
         )
         raise
 
@@ -156,7 +147,7 @@ def main():
         help="Notion page ID (with or without dashes) where database will be created",
     )
     args = parser.parse_args()
-    
+
     try:
         db_id = create_metabolite_features_database(args.parent_page_id)
         print("\n" + "=" * 80)
@@ -174,4 +165,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

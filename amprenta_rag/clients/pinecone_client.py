@@ -8,7 +8,6 @@ from pinecone import Pinecone
 
 from amprenta_rag.config import get_config
 
-
 _pc: Pinecone | None = None
 _index: Any | None = None
 

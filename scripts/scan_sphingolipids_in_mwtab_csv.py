@@ -138,7 +138,9 @@ def classify_sphingolipid_by_name(name: str) -> str | None:
         return "Deoxysphingolipid"
 
     # Gangliosides
-    if any(g in lower for g in ["gm1", "gm2", "gm3", "gd1", "gd2", "gd3", "gt1", "gt2"]):
+    if any(
+        g in lower for g in ["gm1", "gm2", "gm3", "gd1", "gd2", "gd3", "gt1", "gt2"]
+    ):
         return "Ganglioside"
 
     # General ceramide patterns
@@ -199,7 +201,9 @@ def scan_sphingolipids(
                 break
         if name_idx is None:
             name_idx = 0  # fallback
-            print(f"Warning: No metabolite name column found, using first column: '{header[0] if header else 'unknown'}'")
+            print(
+                f"Warning: No metabolite name column found, using first column: '{header[0] if header else 'unknown'}'"
+            )
 
         # Optional RefMet ID / name columns
         refmet_id_idx = None
@@ -266,7 +270,9 @@ def print_summary(class_counts, species_counts, total_rows: int):
             print(f"  {name} : {count}")
 
 
-def write_report(path_str: str, class_counts, species_counts, total_rows: int, csv_path: Path):
+def write_report(
+    path_str: str, class_counts, species_counts, total_rows: int, csv_path: Path
+):
     """
     Write a text report of sphingolipid hits to a file.
 
@@ -309,7 +315,7 @@ def main():
         "--study-id",
         required=False,
         help="Metabolomics Workbench study ID (e.g. ST004396). "
-             "If provided without --csv-path, CSV is assumed at data/mwtab/<study_id>.csv",
+        "If provided without --csv-path, CSV is assumed at data/mwtab/<study_id>.csv",
     )
     parser.add_argument(
         "--csv-path",
@@ -368,12 +374,14 @@ def main():
     print_summary(class_counts, species_counts, total_rows)
 
     if args.output_report:
-        write_report(args.output_report, class_counts, species_counts, total_rows, csv_path)
+        write_report(
+            args.output_report, class_counts, species_counts, total_rows, csv_path
+        )
 
     return 0
 
 
 if __name__ == "__main__":
     import sys
-    sys.exit(main())
 
+    sys.exit(main())

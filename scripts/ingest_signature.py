@@ -20,7 +20,8 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.ingestion.signature_ingestion import ingest_signature_from_file
+from amprenta_rag.ingestion.signature_ingestion import \
+    ingest_signature_from_file
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -69,19 +70,19 @@ def main():
         default=None,
         help="Matrix strings (optional, applied to all components)",
     )
-    
+
     args = parser.parse_args()
-    
+
     signature_file = args.signature_file
-    
+
     if not signature_file.exists():
         print(f"Error: Signature file not found: {signature_file}", file=sys.stderr)
         return 1
-    
+
     if not signature_file.is_file():
         print(f"Error: Path is not a file: {signature_file}", file=sys.stderr)
         return 1
-    
+
     try:
         result = ingest_signature_from_file(
             signature_path=signature_file,
@@ -92,23 +93,23 @@ def main():
             disease_context=args.disease_context,
             matrix=args.matrix,
         )
-        
+
         print("\n" + "=" * 80)
         print("✅ Signature Ingestion Complete")
         print("=" * 80)
         print(f"\nSignature Page ID: {result['signature_page_id']}")
         print(f"Components Created: {result['component_count']}")
         print(f"Lipid Species Created/Linked: {result['species_count']}")
-        
-        if result['warnings']:
+
+        if result["warnings"]:
             print(f"\n⚠️  Warnings ({len(result['warnings'])}):")
-            for warning in result['warnings']:
+            for warning in result["warnings"]:
                 print(f"  - {warning}")
-        
+
         print("\n" + "=" * 80)
-        
-        return 0 if not result['warnings'] else 1
-        
+
+        return 0 if not result["warnings"] else 1
+
     except Exception as e:
         print(f"\n❌ Error ingesting signature: {e}", file=sys.stderr)
         logger.exception("Error ingesting signature")
@@ -117,4 +118,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

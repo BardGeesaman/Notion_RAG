@@ -1,15 +1,27 @@
 # amprenta_rag/ingestion/metadata_semantic.py
+"""
+Semantic metadata extraction from Notion pages.
+
+This module extracts structured metadata from Notion pages for different
+source types (Literature, Email, Experiments, Datasets), including:
+- Disease classifications
+- Matrix types
+- Model systems
+- Lipid signature relations
+- Phenotype axes
+- Other semantic annotations
+"""
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, Optional
-
 import json
-import requests
 import re
+from typing import Any, Dict, List, Optional
 
-from amprenta_rag.config import get_config
+import requests
+
 from amprenta_rag.clients.notion_client import notion_headers
+from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.zotero_api import ZoteroItem
 from amprenta_rag.logging_utils import get_logger
 
@@ -19,7 +31,7 @@ logger = get_logger(__name__)
 def _fetch_notion_page(page_id: str) -> Dict[str, Any]:
     cfg = get_config().notion
     url = f"{cfg.base_url}/pages/{page_id}"
-    resp = requests.get(url, headers=notion_headers())
+    resp = requests.get(url, headers=notion_headers(), timeout=30)
     resp.raise_for_status()
     return resp.json()
 
@@ -42,7 +54,9 @@ def _get_relation_ids(props: Dict[str, Any], name: str) -> List[str]:
     return [r.get("id", "").replace("-", "") for r in rel if r.get("id")]
 
 
-def enforce_signature_reverse_link(signature_page_id: str, literature_page_id: str) -> None:
+def enforce_signature_reverse_link(
+    signature_page_id: str, literature_page_id: str
+) -> None:
     """
     Create reverse link from signature page to literature/email page.
     Updates the signature page's "Source Papers" relation to include the literature page.
@@ -53,30 +67,33 @@ def enforce_signature_reverse_link(signature_page_id: str, literature_page_id: s
         sig_page = _fetch_notion_page(signature_page_id)
         props = sig_page.get("properties", {}) or {}
         current_rel = props.get("Source Papers", {}).get("relation", []) or []
-        existing_ids = {r.get("id", "").replace("-", "") for r in current_rel if r.get("id")}
-        
+        existing_ids = {
+            r.get("id", "").replace("-", "") for r in current_rel if r.get("id")
+        }
+
         # Check if literature page is already linked
         lit_page_id_clean = literature_page_id.replace("-", "")
         if lit_page_id_clean in existing_ids:
             return  # Already linked, skip
-        
+
         # Add literature page to relation
         updated_rel = [{"id": lit_page_id_clean}] + current_rel
-        
+
         # Update signature page
         payload = {
             "properties": {
                 "Source Papers": {"relation": updated_rel},
             },
         }
-        
+
         url = f"{cfg.base_url}/pages/{signature_page_id}"
         resp = requests.patch(
             url,
             headers=notion_headers(),
             data=json.dumps(payload),
+            timeout=30,
         )
-        
+
         if resp.status_code >= 300:
             logger.error(
                 "[METADATA] Failed to update signature page %s reverse link: %s",
@@ -89,7 +106,7 @@ def enforce_signature_reverse_link(signature_page_id: str, literature_page_id: s
                 signature_page_id,
                 literature_page_id,
             )
-            
+
     except Exception as e:
         logger.error(
             "[METADATA] Error creating reverse link for signature %s -> literature %s: %r",
@@ -102,16 +119,16 @@ def enforce_signature_reverse_link(signature_page_id: str, literature_page_id: s
 def _collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
     """
     Fetch Lipid Signature pages and collect their metadata.
-    
+
     For each signature page ID, fetches the page and extracts:
     - Short ID (rich_text or title)
     - Biomarker Role (multi_select)
     - Phenotype Axes (multi_select)
     - Data Ownership (select)
-    
+
     Args:
         signature_ids: List of Notion page IDs (without dashes) for signature pages
-        
+
     Returns:
         Dictionary with:
         - sig_short_ids: List[str] - Short IDs from signature pages
@@ -123,7 +140,7 @@ def _collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
     sig_roles: List[str] = []
     sig_axes: List[str] = []
     sig_ownership: List[str] = []
-    
+
     if not signature_ids:
         return {
             "sig_short_ids": [],
@@ -131,12 +148,12 @@ def _collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
             "sig_axes": [],
             "sig_ownership": [],
         }
-    
+
     for sig_id in signature_ids:
         try:
             sig_page = _fetch_notion_page(sig_id)
             sig_props = sig_page.get("properties", {}) or {}
-            
+
             # Extract Short ID from rich_text or title, fallback to Name property
             short_id = None
             short_id_prop = sig_props.get("Short ID", {})
@@ -148,7 +165,7 @@ def _collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
                 title = short_id_prop.get("title", []) or []
                 if title:
                     short_id = title[0].get("plain_text", "").strip()
-            
+
             # Fallback to Name property if Short ID is missing/empty
             if not short_id:
                 name_prop = sig_props.get("Name", {})
@@ -160,23 +177,23 @@ def _collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
                     rich_text = name_prop.get("rich_text", []) or []
                     if rich_text:
                         short_id = rich_text[0].get("plain_text", "").strip()
-            
+
             if short_id:
                 sig_short_ids.append(short_id)
-            
+
             # Extract Biomarker Role (multi-select)
             roles = _get_multi_names(sig_props, "Biomarker Role")
             sig_roles.extend(roles)
-            
+
             # Extract Phenotype Axes (multi-select)
             axes = _get_multi_names(sig_props, "Phenotype Axes")
             sig_axes.extend(axes)
-            
+
             # Extract Data Ownership (select)
             ownership = _get_select_name(sig_props, "Data Ownership")
             if ownership:
                 sig_ownership.append(ownership)
-                
+
         except Exception as e:
             logger.warning(
                 "[METADATA] Error fetching signature page %s: %r",
@@ -184,7 +201,7 @@ def _collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
                 e,
             )
             continue
-    
+
     return {
         "sig_short_ids": sig_short_ids,
         "sig_roles": list(set(sig_roles)),  # Deduplicate
@@ -193,7 +210,9 @@ def _collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
     }
 
 
-def get_literature_semantic_metadata(parent_page_id: str, item: ZoteroItem) -> Dict[str, Any]:
+def get_literature_semantic_metadata(
+    parent_page_id: str, item: ZoteroItem
+) -> Dict[str, Any]:
     """
     Read semantic + lipid metadata from the Literature DB page and build
     a doc-level + lipid-level metadata dict that we will mirror into Pinecone.
@@ -212,7 +231,7 @@ def get_literature_semantic_metadata(parent_page_id: str, item: ZoteroItem) -> D
       - Phenotype Axes (multi-select)
       - Matrix (multi-select)
       - Treatment Arms (multi-select)
-      
+
     For Lipid Signatures relation: Fetches linked signature pages and extracts:
       - Short ID (rich_text or title)
       - Biomarker Role (multi-select)
@@ -240,24 +259,32 @@ def get_literature_semantic_metadata(parent_page_id: str, item: ZoteroItem) -> D
     lipids_raw = _get_multi_names(props, "Lipid Species (raw)")
 
     canonical_rel = props.get("Canonical Lipid Species", {}).get("relation", []) or []
-    canonical_lipids = [r.get("id", "").replace("-", "") for r in canonical_rel if r.get("id")]
+    canonical_lipids = [
+        r.get("id", "").replace("-", "") for r in canonical_rel if r.get("id")
+    ]
 
     # --- Lipid Signatures: Read from relation and fetch signature metadata ---
     signature_ids = _get_relation_ids(props, "Lipid Signatures")
-    
+
     # Create reverse links from signature pages to this literature page
     for sig_id in signature_ids:
         enforce_signature_reverse_link(sig_id, parent_page_id)
-    
+
     sig_meta = _collect_signature_metadata(signature_ids)
-    
+
     # Get legacy multi-select values for backward compatibility (if any)
     lipid_signatures_legacy = _get_multi_names(props, "Lipid Signatures")
     lipid_signature_role_legacy = _get_multi_names(props, "Lipid Signature Role")
-    
+
     # Use signature Short IDs (prefer relation-based, fall back to legacy multi-select)
-    lipid_signatures = sig_meta["sig_short_ids"] if sig_meta["sig_short_ids"] else lipid_signatures_legacy
-    lipid_signature_role = sig_meta["sig_roles"] if sig_meta["sig_roles"] else lipid_signature_role_legacy
+    lipid_signatures = (
+        sig_meta["sig_short_ids"]
+        if sig_meta["sig_short_ids"]
+        else lipid_signatures_legacy
+    )
+    lipid_signature_role = (
+        sig_meta["sig_roles"] if sig_meta["sig_roles"] else lipid_signature_role_legacy
+    )
 
     # --- Simple doc_type inference from Zotero item_type and tags ---
     doc_type = "JournalArticle"
@@ -295,10 +322,8 @@ def get_literature_semantic_metadata(parent_page_id: str, item: ZoteroItem) -> D
     }
 
     # Extend phenotype_axes with signature axes
-    all_phenotype_axes = sorted(
-        set(phenotype_axes + sig_meta["sig_axes"])
-    )
-    
+    all_phenotype_axes = sorted(set(phenotype_axes + sig_meta["sig_axes"]))
+
     lipid_meta: Dict[str, Any] = {
         "lipids_raw": lipids_raw,
         "lipids": canonical_lipids,
@@ -333,16 +358,16 @@ def get_email_semantic_metadata(email_page: Dict[str, Any]) -> Dict[str, Any]:
       - Treatment Arms (multi-select)
       - Lipid Species (raw) (multi-select)
       - Canonical Lipid Species (relation) – optional
-      
+
     For Lipid Signatures relation: Fetches linked signature pages and extracts:
       - Short ID (rich_text or title)
       - Biomarker Role (multi-select)
       - Phenotype Axes (multi-select)
       - Data Ownership (select)
-      
+
     Args:
         email_page: Notion page object from Email DB query
-        
+
     Returns:
         Dictionary with semantic and lipid metadata fields
     """
@@ -363,31 +388,37 @@ def get_email_semantic_metadata(email_page: Dict[str, Any]) -> Dict[str, Any]:
 
     lipids_raw = _get_multi_names(props, "Lipid Species (raw)")
     canonical_rel = props.get("Canonical Lipid Species", {}).get("relation", []) or []
-    canonical_lipids = [r.get("id", "").replace("-", "") for r in canonical_rel if r.get("id")]
+    canonical_lipids = [
+        r.get("id", "").replace("-", "") for r in canonical_rel if r.get("id")
+    ]
 
     # --- Lipid Signatures: Read from relation and fetch signature metadata ---
     signature_ids = _get_relation_ids(props, "Lipid Signatures")
-    
+
     # Create reverse links from signature pages to this email page
     email_page_id = email_page.get("id", "").replace("-", "")
     if email_page_id:
         for sig_id in signature_ids:
             enforce_signature_reverse_link(sig_id, email_page_id)
-    
+
     sig_meta = _collect_signature_metadata(signature_ids)
-    
+
     # Get legacy multi-select values for backward compatibility (if any)
     lipid_signatures_legacy = _get_multi_names(props, "Lipid Signatures")
     lipid_signature_role_legacy = _get_multi_names(props, "Lipid Signature Role")
-    
+
     # Use signature Short IDs (prefer relation-based, fall back to legacy multi-select)
-    lipid_signatures = sig_meta["sig_short_ids"] if sig_meta["sig_short_ids"] else lipid_signatures_legacy
-    lipid_signature_role = sig_meta["sig_roles"] if sig_meta["sig_roles"] else lipid_signature_role_legacy
+    lipid_signatures = (
+        sig_meta["sig_short_ids"]
+        if sig_meta["sig_short_ids"]
+        else lipid_signatures_legacy
+    )
+    lipid_signature_role = (
+        sig_meta["sig_roles"] if sig_meta["sig_roles"] else lipid_signature_role_legacy
+    )
 
     # Extend phenotype_axes with signature axes
-    all_phenotype_axes = sorted(
-        set(phenotype_axes + sig_meta["sig_axes"])
-    )
+    all_phenotype_axes = sorted(set(phenotype_axes + sig_meta["sig_axes"]))
 
     # doc-level identity & type will be filled in ingest_email()
     base_meta: Dict[str, Any] = {
@@ -455,27 +486,31 @@ def get_experiment_semantic_metadata(exp_page: Dict[str, Any]) -> Dict[str, Any]
 
     # --- Lipid Signatures: Read from relation and fetch signature metadata ---
     signature_ids = _get_relation_ids(props, "Lipid Signatures")
-    
+
     # Create reverse links from signature pages to this experiment page
     exp_page_id = exp_page.get("id", "").replace("-", "")
     if exp_page_id:
         for sig_id in signature_ids:
             enforce_signature_reverse_link(sig_id, exp_page_id)
-    
+
     sig_meta = _collect_signature_metadata(signature_ids)
-    
+
     # Get legacy multi-select values for backward compatibility (if any)
     lipid_signatures_legacy = _get_multi_names(props, "Lipid Signatures")
     lipid_signature_role_legacy = _get_multi_names(props, "Lipid Signature Role")
-    
+
     # Use signature Short IDs (prefer relation-based, fall back to legacy multi-select)
-    lipid_signatures = sig_meta["sig_short_ids"] if sig_meta["sig_short_ids"] else lipid_signatures_legacy
-    lipid_signature_role = sig_meta["sig_roles"] if sig_meta["sig_roles"] else lipid_signature_role_legacy
+    lipid_signatures = (
+        sig_meta["sig_short_ids"]
+        if sig_meta["sig_short_ids"]
+        else lipid_signatures_legacy
+    )
+    lipid_signature_role = (
+        sig_meta["sig_roles"] if sig_meta["sig_roles"] else lipid_signature_role_legacy
+    )
 
     # Merge axes from signatures
-    all_axes = sorted(
-        set(phenotype_axes + sig_meta["sig_axes"])
-    )
+    all_axes = sorted(set(phenotype_axes + sig_meta["sig_axes"]))
 
     base_meta: Dict[str, Any] = {
         "diseases": diseases,
@@ -529,22 +564,28 @@ def get_dataset_semantic_metadata(dataset_page: Dict[str, Any]) -> Dict[str, Any
 
     # --- Lipid Signatures: Read from relation and fetch signature metadata ---
     signature_ids = _get_relation_ids(props, "Related Signature(s)")
-    
+
     # Create reverse links from signature pages to this dataset page
     dataset_page_id = dataset_page.get("id", "").replace("-", "")
     if dataset_page_id:
         for sig_id in signature_ids:
             enforce_signature_reverse_link(sig_id, dataset_page_id)
-    
+
     sig_meta = _collect_signature_metadata(signature_ids)
-    
+
     # Get legacy multi-select values for backward compatibility (if any)
     lipid_signatures_legacy = _get_multi_names(props, "Lipid Signatures")
     lipid_signature_role_legacy = _get_multi_names(props, "Lipid Signature Role")
-    
+
     # Use signature Short IDs (prefer relation-based, fall back to legacy multi-select)
-    lipid_signatures = sig_meta["sig_short_ids"] if sig_meta["sig_short_ids"] else lipid_signatures_legacy
-    lipid_signature_role = sig_meta["sig_roles"] if sig_meta["sig_roles"] else lipid_signature_role_legacy
+    lipid_signatures = (
+        sig_meta["sig_short_ids"]
+        if sig_meta["sig_short_ids"]
+        else lipid_signatures_legacy
+    )
+    lipid_signature_role = (
+        sig_meta["sig_roles"] if sig_meta["sig_roles"] else lipid_signature_role_legacy
+    )
 
     # Merge axes from signatures
     phenotype_axes = sig_meta["sig_axes"]  # Datasets may not have their own axes field

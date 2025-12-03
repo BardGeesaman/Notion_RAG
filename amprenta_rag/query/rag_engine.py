@@ -15,8 +15,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from amprenta_rag.clients.openai_client import get_openai_client, get_default_models
 from amprenta_rag.clients.notion_client import get_page_text
+from amprenta_rag.clients.openai_client import (get_default_models,
+                                                get_openai_client)
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.pinecone_query import build_meta_filter, query_pinecone
 
@@ -26,6 +27,7 @@ logger = get_logger(__name__)
 @dataclass
 class MatchSummary:
     """Summary of a single match from Pinecone."""
+
     id: str
     score: float
     source: str
@@ -38,6 +40,7 @@ class MatchSummary:
 @dataclass
 class RAGQueryResult:
     """Complete result from a RAG query."""
+
     query: str
     matches: List[MatchSummary]
     filtered_matches: List[MatchSummary]
@@ -67,10 +70,10 @@ def _get_tags(meta: Dict[str, Any]) -> List[str]:
 def summarize_match(raw_match: Any) -> MatchSummary:
     """
     Convert a raw Pinecone match into a MatchSummary.
-    
+
     Args:
         raw_match: Raw match object from Pinecone (with metadata)
-        
+
     Returns:
         MatchSummary object with extracted fields
     """
@@ -97,16 +100,17 @@ def filter_matches(
 ) -> List[MatchSummary]:
     """
     Apply optional tag filter to matches.
-    
+
     Note: Source type filtering is now handled at the Pinecone query level.
-    
+
     Args:
         matches: List of MatchSummary objects to filter
         tag: Optional tag substring to filter by
-        
+
     Returns:
         Filtered list of MatchSummary objects
     """
+
     def _has_tag(m: MatchSummary) -> bool:
         if not tag:
             return True
@@ -118,12 +122,12 @@ def filter_matches(
 def collect_chunks(matches: List[MatchSummary]) -> List[str]:
     """
     Retrieve full chunk text from Notion for each match.
-    
+
     Uses the 'notion_chunk_page_id' metadata key to fetch chunk text.
-    
+
     Args:
         matches: List of MatchSummary objects with notion_chunk_page_id in metadata
-        
+
     Returns:
         List of chunk text strings from Notion
     """
@@ -145,11 +149,11 @@ def collect_chunks(matches: List[MatchSummary]) -> List[str]:
 def synthesize_answer(user_query: str, chunks: List[str]) -> str:
     """
     Use OpenAI to synthesize an answer given the query + context chunks.
-    
+
     Args:
         user_query: User's query text
         chunks: List of context chunk texts from Notion
-        
+
     Returns:
         Synthesized answer string from OpenAI
     """
@@ -165,8 +169,7 @@ def synthesize_answer(user_query: str, chunks: List[str]) -> str:
     )
 
     user_content = (
-        f"User question:\n{user_query}\n\n"
-        f"Relevant context chunks:\n{context}"
+        f"User question:\n{user_query}\n\n" f"Relevant context chunks:\n{context}"
     )
 
     try:
@@ -205,7 +208,7 @@ def query_rag(
     3. Summarizes and filters matches
     4. Retrieves chunk text from Notion
     5. Synthesizes answer using OpenAI (if enabled)
-    
+
     Args:
         user_query: User's query text
         top_k: Number of results to retrieve from Pinecone
@@ -216,7 +219,7 @@ def query_rag(
         target: Optional molecular target filter
         lipid: Optional lipid filter (canonical ID or raw label)
         signature: Optional lipid signature filter
-        
+
     Returns:
         RAGQueryResult with matches, filtered matches, context chunks, and answer
     """
@@ -233,7 +236,7 @@ def query_rag(
         top_k=top_k,
         meta_filter=meta_filter,
         source_types=source_types,
-    )    
+    )
     if not raw_matches:
         return RAGQueryResult(
             query=user_query,
@@ -275,20 +278,20 @@ def query_rag(
         )
 
     answer = synthesize_answer(user_query, chunks)
-    
+
     # Add provenance summary
     source_counts: Dict[str, int] = {}
     for m in filtered:
         src = m.metadata.get("source_type") or m.metadata.get("source") or "Unknown"
         source_counts[src] = source_counts.get(src, 0) + 1
-    
+
     provenance_lines = [
         "\nSources used:",
         *[f"- {src}: {cnt} chunk(s)" for src, cnt in sorted(source_counts.items())],
     ]
-    
+
     answer_with_provenance = answer + "\n\n" + "\n".join(provenance_lines)
-    
+
     return RAGQueryResult(
         query=user_query,
         matches=matches,
@@ -296,4 +299,3 @@ def query_rag(
         context_chunks=chunks,
         answer=answer_with_provenance,
     )
-

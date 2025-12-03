@@ -2,6 +2,7 @@
 # scripts/update_collection_universe.py
 
 import argparse
+
 from amprenta_rag.maintenance import update_collection_universe
 
 

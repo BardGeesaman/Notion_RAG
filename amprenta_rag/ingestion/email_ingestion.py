@@ -22,29 +22,27 @@ from __future__ import annotations
 
 import time
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import requests
 
-from amprenta_rag.config import get_config
 from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
-from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
-from amprenta_rag.ingestion.zotero_ingest import _chunk_text, _embed_texts
-from amprenta_rag.ingestion.notion_pages import (
-    create_rag_chunk_page,
-    fetch_not_embedded_emails,
-    extract_page_content,
-    update_email_page,
-)
-from amprenta_rag.ingestion.metadata_semantic import get_email_semantic_metadata
+from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.feature_extraction import (
-    extract_features_from_text,
-    link_features_to_notion_items,
-)
-from amprenta_rag.ingestion.signature_integration import detect_and_ingest_signatures_from_content
+    extract_features_from_text, link_features_to_notion_items)
+from amprenta_rag.ingestion.metadata_semantic import \
+    get_email_semantic_metadata
+from amprenta_rag.ingestion.notion_pages import (create_rag_chunk_page,
+                                                 extract_page_content,
+                                                 fetch_not_embedded_emails,
+                                                 update_email_page)
+from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.ingestion.signature_integration import \
+    detect_and_ingest_signatures_from_content
+from amprenta_rag.ingestion.zotero_ingest import _chunk_text, _embed_texts
+from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -65,6 +63,7 @@ def _rag_db_id() -> str:
     if not cfg.rag_db_id:
         raise RuntimeError("Notion RAG DB ID is not configured in config.py")
     return cfg.rag_db_id
+
 
 # ----------------- Cleanup orphaned chunks ----------------- #
 
@@ -104,7 +103,9 @@ def cleanup_orphaned_chunks() -> None:
             body["start_cursor"] = next_cursor
 
         try:
-            resp = requests.post(query_url, headers=notion_headers(), json=body)
+            resp = requests.post(
+                query_url, headers=notion_headers(), json=body, timeout=30
+            )
             resp.raise_for_status()
         except Exception as e:
             logger.error(
@@ -134,7 +135,9 @@ def cleanup_orphaned_chunks() -> None:
 
             check_url = f"{_notion_base_url()}/pages/{parent_id}"
             try:
-                check_resp = requests.get(check_url, headers=notion_headers())
+                check_resp = requests.get(
+                    check_url, headers=notion_headers(), timeout=30
+                )
                 if check_resp.status_code == 404:
                     orphaned_chunks.append(chunk)
             except Exception as e:
@@ -173,7 +176,9 @@ def cleanup_orphaned_chunks() -> None:
     for idx, chunk_page_id in enumerate(chunk_page_ids, 1):
         delete_url = f"{_notion_base_url()}/blocks/{chunk_page_id}"
         try:
-            del_resp = requests.delete(delete_url, headers=notion_headers())
+            del_resp = requests.delete(
+                delete_url, headers=notion_headers(), timeout=30
+            )
             if del_resp.status_code >= 300:
                 logger.warning(
                     "[INGEST][EMAIL] Failed to delete chunk %d: %s",
@@ -236,7 +241,9 @@ def delete_email_and_chunks(email_page_id: str) -> None:
         }
 
         try:
-            resp = requests.post(query_url, headers=notion_headers(), json=payload)
+            resp = requests.post(
+                query_url, headers=notion_headers(), json=payload, timeout=30
+            )
             if resp.status_code >= 300:
                 logger.error("[INGEST][EMAIL] Error querying RAG chunks: %s", resp.text)
                 resp.raise_for_status()
@@ -249,7 +256,11 @@ def delete_email_and_chunks(email_page_id: str) -> None:
             raise
 
         chunks = resp.json().get("results", [])
-        logger.info("[INGEST][EMAIL] Found %d chunks to delete for email %s", len(chunks), email_page_id)
+        logger.info(
+            "[INGEST][EMAIL] Found %d chunks to delete for email %s",
+            len(chunks),
+            email_page_id,
+        )
 
         chunk_ids: List[str] = []
         chunk_page_ids: List[str] = []
@@ -264,7 +275,9 @@ def delete_email_and_chunks(email_page_id: str) -> None:
         for idx, chunk_page_id in enumerate(chunk_page_ids, 1):
             delete_url = f"{_notion_base_url()}/blocks/{chunk_page_id}"
             try:
-                del_resp = requests.delete(delete_url, headers=notion_headers())
+                del_resp = requests.delete(
+                delete_url, headers=notion_headers(), timeout=30
+            )
                 if del_resp.status_code >= 300:
                     logger.warning(
                         "[INGEST][EMAIL] Failed to delete chunk page %s: %s",
@@ -297,7 +310,10 @@ def delete_email_and_chunks(email_page_id: str) -> None:
             cfg = get_config()
             try:
                 index.delete(ids=chunk_ids, namespace=cfg.pinecone.namespace)
-                logger.info("[INGEST][EMAIL] Pinecone vectors deleted for email %s", email_page_id)
+                logger.info(
+                    "[INGEST][EMAIL] Pinecone vectors deleted for email %s",
+                    email_page_id,
+                )
             except Exception as e:
                 logger.error(
                     "[INGEST][EMAIL] Pinecone API error deleting vectors for email %s: %r",
@@ -306,13 +322,18 @@ def delete_email_and_chunks(email_page_id: str) -> None:
                 )
                 raise
         else:
-            logger.info("[INGEST][EMAIL] No vectors to delete from Pinecone for email %s", email_page_id)
+            logger.info(
+                "[INGEST][EMAIL] No vectors to delete from Pinecone for email %s",
+                email_page_id,
+            )
 
         # 4. Delete the email page itself
         logger.info("[INGEST][EMAIL] Deleting email page %s...", email_page_id)
         delete_url = f"{_notion_base_url()}/blocks/{email_page_id}"
         try:
-            email_resp = requests.delete(delete_url, headers=notion_headers())
+            email_resp = requests.delete(
+                delete_url, headers=notion_headers(), timeout=30
+            )
             if email_resp.status_code >= 300:
                 logger.error(
                     "[INGEST][EMAIL] Failed to delete email page %s: %s",
@@ -333,7 +354,9 @@ def delete_email_and_chunks(email_page_id: str) -> None:
         logger.info("[INGEST][EMAIL] Deletion complete for email %s", email_page_id)
 
     except Exception as e:
-        logger.error("[INGEST][EMAIL] Deletion failed for email %s: %r", email_page_id, e)
+        logger.error(
+            "[INGEST][EMAIL] Deletion failed for email %s: %r", email_page_id, e
+        )
         raise
 
 
@@ -343,7 +366,7 @@ def delete_email_and_chunks(email_page_id: str) -> None:
 def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None:
     """
     Ingest a single email/note page into RAG Engine + Pinecone.
-    
+
     This function:
     1. Extracts metadata (title, from, tags, semantic metadata) from the email page
     2. Extracts full text content from Notion blocks
@@ -352,12 +375,12 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
     5. Creates RAG chunk pages in Notion
     6. Upserts vectors to Pinecone with rich metadata
     7. Updates the email page status to "Embedded"
-    
+
     Metadata structure matches zotero_ingest.py for consistency:
     - Doc-level fields: doc_id, doc_source, doc_type, diseases, targets, etc.
     - Lipid-level fields: lipids, lipid_classes, lipid_signatures, etc.
     - Chunk-level fields: chunk_id, chunk_index, snippet, etc.
-    
+
     Args:
         email_page: Notion page object from Email DB query
         parent_type: Type label ("Email" or "Note") for the parent
@@ -411,7 +434,7 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
         "signature_ownership": semantic_meta.get("signature_ownership", []),
         "matrix": semantic_meta.get("matrix", []),
         "treatment_arms": semantic_meta.get("treatment_arms", []),
-    }    
+    }
 
     logger.info("[INGEST][EMAIL] Processing: %s (%s)", title[:60], item_type)
 
@@ -442,11 +465,15 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
         )
         return
 
-    logger.info("[INGEST][EMAIL] Extracted %d characters for email %s", len(full_text), page_id)
+    logger.info(
+        "[INGEST][EMAIL] Extracted %d characters for email %s", len(full_text), page_id
+    )
 
     # Chunk and embed using shared helpers from zotero_ingest
     chunks = _chunk_text(full_text)
-    logger.info("[INGEST][EMAIL] Generated %d chunks for email %s", len(chunks), page_id)
+    logger.info(
+        "[INGEST][EMAIL] Generated %d chunks for email %s", len(chunks), page_id
+    )
 
     if not chunks:
         logger.info("[INGEST][EMAIL] No chunks to embed for email %s", page_id)
@@ -487,7 +514,7 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
 
         # Build metadata for Pinecone
         metadata: Dict[str, Any] = {
-            **doc_meta,      # doc-level + lipid-level from Email DB
+            **doc_meta,  # doc-level + lipid-level from Email DB
             "chunk_id": chunk_id,
             "chunk_index": order,
             "section": "Body",
@@ -534,7 +561,7 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
             e,
         )
         raise
-    
+
     # Extract and link metabolite features from email content
     try:
         # Use full_text (includes header) for feature extraction
@@ -553,7 +580,9 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
                 item_type="email",
             )
         else:
-            logger.debug("[INGEST][EMAIL] No metabolite features found in email %s", page_id)
+            logger.debug(
+                "[INGEST][EMAIL] No metabolite features found in email %s", page_id
+            )
     except Exception as e:
         # Log but don't raise - feature extraction is non-critical
         logger.warning(
@@ -561,7 +590,7 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
             page_id,
             e,
         )
-    
+
     # Detect and ingest signatures from email content
     try:
         # Get source metadata for signature inference
@@ -570,11 +599,10 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
             "matrix": doc_meta.get("matrix", []),
             "model_systems": doc_meta.get("model_systems", []),
         }
-        
+
         # No attached files for emails typically
-        from pathlib import Path
         attachment_paths: List[Path] = []
-        
+
         page_id_with_dashes = email_page["id"]
         detect_and_ingest_signatures_from_content(
             all_text_content=full_text,
@@ -598,19 +626,19 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
 def batch_ingest_emails(parent_type: str = "Email") -> None:
     """
     Batch process all not-embedded emails from the Email DB.
-    
+
     This function:
     1. Cleans up orphaned chunks (chunks whose parent emails no longer exist)
     2. Fetches all emails with "Embedding Status" = "Not Embedded"
     3. Processes each email through ingest_email()
     4. Handles errors gracefully, continuing with remaining emails
-    
+
     Args:
         parent_type: Type label to use for ingested emails ("Email" or "Note")
     """
     cleanup_orphaned_chunks()
 
-    logger.info("[INGEST][EMAIL] " + "=" * 60)
+    logger.info("[INGEST][EMAIL] %s", "=" * 60)
 
     try:
         emails = fetch_not_embedded_emails()

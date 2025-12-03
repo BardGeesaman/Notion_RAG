@@ -17,13 +17,14 @@ import argparse
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Any, List, Set
+from typing import Any, Dict, List, Set
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.signature_ingestion import ingest_signature_from_file
+from amprenta_rag.ingestion.signature_ingestion import \
+    ingest_signature_from_file
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -32,63 +33,66 @@ logger = get_logger(__name__)
 def find_signature_files(signatures_dir: Path) -> List[Path]:
     """
     Find all signature TSV/CSV files in a directory.
-    
+
     Args:
         signatures_dir: Directory to scan
-        
+
     Returns:
         List of Path objects for signature files
     """
     signature_files: List[Path] = []
-    
+
     if not signatures_dir.exists():
         logger.warning(
             "[INGEST][SIGNATURES][BULK] Directory does not exist: %s",
             signatures_dir,
         )
         return signature_files
-    
+
     if not signatures_dir.is_dir():
         logger.warning(
             "[INGEST][SIGNATURES][BULK] Path is not a directory: %s",
             signatures_dir,
         )
         return signature_files
-    
+
     # Find all TSV and CSV files
     for pattern in ["*.tsv", "*.csv"]:
         signature_files.extend(signatures_dir.glob(pattern))
-    
+
     # Filter out hidden files and directories
-    signature_files = [f for f in signature_files if f.is_file() and not f.name.startswith(".")]
-    
+    signature_files = [
+        f for f in signature_files if f.is_file() and not f.name.startswith(".")
+    ]
+
     # Sort for consistent processing order
     signature_files.sort()
-    
+
     return signature_files
 
 
 def extract_signature_metadata_from_filename(file_path: Path) -> Dict[str, Any]:
     """
     Extract optional metadata from filename patterns.
-    
+
     Attempts to infer signature type, version, etc. from filename.
-    
+
     Args:
         file_path: Path to signature file
-        
+
     Returns:
         Dictionary with extracted metadata (if any)
     """
     metadata: Dict[str, Any] = {}
     filename = file_path.stem.lower()
-    
+
     # Try to extract version from filename (e.g., "signature_v1.tsv" -> "1")
     import re
-    version_match = re.search(r'[vV](\d+(?:\.\d+)?)', filename)
+
+    version_match = re.search(r"[vV](\d+(?:\.\d+)?)", filename)
     if version_match:
         metadata["version"] = version_match.group(1)
-    
+
     # Try to infer signature type from filename
     if "consortium" in filename or "blsa" in filename or "adni" in filename:
         metadata["signature_type"] = "Consortium"
@@ -98,7 +102,7 @@ def extract_signature_metadata_from_filename(file_path: Path) -> Dict[str, Any]:
         metadata["signature_type"] = "Open Dataset"
     else:
         metadata["signature_type"] = "Literature-derived"  # Default
-    
+
     # Try to extract disease context from filename
     disease_keywords = ["als", "ad", "alzheimer", "parkinson", "pd", "fxs", "fragile"]
     disease_context: List[str] = []
@@ -112,10 +116,10 @@ def extract_signature_metadata_from_filename(file_path: Path) -> Dict[str, Any]:
                 disease_context.append("Parkinson's disease")
             elif keyword in ["fxs", "fragile"]:
                 disease_context.append("Fragile X Syndrome")
-    
+
     if disease_context:
         metadata["disease_context"] = disease_context
-    
+
     # Try to extract matrix from filename
     matrix_keywords = ["csf", "plasma", "serum", "tissue", "cell"]
     matrix: List[str] = []
@@ -131,20 +135,20 @@ def extract_signature_metadata_from_filename(file_path: Path) -> Dict[str, Any]:
                 matrix.append("Tissue")
             elif keyword == "cell":
                 matrix.append("Cell")
-    
+
     if matrix:
         metadata["matrix"] = matrix
-    
+
     return metadata
 
 
 def bulk_ingest_signatures(signatures_dir: Path) -> Dict[str, Any]:
     """
     Bulk ingest all signature files from a directory.
-    
+
     Args:
         signatures_dir: Directory containing signature TSV/CSV files
-        
+
     Returns:
         Dictionary with summary statistics:
         - files_processed: Number of files processed
@@ -160,10 +164,10 @@ def bulk_ingest_signatures(signatures_dir: Path) -> Dict[str, Any]:
         "[INGEST][SIGNATURES][BULK] Starting bulk ingestion from directory: %s",
         signatures_dir,
     )
-    
+
     # Find all signature files
     signature_files = find_signature_files(signatures_dir)
-    
+
     if not signature_files:
         logger.warning(
             "[INGEST][SIGNATURES][BULK] No signature files found in directory: %s",
@@ -179,12 +183,12 @@ def bulk_ingest_signatures(signatures_dir: Path) -> Dict[str, Any]:
             "warnings": [],
             "errors": [],
         }
-    
+
     logger.info(
         "[INGEST][SIGNATURES][BULK] Found %d signature file(s) to process",
         len(signature_files),
     )
-    
+
     # Statistics
     files_processed = 0
     files_failed = 0
@@ -195,29 +199,31 @@ def bulk_ingest_signatures(signatures_dir: Path) -> Dict[str, Any]:
     all_warnings: List[str] = []
     all_errors: List[str] = []
     processed_signature_ids: Set[str] = set()
-    
+
     # Process each signature file
     for sig_file in signature_files:
         logger.info(
             "[INGEST][SIGNATURES][BULK] Processing signature file: %s",
             sig_file.name,
         )
-        
+
         try:
             # Extract metadata from filename (optional hints)
             file_metadata = extract_signature_metadata_from_filename(sig_file)
-            
+
             # Ingest signature
             result = ingest_signature_from_file(
                 signature_path=sig_file,
-                signature_type=file_metadata.get("signature_type", "Literature-derived"),
+                signature_type=file_metadata.get(
+                    "signature_type", "Literature-derived"
+                ),
                 data_ownership="Public",
                 version=file_metadata.get("version"),
                 description=None,
                 disease_context=file_metadata.get("disease_context"),
                 matrix=file_metadata.get("matrix"),
             )
-            
+
             if result["signature_page_id"]:
                 # Track if this is a new signature or existing
                 if result["signature_page_id"] in processed_signature_ids:
@@ -228,12 +234,12 @@ def bulk_ingest_signatures(signatures_dir: Path) -> Dict[str, Any]:
                     # We can't easily distinguish, so we'll count as processed
                     signatures_created += 1
                     processed_signature_ids.add(result["signature_page_id"])
-                
+
                 total_components += result["component_count"]
                 total_species += result["species_count"]
-                
+
                 files_processed += 1
-                
+
                 logger.info(
                     "[INGEST][SIGNATURES][BULK] Successfully processed %s: "
                     "%d components, %d species",
@@ -241,7 +247,7 @@ def bulk_ingest_signatures(signatures_dir: Path) -> Dict[str, Any]:
                     result["component_count"],
                     result["species_count"],
                 )
-                
+
                 # Collect warnings
                 if result.get("warnings"):
                     for warning in result["warnings"]:
@@ -252,7 +258,7 @@ def bulk_ingest_signatures(signatures_dir: Path) -> Dict[str, Any]:
                 logger.error(f"[INGEST][SIGNATURES][BULK] {error_msg}")
                 all_errors.append(error_msg)
                 files_failed += 1
-        
+
         except Exception as e:
             error_msg = f"{sig_file.name}: {str(e)}"
             logger.error(
@@ -262,14 +268,14 @@ def bulk_ingest_signatures(signatures_dir: Path) -> Dict[str, Any]:
             )
             all_errors.append(error_msg)
             files_failed += 1
-    
+
     logger.info(
         "[INGEST][SIGNATURES][BULK] Bulk ingestion complete: "
         "%d files processed, %d failed",
         files_processed,
         files_failed,
     )
-    
+
     return {
         "files_processed": files_processed,
         "files_failed": files_failed,
@@ -292,16 +298,16 @@ def main():
         default=None,
         help="Directory containing signature files (overrides SIGNATURES_DIR from config)",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Determine signatures directory
     if args.signatures_dir:
         signatures_dir = args.signatures_dir.resolve()
     else:
         cfg = get_config()
         signatures_dir_str = cfg.pipeline.signatures_dir
-        
+
         if not signatures_dir_str:
             print(
                 "Error: SIGNATURES_DIR is not configured. "
@@ -314,29 +320,35 @@ def main():
             )
             print("  SIGNATURES_DIR=data/signatures", file=sys.stderr)
             print("\nOr use --signatures-dir:", file=sys.stderr)
-            print("  python scripts/bulk_ingest_signatures.py --signatures-dir /path/to/signatures", file=sys.stderr)
+            print(
+                "  python scripts/bulk_ingest_signatures.py --signatures-dir /path/to/signatures",
+                file=sys.stderr,
+            )
             return 1
-        
+
         signatures_dir = Path(signatures_dir_str).resolve()
-    
+
     if not signatures_dir.exists():
-        print(f"Error: Signatures directory does not exist: {signatures_dir}", file=sys.stderr)
+        print(
+            f"Error: Signatures directory does not exist: {signatures_dir}",
+            file=sys.stderr,
+        )
         return 1
-    
+
     if not signatures_dir.is_dir():
         print(f"Error: Path is not a directory: {signatures_dir}", file=sys.stderr)
         return 1
-    
+
     print(f"\n{'=' * 80}")
     print("Bulk Signature Ingestion")
     print(f"{'=' * 80}")
     print(f"\nDirectory: {signatures_dir}")
     print()
-    
+
     # Run bulk ingestion
     try:
         summary = bulk_ingest_signatures(signatures_dir)
-        
+
         # Print summary
         print(f"\n{'=' * 80}")
         print("Summary")
@@ -347,23 +359,23 @@ def main():
         print(f"Signatures updated:    {summary['signatures_updated']}")
         print(f"Components created:    {summary['components_created']}")
         print(f"Lipid species created: {summary['species_created']}")
-        
-        if summary['warnings']:
+
+        if summary["warnings"]:
             print(f"\n⚠️  Warnings ({len(summary['warnings'])}):")
-            for warning in summary['warnings'][:10]:  # Show first 10
+            for warning in summary["warnings"][:10]:  # Show first 10
                 print(f"  - {warning}")
-            if len(summary['warnings']) > 10:
+            if len(summary["warnings"]) > 10:
                 print(f"  ... and {len(summary['warnings']) - 10} more warnings")
-        
-        if summary['errors']:
+
+        if summary["errors"]:
             print(f"\n❌ Errors ({len(summary['errors'])}):")
-            for error in summary['errors']:
+            for error in summary["errors"]:
                 print(f"  - {error}")
-        
+
         print(f"\n{'=' * 80}\n")
-        
-        return 0 if summary['files_failed'] == 0 else 1
-        
+
+        return 0 if summary["files_failed"] == 0 else 1
+
     except Exception as e:
         print(f"\n❌ Fatal error during bulk ingestion: {e}", file=sys.stderr)
         logger.exception("Fatal error in bulk ingestion")
@@ -372,4 +384,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -12,7 +12,7 @@ This module provides:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -53,7 +53,7 @@ def fetch_zotero_item(item_key: str) -> ZoteroItem:
     Fetch the main metadata for a Zotero item.
     """
     url = f"{_zotero_base()}/items/{item_key}?include=data"
-    resp = requests.get(url, headers=_zotero_headers())
+    resp = requests.get(url, headers=_zotero_headers(), timeout=30)
     resp.raise_for_status()
     data = resp.json().get("data", {})
 
@@ -84,7 +84,7 @@ def fetch_zotero_children(item_key: str) -> List[Dict[str, Any]]:
     Fetch *all* children (attachments + notes) for a Zotero item.
     """
     url = f"{_zotero_base()}/items/{item_key}/children"
-    resp = requests.get(url, headers=_zotero_headers())
+    resp = requests.get(url, headers=_zotero_headers(), timeout=30)
     resp.raise_for_status()
     return [c.get("data", {}) for c in resp.json()]
 
@@ -93,7 +93,9 @@ def fetch_zotero_attachments(item_key: str) -> List[Dict[str, Any]]:
     """
     All child items of type 'attachment'.
     """
-    return [d for d in fetch_zotero_children(item_key) if d.get("itemType") == "attachment"]
+    return [
+        d for d in fetch_zotero_children(item_key) if d.get("itemType") == "attachment"
+    ]
 
 
 def fetch_zotero_notes(item_key: str) -> List[Dict[str, Any]]:
@@ -109,6 +111,8 @@ def download_zotero_file(att_key: str) -> bytes:
     """
     url = f"{_zotero_base()}/items/{att_key}/file"
     cfg = get_config().zotero
-    resp = requests.get(url, headers={"Zotero-API-Key": cfg.api_key})
+    resp = requests.get(
+        url, headers={"Zotero-API-Key": cfg.api_key}, timeout=30
+    )
     resp.raise_for_status()
     return resp.content

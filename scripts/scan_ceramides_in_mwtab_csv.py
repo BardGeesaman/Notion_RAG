@@ -38,12 +38,12 @@ def is_ceramide_like(name: str) -> bool:
     lower = name.lower()
 
     patterns = [
-        "cer(d",       # Cer(d18:1/16:0)
-        "ceramide",    # Ceramide C16:0
-        " cer ",       # space cer space
-        " cer(",       # space cer(
-        "cer ",        # Cer 24:1
-        "cer-c",       # some naming variants
+        "cer(d",  # Cer(d18:1/16:0)
+        "ceramide",  # Ceramide C16:0
+        " cer ",  # space cer space
+        " cer(",  # space cer(
+        "cer ",  # Cer 24:1
+        "cer-c",  # some naming variants
     ]
 
     for p in patterns:
@@ -134,7 +134,9 @@ def scan_ceramides(csv_path: Path):
         if name_idx is None:
             # Fallback: assume first column is metabolite name
             name_idx = 0
-            print(f"Warning: No metabolite name column found, using first column: '{header[0] if header else 'unknown'}'")
+            print(
+                f"Warning: No metabolite name column found, using first column: '{header[0] if header else 'unknown'}'"
+            )
 
         for row in reader:
             if not row or len(row) <= name_idx:
@@ -178,7 +180,7 @@ def write_report(path_str: str, cer_hits, total_rows: int, csv_path: Path):
     """
     path = Path(path_str)
     path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     with path.open("w", encoding="utf-8") as f:
         f.write(f"Source CSV: {csv_path}\n")
         f.write(f"Scanned rows: {total_rows}\n\n")
@@ -189,7 +191,7 @@ def write_report(path_str: str, cer_hits, total_rows: int, csv_path: Path):
         f.write("Ceramide-like hits:\n")
         for name, count in cer_hits.most_common():
             f.write(f"{name}\t{count}\n")
-    
+
     print(f"\n✅ Report saved to {path}")
 
 
@@ -201,7 +203,7 @@ def main():
         "--study-id",
         required=False,
         help="Metabolomics Workbench study ID (e.g. ST004396). "
-             "If provided without --csv-path, CSV is assumed at data/mwtab/<study_id>.csv",
+        "If provided without --csv-path, CSV is assumed at data/mwtab/<study_id>.csv",
     )
     parser.add_argument(
         "--csv-path",
@@ -234,5 +236,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
-    sys.exit(main())
 
+    sys.exit(main())

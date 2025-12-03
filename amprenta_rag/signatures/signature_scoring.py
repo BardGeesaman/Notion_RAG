@@ -18,7 +18,7 @@ from .species_matching import match_species, normalize_species_name
 class ComponentMatch:
     """
     Match result for a single signature component.
-    
+
     Attributes:
         signature_species: Original signature species name
         matched_dataset_species: Matched dataset species (or None)
@@ -26,6 +26,7 @@ class ComponentMatch:
         direction_match: Direction match status (match, conflict, neutral, unknown)
         weight: Component weight
     """
+
     signature_species: str
     matched_dataset_species: Optional[str] = None
     match_type: str = "none"  # exact, class_fallback, none
@@ -37,7 +38,7 @@ class ComponentMatch:
 class SignatureScoreResult:
     """
     Complete signature scoring result.
-    
+
     Attributes:
         total_score: Overall signature score (0-1)
         component_matches: List of component match results
@@ -45,6 +46,7 @@ class SignatureScoreResult:
         conflicting_species: Species with direction conflicts
         matched_species: Species successfully matched
     """
+
     total_score: float
     component_matches: List[ComponentMatch] = field(default_factory=list)
     missing_species: List[str] = field(default_factory=list)
@@ -58,14 +60,14 @@ def _get_direction_from_dataset(
 ) -> Optional[str]:
     """
     Extract direction from dataset for a species.
-    
+
     This is a placeholder for future direction inference from multi-condition datasets.
     For now, returns None (no direction info).
-    
+
     Args:
         dataset_species: Species name
         dataset_data: Dataset data structure (future: condition → value mapping)
-        
+
     Returns:
         Direction (↑, ↓, neutral) or None if unknown
     """
@@ -82,27 +84,27 @@ def score_signature(
 ) -> SignatureScoreResult:
     """
     Score a signature against a dataset.
-    
+
     Scoring logic:
     - match = +1.0    if dataset direction matches signature direction
     - match = -1.0    if opposite direction
     - match = +0.3    if present but no direction info
     - match = 0.0     if absent
-    
+
     Final score = Σ (weight_i * match_i) / Σ(weight_i)
-    
+
     Args:
         signature: Signature definition
         dataset_species: Set of species names in the dataset
         dataset_directions: Optional dict mapping species → direction (↑/↓)
         refmet_map: Optional RefMet mapping for species matching
-        
+
     Returns:
         SignatureScoreResult with detailed scoring information
     """
     if dataset_directions is None:
         dataset_directions = {}
-    
+
     # Match species
     signature_species_set = {comp.species for comp in signature.components}
     matches = match_species(
@@ -110,39 +112,43 @@ def score_signature(
         signature_species=signature_species_set,
         refmet_map=refmet_map,
     )
-    
+
     # Score each component
     component_matches: List[ComponentMatch] = []
     total_weighted_score = 0.0
     total_weight = 0.0
-    
+
     for comp in signature.components:
         sig_species = comp.species
         matched_species = matches.get(sig_species)
-        
+
         # Determine match type
         match_type = "none"
         if matched_species:
-            if normalize_species_name(sig_species) == normalize_species_name(matched_species):
+            if normalize_species_name(sig_species) == normalize_species_name(
+                matched_species
+            ):
                 match_type = "exact"
             else:
                 match_type = "class_fallback"
-        
+
         # Determine direction match
         direction_match = "unknown"
         match_value = 0.0
-        
+
         if matched_species:
             # Get dataset direction (if available)
             dataset_dir = dataset_directions.get(matched_species)
             sig_dir = comp.direction
-            
+
             if sig_dir and dataset_dir:
                 # Both have direction info
                 if sig_dir == dataset_dir:
                     direction_match = "match"
                     match_value = 1.0
-                elif (sig_dir == '↑' and dataset_dir == '↓') or (sig_dir == '↓' and dataset_dir == '↑'):
+                elif (sig_dir == "↑" and dataset_dir == "↓") or (
+                    sig_dir == "↓" and dataset_dir == "↑"
+                ):
                     direction_match = "conflict"
                     match_value = -1.0
                 else:
@@ -160,21 +166,23 @@ def score_signature(
             # Species not found
             direction_match = "missing"
             match_value = 0.0
-        
+
         # Weight the match
         weight = comp.weight or 1.0
         weighted_score = weight * match_value
         total_weighted_score += weighted_score
         total_weight += weight
-        
-        component_matches.append(ComponentMatch(
-            signature_species=sig_species,
-            matched_dataset_species=matched_species,
-            match_type=match_type,
-            direction_match=direction_match,
-            weight=weight,
-        ))
-    
+
+        component_matches.append(
+            ComponentMatch(
+                signature_species=sig_species,
+                matched_dataset_species=matched_species,
+                match_type=match_type,
+                direction_match=direction_match,
+                weight=weight,
+            )
+        )
+
     # Calculate final score
     if total_weight > 0:
         total_score = total_weighted_score / total_weight
@@ -182,26 +190,26 @@ def score_signature(
         total_score = (total_score + 1.0) / 2.0
     else:
         total_score = 0.0
-    
+
     # Categorize results
     missing_species = [
         comp.signature_species
         for comp in component_matches
         if comp.matched_dataset_species is None
     ]
-    
+
     conflicting_species = [
         comp.signature_species
         for comp in component_matches
         if comp.direction_match == "conflict"
     ]
-    
+
     matched_species = [
         comp.matched_dataset_species
         for comp in component_matches
         if comp.matched_dataset_species is not None
     ]
-    
+
     return SignatureScoreResult(
         total_score=total_score,
         component_matches=component_matches,
@@ -209,4 +217,3 @@ def score_signature(
         conflicting_species=conflicting_species,
         matched_species=matched_species,
     )
-

@@ -11,10 +11,9 @@ This module provides:
 
 from __future__ import annotations
 
+import re
 from io import BytesIO
 from typing import List, Optional
-
-import re
 
 from pypdf import PdfReader
 

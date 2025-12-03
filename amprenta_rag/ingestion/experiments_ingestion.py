@@ -1,23 +1,29 @@
 # amprenta_rag/ingestion/experiments_ingestion.py
+"""
+Experiment ingestion module.
+
+Handles ingestion of experiment data from Notion into Pinecone.
+Extracts experiment content, chunks it, embeds it, and upserts to Pinecone
+with full metadata including lipid signatures and metabolite features.
+"""
 
 from __future__ import annotations
 
-from typing import Dict, Any, List
-from pathlib import Path
-
 import textwrap
+from pathlib import Path
+from typing import Any, Dict, List
 
-from amprenta_rag.config import get_config
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
-from amprenta_rag.ingestion.metadata_semantic import get_experiment_semantic_metadata
+from amprenta_rag.config import get_config
+from amprenta_rag.ingestion.feature_extraction import (
+    extract_features_from_text, link_features_to_notion_items)
+from amprenta_rag.ingestion.metadata_semantic import \
+    get_experiment_semantic_metadata
 from amprenta_rag.ingestion.notion_pages import extract_page_content
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.ingestion.signature_integration import \
+    detect_and_ingest_signatures_from_content
 from amprenta_rag.ingestion.zotero_ingest import _chunk_text, _embed_texts
-from amprenta_rag.ingestion.feature_extraction import (
-    extract_features_from_text,
-    link_features_to_notion_items,
-)
-from amprenta_rag.ingestion.signature_integration import detect_and_ingest_signatures_from_content
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -25,8 +31,9 @@ logger = get_logger(__name__)
 
 def _fetch_notion_page(page_id: str) -> Dict[str, Any]:
     """Fetch a Notion page by ID."""
-    from amprenta_rag.ingestion.metadata_semantic import _fetch_notion_page as _fetch
-    
+    from amprenta_rag.ingestion.metadata_semantic import \
+        _fetch_notion_page as _fetch
+
     try:
         return _fetch(page_id)
     except Exception as e:
@@ -37,9 +44,25 @@ def _fetch_notion_page(page_id: str) -> Dict[str, Any]:
 def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None:
     """
     Ingest a single Experiment page from Notion into Pinecone.
+
+    This function performs the complete experiment ingestion pipeline:
+    1. Fetches the experiment page from Notion
+    2. Extracts full text content
+    3. Extracts semantic metadata (diseases, matrix, signatures, etc.)
+    4. Chunks and embeds the text
+    5. Upserts vectors to Pinecone with metadata
+    6. Extracts metabolite features and links them
+    7. Detects and ingests signatures from content
+
+    Args:
+        exp_page_id: Notion page ID (with or without dashes)
+        parent_type: Type label for the experiment (default: "Experiment")
+
+    Raises:
+        Exception: If ingestion fails at any step
     """
     logger.info("[INGEST][EXPERIMENT] Ingesting experiment page %s", exp_page_id)
-    
+
     try:
         page = _fetch_notion_page(exp_page_id)
     except Exception as e:
@@ -49,12 +72,16 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
             e,
         )
         raise
-    
+
     props = page.get("properties", {}) or {}
 
     title_prop = props.get("Name", {})
     title_parts = title_prop.get("title", []) or []
-    exp_title = title_parts[0].get("plain_text", "").strip() if title_parts else "(untitled experiment)"
+    exp_title = (
+        title_parts[0].get("plain_text", "").strip()
+        if title_parts
+        else "(untitled experiment)"
+    )
 
     # Extract full content from blocks (using shared helper)
     try:
@@ -69,7 +96,10 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
         )
         raise
     if not full_text or len(full_text.strip()) < 50:
-        logger.info("[INGEST][EXPERIMENT] Experiment %s has very little text; skipping.", exp_page_id)
+        logger.info(
+            "[INGEST][EXPERIMENT] Experiment %s has very little text; skipping.",
+            exp_page_id,
+        )
         return
 
     # Semantic + signature metadata
@@ -91,7 +121,9 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
     # Chunk and embed
     chunks = _chunk_text(full_text)
     if not chunks:
-        logger.info("[INGEST][EXPERIMENT] No chunks produced for %s; skipping.", exp_page_id)
+        logger.info(
+            "[INGEST][EXPERIMENT] No chunks produced for %s; skipping.", exp_page_id
+        )
         return
 
     logger.info(
@@ -109,7 +141,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
             e,
         )
         raise
-    
+
     index = get_pinecone_index()
     cfg = get_config()
 
@@ -137,7 +169,9 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
         )
 
     if not vectors:
-        logger.info("[INGEST][EXPERIMENT] No vectors to upsert for %s; skipping.", exp_page_id)
+        logger.info(
+            "[INGEST][EXPERIMENT] No vectors to upsert for %s; skipping.", exp_page_id
+        )
         return
 
     logger.info(
@@ -145,7 +179,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
         len(vectors),
         exp_page_id,
     )
-    
+
     try:
         index.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
     except Exception as e:
@@ -155,7 +189,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
             e,
         )
         raise
-    
+
     # Extract and link metabolite features from experiment content
     try:
         feature_names = extract_features_from_text(full_text)
@@ -184,7 +218,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
             exp_page_id,
             e,
         )
-    
+
     # Detect and ingest signatures from experiment content
     try:
         # Get source metadata for signature inference
@@ -193,11 +227,12 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
             "matrix": base_meta.get("matrix", []),
             "model_systems": base_meta.get("model_systems", []),
         }
-        
+
         # No attached files for experiments typically
         from pathlib import Path
+
         attachment_paths: List[Path] = []
-        
+
         canonical_page_id = page.get("id", exp_page_id)
         detect_and_ingest_signatures_from_content(
             all_text_content=full_text,
@@ -214,6 +249,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment") -> None
             e,
         )
         # Non-blocking - continue
-    
-    logger.info("[INGEST][EXPERIMENT] Ingestion complete for experiment %s", exp_page_id)
 
+    logger.info(
+        "[INGEST][EXPERIMENT] Ingestion complete for experiment %s", exp_page_id
+    )

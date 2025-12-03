@@ -3,8 +3,8 @@
 
 import argparse
 
-from amprenta_rag.maintenance import rebuild_collection_universe
 from amprenta_rag.ingestion import batch_ingest_emails
+from amprenta_rag.maintenance import rebuild_collection_universe
 
 
 def main() -> None:

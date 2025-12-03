@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, Optional, Set
-
 import json
+from typing import Any, Dict, List, Optional, Set
+
 import requests
 
-from amprenta_rag.config import get_config
 from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
-from amprenta_rag.ingestion import (
-    incremental_ingest_collection,
-    resync_collection,
-)
+from amprenta_rag.config import get_config
+from amprenta_rag.ingestion import (incremental_ingest_collection,
+                                    resync_collection)
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -151,7 +149,9 @@ def delete_rag_pages_for_lit_page(lit_page_id: str) -> None:
             print("⚠️ Error archiving RAG page:", resp2.text)
 
 
-def archive_literature_page(lit_page_id: str, title_text: str = "", item_key: str = "") -> None:
+def archive_literature_page(
+    lit_page_id: str, title_text: str = "", item_key: str = ""
+) -> None:
     """
     Archive a single Literature page.
     """
@@ -203,7 +203,9 @@ def cleanup_deleted_items() -> None:
             kept += 1
             continue
 
-        print(f"❌ Zotero item missing for {title} ({item_key}) – deleting associated data...")
+        print(
+            f"❌ Zotero item missing for {title} ({item_key}) – deleting associated data..."
+        )
 
         # 1) Pinecone
         delete_pinecone_vectors_for_item(item_key)
@@ -242,7 +244,9 @@ def sync_collection_state(collection_key: str) -> None:
     kept = 0
     deleted = 0
 
-    print(f"\n🔄 Syncing collection-defined universe for collection {collection_key}...\n")
+    print(
+        f"\n🔄 Syncing collection-defined universe for collection {collection_key}...\n"
+    )
     print(f"   Collection currently has {len(current_keys)} parent item(s).")
 
     for page in pages:
@@ -264,7 +268,9 @@ def sync_collection_state(collection_key: str) -> None:
             kept += 1
             continue
 
-        print(f"❌ Item {title} ({item_key}) not in collection or missing in Zotero → deleting.")
+        print(
+            f"❌ Item {title} ({item_key}) not in collection or missing in Zotero → deleting."
+        )
 
         delete_pinecone_vectors_for_item(item_key)
         delete_rag_pages_for_lit_page(lit_page_id)
@@ -293,7 +299,9 @@ def update_collection_universe(collection_key: str) -> None:
     Mirrors update_collection_universe.py.
     """
     print("\n📈 Incrementally ingesting collection items...")
-    incremental_ingest_collection(collection_key=collection_key, parent_type="Literature")
+    incremental_ingest_collection(
+        collection_key=collection_key, parent_type="Literature"
+    )
 
     print("\n🧹 Deleting items no longer in the collection or missing...")
     sync_collection_state(collection_key)
@@ -313,7 +321,6 @@ def rebuild_collection_universe(collection_key: str) -> None:
 
     Mirrors rebuild_collection_universe.py.
     """
-
 
     print("\n🔁 Rebuilding collection universe (full resync)...")
     resync_collection(

@@ -5,16 +5,17 @@ Create a Notion Experimental Data Asset page for the synthetic lipidomics test d
 This creates a page that can be ingested using the dataset ingestion pipeline.
 """
 
+import json
 import sys
 from pathlib import Path
-import json
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.config import get_config
-from amprenta_rag.clients.notion_client import notion_headers
-from amprenta_rag.logging_utils import get_logger
 import requests
+
+from amprenta_rag.clients.notion_client import notion_headers
+from amprenta_rag.config import get_config
+from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -22,15 +23,15 @@ logger = get_logger(__name__)
 def create_test_lipidomics_dataset_page() -> str:
     """
     Create a Notion Experimental Data Asset page for the synthetic lipidomics dataset.
-    
+
     Returns:
         Created page ID
     """
     cfg = get_config()
-    
+
     if not cfg.notion.exp_data_db_id:
         raise RuntimeError("Experimental Data Assets DB ID not configured")
-    
+
     # Create minimal mwTab JSON structure for synthetic dataset
     # This allows the ingestion pipeline to extract species correctly
     mwtab_data = {
@@ -77,9 +78,9 @@ def create_test_lipidomics_dataset_page() -> str:
             ],
         },
     }
-    
+
     mwtab_json_text = json.dumps(mwtab_data, indent=2)
-    
+
     # Create page properties
     props = {
         "Experiment Name": {
@@ -110,13 +111,13 @@ def create_test_lipidomics_dataset_page() -> str:
             "multi_select": [{"name": "Homo sapiens"}],
         },
     }
-    
+
     # Create the page
     payload = {
         "parent": {"database_id": cfg.notion.exp_data_db_id},
         "properties": props,
     }
-    
+
     try:
         url = f"{cfg.notion.base_url}/pages"
         resp = requests.post(
@@ -127,42 +128,46 @@ def create_test_lipidomics_dataset_page() -> str:
         )
         resp.raise_for_status()
         page_id = resp.json()["id"]
-        
+
         logger.info(
             "[DATASET] Created test lipidomics dataset page: %s",
             page_id,
         )
-        
+
         # Add mwTab data as code blocks (matching the format ingestion expects)
         blocks = []
         # Add heading
-        blocks.append({
-            "object": "block",
-            "type": "heading_2",
-            "heading_2": {
-                "rich_text": [{"type": "text", "text": {"content": "mwTab Data"}}],
-            },
-        })
-        
+        blocks.append(
+            {
+                "object": "block",
+                "type": "heading_2",
+                "heading_2": {
+                    "rich_text": [{"type": "text", "text": {"content": "mwTab Data"}}],
+                },
+            }
+        )
+
         # Add mwTab JSON as code block
         # Split into chunks if needed (Notion code blocks have size limits)
         chunk_size = 1900
         chunks = [
-            mwtab_json_text[i:i + chunk_size]
+            mwtab_json_text[i : i + chunk_size]
             for i in range(0, len(mwtab_json_text), chunk_size)
         ]
-        
+
         for chunk in chunks:
-            blocks.append({
-                "object": "block",
-                "type": "code",
-                "code": {
-                    "caption": [],
-                    "rich_text": [{"type": "text", "text": {"content": chunk}}],
-                    "language": "json",
-                },
-            })
-        
+            blocks.append(
+                {
+                    "object": "block",
+                    "type": "code",
+                    "code": {
+                        "caption": [],
+                        "rich_text": [{"type": "text", "text": {"content": chunk}}],
+                        "language": "json",
+                    },
+                }
+            )
+
         # Append blocks to page
         url = f"{cfg.notion.base_url}/blocks/{page_id}/children"
         resp = requests.patch(
@@ -172,15 +177,15 @@ def create_test_lipidomics_dataset_page() -> str:
             timeout=30,
         )
         resp.raise_for_status()
-        
+
         logger.info(
             "[DATASET] Added mwTab data to page %s (%d blocks)",
             page_id,
             len(blocks),
         )
-        
+
         return page_id
-    
+
     except Exception as e:
         logger.error(
             "[DATASET] Error creating test dataset page: %r",

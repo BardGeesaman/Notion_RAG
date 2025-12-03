@@ -10,9 +10,9 @@ Otherwise, it falls back to environment variables.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass
 
 import os
+from dataclasses import dataclass
 
 # Load .env file if python-dotenv is installed (optional dependency)
 try:
@@ -63,21 +63,29 @@ if not ZOTERO_API_KEY:
 # Database IDs (no dashes)
 NOTION_EMAIL_DB_ID = "2b7adf6142ab80878ccce09b0067db60"  # Email & Notes Inbox
 NOTION_RAG_DB_ID = "2bbadf6142ab8076a5fbed30f2cfcbfb"  # RAG Engine
-NOTION_EXP_DATA_DB_ID = os.getenv("NOTION_EXP_DATA_DB_ID", "")  # Experimental Data Assets
-NOTION_METABOLITE_FEATURES_DB_ID = os.getenv("NOTION_METABOLITE_FEATURES_DB_ID", "")  # Metabolite Features
+NOTION_EXP_DATA_DB_ID = os.getenv(
+    "NOTION_EXP_DATA_DB_ID", ""
+)  # Experimental Data Assets
+NOTION_METABOLITE_FEATURES_DB_ID = os.getenv(
+    "NOTION_METABOLITE_FEATURES_DB_ID", ""
+)  # Metabolite Features
 NOTION_SIGNATURE_DB_ID = os.getenv("NOTION_SIGNATURE_DB_ID", "")  # Lipid Signatures
-NOTION_SIGNATURE_COMPONENT_DB_ID = os.getenv("NOTION_SIGNATURE_COMPONENT_DB_ID", "")  # Lipid Signature Components
-NOTION_LIPID_SPECIES_DB_ID = os.getenv("NOTION_LIPID_SPECIES_DB_ID", "")  # Lipid Species
+NOTION_SIGNATURE_COMPONENT_DB_ID = os.getenv(
+    "NOTION_SIGNATURE_COMPONENT_DB_ID", ""
+)  # Lipid Signature Components
+NOTION_LIPID_SPECIES_DB_ID = os.getenv(
+    "NOTION_LIPID_SPECIES_DB_ID", ""
+)  # Lipid Species
 
 # Pipeline directories
 SIGNATURES_DIR = os.getenv("SIGNATURES_DIR", "")
 
 # Signature scoring configuration
 SIGNATURE_OVERLAP_THRESHOLD = float(os.getenv("SIGNATURE_OVERLAP_THRESHOLD", "0.3"))
-ENABLE_SIGNATURE_SCORING = os.getenv("ENABLE_SIGNATURE_SCORING", "true").lower() == "true"
+ENABLE_SIGNATURE_SCORING = (
+    os.getenv("ENABLE_SIGNATURE_SCORING", "true").lower() == "true"
+)
 ENABLE_LIPID_MAPPING = os.getenv("ENABLE_LIPID_MAPPING", "true").lower() == "true"
-
-
 
 
 # ---------------------------------------------------------
@@ -111,6 +119,7 @@ NOTION_VERSION = "2022-06-28"
 # ---------------------------------------------------------
 #  📦 CONFIG STRUCTURES
 # ---------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class OpenAIConfig:
@@ -172,6 +181,7 @@ class AppConfig:
 # ---------------------------------------------------------
 
 _config_singleton: AppConfig | None = None
+
 
 def get_config() -> AppConfig:
     global _config_singleton

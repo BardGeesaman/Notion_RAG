@@ -6,7 +6,9 @@ from amprenta_rag.ingestion.experiments_ingestion import ingest_experiment
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Ingest a single Experiment page from Notion into Pinecone.")
+    parser = argparse.ArgumentParser(
+        description="Ingest a single Experiment page from Notion into Pinecone."
+    )
     parser.add_argument(
         "--experiment-page-id",
         required=True,
@@ -19,4 +21,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

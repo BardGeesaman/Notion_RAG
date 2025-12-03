@@ -28,11 +28,11 @@ from scripts.harvest_mw_studies import fetch_mw_mwtab
 def resolve_csv_path(study_id: str | None, csv_path: str | None) -> Path | None:
     """
     Determine which CSV path to use.
-    
+
     Args:
         study_id: Optional MW study ID
         csv_path: Optional explicit CSV file path
-        
+
     Returns:
         Path object if valid CSV found, None otherwise
     """
@@ -56,11 +56,11 @@ def resolve_csv_path(study_id: str | None, csv_path: str | None) -> Path | None:
 def load_mwtab_json(study_id: str | None, mwtab_json_path: str | None) -> dict | None:
     """
     Load mwTab JSON data from file or API.
-    
+
     Args:
         study_id: Optional MW study ID (used if mwtab_json_path not provided)
         mwtab_json_path: Optional path to mwTab JSON file
-        
+
     Returns:
         Parsed JSON dict or None if error
     """
@@ -81,15 +81,15 @@ def load_mwtab_json(study_id: str | None, mwtab_json_path: str | None) -> dict |
         if not text:
             print(f"No mwTab content returned for study {study_id}")
             return None
-        
+
         # Try to parse JSON (handle potential multiple JSON objects)
         text_stripped = text.strip()
-        first_brace = text_stripped.find('{')
-        
+        first_brace = text_stripped.find("{")
+
         if first_brace == -1:
             print(f"mwTab text for {study_id} doesn't appear to be JSON")
             return None
-        
+
         # Try to parse first complete JSON object
         for end_pos in range(len(text_stripped), first_brace, -1):
             try:
@@ -97,7 +97,7 @@ def load_mwtab_json(study_id: str | None, mwtab_json_path: str | None) -> dict |
                 return json.loads(json_str)
             except (json.JSONDecodeError, ValueError):
                 continue
-        
+
         print(f"Failed to parse mwTab JSON for {study_id}")
         return None
 
@@ -110,10 +110,10 @@ def build_sample_metadata_map(mwtab_data: dict) -> dict[str, str]:
 
     Example output:
       'FXS1' -> 'FXS1 (Group=FXS, Source=LCL, Disease=Fragile X syndrome)'
-    
+
     Args:
         mwtab_data: Parsed mwTab JSON data
-        
+
     Returns:
         Dictionary mapping sample_id -> annotated_label
     """
@@ -122,81 +122,91 @@ def build_sample_metadata_map(mwtab_data: dict) -> dict[str, str]:
     # Look for SUBJECT_SAMPLE_FACTORS section
     # It can be either a direct list or a dict with "Data" key
     factors_section = mwtab_data.get("SUBJECT_SAMPLE_FACTORS")
-    
+
     if not factors_section:
         # Try alternative key names
         factors_section = mwtab_data.get("SUBJECT_SAMPLE_FACTORS_DATA")
-    
+
     # Handle both list and dict structures
     data_list = None
     if isinstance(factors_section, list):
         data_list = factors_section
     elif isinstance(factors_section, dict):
         data_list = factors_section.get("Data") or factors_section.get("data")
-    
+
     if not isinstance(data_list, list):
         return sample_meta
 
     for entry in data_list:
         if not isinstance(entry, dict):
             continue
-        
+
         # Extract sample ID
         sample_id = (
-            entry.get("Sample ID") or
-            entry.get("Sample_ID") or
-            entry.get("sample_id") or
-            entry.get("SampleID")
+            entry.get("Sample ID")
+            or entry.get("Sample_ID")
+            or entry.get("sample_id")
+            or entry.get("SampleID")
         )
-        
+
         if not sample_id:
             continue
 
         # Extract factors
-        factors = entry.get("Factors") or entry.get("FACTOR") or entry.get("factor") or {}
-        
+        factors = (
+            entry.get("Factors") or entry.get("FACTOR") or entry.get("factor") or {}
+        )
+
         if not isinstance(factors, dict):
             factors = {}
 
         # Extract key fields for the label
         disease = (
-            factors.get("Disease") or
-            factors.get("disease") or
-            factors.get("DISEASE") or
-            ""
+            factors.get("Disease")
+            or factors.get("disease")
+            or factors.get("DISEASE")
+            or ""
         )
-        
+
         source = (
-            factors.get("Sample source") or
-            factors.get("Sample Source") or
-            factors.get("sample_source") or
-            factors.get("Source") or
-            ""
+            factors.get("Sample source")
+            or factors.get("Sample Source")
+            or factors.get("sample_source")
+            or factors.get("Source")
+            or ""
         )
-        
+
         genotype = (
-            factors.get("Genotype") or
-            factors.get("genotype") or
-            factors.get("GENOTYPE") or
-            ""
+            factors.get("Genotype")
+            or factors.get("genotype")
+            or factors.get("GENOTYPE")
+            or ""
         )
-        
+
         group = None
 
         # Heuristic: derive group from disease, genotype, or sample_id prefix
         disease_lower = disease.lower() if disease else ""
         genotype_lower = genotype.lower() if genotype else ""
         sample_id_upper = sample_id.upper()
-        
-        if "fragile" in disease_lower or "fxs" in genotype_lower or "fxs" in disease_lower:
+
+        if (
+            "fragile" in disease_lower
+            or "fxs" in genotype_lower
+            or "fxs" in disease_lower
+        ):
             group = "FXS"
-        elif "control" in disease_lower or "typical" in disease_lower or "td" in genotype_lower:
+        elif (
+            "control" in disease_lower
+            or "typical" in disease_lower
+            or "td" in genotype_lower
+        ):
             group = "TD"
         elif "case" in disease_lower:
             group = "Case"
         elif "control" in sample_id_upper:
             group = "Control"
-        
+
         # Fallback: prefix of sample_id
         if group is None:
             if sample_id_upper.startswith("FXS"):
@@ -210,18 +220,18 @@ def build_sample_metadata_map(mwtab_data: dict) -> dict[str, str]:
 
         # Build label parts
         label_parts = []
-        
+
         if group:
             label_parts.append(f"Group={group}")
-        
+
         if genotype:
             label_parts.append(f"Genotype={genotype}")
-        
+
         if disease:
             # Truncate long disease names
             disease_short = disease[:30] + "..." if len(disease) > 30 else disease
             label_parts.append(f"Disease={disease_short}")
-        
+
         if source:
             # Truncate long source descriptions
             source_short = source[:20] + "..." if len(source) > 20 else source
@@ -237,10 +247,12 @@ def build_sample_metadata_map(mwtab_data: dict) -> dict[str, str]:
     return sample_meta
 
 
-def annotate_csv_headers(csv_path: Path, sample_meta_map: dict[str, str], output_csv: str | None):
+def annotate_csv_headers(
+    csv_path: Path, sample_meta_map: dict[str, str], output_csv: str | None
+):
     """
     Annotate CSV column headers with sample metadata.
-    
+
     Args:
         csv_path: Path to input CSV file
         sample_meta_map: Dictionary mapping sample_id -> annotated_label
@@ -251,9 +263,10 @@ def annotate_csv_headers(csv_path: Path, sample_meta_map: dict[str, str], output
     else:
         out_path = csv_path.with_name(csv_path.stem + "_annotated.csv")
 
-    with csv_path.open("r", encoding="utf-8", newline="") as f_in, \
-         out_path.open("w", encoding="utf-8", newline="") as f_out:
-        
+    with csv_path.open("r", encoding="utf-8", newline="") as f_in, out_path.open(
+        "w", encoding="utf-8", newline=""
+    ) as f_out:
+
         reader = csv.reader(f_in)
         writer = csv.writer(f_out)
 
@@ -271,7 +284,7 @@ def annotate_csv_headers(csv_path: Path, sample_meta_map: dict[str, str], output
                 new_header.append(col)
 
         writer.writerow(new_header)
-        
+
         # Copy all data rows unchanged
         for row in reader:
             writer.writerow(row)
@@ -328,9 +341,11 @@ def main():
 
     print(f"Extracting sample metadata...")
     sample_meta_map = build_sample_metadata_map(mwtab_data)
-    
+
     if not sample_meta_map:
-        print("⚠️  No sample metadata found in mwTab JSON. CSV headers will not be annotated.")
+        print(
+            "⚠️  No sample metadata found in mwTab JSON. CSV headers will not be annotated."
+        )
     else:
         print(f"Found metadata for {len(sample_meta_map)} samples:")
         for sample_id, annotation in list(sample_meta_map.items())[:5]:
@@ -346,4 +361,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

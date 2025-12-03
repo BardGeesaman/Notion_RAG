@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, Iterable, Set, Optional
+from typing import Any, Dict, Iterable, List, Optional, Set
 
 import requests
 
-from amprenta_rag.config import get_config
-from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
-
-
+from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.zotero_ingest import ingest_zotero_item
+from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -58,7 +56,7 @@ def fetch_collection_items(collection_key: str) -> List[Dict[str, Any]]:
     using the /items/top endpoint with include=data.
     """
     url = f"{_zotero_base()}/collections/{collection_key}/items/top?include=data"
-    resp = requests.get(url, headers=_zotero_headers())
+    resp = requests.get(url, headers=_zotero_headers(), timeout=30)
     resp.raise_for_status()
     items = resp.json()
     if not isinstance(items, list):
@@ -94,7 +92,9 @@ def get_literature_page_id_for_item(item_key: str) -> Optional[str]:
         },
     }
 
-    resp = requests.post(url, headers=notion_headers(), json=payload)
+    resp = requests.post(
+        url, headers=notion_headers(), json=payload, timeout=30
+    )
     if resp.status_code >= 300:
         logger.warning(
             "Notion Literature query error for item %s: %s %s",
@@ -133,7 +133,9 @@ def delete_rag_pages_for_item(item_key: str) -> None:
         },
     }
 
-    resp = requests.post(url, headers=notion_headers(), json=payload)
+    resp = requests.post(
+        url, headers=notion_headers(), json=payload, timeout=30
+    )
     if resp.status_code >= 300:
         logger.warning(
             "Notion RAG query error for item %s: %s %s",
@@ -188,9 +190,7 @@ def _iter_eligible_items(
             continue
 
         if item_type not in allowed_types:
-            logger.info(
-                "⏭️ Skipping non-literature item %s [%s]", item_key, item_type
-            )
+            logger.info("⏭️ Skipping non-literature item %s [%s]", item_key, item_type)
             continue
 
         yield item
@@ -246,7 +246,6 @@ def resync_collection(
     allowed_types: Optional[Set[str]] = None,
     force: bool = False,
 ) -> None:
-
     """
     Fully resync a Zotero collection:
 

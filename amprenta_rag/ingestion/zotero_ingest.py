@@ -15,44 +15,35 @@ The pipeline is idempotent - unchanged attachments/notes are skipped.
 
 from __future__ import annotations
 
-from typing import Dict, Any, List
-from pathlib import Path
-
 import hashlib
 import textwrap
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List
 
-from amprenta_rag.config import get_config
-from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
+from amprenta_rag.clients.openai_client import (get_default_models,
+                                                get_openai_client)
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
-from amprenta_rag.ingestion.zotero_api import (
-    fetch_zotero_item,
-    fetch_zotero_attachments,
-    fetch_zotero_notes,
-    download_zotero_file,
-    ZoteroItem,
-)
-from amprenta_rag.ingestion.text_extraction import (
-    extract_text_from_attachment_bytes,
-    html_to_text,
-    is_boilerplate,
-)
-from amprenta_rag.ingestion.notion_pages import (
-    ensure_literature_page,
-    create_rag_chunk_page,
-    update_literature_page,
-)
-from amprenta_rag.ingestion.metadata_semantic import get_literature_semantic_metadata
-from amprenta_rag.ingestion.pinecone_utils import (
-    sanitize_metadata,
-    attachment_already_ingested,
-    note_already_ingested,
-)
+from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.feature_extraction import (
-    extract_features_from_text,
-    link_features_to_notion_items,
-)
-from amprenta_rag.ingestion.signature_integration import detect_and_ingest_signatures_from_content
+    extract_features_from_text, link_features_to_notion_items)
+from amprenta_rag.ingestion.metadata_semantic import \
+    get_literature_semantic_metadata
+from amprenta_rag.ingestion.notion_pages import (create_rag_chunk_page,
+                                                 ensure_literature_page,
+                                                 update_literature_page)
+from amprenta_rag.ingestion.pinecone_utils import (attachment_already_ingested,
+                                                   note_already_ingested,
+                                                   sanitize_metadata)
+from amprenta_rag.ingestion.signature_integration import \
+    detect_and_ingest_signatures_from_content
+from amprenta_rag.ingestion.text_extraction import (
+    extract_text_from_attachment_bytes, html_to_text, is_boilerplate)
+from amprenta_rag.ingestion.zotero_api import (ZoteroItem,
+                                               download_zotero_file,
+                                               fetch_zotero_attachments,
+                                               fetch_zotero_item,
+                                               fetch_zotero_notes)
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -143,7 +134,9 @@ def ingest_zotero_item(
     try:
         item: ZoteroItem = fetch_zotero_item(item_key)
     except Exception as e:
-        logger.error("[INGEST][ZOTERO] Zotero API error fetching item %s: %r", item_key, e)
+        logger.error(
+            "[INGEST][ZOTERO] Zotero API error fetching item %s: %r", item_key, e
+        )
         raise
 
     # 2) Ensure Literature page exists
@@ -196,7 +189,7 @@ def ingest_zotero_item(
 
     now = datetime.now(timezone.utc).isoformat()
     any_ingested = False
-    
+
     # Collect all text content for feature extraction
     all_text_parts: List[str] = []
 
@@ -222,7 +215,9 @@ def ingest_zotero_item(
             logger.info("[INGEST][ZOTERO] Skipping Snapshot attachment %s", att_key)
             continue
         if content_type and content_type.lower().startswith("text/html"):
-            logger.info("[INGEST][ZOTERO] Skipping HTML snapshot attachment %s", att_key)
+            logger.info(
+                "[INGEST][ZOTERO] Skipping HTML snapshot attachment %s", att_key
+            )
             continue
 
         if not force and attachment_already_ingested(
@@ -261,7 +256,7 @@ def ingest_zotero_item(
             header += f"DOI: {item.doi}\n"
         header += f"[Attachment: {filename}]\n\n"
         full_text = header + text
-        
+
         # Collect text for feature extraction
         all_text_parts.append(text)
 
@@ -279,7 +274,9 @@ def ingest_zotero_item(
             len(chunks),
             att_key,
         )
-        logger.info("[INGEST][ZOTERO] Embedding chunks with OpenAI for attachment %s", att_key)
+        logger.info(
+            "[INGEST][ZOTERO] Embedding chunks with OpenAI for attachment %s", att_key
+        )
         embeddings = _embed_texts(chunks)
 
         vectors: List[Dict[str, Any]] = []
@@ -366,8 +363,10 @@ def ingest_zotero_item(
             continue
 
         note_hash = hashlib.md5(text.encode("utf-8", errors="ignore")).hexdigest()
-        logger.info("[INGEST][ZOTERO] Processing note %s (hash=%s)", note_key, note_hash)
-        
+        logger.info(
+            "[INGEST][ZOTERO] Processing note %s (hash=%s)", note_key, note_hash
+        )
+
         # Collect text for feature extraction
         all_text_parts.append(text)
 
@@ -388,7 +387,9 @@ def ingest_zotero_item(
         chunks = _chunk_text(full_text)
         chunks = [c for c in chunks if not is_boilerplate(c)]
         if not chunks:
-            logger.info("[INGEST][ZOTERO] No usable chunks for note; skipping %s", note_key)
+            logger.info(
+                "[INGEST][ZOTERO] No usable chunks for note; skipping %s", note_key
+            )
             continue
 
         logger.info(
@@ -396,7 +397,9 @@ def ingest_zotero_item(
             len(chunks),
             note_key,
         )
-        logger.info("[INGEST][ZOTERO] Embedding note chunks with OpenAI for note %s", note_key)
+        logger.info(
+            "[INGEST][ZOTERO] Embedding note chunks with OpenAI for note %s", note_key
+        )
         embeddings = _embed_texts(chunks)
 
         note_vectors: List[Dict[str, Any]] = []
@@ -483,7 +486,7 @@ def ingest_zotero_item(
                 e,
             )
             raise
-        
+
         # Extract and link metabolite features from all ingested content
         try:
             if all_text_parts:
@@ -512,12 +515,12 @@ def ingest_zotero_item(
                 item_key,
                 e,
             )
-        
+
         # Detect and ingest signatures from literature content
         try:
             if all_text_parts:
                 combined_text = "\n\n".join(all_text_parts)
-                
+
                 # Get source metadata for signature inference
                 base_meta = get_literature_semantic_metadata(parent_page_id, item)
                 source_metadata = {
@@ -525,11 +528,12 @@ def ingest_zotero_item(
                     "matrix": base_meta.get("matrix", []),
                     "model_systems": base_meta.get("model_systems", []),
                 }
-                
+
                 # No attached files for literature (text extracted, files not stored locally)
                 from pathlib import Path
+
                 attachment_paths: List[Path] = []
-                
+
                 detect_and_ingest_signatures_from_content(
                     all_text_content=combined_text,
                     attachment_paths=attachment_paths,
@@ -545,7 +549,7 @@ def ingest_zotero_item(
                 e,
             )
             # Non-blocking - continue
-        
+
         logger.info("[INGEST][ZOTERO] Ingestion complete for item %s", item_key)
     else:
         logger.info(

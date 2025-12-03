@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, Optional
-
 import json
 import re
+from typing import Any, Dict, List, Optional
 
 import requests
 
-from amprenta_rag.config import get_config
-from amprenta_rag.clients.openai_client import get_openai_client, get_default_models
 from amprenta_rag.clients.notion_client import notion_headers
+from amprenta_rag.clients.openai_client import (get_default_models,
+                                                get_openai_client)
+from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -297,6 +297,7 @@ def _build_notion_updates_from_classification(cls: Dict[str, Any]) -> Dict[str, 
     """
     Convert classifier output into Notion property updates.
     """
+
     def ms(name: str) -> Dict[str, Any]:
         vals = cls.get(name, []) or []
         return {"multi_select": [{"name": str(v)} for v in vals if v]}
@@ -318,9 +319,7 @@ def _build_notion_updates_from_classification(cls: Dict[str, Any]) -> Dict[str, 
     # Build Targets with lipid-stripping logic
     raw_targets = cls.get("targets", []) or []
     cleaned_targets = _filter_targets_for_molecular_entities(raw_targets)
-    targets_prop = {
-        "multi_select": [{"name": t} for t in cleaned_targets]
-    }
+    targets_prop = {"multi_select": [{"name": t} for t in cleaned_targets]}
 
     updates: Dict[str, Any] = {
         "Disease": ms("disease"),
@@ -381,7 +380,9 @@ def classify_and_update_all_literature(
             continue
 
         if (not force) and (not _needs_classification(props)):
-            print(f"\n[{idx}/{total}] {title[:80]} – already has semantic metadata, skipping.")
+            print(
+                f"\n[{idx}/{total}] {title[:80]} – already has semantic metadata, skipping."
+            )
             skipped += 1
             continue
 

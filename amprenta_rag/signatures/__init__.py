@@ -7,9 +7,9 @@ This module provides tools for:
 - Computing direction-aware, weight-aware signature scores
 """
 
+from .signature_loader import SignatureComponent, load_signature_from_tsv
+from .signature_scoring import SignatureScoreResult, score_signature
 from .species_matching import match_species, normalize_species_name
-from .signature_loader import load_signature_from_tsv, SignatureComponent
-from .signature_scoring import score_signature, SignatureScoreResult
 
 __all__ = [
     "match_species",
@@ -19,4 +19,3 @@ __all__ = [
     "score_signature",
     "SignatureScoreResult",
 ]
-

@@ -1,9 +1,7 @@
 # tests/test_metadata_classifier.py
 
 from amprenta_rag.metadata.classify_literature import (
-    _classify_literature_doc,
-    _build_notion_updates_from_classification,
-)
+    _build_notion_updates_from_classification, _classify_literature_doc)
 
 
 def test_classifier_separates_targets_and_lipids():

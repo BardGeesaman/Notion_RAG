@@ -2,6 +2,7 @@
 # scripts/sync_collection_state.py
 
 import argparse
+
 from amprenta_rag.maintenance import sync_collection_state
 
 

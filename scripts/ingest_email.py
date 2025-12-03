@@ -3,10 +3,7 @@
 
 import argparse
 
-from amprenta_rag.ingestion import (
-    batch_ingest_emails,
-    delete_email_and_chunks,
-)
+from amprenta_rag.ingestion import batch_ingest_emails, delete_email_and_chunks
 
 
 def main() -> None:
