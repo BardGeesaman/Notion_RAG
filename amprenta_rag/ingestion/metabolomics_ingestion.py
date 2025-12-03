@@ -498,26 +498,33 @@ def ingest_metabolomics_file(
             experiment_ids=experiment_ids,
         )
 
-    # Optional: Metabolite Features DB integration (Phase 2)
+    # Link metabolites to Metabolite Features DB
     try:
-        from amprenta_rag.ingestion.feature_extraction import (
-            link_features_to_notion_items)
-        cfg = get_config()
-        if hasattr(cfg.notion, "metabolite_features_db_id") and cfg.notion.metabolite_features_db_id:
-            # Link metabolites to Metabolite Features DB
-            metabolite_list = list(metabolite_set)
-            link_features_to_notion_items(
-                feature_names=metabolite_list,
-                item_page_id=page_id,
-                item_type="dataset",
-            )
-            logger.info(
-                "[INGEST][METABOLOMICS] Linked %d metabolites to Metabolite Features DB",
-                len(metabolite_list),
-            )
+        from amprenta_rag.ingestion.feature_extraction import link_feature
+
+        logger.info(
+            "[INGEST][METABOLOMICS] Linking %d metabolites to Metabolite Features DB",
+            len(metabolite_set),
+        )
+        linked_count = 0
+        for metabolite in metabolite_set:
+            try:
+                link_feature("metabolite", metabolite, page_id)
+                linked_count += 1
+            except Exception as e:
+                logger.warning(
+                    "[INGEST][METABOLOMICS] Error linking metabolite '%s': %r",
+                    metabolite,
+                    e,
+                )
+        logger.info(
+            "[INGEST][METABOLOMICS] Linked %d/%d metabolites to Metabolite Features DB",
+            linked_count,
+            len(metabolite_set),
+        )
     except Exception as e:
         logger.warning(
-            "[INGEST][METABOLOMICS] Metabolite Features DB integration skipped (not configured or error): %r",
+            "[INGEST][METABOLOMICS] Feature linking skipped (error): %r",
             e,
         )
 

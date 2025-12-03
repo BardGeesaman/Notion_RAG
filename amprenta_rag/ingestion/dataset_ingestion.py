@@ -426,9 +426,17 @@ def ingest_dataset(page_id: str, force: bool = False) -> None:
                     len(dataset_species_set),
                 )
 
+                # Determine omics type from dataset properties
+                omics_type = None
+                omics_type_prop = props.get("Omics Type", {}).get("select")
+                if omics_type_prop:
+                    omics_type = omics_type_prop.get("name")
+
                 matches = find_matching_signatures_for_dataset(
-                    dataset_species=dataset_species_set,
+                    dataset_species=dataset_species_set,  # Legacy support
                     overlap_threshold=cfg.pipeline.signature_overlap_threshold,
+                    dataset_page_id=canonical_page_id,  # Multi-omics support
+                    omics_type=omics_type,
                 )
 
                 if matches:

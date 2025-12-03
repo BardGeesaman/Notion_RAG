@@ -1,0 +1,4 @@
+gene,log2FC,pvalue
+TP53,1.2,0.001
+TNF,0.8,0.010
+MAPK1,-0.5,0.020

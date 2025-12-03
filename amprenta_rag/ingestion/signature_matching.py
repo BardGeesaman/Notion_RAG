@@ -23,6 +23,9 @@ from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.feature_extraction import \
     extract_features_from_mwtab
+from amprenta_rag.ingestion.multi_omics_scoring import (
+    extract_dataset_features_by_type,
+    score_multi_omics_signature_against_dataset)
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.signatures.signature_loader import (Signature,
                                                       SignatureComponent,
@@ -256,9 +259,21 @@ def load_signature_from_notion_page(
             weight_prop = comp_props.get("Weight", {}).get("number")
             weight = float(weight_prop) if weight_prop is not None else None
 
+            # Get feature_type (for multi-omics support)
+            feature_type_prop = comp_props.get("Feature Type", {}).get("select")
+            feature_type = None
+            if feature_type_prop:
+                feature_type_str = feature_type_prop.get("name", "").lower()
+                # Normalize to lowercase (gene, protein, metabolite, lipid)
+                feature_type = feature_type_str
+            else:
+                # Default to lipid for backward compatibility
+                feature_type = "lipid"
+
             components.append(
                 SignatureComponent(
-                    species=species,
+                    feature_name=species,  # Use feature_name for multi-omics
+                    feature_type=feature_type,
                     direction=direction,
                     weight=weight,
                 )
@@ -322,22 +337,49 @@ def score_signature_against_dataset(
 
 
 def find_matching_signatures_for_dataset(
-    dataset_species: Set[str],
+    dataset_species: Optional[Set[str]] = None,
     dataset_directions: Optional[Dict[str, str]] = None,
     overlap_threshold: float = 0.3,
+    dataset_page_id: Optional[str] = None,
+    omics_type: Optional[str] = None,
 ) -> List[SignatureMatchResult]:
     """
     Find all signatures that match a dataset above the overlap threshold.
 
+    Supports both legacy (lipid-only) and multi-omics signatures.
+
     Args:
-        dataset_species: Set of species names in the dataset
+        dataset_species: Set of species names in the dataset (legacy, for backward compat)
         dataset_directions: Optional dict mapping species → direction
         overlap_threshold: Minimum overlap fraction to consider a match (default: 0.3)
+        dataset_page_id: Optional Notion page ID of dataset (for multi-omics extraction)
+        omics_type: Optional omics type hint (Lipidomics, Metabolomics, etc.)
 
     Returns:
         List of SignatureMatchResult objects for matching signatures
     """
     matches: List[SignatureMatchResult] = []
+
+    # Extract dataset features if dataset_page_id is provided (multi-omics mode)
+    dataset_features_by_type: Optional[Dict[str, Set[str]]] = None
+    if dataset_page_id:
+        try:
+            dataset_features_by_type = extract_dataset_features_by_type(
+                dataset_page_id=dataset_page_id,
+                omics_type=omics_type,
+            )
+            logger.info(
+                "[INGEST][SIGNATURE-MATCH] Extracted features from dataset %s for multi-omics scoring",
+                dataset_page_id,
+            )
+        except Exception as e:
+            logger.warning(
+                "[INGEST][SIGNATURE-MATCH] Error extracting features from dataset %s: %r. "
+                "Falling back to legacy scoring.",
+                dataset_page_id,
+                e,
+            )
+            dataset_features_by_type = None
 
     # Fetch all signatures from Notion
     signature_pages = fetch_all_signatures_from_notion()
@@ -355,12 +397,41 @@ def find_matching_signatures_for_dataset(
             if not signature:
                 continue
 
-            # Score signature against dataset
-            score_result = score_signature_against_dataset(
-                signature=signature,
-                dataset_species=dataset_species,
-                dataset_directions=dataset_directions,
+            # Determine if this is a multi-omics signature
+            is_multi_omics = (
+                signature.modalities
+                and len(signature.modalities) > 0
+                and (
+                    len(signature.modalities) > 1
+                    or signature.modalities[0].lower() != "lipid"
+                )
+            ) or any(
+                getattr(comp, "feature_type", "lipid") != "lipid"
+                for comp in signature.components
             )
+
+            # Use multi-omics scoring if we have feature extraction and it's a multi-omics signature
+            if dataset_features_by_type and is_multi_omics:
+                # Multi-omics scoring
+                score_result = score_multi_omics_signature_against_dataset(
+                    signature=signature,
+                    dataset_features_by_type=dataset_features_by_type,
+                    dataset_directions=None,  # TODO: Support directions by feature type
+                )
+            elif dataset_species:
+                # Legacy scoring (lipid-only)
+                score_result = score_signature_against_dataset(
+                    signature=signature,
+                    dataset_species=dataset_species,
+                    dataset_directions=dataset_directions,
+                )
+            else:
+                # Can't score without dataset features
+                logger.debug(
+                    "[INGEST][SIGNATURE-MATCH] Skipping signature %s: no dataset features available",
+                    signature.name,
+                )
+                continue
 
             # Calculate overlap fraction
             total_components = len(signature.components)
@@ -424,8 +495,8 @@ def update_dataset_with_signature_matches(
         matches: List of signature match results
     """
     if not matches:
-        logger.debug(
-            "[INGEST][SIGNATURE-MATCH] No matches to write back for dataset %s",
+        logger.info(
+            "[INGEST][SIGNATURE-MATCH] No signature matches found for dataset %s — Signature Match Score unchanged",
             dataset_page_id,
         )
         return
@@ -469,6 +540,18 @@ def update_dataset_with_signature_matches(
             properties["Related Signature(s)"] = {
                 "relation": signature_relations,
             }
+
+        # Write Signature Match Score (numeric property)
+        # Only write if we have matches (idempotent: don't clear if no matches)
+        if matches and highest_score > 0:
+            properties["Signature Match Score"] = {
+                "number": highest_score,
+            }
+            logger.info(
+                "[INGEST][SIGNATURE-MATCH] Writing Signature Match Score = %.3f to dataset %s",
+                highest_score,
+                dataset_page_id,
+            )
 
         # Add summary to existing Summary property (append to existing content)
         # First fetch current summary to append
@@ -531,16 +614,50 @@ def update_dataset_with_signature_matches(
         )
 
         if resp.status_code >= 300:
-            logger.warning(
-                "[INGEST][SIGNATURE-MATCH] Failed to update dataset %s: %s",
-                dataset_page_id,
-                resp.text,
-            )
+            # Check if error is due to missing property
+            error_text = resp.text
+            if "Signature Match Score" in error_text and "not a property" in error_text:
+                logger.warning(
+                    "[INGEST][SIGNATURE-MATCH] Signature Match Score property not found on dataset %s. "
+                    "Property may not exist in database schema. Continuing without score update.",
+                    dataset_page_id,
+                )
+                # Retry without the Signature Match Score property
+                if "Signature Match Score" in properties:
+                    del properties["Signature Match Score"]
+                    payload_retry = {"properties": properties}
+                    retry_resp = requests.patch(
+                        url,
+                        headers=notion_headers(),
+                        json=payload_retry,
+                        timeout=30,
+                    )
+                    if retry_resp.status_code < 300:
+                        logger.info(
+                            "[INGEST][SIGNATURE-MATCH] Updated dataset %s with %d signature match(es) "
+                            "(without Signature Match Score property)",
+                            dataset_page_id,
+                            len(matches),
+                        )
+                    else:
+                        logger.warning(
+                            "[INGEST][SIGNATURE-MATCH] Failed to update dataset %s even without score: %s",
+                            dataset_page_id,
+                            retry_resp.text,
+                        )
+            else:
+                logger.warning(
+                    "[INGEST][SIGNATURE-MATCH] Failed to update dataset %s: %s",
+                    dataset_page_id,
+                    error_text,
+                )
         else:
             logger.info(
-                "[INGEST][SIGNATURE-MATCH] Updated dataset %s with %d signature match(es)",
+                "[INGEST][SIGNATURE-MATCH] Updated dataset %s with %d signature match(es) "
+                "(Signature Match Score = %.3f)",
                 dataset_page_id,
                 len(matches),
+                highest_score if matches else 0.0,
             )
 
     except Exception as e:

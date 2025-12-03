@@ -18,8 +18,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from amprenta_rag.ingestion.signature_embedding import embed_signature
 from amprenta_rag.ingestion.signature_linking import (
-    link_component_to_lipid_species, link_component_to_metabolite_feature,
-    link_signature_to_source)
+    link_component_to_feature, link_component_to_lipid_species,
+    link_component_to_metabolite_feature, link_signature_to_source)
 from amprenta_rag.ingestion.signature_notion_crud import (
     find_or_create_component_page, find_or_create_lipid_species_page,
     find_or_create_signature_page, generate_signature_short_id,
@@ -197,12 +197,37 @@ def ingest_signature_from_file(
             "warnings": warnings,
         }
 
-    # Create component pages and link to lipid species
+    # Create component pages and link to feature pages (multi-omics support)
     component_count = 0
-    species_created: Set[str] = set()
+    features_created: Set[tuple] = set()  # (feature_type, feature_name) tuples
+    
+    # Import normalization functions
+    from amprenta_rag.ingestion.transcriptomics_ingestion import normalize_gene_identifier
+    from amprenta_rag.ingestion.proteomics_ingestion import normalize_protein_identifier
+    from amprenta_rag.ingestion.metabolomics_ingestion import normalize_metabolite_name
+    from amprenta_rag.ingestion.lipidomics_ingestion import normalize_lipid_species
 
     for component in signature.components:
         try:
+            # Get feature type and name
+            feature_type = getattr(component, "feature_type", "lipid")  # Default to lipid for backward compat
+            feature_name_raw = getattr(component, "feature_name", component.species)
+            
+            # Normalize feature name based on type
+            feature_name_normalized = feature_name_raw
+            if feature_type == "gene":
+                feature_name_normalized = normalize_gene_identifier(feature_name_raw)
+            elif feature_type == "protein":
+                feature_name_normalized = normalize_protein_identifier(feature_name_raw)
+            elif feature_type == "metabolite":
+                feature_name_normalized = normalize_metabolite_name(feature_name_raw)
+            elif feature_type == "lipid":
+                normalized = normalize_lipid_species(feature_name_raw)
+                if normalized:
+                    feature_name_normalized = normalized
+                else:
+                    feature_name_normalized = feature_name_raw
+            
             # Create or find component page
             component_page_id = _find_or_create_component_page(
                 component=component,
@@ -212,47 +237,40 @@ def ingest_signature_from_file(
             )
 
             if not component_page_id:
-                warning = f"Failed to create component page for {component.species}"
+                warning = f"Failed to create component page for {feature_name_raw} ({feature_type})"
                 logger.warning(f"[INGEST][SIGNATURES] {warning}")
                 warnings.append(warning)
                 continue
 
             component_count += 1
 
-            # Create or find lipid species page
-            lipid_species_page_id = _find_or_create_lipid_species_page(
-                lipid_name=component.species,
-            )
-
-            if lipid_species_page_id:
-                # Link component to lipid species
-                link_component_to_lipid_species(
+            # Link component to appropriate feature page
+            try:
+                link_component_to_feature(
                     component_page_id=component_page_id,
-                    lipid_species_page_id=lipid_species_page_id,
+                    feature_type=feature_type,
+                    feature_name=feature_name_normalized,
                 )
-
-                # Link component to metabolite feature (cross-link)
-                try:
-                    link_component_to_metabolite_feature(
-                        component_page_id=component_page_id,
-                        lipid_species_page_id=lipid_species_page_id,
-                    )
-                except Exception as e:
-                    logger.warning(
-                        "[INGEST][SIGNATURES] Error linking component to metabolite feature: %r",
-                        e,
-                    )
-                    # Non-blocking - continue
-
-                if component.species not in species_created:
-                    species_created.add(component.species)
-            else:
-                warning = f"Failed to create/link lipid species for {component.species}"
+                
+                feature_key = (feature_type, feature_name_normalized)
+                if feature_key not in features_created:
+                    features_created.add(feature_key)
+                    
+                logger.debug(
+                    "[INGEST][SIGNATURES] Linked component %s to %s feature '%s'",
+                    component_page_id,
+                    feature_type,
+                    feature_name_normalized,
+                )
+            except Exception as e:
+                warning = f"Error linking component to {feature_type} feature '{feature_name_normalized}': {e}"
                 logger.warning(f"[INGEST][SIGNATURES] {warning}")
                 warnings.append(warning)
+                # Non-blocking - continue
 
         except Exception as e:
-            warning = f"Error processing component {component.species}: {e}"
+            feature_name = getattr(component, "feature_name", component.species)
+            warning = f"Error processing component {feature_name}: {e}"
             logger.warning(f"[INGEST][SIGNATURES] {warning}")
             warnings.append(warning)
 
@@ -270,17 +288,33 @@ def ingest_signature_from_file(
         )
         # Non-blocking - continue
 
+    # Update signature page with Modalities field if available
+    try:
+        if signature.modalities:
+            from amprenta_rag.ingestion.signature_notion_crud import update_signature_modalities
+            update_signature_modalities(signature_page_id, signature.modalities)
+    except Exception as e:
+        logger.warning(
+            "[INGEST][SIGNATURES] Error updating modalities for signature '%s': %r",
+            signature.name,
+            e,
+        )
+        # Non-blocking
+
     logger.info(
         "[INGEST][SIGNATURES] Ingestion complete for signature '%s': "
-        "%d components, %d species",
+        "%d components, %d features (modalities: %s)",
         signature.name,
         component_count,
-        len(species_created),
+        len(features_created),
+        ", ".join(signature.modalities) if signature.modalities else "none",
     )
 
     return {
         "signature_page_id": signature_page_id,
         "component_count": component_count,
-        "species_count": len(species_created),
+        "species_count": len(features_created),  # Renamed for backward compatibility
+        "feature_count": len(features_created),
+        "modalities": signature.modalities or [],
         "warnings": warnings,
     }

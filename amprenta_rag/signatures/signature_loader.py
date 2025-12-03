@@ -1,37 +1,46 @@
 """
-Signature loader for lipid signatures.
+Signature loader for multi-omics signatures.
 
 Loads signature definitions from TSV files or Notion with components including:
-- Species name
+- Feature name (gene, protein, metabolite, or lipid species)
+- Feature type (gene, protein, metabolite, lipid - auto-detected if not provided)
 - Direction (↑ / ↓ / neutral / complex)
 - Weight (float or None)
 """
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
+
+from amprenta_rag.signatures.feature_type_inference import infer_feature_type
 
 
 @dataclass
 class SignatureComponent:
     """
-    A single component of a lipid signature.
+    A single component of a multi-omics signature.
 
     Attributes:
-        species: Lipid species name
+        feature_name: Feature name (gene, protein, metabolite, or lipid species)
+        feature_type: Feature type (gene, protein, metabolite, lipid) - auto-inferred if None
         direction: Direction of change (↑, ↓, neutral, complex, or None)
         weight: Optional weight for this component (default: 1.0)
     """
 
-    species: str
+    feature_name: str
+    feature_type: Optional[str] = None
     direction: Optional[str] = None
     weight: Optional[float] = None
 
     def __post_init__(self):
-        """Normalize direction and set default weight."""
+        """Normalize direction, infer feature type, and set defaults."""
+        # Infer feature type if not provided
+        if not self.feature_type:
+            self.feature_type = infer_feature_type(self.feature_name)
+
+        # Normalize direction symbols
         if self.direction:
-            # Normalize direction symbols
             direction_lower = self.direction.lower().strip()
             if direction_lower in ["↑", "up", "increased", "increase", "+"]:
                 self.direction = "↑"
@@ -41,48 +50,76 @@ class SignatureComponent:
                 self.direction = "neutral"
             elif direction_lower in ["complex", "mixed"]:
                 self.direction = "complex"
-            else:
-                # Keep original if not recognized
-                pass
+            # Keep original if not recognized
 
         # Default weight to 1.0 if not provided
         if self.weight is None:
             self.weight = 1.0
 
+    @property
+    def species(self) -> str:
+        """
+        Backward compatibility: return feature_name as species.
+        
+        Allows existing code that uses .species to continue working.
+        """
+        return self.feature_name
+
 
 @dataclass
 class Signature:
     """
-    A complete lipid signature definition.
+    A complete multi-omics signature definition.
 
     Attributes:
         name: Signature name/identifier
-        components: List of signature components
+        components: List of signature components (can include genes, proteins, metabolites, lipids)
         description: Optional description
+        modalities: Set of feature types present in this signature (auto-computed)
     """
 
     name: str
     components: List[SignatureComponent]
     description: Optional[str] = None
+    modalities: Optional[List[str]] = None
+
+    def __post_init__(self):
+        """Auto-compute modalities from components if not provided."""
+        if self.modalities is None:
+            self.modalities = list(
+                set(
+                    comp.feature_type
+                    for comp in self.components
+                    if comp.feature_type
+                )
+            )
 
 
 def load_signature_from_tsv(tsv_path: Path) -> Signature:
     """
-    Load a signature from a TSV file.
+    Load a multi-omics signature from a TSV file.
 
-    Expected TSV format:
-        species	direction	weight
-        Cer(d18:1/16:0)	↑	1.0
-        Cer(d18:1/18:0)	↓	0.8
-        SM(d18:1/16:0)	↑	1.2
+    Expected TSV format (with feature_type column):
+        feature_type    feature_name        direction   weight
+        gene            TP53                up          1.0
+        protein         P04637              down        0.8
+        metabolite      Glutamate           up          1.0
+        lipid           Cer(d18:1/16:0)     up          1.0
+
+    OR (without feature_type - auto-detected):
+        feature_name        direction   weight
+        TP53                up          1.0
+        Cer(d18:1/16:0)     up          1.0
 
     Columns:
-        - species (required): Lipid species name
-        - direction (optional): ↑, ↓, neutral, complex, or empty
+        - feature_name (required): Feature identifier/name
+        - feature_type (optional): gene, protein, metabolite, lipid (auto-detected if missing)
+        - direction (optional): ↑, ↓, neutral, complex, up, down, or empty
         - weight (optional): Numeric weight (default: 1.0)
+        - Legacy: "species" column is also supported (treated as feature_name)
 
     Args:
-        tsv_path: Path to TSV file
+        tsv_path: Path to TSV/CSV file
 
     Returns:
         Signature object with loaded components
@@ -111,37 +148,69 @@ def load_signature_from_tsv(tsv_path: Path) -> Signature:
         # Normalize column names (case-insensitive)
         fieldnames_lower = {f.lower(): f for f in reader.fieldnames}
 
-        species_col = None
-        direction_col = None
-        weight_col = None
-
-        for key in ["species", "metabolite", "lipid", "name"]:
+        # Find feature name column (supports multiple names)
+        feature_name_col = None
+        for key in ["feature_name", "feature", "name", "species", "metabolite", "lipid", "gene", "protein"]:
             if key in fieldnames_lower:
-                species_col = fieldnames_lower[key]
+                feature_name_col = fieldnames_lower[key]
                 break
 
+        # Find feature type column
+        feature_type_col = None
+        for key in ["feature_type", "type", "featuretype"]:
+            if key in fieldnames_lower:
+                feature_type_col = fieldnames_lower[key]
+                break
+
+        # Find direction column
+        direction_col = None
         for key in ["direction", "dir", "change"]:
             if key in fieldnames_lower:
                 direction_col = fieldnames_lower[key]
                 break
 
+        # Find weight column
+        weight_col = None
         for key in ["weight", "w", "importance"]:
             if key in fieldnames_lower:
                 weight_col = fieldnames_lower[key]
                 break
 
-        if not species_col:
-            raise ValueError(f"TSV must have a 'species' column: {tsv_path}")
+        if not feature_name_col:
+            raise ValueError(
+                f"TSV must have a feature name column (feature_name, name, species, etc.): {tsv_path}"
+            )
 
         for row in reader:
-            species = row.get(species_col, "").strip()
-            if not species:
+            feature_name = row.get(feature_name_col, "").strip()
+            if not feature_name:
                 continue  # Skip empty rows
 
+            # Get feature type (if provided)
+            feature_type = None
+            if feature_type_col:
+                feature_type_raw = row.get(feature_type_col, "").strip()
+                if feature_type_raw:
+                    feature_type = feature_type_raw.lower()
+                    # Normalize feature type values
+                    if feature_type in ["gene", "g", "genes"]:
+                        feature_type = "gene"
+                    elif feature_type in ["protein", "p", "proteins", "prot"]:
+                        feature_type = "protein"
+                    elif feature_type in ["metabolite", "m", "metabolites", "met"]:
+                        feature_type = "metabolite"
+                    elif feature_type in ["lipid", "l", "lipids"]:
+                        feature_type = "lipid"
+                    else:
+                        # If not recognized, let inference handle it
+                        feature_type = None
+
+            # Get direction
             direction = row.get(direction_col, "").strip() if direction_col else None
             if not direction:
                 direction = None
 
+            # Get weight
             weight_str = row.get(weight_col, "").strip() if weight_col else None
             weight = None
             if weight_str:
@@ -152,7 +221,8 @@ def load_signature_from_tsv(tsv_path: Path) -> Signature:
 
             components.append(
                 SignatureComponent(
-                    species=species,
+                    feature_name=feature_name,
+                    feature_type=feature_type,  # Will be auto-inferred if None
                     direction=direction,
                     weight=weight,
                 )

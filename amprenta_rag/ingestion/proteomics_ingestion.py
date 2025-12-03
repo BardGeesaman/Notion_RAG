@@ -497,26 +497,33 @@ def ingest_proteomics_file(
             experiment_ids=experiment_ids,
         )
 
-    # Optional: Protein Features DB integration (Phase 2)
+    # Link proteins to Protein Features DB
     try:
-        from amprenta_rag.ingestion.feature_extraction import (
-            link_features_to_notion_items)
-        cfg = get_config()
-        if hasattr(cfg.notion, "protein_features_db_id") and cfg.notion.protein_features_db_id:
-            # Link proteins to Protein Features DB
-            protein_list = list(protein_set)
-            link_features_to_notion_items(
-                feature_names=protein_list,
-                item_page_id=page_id,
-                item_type="dataset",
-            )
-            logger.info(
-                "[INGEST][PROTEOMICS] Linked %d proteins to Protein Features DB",
-                len(protein_list),
-            )
+        from amprenta_rag.ingestion.feature_extraction import link_feature
+
+        logger.info(
+            "[INGEST][PROTEOMICS] Linking %d proteins to Protein Features DB",
+            len(protein_set),
+        )
+        linked_count = 0
+        for protein in protein_set:
+            try:
+                link_feature("protein", protein, page_id)
+                linked_count += 1
+            except Exception as e:
+                logger.warning(
+                    "[INGEST][PROTEOMICS] Error linking protein '%s': %r",
+                    protein,
+                    e,
+                )
+        logger.info(
+            "[INGEST][PROTEOMICS] Linked %d/%d proteins to Protein Features DB",
+            linked_count,
+            len(protein_set),
+        )
     except Exception as e:
         logger.warning(
-            "[INGEST][PROTEOMICS] Protein Features DB integration skipped (not configured or error): %r",
+            "[INGEST][PROTEOMICS] Feature linking skipped (error): %r",
             e,
         )
 

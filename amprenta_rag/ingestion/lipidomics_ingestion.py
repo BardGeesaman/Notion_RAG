@@ -523,6 +523,36 @@ def ingest_lipidomics_file(
             experiment_ids=experiment_ids,
         )
 
+    # Link lipid species to Lipid Species DB
+    try:
+        from amprenta_rag.ingestion.feature_extraction import link_feature
+
+        logger.info(
+            "[INGEST][LIPIDOMICS] Linking %d lipid species to Lipid Species DB",
+            len(species_set),
+        )
+        linked_count = 0
+        for lipid in species_set:
+            try:
+                link_feature("lipid", lipid, page_id)
+                linked_count += 1
+            except Exception as e:
+                logger.warning(
+                    "[INGEST][LIPIDOMICS] Error linking lipid species '%s': %r",
+                    lipid,
+                    e,
+                )
+        logger.info(
+            "[INGEST][LIPIDOMICS] Linked %d/%d lipid species to Lipid Species DB",
+            linked_count,
+            len(species_set),
+        )
+    except Exception as e:
+        logger.warning(
+            "[INGEST][LIPIDOMICS] Feature linking skipped (error): %r",
+            e,
+        )
+
     # Score against signatures
     cfg = get_config()
     signature_matches = []
@@ -534,8 +564,10 @@ def ingest_lipidomics_file(
         )
 
         matches = find_matching_signatures_for_dataset(
-            dataset_species=species_set,
+            dataset_species=species_set,  # Legacy support
             overlap_threshold=cfg.pipeline.signature_overlap_threshold,
+            dataset_page_id=page_id,  # Multi-omics support
+            omics_type="Lipidomics",
         )
 
         if matches:

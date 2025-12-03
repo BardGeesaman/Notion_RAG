@@ -39,19 +39,27 @@ def embed_signature(
     cfg = get_config()
 
     try:
-        # Build text representation of signature
+        # Build text representation of signature (multi-omics support)
+        signature_type = "Multi-Omics Signature" if (signature.modalities and len(signature.modalities) > 1) else "Signature"
         text_parts = [
-            f"Lipid Signature: {signature.name}",
+            f"{signature_type}: {signature.name}",
         ]
+
+        if signature.modalities:
+            modalities_str = ", ".join(mod.title() for mod in signature.modalities)
+            text_parts.append(f"Modalities: {modalities_str}")
 
         if signature.description:
             text_parts.append(f"Description: {signature.description}")
 
         text_parts.append("\nComponents:")
         for comp in signature.components:
-            comp_line = f"- {comp.species}"
+            feature_name = getattr(comp, "feature_name", comp.species)
+            feature_type = getattr(comp, "feature_type", "lipid")
+            
+            comp_line = f"- {feature_name} ({feature_type})"
             if comp.direction:
-                comp_line += f" ({comp.direction})"
+                comp_line += f" [{comp.direction}]"
             if comp.weight:
                 comp_line += f" [weight: {comp.weight}]"
             text_parts.append(comp_line)

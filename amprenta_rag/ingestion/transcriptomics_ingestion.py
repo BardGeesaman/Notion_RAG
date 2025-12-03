@@ -573,26 +573,33 @@ def ingest_transcriptomics_file(
             experiment_ids=experiment_ids,
         )
 
-    # Optional: Gene Features DB integration (Phase 2)
+    # Link genes to Gene Features DB
     try:
-        from amprenta_rag.ingestion.feature_extraction import (
-            link_features_to_notion_items)
-        cfg = get_config()
-        if hasattr(cfg.notion, "gene_features_db_id") and cfg.notion.gene_features_db_id:
-            # Link genes to Gene Features DB
-            gene_list = list(gene_set)
-            link_features_to_notion_items(
-                feature_names=gene_list,
-                item_page_id=page_id,
-                item_type="dataset",
-            )
-            logger.info(
-                "[INGEST][TRANSCRIPTOMICS] Linked %d genes to Gene Features DB",
-                len(gene_list),
-            )
+        from amprenta_rag.ingestion.feature_extraction import link_feature
+
+        logger.info(
+            "[INGEST][TRANSCRIPTOMICS] Linking %d genes to Gene Features DB",
+            len(gene_set),
+        )
+        linked_count = 0
+        for gene in gene_set:
+            try:
+                link_feature("gene", gene, page_id)
+                linked_count += 1
+            except Exception as e:
+                logger.warning(
+                    "[INGEST][TRANSCRIPTOMICS] Error linking gene '%s': %r",
+                    gene,
+                    e,
+                )
+        logger.info(
+            "[INGEST][TRANSCRIPTOMICS] Linked %d/%d genes to Gene Features DB",
+            linked_count,
+            len(gene_set),
+        )
     except Exception as e:
         logger.warning(
-            "[INGEST][TRANSCRIPTOMICS] Gene Features DB not configured; skipping feature linking: %r",
+            "[INGEST][TRANSCRIPTOMICS] Feature linking skipped (error): %r",
             e,
         )
 

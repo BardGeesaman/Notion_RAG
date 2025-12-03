@@ -17,12 +17,24 @@ from amprenta_rag.query.pinecone_query import (build_meta_filter, embed_query,
                                                query_pinecone)
 # Re-export dataclasses and main query function from rag_engine
 from amprenta_rag.query.rag_engine import (MatchSummary, RAGQueryResult,
-                                           query_rag)
+                                           query_rag, signature_similarity_query)
+# Re-export cross-omics reasoning functions
+from amprenta_rag.query.cross_omics_reasoning import (
+    cross_omics_dataset_summary,
+    cross_omics_feature_summary,
+    cross_omics_program_summary,
+    cross_omics_signature_summary,
+)
 
 __all__ = [
     "MatchSummary",
     "RAGQueryResult",
     "query_rag",
+    "signature_similarity_query",
+    "cross_omics_program_summary",
+    "cross_omics_signature_summary",
+    "cross_omics_feature_summary",
+    "cross_omics_dataset_summary",
     "build_meta_filter",
     "embed_query",
     "query_pinecone",

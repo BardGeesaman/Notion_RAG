@@ -21,6 +21,7 @@ __all__ = [
     "link_component_to_lipid_species",
     "link_signature_to_source",
     "link_component_to_metabolite_feature",
+    "link_component_to_feature",
 ]
 
 
@@ -221,4 +222,154 @@ def link_component_to_metabolite_feature(
             e,
         )
         # Don't raise - cross-linking is non-critical
+
+
+def link_component_to_feature(
+    component_page_id: str,
+    feature_type: str,
+    feature_name: str,
+) -> None:
+    """
+    Link a signature component to its feature page (gene, protein, metabolite, or lipid).
+
+    This is a unified function that handles all feature types by finding/creating
+    the appropriate feature page and linking it to the component.
+
+    Args:
+        component_page_id: Notion page ID of component (with dashes)
+        feature_type: One of "gene", "protein", "metabolite", "lipid"
+        feature_name: Normalized feature name
+    """
+    from amprenta_rag.ingestion.feature_extraction import _find_or_create_feature_page
+
+    try:
+        # Find or create feature page in the appropriate database
+        feature_page_id = _find_or_create_feature_page(feature_type, feature_name)
+        
+        if not feature_page_id:
+            logger.warning(
+                "[INGEST][SIGNATURES] Could not create/find %s feature page for '%s'",
+                feature_type,
+                feature_name,
+            )
+            return
+
+        # Map feature type to relation property name on component page
+        relation_map = {
+            "gene": "Gene Feature",
+            "protein": "Protein Feature",
+            "metabolite": "Metabolite Feature",
+            "lipid": "Lipid Species",
+        }
+
+        relation_property = relation_map.get(feature_type)
+        
+        # For backward compatibility, use "Lipid Species" for lipids
+        # but also support other property names
+        if not relation_property:
+            logger.debug(
+                "[INGEST][SIGNATURES] No relation property mapped for feature_type '%s', "
+                "trying generic approach",
+                feature_type,
+            )
+            # Try a generic approach - search for property names containing feature type
+            relation_property = f"{feature_type.title()} Feature"
+            if feature_type == "lipid":
+                relation_property = "Lipid Species"
+
+        # Fetch current component page
+        cfg = get_config()
+        url = f"{cfg.notion.base_url}/pages/{component_page_id}"
+        resp = requests.get(url, headers=notion_headers(), timeout=30)
+        resp.raise_for_status()
+
+        page = resp.json()
+        props = page.get("properties", {}) or {}
+        
+        # Try to find the relation property (it may have different names)
+        current_rel = []
+        relation_property_found = None
+        
+        # Try the mapped property name first
+        if relation_property in props:
+            current_rel = props.get(relation_property, {}).get("relation", []) or []
+            relation_property_found = relation_property
+        else:
+            # Try alternative property names
+            for prop_name in props.keys():
+                prop_lower = prop_name.lower()
+                feature_type_lower = feature_type.lower()
+                
+                # Check if property name contains feature type
+                if (feature_type_lower in prop_lower or 
+                    (feature_type == "lipid" and "lipid" in prop_lower and "species" in prop_lower) or
+                    (feature_type != "lipid" and "feature" in prop_lower)):
+                    # Check if it's a relation property
+                    prop_type = props[prop_name].get("type")
+                    if prop_type == "relation":
+                        current_rel = props[prop_name].get("relation", []) or []
+                        relation_property_found = prop_name
+                        logger.debug(
+                            "[INGEST][SIGNATURES] Found relation property '%s' for %s feature",
+                            prop_name,
+                            feature_type,
+                        )
+                        break
+
+        if not relation_property_found:
+            logger.debug(
+                "[INGEST][SIGNATURES] No relation property found for %s feature on component %s, "
+                "skipping link",
+                feature_type,
+                component_page_id,
+            )
+            return
+
+        existing_ids = {r.get("id", "") for r in current_rel if r.get("id")}
+
+        # Check if already linked
+        if feature_page_id in existing_ids:
+            logger.debug(
+                "[INGEST][SIGNATURES] Component %s already linked to %s feature %s",
+                component_page_id,
+                feature_type,
+                feature_name,
+            )
+            return  # Already linked
+
+        # Add feature page to relation
+        updated_rel = [{"id": feature_page_id}] + current_rel
+
+        # Update component page
+        url = f"{cfg.notion.base_url}/pages/{component_page_id}"
+        payload = {
+            "properties": {
+                relation_property_found: {"relation": updated_rel},
+            },
+        }
+
+        resp = requests.patch(
+            url,
+            headers=notion_headers(),
+            json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+
+        logger.info(
+            "[INGEST][SIGNATURES] Linked component %s to %s feature '%s' (page: %s)",
+            component_page_id,
+            feature_type,
+            feature_name,
+            feature_page_id,
+        )
+    except Exception as e:
+        logger.warning(
+            "[INGEST][SIGNATURES] Error linking component %s to %s feature '%s': %r",
+            component_page_id,
+            feature_type,
+            feature_name,
+            e,
+        )
+        # Don't raise - linking is non-critical
 

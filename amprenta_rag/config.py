@@ -69,6 +69,12 @@ NOTION_EXP_DATA_DB_ID = os.getenv(
 NOTION_METABOLITE_FEATURES_DB_ID = os.getenv(
     "NOTION_METABOLITE_FEATURES_DB_ID", ""
 )  # Metabolite Features
+NOTION_PROTEIN_FEATURES_DB_ID = os.getenv(
+    "NOTION_PROTEIN_FEATURES_DB_ID", ""
+)  # Protein Features
+NOTION_GENE_FEATURES_DB_ID = os.getenv(
+    "NOTION_GENE_FEATURES_DB_ID", ""
+)  # Gene Features
 NOTION_SIGNATURE_DB_ID = os.getenv("NOTION_SIGNATURE_DB_ID", "")  # Lipid Signatures
 NOTION_SIGNATURE_COMPONENT_DB_ID = os.getenv(
     "NOTION_SIGNATURE_COMPONENT_DB_ID", ""
@@ -76,6 +82,12 @@ NOTION_SIGNATURE_COMPONENT_DB_ID = os.getenv(
 NOTION_LIPID_SPECIES_DB_ID = os.getenv(
     "NOTION_LIPID_SPECIES_DB_ID", ""
 )  # Lipid Species
+NOTION_PROGRAMS_DB_ID = os.getenv(
+    "NOTION_PROGRAMS_DB_ID", ""
+)  # Programs
+NOTION_EXPERIMENTS_DB_ID = os.getenv(
+    "NOTION_EXPERIMENTS_DB_ID", ""
+)  # Experiments
 
 # Pipeline directories
 SIGNATURES_DIR = os.getenv("SIGNATURES_DIR", "")
@@ -147,9 +159,13 @@ class NotionConfig:
     parent_page_id: str = NOTION_PARENT_PAGE_ID
     exp_data_db_id: str = NOTION_EXP_DATA_DB_ID
     metabolite_features_db_id: str = NOTION_METABOLITE_FEATURES_DB_ID
+    protein_features_db_id: str = NOTION_PROTEIN_FEATURES_DB_ID
+    gene_features_db_id: str = NOTION_GENE_FEATURES_DB_ID
     signature_db_id: str = NOTION_SIGNATURE_DB_ID
     signature_component_db_id: str = NOTION_SIGNATURE_COMPONENT_DB_ID
     lipid_species_db_id: str = NOTION_LIPID_SPECIES_DB_ID
+    programs_db_id: str = NOTION_PROGRAMS_DB_ID
+    experiments_db_id: str = NOTION_EXPERIMENTS_DB_ID
 
 
 @dataclass(frozen=True)

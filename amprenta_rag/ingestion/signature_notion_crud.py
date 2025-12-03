@@ -301,11 +301,101 @@ def update_signature_page_if_needed(
                 page_id,
             )
     except Exception as e:
-        logger.warning(
+            logger.warning(
             "[INGEST][SIGNATURES] Error updating signature page %s: %r",
             page_id,
             e,
         )
+
+
+def update_signature_modalities(
+    page_id: str,
+    modalities: List[str],
+) -> None:
+    """
+    Update the Modalities field on a signature page.
+
+    Args:
+        page_id: Notion page ID of signature (with dashes)
+        modalities: List of modality strings (e.g., ["Gene", "Protein", "Metabolite", "Lipid"])
+    """
+    cfg = get_config()
+
+    # Map lowercase modality names to Notion select values
+    modality_map = {
+        "gene": "Gene",
+        "protein": "Protein",
+        "metabolite": "Metabolite",
+        "lipid": "Lipid",
+    }
+
+    # Normalize modalities to Notion select values
+    normalized_modalities = []
+    for mod in modalities:
+        mod_lower = mod.lower().strip()
+        normalized = modality_map.get(mod_lower, mod.title())  # Default to title case
+        normalized_modalities.append(normalized)
+
+    try:
+        # Fetch current page
+        url = f"{cfg.notion.base_url}/pages/{page_id}"
+        resp = requests.get(url, headers=notion_headers(), timeout=30)
+        resp.raise_for_status()
+
+        page = resp.json()
+        props = page.get("properties", {}) or {}
+        
+        # Check if Modalities property exists
+        if "Modalities" not in props:
+            logger.debug(
+                "[INGEST][SIGNATURES] Modalities property not found on signature page %s, "
+                "skipping update",
+                page_id,
+            )
+            return
+
+        # Update Modalities field (merge with existing if any)
+        existing_modalities = []
+        modalities_prop = props.get("Modalities", {})
+        if modalities_prop.get("type") == "multi_select":
+            existing_modalities = [
+                item.get("name", "") 
+                for item in modalities_prop.get("multi_select", [])
+            ]
+
+        # Merge existing and new modalities
+        all_modalities = list(set(existing_modalities + normalized_modalities))
+
+        # Update page
+        url = f"{cfg.notion.base_url}/pages/{page_id}"
+        payload = {
+            "properties": {
+                "Modalities": {
+                    "multi_select": [{"name": mod} for mod in all_modalities],
+                },
+            },
+        }
+
+        resp = requests.patch(
+            url,
+            headers=notion_headers(),
+            json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+
+        logger.debug(
+            "[INGEST][SIGNATURES] Updated Modalities for signature page %s: %s",
+            page_id,
+            ", ".join(all_modalities),
+        )
+    except Exception as e:
+        logger.warning(
+            "[INGEST][SIGNATURES] Error updating Modalities for signature page %s: %r",
+            page_id,
+            e,
+        )
+        # Non-blocking - modalities update is optional
 
 
 def find_or_create_component_page(
@@ -315,10 +405,12 @@ def find_or_create_component_page(
     matrix: Optional[List[str]] = None,
 ) -> Optional[str]:
     """
-    Find or create a Lipid Signature Component page in Notion.
+    Find or create a multi-omics Signature Component page in Notion.
+
+    Supports components for genes, proteins, metabolites, and lipids.
 
     Args:
-        component: SignatureComponent object
+        component: SignatureComponent object (with feature_name and feature_type)
         signature_page_id: Notion page ID of parent signature (with dashes)
         disease_context: Optional list of disease context strings
         matrix: Optional list of matrix strings
@@ -334,12 +426,16 @@ def find_or_create_component_page(
         or not cfg.notion.signature_component_db_id
     ):
         logger.warning(
-            "[INGEST][SIGNATURES] Lipid Signature Components database ID not configured. "
+            "[INGEST][SIGNATURES] Signature Components database ID not configured. "
             "Set NOTION_SIGNATURE_COMPONENT_DB_ID in config."
         )
         return None
 
     db_id = cfg.notion.signature_component_db_id
+
+    # Get feature name (use feature_name, fallback to species for backward compatibility)
+    feature_name = getattr(component, "feature_name", component.species)
+    feature_type = getattr(component, "feature_type", "lipid")  # Default to lipid for backward compat
 
     # Map direction to Notion select values
     direction_map = {
@@ -351,6 +447,15 @@ def find_or_create_component_page(
     }
     direction_value = direction_map.get(component.direction, "Unknown")
 
+    # Map feature_type to Notion select values
+    feature_type_map = {
+        "gene": "Gene",
+        "protein": "Protein",
+        "metabolite": "Metabolite",
+        "lipid": "Lipid",
+    }
+    feature_type_value = feature_type_map.get(feature_type, "Lipid")  # Default to Lipid
+
     # Try to find existing component by Component Name and Signature relation
     try:
         url = f"{cfg.notion.base_url}/databases/{db_id}/query"
@@ -359,7 +464,7 @@ def find_or_create_component_page(
                 "and": [
                     {
                         "property": "Component Name",
-                        "title": {"equals": component.species},
+                        "title": {"equals": feature_name},
                     },
                     {
                         "property": "Signature",
@@ -382,15 +487,16 @@ def find_or_create_component_page(
         if results:
             page_id = results[0].get("id", "")
             logger.debug(
-                "[INGEST][SIGNATURES] Found existing component page for %s: %s",
-                component.species,
+                "[INGEST][SIGNATURES] Found existing component page for %s (%s): %s",
+                feature_name,
+                feature_type,
                 page_id,
             )
             return page_id
     except Exception as e:
         logger.warning(
             "[INGEST][SIGNATURES] Error querying for existing component %s: %r",
-            component.species,
+            feature_name,
             e,
         )
 
@@ -400,10 +506,10 @@ def find_or_create_component_page(
 
         properties: Dict[str, Any] = {
             "Component Name": {
-                "title": [{"text": {"content": component.species}}],
+                "title": [{"text": {"content": feature_name}}],
             },
             "Raw Name": {
-                "rich_text": [{"text": {"content": component.species}}],
+                "rich_text": [{"text": {"content": feature_name}}],
             },
             "Direction": {
                 "select": {"name": direction_value},
@@ -412,6 +518,18 @@ def find_or_create_component_page(
                 "relation": [{"id": signature_page_id}],
             },
         }
+
+        # Add Feature Type if property exists (gracefully skip if not)
+        try:
+            properties["Feature Type"] = {
+                "select": {"name": feature_type_value},
+            }
+        except Exception:
+            # Feature Type property may not exist yet - log and continue
+            logger.debug(
+                "[INGEST][SIGNATURES] Feature Type property not available for component %s",
+                feature_name,
+            )
 
         if component.weight is not None:
             properties["Weight"] = {
@@ -444,17 +562,54 @@ def find_or_create_component_page(
         new_page = resp.json()
         page_id = new_page.get("id", "")
         logger.info(
-            "[INGEST][SIGNATURES] Created new component page for %s: %s",
-            component.species,
+            "[INGEST][SIGNATURES] Created new component page for %s (%s): %s",
+            feature_name,
+            feature_type,
             page_id,
         )
         return page_id
     except Exception as e:
         logger.error(
             "[INGEST][SIGNATURES] Error creating component page for %s: %r",
-            component.species,
+            feature_name,
             e,
         )
+        # If Feature Type property caused the error, retry without it
+        if "Feature Type" in str(e) or "feature type" in str(e).lower():
+            logger.debug(
+                "[INGEST][SIGNATURES] Retrying component creation without Feature Type property"
+            )
+            try:
+                # Remove Feature Type from properties
+                if "Feature Type" in properties:
+                    del properties["Feature Type"]
+                
+                payload = {
+                    "parent": {"database_id": db_id},
+                    "properties": properties,
+                }
+
+                resp = requests.post(
+                    url,
+                    headers=notion_headers(),
+                    json=payload,
+                    timeout=30,
+                )
+                resp.raise_for_status()
+
+                new_page = resp.json()
+                page_id = new_page.get("id", "")
+                logger.info(
+                    "[INGEST][SIGNATURES] Created component page (without Feature Type) for %s: %s",
+                    feature_name,
+                    page_id,
+                )
+                return page_id
+            except Exception as e2:
+                logger.error(
+                    "[INGEST][SIGNATURES] Error creating component page (retry): %r",
+                    e2,
+                )
         return None
 
 
