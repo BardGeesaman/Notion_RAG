@@ -20,13 +20,105 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from scripts.harvest_mw_studies import fetch_mw_mwtab
 
 
+def parse_json_mwtab(mwtab_text: str):
+    """
+    Parse JSON-formatted mwTab to extract metabolite data.
+    
+    Handles mwTab JSON structure with MS_METABOLITE_DATA section.
+    
+    Args:
+        mwtab_text: Raw mwTab text content (JSON format)
+        
+    Returns:
+        List of lists representing rows (first row is header), or empty list
+    """
+    rows = []
+    
+    # Try to parse JSON (may have multiple JSON objects or extra content)
+    text = mwtab_text.strip()
+    first_brace = text.find('{')
+    
+    if first_brace == -1:
+        return rows
+    
+    # Try to parse first complete JSON object
+    for end_pos in range(len(text), first_brace, -1):
+        try:
+            json_str = text[first_brace:end_pos]
+            data = json.loads(json_str)
+            
+            # Look for metabolite data sections
+            metabolite_sections = [
+                'MS_METABOLITE_DATA',
+                'GC_METABOLITE_DATA',
+                'LC_METABOLITE_DATA',
+                'METABOLITE_DATA',
+            ]
+            
+            for section_key in metabolite_sections:
+                if section_key not in data:
+                    continue
+                
+                section = data[section_key]
+                if not isinstance(section, dict):
+                    continue
+                
+                # Extract data array
+                data_array = section.get('Data', [])
+                if not isinstance(data_array, list) or len(data_array) == 0:
+                    continue
+                
+                # First row is a dict - extract keys (Metabolite + sample IDs)
+                if isinstance(data_array[0], dict):
+                    # Get all unique keys across all rows (for header)
+                    all_keys = set()
+                    for row_dict in data_array:
+                        if isinstance(row_dict, dict):
+                            all_keys.update(row_dict.keys())
+                    
+                    # Use 'Metabolite' as first column, then sample IDs
+                    header = ['Metabolite']
+                    sample_keys = sorted([k for k in all_keys if k != 'Metabolite'])
+                    header.extend(sample_keys)
+                    rows.append(header)
+                    
+                    # Convert each dict to a row
+                    for row_dict in data_array:
+                        if not isinstance(row_dict, dict):
+                            continue
+                        row = [
+                            str(row_dict.get('Metabolite', '')),
+                            *[str(row_dict.get(key, '')) for key in sample_keys]
+                        ]
+                        rows.append(row)
+                    
+                    if rows:
+                        return rows
+                
+                # Alternative format: Data might be list of lists
+                elif isinstance(data_array[0], list):
+                    # First list is header
+                    if len(data_array) > 0:
+                        rows.append(data_array[0])  # header
+                        rows.extend(data_array[1:])  # data rows
+                        return rows
+            
+            # If we found valid JSON but no metabolite data, break
+            break
+            
+        except (json.JSONDecodeError, ValueError, KeyError):
+            continue
+    
+    return rows
+
+
 def parse_mwtab_to_rows(mwtab_text: str):
     """
     Parse mwTab content to extract tabular data.
     
     Handles multiple formats:
     1. Tab-separated text (legacy format) - lines with tabs
-    2. JSON format (newer format) - tries to extract metabolite data
+    2. JSON format (newer format) - extracts metabolite data from JSON structure
     
     Args:
         mwtab_text: Raw mwTab text content
@@ -60,26 +152,10 @@ def parse_mwtab_to_rows(mwtab_text: str):
     if rows:
         return rows
     
-    # Otherwise, try to handle JSON-like format
-    # Look for sections that might contain tabular data
-    # Sometimes mwTab has mixed JSON and text sections
-    lines = mwtab_text.splitlines()
-    for i, line in enumerate(lines):
-        # Look for section markers that might precede tabular data
-        if any(marker in line.upper() for marker in ["METABOLITE", "DATA_START", "SAMPLE"]):
-            # Check subsequent lines for tab-separated data
-            for j in range(i + 1, min(i + 100, len(lines))):  # Check next 100 lines
-                check_line = lines[j].strip()
-                if not check_line or check_line.startswith("#"):
-                    continue
-                if "\t" in check_line:
-                    parts = check_line.split("\t")
-                    if not rows:
-                        rows.append(parts)  # header
-                    else:
-                        rows.append(parts)
-            if rows:
-                return rows
+    # Otherwise, try to parse as JSON format
+    rows = parse_json_mwtab(mwtab_text)
+    if rows:
+        return rows
     
     # If still no data, return empty (will be handled by caller)
     return rows

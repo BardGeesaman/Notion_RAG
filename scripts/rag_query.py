@@ -54,12 +54,12 @@ def main() -> None:
         "--source-type",
         dest="source_types",
         nargs="*",
-        choices=["Literature", "Email", "Experiment", "Dataset"],
+        choices=["Literature", "Email", "Experiment", "Dataset", "Signature"],
         default=["Literature"],
         help=(
             "Optional source type filter(s). "
             "You can pass multiple values, e.g. "
-            "--source-type Literature Experiment Dataset. "
+            "--source-type Literature Experiment Dataset Signature. "
             "Defaults to ['Literature']."
         ),
     )

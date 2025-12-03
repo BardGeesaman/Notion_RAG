@@ -16,6 +16,7 @@ The pipeline is idempotent - unchanged attachments/notes are skipped.
 from __future__ import annotations
 
 from typing import Dict, Any, List
+from pathlib import Path
 
 import hashlib
 import textwrap
@@ -47,6 +48,11 @@ from amprenta_rag.ingestion.pinecone_utils import (
     attachment_already_ingested,
     note_already_ingested,
 )
+from amprenta_rag.ingestion.feature_extraction import (
+    extract_features_from_text,
+    link_features_to_notion_items,
+)
+from amprenta_rag.ingestion.signature_integration import detect_and_ingest_signatures_from_content
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -190,6 +196,9 @@ def ingest_zotero_item(
 
     now = datetime.now(timezone.utc).isoformat()
     any_ingested = False
+    
+    # Collect all text content for feature extraction
+    all_text_parts: List[str] = []
 
     # ---------------- Attachments ---------------- #
     for att in attachments:
@@ -252,6 +261,9 @@ def ingest_zotero_item(
             header += f"DOI: {item.doi}\n"
         header += f"[Attachment: {filename}]\n\n"
         full_text = header + text
+        
+        # Collect text for feature extraction
+        all_text_parts.append(text)
 
         chunks = _chunk_text(full_text)
         chunks = [c for c in chunks if not is_boilerplate(c)]
@@ -355,6 +367,9 @@ def ingest_zotero_item(
 
         note_hash = hashlib.md5(text.encode("utf-8", errors="ignore")).hexdigest()
         logger.info("[INGEST][ZOTERO] Processing note %s (hash=%s)", note_key, note_hash)
+        
+        # Collect text for feature extraction
+        all_text_parts.append(text)
 
         if not force and note_already_ingested(
             item_key=item_key,
@@ -468,6 +483,69 @@ def ingest_zotero_item(
                 e,
             )
             raise
+        
+        # Extract and link metabolite features from all ingested content
+        try:
+            if all_text_parts:
+                combined_text = "\n\n".join(all_text_parts)
+                feature_names = extract_features_from_text(combined_text)
+                if feature_names:
+                    logger.info(
+                        "[INGEST][LITERATURE] Extracted %d metabolite feature(s) from item %s",
+                        len(feature_names),
+                        item_key,
+                    )
+                    link_features_to_notion_items(
+                        feature_names=feature_names,
+                        item_page_id=parent_page_id,
+                        item_type="literature",
+                    )
+                else:
+                    logger.debug(
+                        "[INGEST][LITERATURE] No metabolite features found in item %s",
+                        item_key,
+                    )
+        except Exception as e:
+            # Log but don't raise - feature extraction is non-critical
+            logger.warning(
+                "[INGEST][LITERATURE] Error extracting/linking features for item %s: %r",
+                item_key,
+                e,
+            )
+        
+        # Detect and ingest signatures from literature content
+        try:
+            if all_text_parts:
+                combined_text = "\n\n".join(all_text_parts)
+                
+                # Get source metadata for signature inference
+                base_meta = get_literature_semantic_metadata(parent_page_id, item)
+                source_metadata = {
+                    "diseases": base_meta.get("diseases", []),
+                    "matrix": base_meta.get("matrix", []),
+                    "model_systems": base_meta.get("model_systems", []),
+                }
+                
+                # No attached files for literature (text extracted, files not stored locally)
+                from pathlib import Path
+                attachment_paths: List[Path] = []
+                
+                detect_and_ingest_signatures_from_content(
+                    all_text_content=combined_text,
+                    attachment_paths=attachment_paths,
+                    source_page_id=parent_page_id,
+                    source_type="literature",
+                    source_metadata=source_metadata,
+                    source_name=item.title or f"Zotero Item {item_key}",
+                )
+        except Exception as e:
+            logger.warning(
+                "[INGEST][LITERATURE] Error detecting/ingesting signatures for item %s: %r",
+                item_key,
+                e,
+            )
+            # Non-blocking - continue
+        
         logger.info("[INGEST][ZOTERO] Ingestion complete for item %s", item_key)
     else:
         logger.info(

@@ -23,6 +23,7 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
+from pathlib import Path
 
 import requests
 
@@ -39,6 +40,11 @@ from amprenta_rag.ingestion.notion_pages import (
     update_email_page,
 )
 from amprenta_rag.ingestion.metadata_semantic import get_email_semantic_metadata
+from amprenta_rag.ingestion.feature_extraction import (
+    extract_features_from_text,
+    link_features_to_notion_items,
+)
+from amprenta_rag.ingestion.signature_integration import detect_and_ingest_signatures_from_content
 
 logger = get_logger(__name__)
 
@@ -528,6 +534,63 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
             e,
         )
         raise
+    
+    # Extract and link metabolite features from email content
+    try:
+        # Use full_text (includes header) for feature extraction
+        feature_names = extract_features_from_text(full_text)
+        if feature_names:
+            logger.info(
+                "[INGEST][EMAIL] Extracted %d metabolite feature(s) from email %s",
+                len(feature_names),
+                page_id,
+            )
+            # Use page ID with dashes for Notion API
+            page_id_with_dashes = email_page["id"]
+            link_features_to_notion_items(
+                feature_names=feature_names,
+                item_page_id=page_id_with_dashes,
+                item_type="email",
+            )
+        else:
+            logger.debug("[INGEST][EMAIL] No metabolite features found in email %s", page_id)
+    except Exception as e:
+        # Log but don't raise - feature extraction is non-critical
+        logger.warning(
+            "[INGEST][EMAIL] Feature extraction error for email %s: %r",
+            page_id,
+            e,
+        )
+    
+    # Detect and ingest signatures from email content
+    try:
+        # Get source metadata for signature inference
+        source_metadata = {
+            "diseases": doc_meta.get("diseases", []),
+            "matrix": doc_meta.get("matrix", []),
+            "model_systems": doc_meta.get("model_systems", []),
+        }
+        
+        # No attached files for emails typically
+        from pathlib import Path
+        attachment_paths: List[Path] = []
+        
+        page_id_with_dashes = email_page["id"]
+        detect_and_ingest_signatures_from_content(
+            all_text_content=full_text,
+            attachment_paths=attachment_paths,
+            source_page_id=page_id_with_dashes,
+            source_type="email",
+            source_metadata=source_metadata,
+            source_name=title or f"Email {page_id[:8]}",
+        )
+    except Exception as e:
+        logger.warning(
+            "[INGEST][EMAIL] Error detecting/ingesting signatures for email %s: %r",
+            page_id,
+            e,
+        )
+        # Non-blocking - continue
 
     logger.info("[INGEST][EMAIL] Email ingestion complete for email %s", page_id)
 

@@ -1,0 +1,10 @@
+Lipid Signature Panel Results
+
+We identified the following ceramide signature components:
+
+Cer(d18:1/16:0) ↑ 1.0
+Cer(d18:1/22:0) ↑ 0.8
+SM(d18:1/24:1) ↓ 0.5
+
+These lipid species form a core biomarker panel for disease detection.
+

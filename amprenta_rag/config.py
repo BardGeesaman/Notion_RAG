@@ -64,6 +64,18 @@ if not ZOTERO_API_KEY:
 NOTION_EMAIL_DB_ID = "2b7adf6142ab80878ccce09b0067db60"  # Email & Notes Inbox
 NOTION_RAG_DB_ID = "2bbadf6142ab8076a5fbed30f2cfcbfb"  # RAG Engine
 NOTION_EXP_DATA_DB_ID = os.getenv("NOTION_EXP_DATA_DB_ID", "")  # Experimental Data Assets
+NOTION_METABOLITE_FEATURES_DB_ID = os.getenv("NOTION_METABOLITE_FEATURES_DB_ID", "")  # Metabolite Features
+NOTION_SIGNATURE_DB_ID = os.getenv("NOTION_SIGNATURE_DB_ID", "")  # Lipid Signatures
+NOTION_SIGNATURE_COMPONENT_DB_ID = os.getenv("NOTION_SIGNATURE_COMPONENT_DB_ID", "")  # Lipid Signature Components
+NOTION_LIPID_SPECIES_DB_ID = os.getenv("NOTION_LIPID_SPECIES_DB_ID", "")  # Lipid Species
+
+# Pipeline directories
+SIGNATURES_DIR = os.getenv("SIGNATURES_DIR", "")
+
+# Signature scoring configuration
+SIGNATURE_OVERLAP_THRESHOLD = float(os.getenv("SIGNATURE_OVERLAP_THRESHOLD", "0.3"))
+ENABLE_SIGNATURE_SCORING = os.getenv("ENABLE_SIGNATURE_SCORING", "true").lower() == "true"
+ENABLE_LIPID_MAPPING = os.getenv("ENABLE_LIPID_MAPPING", "true").lower() == "true"
 
 
 
@@ -125,6 +137,10 @@ class NotionConfig:
     rag_db_id: str = NOTION_RAG_DB_ID
     parent_page_id: str = NOTION_PARENT_PAGE_ID
     exp_data_db_id: str = NOTION_EXP_DATA_DB_ID
+    metabolite_features_db_id: str = NOTION_METABOLITE_FEATURES_DB_ID
+    signature_db_id: str = NOTION_SIGNATURE_DB_ID
+    signature_component_db_id: str = NOTION_SIGNATURE_COMPONENT_DB_ID
+    lipid_species_db_id: str = NOTION_LIPID_SPECIES_DB_ID
 
 
 @dataclass(frozen=True)
@@ -135,11 +151,20 @@ class ZoteroConfig:
 
 
 @dataclass(frozen=True)
+class PipelineConfig:
+    signatures_dir: str = SIGNATURES_DIR
+    signature_overlap_threshold: float = SIGNATURE_OVERLAP_THRESHOLD
+    enable_signature_scoring: bool = ENABLE_SIGNATURE_SCORING
+    enable_lipid_mapping: bool = ENABLE_LIPID_MAPPING
+
+
+@dataclass(frozen=True)
 class AppConfig:
     openai: OpenAIConfig
     pinecone: PineconeConfig
     notion: NotionConfig
     zotero: ZoteroConfig
+    pipeline: PipelineConfig
 
 
 # ---------------------------------------------------------
@@ -156,5 +181,6 @@ def get_config() -> AppConfig:
             pinecone=PineconeConfig(),
             notion=NotionConfig(),
             zotero=ZoteroConfig(),
+            pipeline=PipelineConfig(),
         )
     return _config_singleton

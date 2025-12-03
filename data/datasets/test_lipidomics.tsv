@@ -1,0 +1,8 @@
+species	intensity	condition
+Cer(d18:1/16:0)	12345	disease
+Cer(d18:1/18:0)	18234	disease
+Cer(d18:1/24:0)	9812	disease
+Cer(d18:1/24:1)	15234	disease
+SM(d18:1/16:0)	23145	disease
+SM(d18:1/18:0)	11234	disease
+
