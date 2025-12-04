@@ -1,7 +1,7 @@
 """
 Semantic metadata extraction from Notion pages.
 
-This module extracts structured metadata from Notion pages for different
+This package extracts structured metadata from Notion pages for different
 source types (Literature, Email, Experiments, Datasets), including:
 - Disease classifications
 - Matrix types
@@ -10,18 +10,21 @@ source types (Literature, Email, Experiments, Datasets), including:
 - Phenotype axes
 - Other semantic annotations
 
-**Note**: This module has been refactored. All functions are now in the
-`amprenta_rag.ingestion.metadata` package. This file maintains backward
-compatibility by re-exporting all public functions.
+Maintains backward compatibility by re-exporting all public functions.
 """
 
 from __future__ import annotations
 
-# Re-export all public functions from the new modular structure
-from amprenta_rag.ingestion.metadata import (
+from amprenta_rag.ingestion.metadata.dataset_extraction import (
     get_dataset_semantic_metadata,
+)
+from amprenta_rag.ingestion.metadata.email_extraction import (
     get_email_semantic_metadata,
+)
+from amprenta_rag.ingestion.metadata.experiment_extraction import (
     get_experiment_semantic_metadata,
+)
+from amprenta_rag.ingestion.metadata.literature_extraction import (
     get_literature_semantic_metadata,
 )
 
@@ -31,3 +34,4 @@ __all__ = [
     "get_experiment_semantic_metadata",
     "get_dataset_semantic_metadata",
 ]
+

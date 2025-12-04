@@ -27,15 +27,20 @@ logger = get_logger(__name__)
 def extract_dataset_features_by_type(
     dataset_page_id: str,
     omics_type: Optional[str] = None,
+    use_cache: bool = True,
+    force_refresh: bool = False,
 ) -> Dict[str, Set[str]]:
     """
     Extract features from a dataset grouped by feature type.
 
     Queries feature databases for features that are linked to this dataset.
+    Uses caching to avoid repeated Notion API calls.
 
     Args:
         dataset_page_id: Notion page ID of dataset (with dashes)
         omics_type: Optional omics type hint (Lipidomics, Metabolomics, Proteomics, Transcriptomics)
+        use_cache: Whether to use feature cache (default: True)
+        force_refresh: Force refresh even if cached (default: False)
 
     Returns:
         Dictionary mapping feature_type → set of feature names:
@@ -48,6 +53,19 @@ def extract_dataset_features_by_type(
     """
     from amprenta_rag.clients.notion_client import notion_headers
     from amprenta_rag.config import get_config
+
+    # Check cache first
+    if use_cache and not force_refresh:
+        from amprenta_rag.ingestion.dataset_feature_cache import get_feature_cache
+
+        cache = get_feature_cache()
+        cached_features = cache.get_features(dataset_page_id)
+        if cached_features:
+            logger.debug(
+                "[INGEST][MULTI-OMICS-SCORE] Using cached features for dataset %s",
+                dataset_page_id,
+            )
+            return cached_features
 
     cfg = get_config()
     features_by_type: Dict[str, Set[str]] = {
@@ -231,6 +249,17 @@ def extract_dataset_features_by_type(
         len(features_by_type["metabolite"]),
         len(features_by_type["lipid"]),
     )
+
+    # Cache the extracted features
+    if use_cache:
+        from amprenta_rag.ingestion.dataset_feature_cache import get_feature_cache
+
+        cache = get_feature_cache()
+        cache.set_features(
+            dataset_page_id=dataset_page_id,
+            features_by_type=features_by_type,
+            omics_type=omics_type,
+        )
 
     return features_by_type
 

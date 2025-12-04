@@ -1,29 +1,30 @@
 """
-Metabolite/Feature extraction and linking for ingestion pipelines.
+Feature extraction and linking for ingestion pipelines.
 
-This module provides functions to:
-- Normalize metabolite names
-- Extract metabolite features from mwTab data and text
+This package provides functions to:
+- Normalize feature names (metabolites, etc.)
+- Extract features from mwTab data and text
 - Link features to Notion items (datasets, literature, experiments, emails)
 
-**Note**: This module has been refactored. All functions are now in the
-`amprenta_rag.ingestion.features` package. This file maintains backward
-compatibility by re-exporting all public functions and constants.
+Maintains backward compatibility by re-exporting all public functions.
 """
 
 from __future__ import annotations
 
-# Re-export all public functions and constants from the new modular structure
-from amprenta_rag.ingestion.features import (
+from amprenta_rag.ingestion.features.constants import (
     AMINO_ACIDS,
     METABOLITE_SYNONYMS,
     NUCLEOTIDES,
+)
+from amprenta_rag.ingestion.features.extraction import (
     extract_features_from_mwtab,
     extract_features_from_text,
+)
+from amprenta_rag.ingestion.features.linking import (
     link_feature,
     link_features_to_notion_items,
-    normalize_metabolite_name,
 )
+from amprenta_rag.ingestion.features.normalization import normalize_metabolite_name
 
 __all__ = [
     # Constants
@@ -39,3 +40,4 @@ __all__ = [
     "link_feature",
     "link_features_to_notion_items",
 ]
+

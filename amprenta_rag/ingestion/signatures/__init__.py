@@ -1,29 +1,28 @@
 """
-Notion CRUD operations for lipid signatures, components, and species.
+Notion CRUD operations for signatures, components, and species.
 
-This module handles all Notion database operations for:
+This package handles all Notion database operations for:
 - Lipid Signatures database
 - Lipid Signature Components database
 - Lipid Species database
 
 All functions are idempotent - they find existing pages or create new ones.
 
-**Note**: This module has been refactored. All functions are now in the
-`amprenta_rag.ingestion.signatures` package. This file maintains backward
-compatibility by re-exporting all public functions.
+Maintains backward compatibility by re-exporting all public functions.
 """
 
 from __future__ import annotations
 
-# Re-export all public functions from the new modular structure
-from amprenta_rag.ingestion.signatures import (
-    find_or_create_component_page,
-    find_or_create_lipid_species_page,
+from amprenta_rag.ingestion.signatures.component_crud import find_or_create_component_page
+from amprenta_rag.ingestion.signatures.short_id import generate_signature_short_id
+from amprenta_rag.ingestion.signatures.signature_crud import (
     find_or_create_signature_page,
-    generate_signature_short_id,
-    update_lipid_species_synonyms,
     update_signature_modalities,
     update_signature_page_if_needed,
+)
+from amprenta_rag.ingestion.signatures.species_crud import (
+    find_or_create_lipid_species_page,
+    update_lipid_species_synonyms,
 )
 
 __all__ = [
@@ -35,3 +34,4 @@ __all__ = [
     "find_or_create_lipid_species_page",
     "update_lipid_species_synonyms",
 ]
+

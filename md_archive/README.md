@@ -62,7 +62,7 @@ Files are named descriptively. Use your editor's search functionality to find sp
 
 ## 📅 Archive Date
 
-Files archived: December 2024
+Files archived: December 2025
 
 These files are kept for historical reference but are not actively maintained.
 
