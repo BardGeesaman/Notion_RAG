@@ -1,9 +1,24 @@
 """
 Dataset feature cache for performance optimization.
 
-Caches extracted dataset features to avoid repeated Notion API calls during
-signature scoring operations. Provides 10-100x performance improvement for
-batch scoring.
+This module provides a TTL-based caching system for dataset features extracted from Notion.
+The cache significantly improves performance for batch signature scoring operations by
+reducing redundant API calls.
+
+Key Classes:
+    - DatasetFeatureCache: Main cache class with TTL-based expiration
+
+Key Functions:
+    - get_feature_cache: Returns singleton cache instance
+    - clear_feature_cache: Clears cache entries
+
+Example:
+    >>> from amprenta_rag.ingestion.dataset_feature_cache import get_feature_cache
+    >>> cache = get_feature_cache(ttl_seconds=3600)
+    >>> features = cache.get_features("dataset-page-id-123")
+    >>> if features is None:
+    ...     features = extract_dataset_features_by_type("dataset-page-id-123")
+    ...     cache.set_features("dataset-page-id-123", features)
 """
 
 from __future__ import annotations

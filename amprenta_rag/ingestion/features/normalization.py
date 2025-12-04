@@ -1,8 +1,20 @@
 """
 Feature name normalization functions.
 
-Handles normalization of metabolite names and other features from
-various formats (mwTab, CSV, vendor formats) into canonical forms.
+This module provides functions for normalizing feature names (metabolites, proteins, genes, lipids)
+from various formats (mwTab, CSV, vendor formats) into canonical forms suitable for
+knowledge graph linking and signature matching.
+
+Key Functions:
+    - normalize_metabolite_name: Normalize metabolite names with database prefix removal,
+      synonym mapping, and case normalization.
+
+Example:
+    >>> from amprenta_rag.ingestion.features.normalization import normalize_metabolite_name
+    >>> normalize_metabolite_name("HMDB:12345 L-glutamate")
+    'Glutamate'
+    >>> normalize_metabolite_name("KEGG:C00025 Citrate")
+    'Citrate'
 """
 
 from __future__ import annotations

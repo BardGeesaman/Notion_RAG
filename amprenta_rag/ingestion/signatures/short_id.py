@@ -1,7 +1,19 @@
 """
 Short ID generation for signatures.
 
-Generates deterministic Short IDs for signature pages in Notion.
+This module provides utilities for creating consistent, URL-safe short identifiers
+for signatures that can be used for idempotent Notion page creation and lookup.
+
+Key Functions:
+    - generate_signature_short_id: Creates a normalized short ID from a signature name
+      and optional version, handling special characters and length limits.
+
+Example:
+    >>> from amprenta_rag.ingestion.signatures.short_id import generate_signature_short_id
+    >>> generate_signature_short_id("ALS-CSF-Core-6Ceramides")
+    'ALS-CSF-Core-6Ceramides'
+    >>> generate_signature_short_id("Test Signature", version="1.0")
+    'Test-Signature-v1.0'
 """
 
 from __future__ import annotations
