@@ -1,0 +1,193 @@
+"""
+SQLite schema definitions for chemistry and HTS data.
+
+This module defines the database schema for storing:
+- Compounds (SMILES, InChIKeys, internal IDs)
+- Libraries (compound collections)
+- HTS Campaigns (screening campaigns)
+- HTS Results (assay results from screening)
+- Biochemical Results (detailed biochemical assays)
+- Compound-Program relationships
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Optional
+
+# SQLite schema definitions as CREATE TABLE statements
+
+COMPOUNDS_TABLE = """
+CREATE TABLE IF NOT EXISTS compounds (
+    compound_id TEXT PRIMARY KEY,
+    smiles TEXT NOT NULL,
+    inchi_key TEXT UNIQUE,
+    canonical_smiles TEXT,
+    molecular_formula TEXT,
+    molecular_weight REAL,
+    logp REAL,
+    hbd_count INTEGER,
+    hba_count INTEGER,
+    rotatable_bonds INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+LIBRARIES_TABLE = """
+CREATE TABLE IF NOT EXISTS libraries (
+    library_id TEXT PRIMARY KEY,
+    library_name TEXT NOT NULL,
+    description TEXT,
+    vendor TEXT,
+    compound_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+LIBRARY_COMPOUNDS_TABLE = """
+CREATE TABLE IF NOT EXISTS library_compounds (
+    library_id TEXT NOT NULL,
+    compound_id TEXT NOT NULL,
+    vendor_id TEXT,
+    vendor_name TEXT,
+    PRIMARY KEY (library_id, compound_id),
+    FOREIGN KEY (library_id) REFERENCES libraries(library_id),
+    FOREIGN KEY (compound_id) REFERENCES compounds(compound_id)
+);
+"""
+
+HTS_CAMPAIGNS_TABLE = """
+CREATE TABLE IF NOT EXISTS hts_campaigns (
+    campaign_id TEXT PRIMARY KEY,
+    campaign_name TEXT NOT NULL,
+    description TEXT,
+    assay_type TEXT,
+    target TEXT,
+    library_id TEXT,
+    total_wells INTEGER,
+    hit_count INTEGER DEFAULT 0,
+    run_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (library_id) REFERENCES libraries(library_id)
+);
+"""
+
+HTS_RESULTS_TABLE = """
+CREATE TABLE IF NOT EXISTS hts_results (
+    result_id TEXT PRIMARY KEY,
+    campaign_id TEXT NOT NULL,
+    compound_id TEXT NOT NULL,
+    well_position TEXT,
+    raw_value REAL,
+    normalized_value REAL,
+    z_score REAL,
+    hit_flag INTEGER DEFAULT 0,
+    hit_category TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES hts_campaigns(campaign_id),
+    FOREIGN KEY (compound_id) REFERENCES compounds(compound_id)
+);
+"""
+
+BIOCHEMICAL_RESULTS_TABLE = """
+CREATE TABLE IF NOT EXISTS biochemical_results (
+    result_id TEXT PRIMARY KEY,
+    compound_id TEXT NOT NULL,
+    assay_name TEXT NOT NULL,
+    target TEXT,
+    ic50 REAL,
+    ec50 REAL,
+    ki REAL,
+    kd REAL,
+    activity_type TEXT,
+    units TEXT,
+    run_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (compound_id) REFERENCES compounds(compound_id)
+);
+"""
+
+COMPOUND_PROGRAM_TABLE = """
+CREATE TABLE IF NOT EXISTS compound_program (
+    compound_id TEXT NOT NULL,
+    program_id TEXT NOT NULL,
+    status TEXT,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (compound_id, program_id),
+    FOREIGN KEY (compound_id) REFERENCES compounds(compound_id)
+);
+"""
+
+# Indexes for performance
+INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_compounds_inchi_key ON compounds(inchi_key);",
+    "CREATE INDEX IF NOT EXISTS idx_compounds_smiles ON compounds(smiles);",
+    "CREATE INDEX IF NOT EXISTS idx_hts_results_campaign ON hts_results(campaign_id);",
+    "CREATE INDEX IF NOT EXISTS idx_hts_results_compound ON hts_results(compound_id);",
+    "CREATE INDEX IF NOT EXISTS idx_hts_results_hit ON hts_results(hit_flag);",
+    "CREATE INDEX IF NOT EXISTS idx_biochemical_compound ON biochemical_results(compound_id);",
+    "CREATE INDEX IF NOT EXISTS idx_biochemical_target ON biochemical_results(target);",
+    "CREATE INDEX IF NOT EXISTS idx_compound_program_program ON compound_program(program_id);",
+]
+
+
+@dataclass
+class Compound:
+    """Represents a chemical compound."""
+    compound_id: str
+    smiles: str
+    inchi_key: Optional[str] = None
+    canonical_smiles: Optional[str] = None
+    molecular_formula: Optional[str] = None
+    molecular_weight: Optional[float] = None
+    logp: Optional[float] = None
+    hbd_count: Optional[int] = None
+    hba_count: Optional[int] = None
+    rotatable_bonds: Optional[int] = None
+
+
+@dataclass
+class HTSCampaign:
+    """Represents an HTS screening campaign."""
+    campaign_id: str
+    campaign_name: str
+    description: Optional[str] = None
+    assay_type: Optional[str] = None
+    target: Optional[str] = None
+    library_id: Optional[str] = None
+    total_wells: Optional[int] = None
+    hit_count: int = 0
+    run_date: Optional[str] = None
+
+
+@dataclass
+class HTSResult:
+    """Represents a single HTS assay result."""
+    result_id: str
+    campaign_id: str
+    compound_id: str
+    well_position: Optional[str] = None
+    raw_value: Optional[float] = None
+    normalized_value: Optional[float] = None
+    z_score: Optional[float] = None
+    hit_flag: int = 0
+    hit_category: Optional[str] = None
+
+
+@dataclass
+class BiochemicalResult:
+    """Represents a biochemical assay result."""
+    result_id: str
+    compound_id: str
+    assay_name: str
+    target: Optional[str] = None
+    ic50: Optional[float] = None
+    ec50: Optional[float] = None
+    ki: Optional[float] = None
+    kd: Optional[float] = None
+    activity_type: Optional[str] = None
+    units: Optional[str] = None
+    run_date: Optional[str] = None
+

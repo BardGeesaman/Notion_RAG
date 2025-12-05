@@ -1,0 +1,18 @@
+{
+  "results": {
+    "MetaboLights": ["MTBLS1"],
+    "MW_LIPIDOMICS": ["ST004217"],
+    "GEO": ["GSE12251"],
+    "PRIDE": ["PXD000001"]
+  },
+  "summary": {
+    "total_repositories": 4,
+    "total_studies": 4,
+    "by_repository": {
+      "MetaboLights": 1,
+      "MW_LIPIDOMICS": 1,
+      "GEO": 1,
+      "PRIDE": 1
+    }
+  }
+}

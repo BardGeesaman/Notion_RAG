@@ -148,4 +148,100 @@ Whenever we update the code and create a new zip, this file should be kept rough
 
   ```bash
   python scripts/ingest_collection.py --collection-key 3RGXZTAY --parent-type Literature
+  ```
+
+---
+
+## 5. Repository Ingestion
+
+### ✅ Current Status
+
+- **Public Repository Integration:**
+  - ✅ GEO (GSE) - Transcriptomics via NCBI/Biopython
+  - ✅ PRIDE Archive - Proteomics via REST API v2
+  - ✅ MetaboLights - Metabolomics via ISA-Tab
+  - ✅ Metabolomics Workbench (MW) - Metabolomics/Lipidomics via REST API
+  - ✅ ENA (European Nucleotide Archive) - Genomics/RNA-seq
+
+- **Genomics Pipeline:**
+  - ✅ Salmon quantification pipeline implemented
+  - ✅ Transcriptome index built (human GRCh38)
+  - ✅ Full end-to-end pipeline tested (search → download → quantify → extract)
+
+### ⏭️ Future Repository Work
+
+- [ ] **Research additional repositories:**
+  - Query Gemini AI about additional omics data repositories that could be integrated
+  - Identify repositories for:
+    - Additional transcriptomics sources (beyond GEO)
+    - Additional proteomics sources (beyond PRIDE)
+    - Additional metabolomics/lipidomics sources (beyond MW/MetaboLights)
+    - Epigenomics repositories
+    - Single-cell omics repositories
+    - Multi-omics integrated repositories
+  - Evaluate API stability, data quality, and integration complexity
+
+---
+
+## 6. Web UI Improvements ⚠️ HIGH PRIORITY
+
+### ✅ Current State
+
+- **Streamlit Dashboard** (`scripts/run_dashboard.py`):
+  - ✅ Basic data browser (Overview, Datasets, Programs, Experiments, Features, Signatures)
+  - ✅ Filtering and search capabilities
+  - ✅ CSV export functionality
+  - ✅ Direct Postgres connection
+  - Status: Functional but basic
+
+- **FastAPI REST API**:
+  - ✅ Full CRUD operations
+  - ✅ Swagger UI documentation
+  - Status: Production-ready
+
+### ❌ Missing Features (TIER 4)
+
+1. **Multi-Omics Coverage Maps** - NOT IMPLEMENTED (2-3 days)
+2. **Feature Recurrence Visualization** - NOT IMPLEMENTED (3-4 days)
+
+### ⏭️ Immediate Improvements Needed
+
+**Priority 1: Enhanced Visualizations** ⚠️ HIGH PRIORITY
+- [ ] Multi-Omics Coverage Maps visualization
+- [ ] Feature Recurrence Visualization
+- [ ] Network graphs for relationships
+- [ ] Timeline charts for dataset creation
+- [ ] Heatmaps for signature matches
+
+**Priority 2: AI Agent Tools Integration** ⚠️ CRITICAL
+- [ ] **RAG Query Interface** - Natural language search with AI-synthesized answers
+- [ ] **Cross-Omics Reasoning** - AI-powered summaries for programs, signatures, features, datasets
+- [ ] **Signature Matching** - Visual signature similarity scoring
+- [ ] **Interactive AI Chat** - "Ask AI" functionality on entity pages
+- [ ] Real-time semantic search with filters (disease, target, lipid, signature)
+- [ ] Display top matches with relevance scores and citations
+
+**Priority 3: User Experience**
+- [ ] Advanced filtering (date ranges, multiple criteria)
+- [ ] Global search across all entities
+- [ ] Data editing capabilities
+- [ ] Saved filter presets
+- [ ] Better empty states and loading indicators
+
+**Priority 4: Authentication & Security**
+- [ ] User login/logout
+- [ ] Role-based access control
+- [ ] Audit logging
+
+### 🎯 Long-Term Vision
+
+**Next.js/React Frontend** (Future):
+- Modern interactive UI with real-time updates
+- **AI Agent Tools** - Integrated RAG queries, cross-omics reasoning, AI chat
+- Advanced visualizations (D3.js, Recharts)
+- Production-ready deployment
+- Multi-user support with permissions
+
+See `docs/UI_IMPROVEMENT_ROADMAP.md` for detailed plan.
+
   

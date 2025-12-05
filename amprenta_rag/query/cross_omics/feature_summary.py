@@ -14,6 +14,10 @@ import requests
 from amprenta_rag.clients.notion_client import get_page_text, notion_headers
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.query.cross_omics.context_extraction import (
+    extract_aggregated_context,
+    identify_comparative_context,
+)
 from amprenta_rag.query.cross_omics.helpers import (
     extract_relation_ids,
     fetch_notion_page,
@@ -21,6 +25,7 @@ from amprenta_rag.query.cross_omics.helpers import (
     group_chunks_by_omics_type,
     retrieve_chunks_for_objects,
 )
+from amprenta_rag.query.cross_omics.prompt_templates import build_enhanced_prompt
 from amprenta_rag.query.cross_omics.synthesis import synthesize_cross_omics_summary
 from amprenta_rag.query.pinecone_query import query_pinecone
 
@@ -196,23 +201,38 @@ def cross_omics_feature_summary(
         omics_counts,
     )
     
-    # Build prompt
-    prompt = f"""Generate a cross-omics summary for the {feature_type} feature: {feature_name}
-
-This feature appears in:
+    # Aggregate context from linked datasets
+    aggregated_context = None
+    if dataset_ids:
+        aggregated_context = extract_aggregated_context(dataset_ids, page_type="dataset")
+    
+    # Identify comparative context
+    comparative_context = None
+    if aggregated_context:
+        comparative_context = identify_comparative_context(aggregated_context)
+    
+    # Build additional info
+    additional_info = f"""This {feature_type} feature appears in:
 - {len(dataset_ids)} linked dataset(s)
 
-Chunks retrieved across omics:
-- {omics_counts.get('Lipidomics', 0)} lipidomics chunks
-- {omics_counts.get('Metabolomics', 0)} metabolomics chunks
-- {omics_counts.get('Proteomics', 0)} proteomics chunks
-- {omics_counts.get('Transcriptomics', 0)} transcriptomics chunks
-
-Summarize how this feature behaves across different omics modalities and contexts.
-"""
+Summarize how this feature behaves across different omics modalities and contexts."""
     
-    # Synthesize summary
-    summary = synthesize_cross_omics_summary(prompt, context_chunks)
+    # Build enhanced prompt
+    prompt = build_enhanced_prompt(
+        entity_name=feature_name,
+        entity_type=f"{feature_type} feature",
+        context_info=aggregated_context if aggregated_context and (aggregated_context.get("diseases") or aggregated_context.get("matrix") or aggregated_context.get("model_systems")) else None,
+        omics_counts=omics_counts,
+        additional_info=additional_info,
+    )
+    
+    # Synthesize summary with comparative analysis if applicable
+    include_comparative = comparative_context is not None
+    summary = synthesize_cross_omics_summary(
+        prompt,
+        context_chunks,
+        include_comparative=include_comparative,
+    )
     
     return summary
 

@@ -1,0 +1,13 @@
+{
+  "keywords": [
+    "cancer",
+    "gene expression"
+  ],
+  "omics_type": "transcriptomics",
+  "repository": null,
+  "filters": {},
+  "results": {
+    "GEO": []
+  },
+  "total_studies": 0
+}

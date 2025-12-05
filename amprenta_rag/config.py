@@ -13,6 +13,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import Optional
+from typing import Optional
+from typing import Optional
 
 # Load .env file if python-dotenv is installed (optional dependency)
 try:
@@ -44,12 +47,18 @@ if not PINECONE_API_KEY:
         "See .env.example for a template."
     )
 
+# Notion API key - OPTIONAL (only required if ENABLE_NOTION_SYNC=true)
+# Check if Notion sync is enabled first, then validate API key if needed
+ENABLE_NOTION_SYNC_ENV = os.getenv("ENABLE_NOTION_SYNC", "false").lower() == "true"
 NOTION_API_KEY = os.getenv("NOTION_API_KEY", "")
-if not NOTION_API_KEY:
+
+# Only require Notion API key if Notion sync is explicitly enabled
+if ENABLE_NOTION_SYNC_ENV and not NOTION_API_KEY:
     raise RuntimeError(
-        "NOTION_API_KEY is not set. "
-        "Please define it in your environment or in a .env file. "
-        "See .env.example for a template."
+        "NOTION_API_KEY is not set but ENABLE_NOTION_SYNC is true. "
+        "Either set NOTION_API_KEY in your environment/.env file, "
+        "or set ENABLE_NOTION_SYNC=false to disable Notion entirely. "
+        "Notion is now optional and disabled by default."
     )
 
 ZOTERO_API_KEY = os.getenv("ZOTERO_API_KEY", "")
@@ -59,6 +68,19 @@ if not ZOTERO_API_KEY:
         "Please define it in your environment or in a .env file. "
         "See .env.example for a template."
     )
+
+# Optional API keys for public repositories
+GEO_API_KEY = os.getenv("GEO_API_KEY", "")  # Optional, for higher NCBI rate limits
+NCBI_EMAIL = os.getenv("NCBI_EMAIL", "")  # Required by NCBI for API access
+
+# Postgres Database Configuration (optional - for TIER 3 architecture evolution)
+POSTGRES_URL = os.getenv("POSTGRES_URL", "")  # Full connection string (optional)
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
+POSTGRES_DB = os.getenv("POSTGRES_DB", "amprenta_rag")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
+POSTGRES_ECHO = os.getenv("POSTGRES_ECHO", "false").lower() == "true"
 
 # Database IDs (no dashes)
 NOTION_EMAIL_DB_ID = "2b7adf6142ab80878ccce09b0067db60"  # Email & Notes Inbox
@@ -88,6 +110,18 @@ NOTION_PROGRAMS_DB_ID = os.getenv(
 NOTION_EXPERIMENTS_DB_ID = os.getenv(
     "NOTION_EXPERIMENTS_DB_ID", ""
 )  # Experiments
+NOTION_COMPOUND_FEATURES_DB_ID = os.getenv(
+    "NOTION_COMPOUND_FEATURES_DB_ID", ""
+)  # Compound Features
+NOTION_HTS_CAMPAIGNS_DB_ID = os.getenv(
+    "NOTION_HTS_CAMPAIGNS_DB_ID", ""
+)  # HTS Campaigns
+NOTION_BIOCHEMICAL_HITS_DB_ID = os.getenv(
+    "NOTION_BIOCHEMICAL_HITS_DB_ID", ""
+)  # Biochemical Hits
+NOTION_PATHWAYS_DB_ID = os.getenv(
+    "NOTION_PATHWAYS_DB_ID", ""
+)  # Pathways
 
 # Pipeline directories
 SIGNATURES_DIR = os.getenv("SIGNATURES_DIR", "")
@@ -98,6 +132,25 @@ ENABLE_SIGNATURE_SCORING = (
     os.getenv("ENABLE_SIGNATURE_SCORING", "true").lower() == "true"
 )
 ENABLE_LIPID_MAPPING = os.getenv("ENABLE_LIPID_MAPPING", "true").lower() == "true"
+ENABLE_FEATURE_LINKING = os.getenv("ENABLE_FEATURE_LINKING", "true").lower() == "true"
+FEATURE_LINKING_MAX_WORKERS = int(os.getenv("FEATURE_LINKING_MAX_WORKERS", "10"))
+ENABLE_LLM_SEMANTIC_EXTRACTION = os.getenv("ENABLE_LLM_SEMANTIC_EXTRACTION", "false").lower() == "true"
+
+# Feature cache configuration
+FEATURE_CACHE_TTL_SECONDS = int(os.getenv("FEATURE_CACHE_TTL_SECONDS", "3600"))
+FEATURE_CACHE_MAX_SIZE = os.getenv("FEATURE_CACHE_MAX_SIZE", "")
+FEATURE_CACHE_MAX_SIZE = int(FEATURE_CACHE_MAX_SIZE) if FEATURE_CACHE_MAX_SIZE else None
+FEATURE_CACHE_ENABLE_PERSISTENCE = os.getenv("FEATURE_CACHE_ENABLE_PERSISTENCE", "true").lower() == "true"
+FEATURE_CACHE_DIR = os.getenv("FEATURE_CACHE_DIR", "")
+FEATURE_CACHE_PARALLEL_WORKERS = int(os.getenv("FEATURE_CACHE_PARALLEL_WORKERS", "5"))
+
+# Feature cache configuration
+FEATURE_CACHE_TTL_SECONDS = int(os.getenv("FEATURE_CACHE_TTL_SECONDS", "3600"))
+FEATURE_CACHE_MAX_SIZE = os.getenv("FEATURE_CACHE_MAX_SIZE", "")
+FEATURE_CACHE_MAX_SIZE = int(FEATURE_CACHE_MAX_SIZE) if FEATURE_CACHE_MAX_SIZE else None
+FEATURE_CACHE_ENABLE_PERSISTENCE = os.getenv("FEATURE_CACHE_ENABLE_PERSISTENCE", "true").lower() == "true"
+FEATURE_CACHE_DIR = os.getenv("FEATURE_CACHE_DIR", "")
+FEATURE_CACHE_PARALLEL_WORKERS = int(os.getenv("FEATURE_CACHE_PARALLEL_WORKERS", "5"))
 
 
 # ---------------------------------------------------------
@@ -150,6 +203,7 @@ class PineconeConfig:
 
 @dataclass(frozen=True)
 class NotionConfig:
+    # Notion API key - may be empty if Notion sync is disabled
     api_key: str = NOTION_API_KEY
     version: str = NOTION_VERSION
     base_url: str = "https://api.notion.com/v1"
@@ -166,6 +220,10 @@ class NotionConfig:
     lipid_species_db_id: str = NOTION_LIPID_SPECIES_DB_ID
     programs_db_id: str = NOTION_PROGRAMS_DB_ID
     experiments_db_id: str = NOTION_EXPERIMENTS_DB_ID
+    compound_features_db_id: str = NOTION_COMPOUND_FEATURES_DB_ID
+    hts_campaigns_db_id: str = NOTION_HTS_CAMPAIGNS_DB_ID
+    biochemical_hits_db_id: str = NOTION_BIOCHEMICAL_HITS_DB_ID
+    pathways_db_id: str = NOTION_PATHWAYS_DB_ID
 
 
 @dataclass(frozen=True)
@@ -181,6 +239,28 @@ class PipelineConfig:
     signature_overlap_threshold: float = SIGNATURE_OVERLAP_THRESHOLD
     enable_signature_scoring: bool = ENABLE_SIGNATURE_SCORING
     enable_lipid_mapping: bool = ENABLE_LIPID_MAPPING
+    enable_feature_linking: bool = ENABLE_FEATURE_LINKING
+    enable_llm_semantic_extraction: bool = ENABLE_LLM_SEMANTIC_EXTRACTION
+    feature_linking_max_workers: int = FEATURE_LINKING_MAX_WORKERS
+    # TIER 3: Postgres as Source of Truth (PRIMARY for performance)
+    # Set to true to use Postgres as primary database (recommended for bulk ingestion)
+    use_postgres_as_sot: bool = os.getenv("USE_POSTGRES_AS_SOT", "true").lower() == "true"
+    # Optional: Sync to Notion for documentation (set to false to disable Notion entirely)
+    enable_notion_sync: bool = os.getenv("ENABLE_NOTION_SYNC", "false").lower() == "true"
+    # Dual-write mode (transition period only - writes to both Postgres and Notion)
+    enable_dual_write: bool = os.getenv("ENABLE_DUAL_WRITE", "false").lower() == "true"
+
+
+@dataclass(frozen=True)
+class PostgresConfig:
+    """Postgres database configuration for TIER 3 architecture evolution."""
+    url: str = POSTGRES_URL
+    host: str = POSTGRES_HOST
+    port: int = POSTGRES_PORT
+    db: str = POSTGRES_DB
+    user: str = POSTGRES_USER
+    password: str = POSTGRES_PASSWORD
+    echo: bool = POSTGRES_ECHO
 
 
 @dataclass(frozen=True)
@@ -190,6 +270,7 @@ class AppConfig:
     notion: NotionConfig
     zotero: ZoteroConfig
     pipeline: PipelineConfig
+    postgres: PostgresConfig
 
 
 # ---------------------------------------------------------
@@ -208,5 +289,6 @@ def get_config() -> AppConfig:
             notion=NotionConfig(),
             zotero=ZoteroConfig(),
             pipeline=PipelineConfig(),
+            postgres=PostgresConfig(),
         )
     return _config_singleton

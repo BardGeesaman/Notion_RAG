@@ -40,3 +40,29 @@ sandbox/
 
 sandbox
 ChatGPT context/
+
+# Gmail API credentials (sensitive)
+credentials/gmail_credentials.json
+credentials/gmail_token.json
+credentials/*.json
+
+# Test data and cache directories
+test_genomics/
+test_*/
+geo_cache_test/
+
+# Genomics pipeline data
+salmon_index/
+reference_data/
+fastq_downloads/
+quants/
+
+# Database migrations (already tracked)
+# alembic/
+# alembic.ini
+
+# Temporary files
+*.log
+*.txt
+!requirements*.txt
+

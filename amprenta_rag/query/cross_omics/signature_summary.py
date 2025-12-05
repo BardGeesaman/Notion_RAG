@@ -14,6 +14,12 @@ import requests
 from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.query.cross_omics.context_extraction import (
+    extract_aggregated_context,
+    extract_disease_context,
+    extract_matrix_context,
+    identify_comparative_context,
+)
 from amprenta_rag.query.cross_omics.helpers import (
     extract_relation_ids,
     extract_select_values,
@@ -23,6 +29,7 @@ from amprenta_rag.query.cross_omics.helpers import (
     group_chunks_by_omics_type,
     retrieve_chunks_for_objects,
 )
+from amprenta_rag.query.cross_omics.prompt_templates import build_enhanced_prompt
 from amprenta_rag.query.cross_omics.synthesis import synthesize_cross_omics_summary
 from amprenta_rag.query.pinecone_query import query_pinecone
 
@@ -57,8 +64,16 @@ def cross_omics_signature_summary(
     
     signature_name = extract_text_property(signature_page, "Name") or "Unknown Signature"
     modalities = extract_select_values(signature_page, "Modalities")
-    disease = extract_select_values(signature_page, "Disease")
-    matrix = extract_select_values(signature_page, "Matrix")
+    
+    # Extract context from signature page
+    diseases = extract_disease_context(signature_page)
+    matrix = extract_matrix_context(signature_page)
+    
+    signature_context = {
+        "diseases": diseases,
+        "matrix": matrix,
+        "model_systems": [],  # Signatures typically don't have model systems
+    }
     
     # Find datasets with this signature
     # Query Experimental Data Assets database for datasets with this signature in Related Signature(s)
@@ -182,25 +197,40 @@ def cross_omics_signature_summary(
         if chunks
     }
     
-    # Build prompt
-    prompt = f"""Generate a cross-omics summary for the signature: {signature_name}
-
-Signature details:
-- Modalities: {', '.join(modalities) if modalities else 'Not specified'}
-- Disease: {', '.join(disease) if disease else 'Not specified'}
-- Matrix: {', '.join(matrix) if matrix else 'Not specified'}
-- Matched datasets: {len(dataset_ids)}
-
-Chunks retrieved:
-- {omics_counts.get('Lipidomics', 0)} lipidomics chunks
-- {omics_counts.get('Metabolomics', 0)} metabolomics chunks
-- {omics_counts.get('Proteomics', 0)} proteomics chunks
-- {omics_counts.get('Transcriptomics', 0)} transcriptomics chunks
-- {len(signature_chunks)} signature chunks
-"""
+    # Aggregate context from matched datasets
+    if dataset_ids:
+        aggregated_context = extract_aggregated_context(dataset_ids, page_type="dataset")
+        # Merge signature context with aggregated context
+        if aggregated_context.get("diseases") or aggregated_context.get("matrix") or aggregated_context.get("model_systems"):
+            signature_context["diseases"] = list(set(signature_context["diseases"] + aggregated_context.get("diseases", [])))
+            signature_context["matrix"] = list(set(signature_context["matrix"] + aggregated_context.get("matrix", [])))
+            signature_context["model_systems"] = list(set(signature_context["model_systems"] + aggregated_context.get("model_systems", [])))
     
-    # Synthesize summary
-    summary = synthesize_cross_omics_summary(prompt, context_chunks)
+    # Identify comparative context
+    comparative_context = identify_comparative_context(signature_context)
+    
+    # Build additional info
+    additional_info = f"""Signature details:
+- Modalities: {', '.join(modalities) if modalities else 'Not specified'}
+- Matched datasets: {len(dataset_ids)}
+- Signature chunks: {len(signature_chunks)}"""
+    
+    # Build enhanced prompt
+    prompt = build_enhanced_prompt(
+        entity_name=signature_name,
+        entity_type="signature",
+        context_info=signature_context if (signature_context.get("diseases") or signature_context.get("matrix")) else None,
+        omics_counts=omics_counts,
+        additional_info=additional_info,
+    )
+    
+    # Synthesize summary with comparative analysis if applicable
+    include_comparative = comparative_context is not None
+    summary = synthesize_cross_omics_summary(
+        prompt,
+        context_chunks,
+        include_comparative=include_comparative,
+    )
     
     return summary
 

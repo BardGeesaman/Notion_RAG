@@ -1,0 +1,46 @@
+# Core dependencies
+requests>=2.31.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Notion API
+notion-client>=2.0.0
+
+# Pinecone
+pinecone>=3.0.0
+
+# OpenAI
+openai>=1.0.0
+
+# Chemistry
+# Note: RDKit is best installed via conda: conda install -c conda-forge rdkit
+# For pip installation, use: pip install rdkit (may not work on all platforms)
+
+# Scientific computing
+scipy>=1.11.0
+statsmodels>=0.14.0
+
+# PDF processing
+pypdf>=3.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+tqdm>=4.66.0
+
+# Bioinformatics
+biopython>=1.86  # For NCBI Entrez API (GEO repository)
+GEOparse>=1.2.0  # For parsing GEO Series Matrix files
+
+# Database (TIER 3: Architecture Evolution)
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+psycopg2-binary>=2.9.0  # Postgres adapter
+
+# API (TIER 3: Architecture Evolution)
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0  # ASGI server
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+streamlit>=1.28.0
+pandas>=2.0.0
+

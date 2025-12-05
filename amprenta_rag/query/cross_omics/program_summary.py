@@ -11,6 +11,10 @@ from typing import Any, Dict, List
 
 from amprenta_rag.clients.notion_client import get_page_text
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.query.cross_omics.context_extraction import (
+    extract_aggregated_context,
+    identify_comparative_context,
+)
 from amprenta_rag.query.cross_omics.helpers import (
     extract_relation_ids,
     extract_text_property,
@@ -18,6 +22,7 @@ from amprenta_rag.query.cross_omics.helpers import (
     group_chunks_by_omics_type,
     retrieve_chunks_for_objects,
 )
+from amprenta_rag.query.cross_omics.prompt_templates import build_enhanced_prompt
 from amprenta_rag.query.cross_omics.synthesis import synthesize_cross_omics_summary
 
 logger = get_logger(__name__)
@@ -94,6 +99,11 @@ def cross_omics_program_summary(
             "Linked datasets and experiments may not have been ingested into RAG."
         )
     
+    # Extract aggregated context from all linked pages
+    all_page_ids = dataset_ids + experiment_ids
+    aggregated_context = extract_aggregated_context(all_page_ids, page_type="dataset")
+    comparative_context = identify_comparative_context(aggregated_context)
+    
     # Group chunks by omics type
     chunks_by_omics = group_chunks_by_omics_type(all_chunks)
     
@@ -140,22 +150,27 @@ def cross_omics_program_summary(
         omics_counts,
     )
     
-    # Build prompt
-    prompt = f"""Generate a cross-omics summary for the program: {program_name}
-
-The program is linked to:
+    # Build additional info
+    additional_info = f"""The program is linked to:
 - {len(experiment_ids)} experiment(s)
-- {len(dataset_ids)} dataset(s)
-
-Chunks retrieved:
-- {omics_counts.get('Lipidomics', 0)} lipidomics chunks
-- {omics_counts.get('Metabolomics', 0)} metabolomics chunks
-- {omics_counts.get('Proteomics', 0)} proteomics chunks
-- {omics_counts.get('Transcriptomics', 0)} transcriptomics chunks
-"""
+- {len(dataset_ids)} dataset(s)"""
     
-    # Synthesize summary
-    summary = synthesize_cross_omics_summary(prompt, context_chunks)
+    # Build enhanced prompt with context
+    prompt = build_enhanced_prompt(
+        entity_name=program_name,
+        entity_type="program",
+        context_info=aggregated_context if aggregated_context.get("diseases") or aggregated_context.get("matrix") or aggregated_context.get("model_systems") else None,
+        omics_counts=omics_counts,
+        additional_info=additional_info,
+    )
+    
+    # Synthesize summary with comparative analysis if applicable
+    include_comparative = comparative_context is not None
+    summary = synthesize_cross_omics_summary(
+        prompt, 
+        context_chunks,
+        include_comparative=include_comparative,
+    )
     
     return summary
 

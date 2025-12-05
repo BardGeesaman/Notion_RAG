@@ -40,11 +40,10 @@ def fetch_dataset_page(page_id: str) -> Dict[str, Any]:
     Raises:
         Exception: If page fetch fails
     """
-    from amprenta_rag.ingestion.metadata_semantic import \
-        _fetch_notion_page as _fetch
+    from amprenta_rag.ingestion.metadata.helpers import fetch_notion_page
 
     try:
-        return _fetch(page_id)
+        return fetch_notion_page(page_id)
     except Exception as e:
         logger.error("[DATASET][NOTION] Error fetching page %s: %r", page_id, e)
         raise

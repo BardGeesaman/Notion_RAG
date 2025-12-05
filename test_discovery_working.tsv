@@ -1,0 +1,6 @@
+signature_name	feature_type	feature_name	direction	weight	support_count	confidence
+Discovered-lipid-1	lipid	Cer(d18:1/24:0)		0.600	2	0.600
+Discovered-lipid-1	lipid	PC(16:0/18:1)		0.600	2	0.600
+Discovered-lipid-1	lipid	Cer(d18:1/16:0)		0.600	2	0.600
+Discovered-lipid-1	lipid	SM(d18:1/24:1)		0.600	2	0.600
+Discovered-lipid-1	lipid	Cer(d18:1/18:0)		0.600	2	0.600

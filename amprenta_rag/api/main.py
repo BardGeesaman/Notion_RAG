@@ -1,0 +1,61 @@
+"""
+FastAPI main application.
+
+This module sets up the FastAPI application with all routes, middleware,
+and configuration.
+"""
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from amprenta_rag.api.routers import (
+    datasets,
+    experiments,
+    features,
+    programs,
+    signatures,
+)
+from amprenta_rag.config import get_config
+
+# Get configuration
+cfg = get_config()
+
+# Create FastAPI app
+app = FastAPI(
+    title="Amprenta Multi-Omics Platform API",
+    description="REST API for the multi-omics research platform",
+    version="1.0.0",
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(programs.router, prefix="/api/v1/programs", tags=["Programs"])
+app.include_router(experiments.router, prefix="/api/v1/experiments", tags=["Experiments"])
+app.include_router(datasets.router, prefix="/api/v1/datasets", tags=["Datasets"])
+app.include_router(features.router, prefix="/api/v1/features", tags=["Features"])
+app.include_router(signatures.router, prefix="/api/v1/signatures", tags=["Signatures"])
+
+
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {
+        "name": "Amprenta Multi-Omics Platform API",
+        "version": "1.0.0",
+        "status": "operational",
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy"}
+

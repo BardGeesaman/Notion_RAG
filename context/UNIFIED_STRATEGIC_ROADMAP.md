@@ -318,7 +318,330 @@ This roadmap integrates:
 
 ---
 
-## 💡 TIER 3: QUALITY & OPERATIONS (Ongoing)
+### 2.6 Chemistry & HTS Integration 🧪 **NEW ARCHITECTURE**
+
+**Priority**: 🔥🔥🔥 **HIGH STRATEGIC VALUE**
+
+**Strategic Value**:
+- Complete drug discovery pipeline integration
+- HTS data management (up to 1M molecules)
+- Compound-to-biology linking
+- Campaign-to-program integration
+
+**Architecture Principles**:
+1. **SQLite is the system of record** for chemistry and screening data
+2. **Notion is the knowledge lens** - only "promoted" compounds appear in Notion
+3. **Pinecone receives summaries only** - not full HTS data matrices
+4. **HTS data NOT fully mirrored** - only summaries and selected hits
+
+**Implementation**:
+
+#### Phase 1: SQLite Chemistry & Screening Layer
+
+```python
+# New modules:
+- amprenta_rag/chemistry/compound_registry.py
+- amprenta_rag/chemistry/screening_db.py
+- amprenta_rag/chemistry/normalization.py (RDKit-based, optional)
+```
+
+**Schema (First Pass)**:
+- `compounds` table (compound_id, smiles, inchi_key, salt_stripped_smiles, source)
+- `libraries` table (library_id, name, vendor, description)
+- `hts_campaigns` table (campaign_id, program_id, assay_name, target, library_id, screen_date, num_molecules, hit_cutoff, num_hits, qc_metrics_json)
+- `hts_results` table (campaign_id, compound_id, plate_id, well_id, raw_signal, normalized_value, zscore, is_hit)
+- `biochemical_results` table (assay_id, campaign_id, compound_id, ic50, ec50, curve_fit_quality, replicate_count, qc_flags, stage)
+- `compound_program` table (compound_id, program_id, role)
+
+**Features**:
+- RDKit-based SMILES normalization (if available)
+- Internal compound ID generation (AMPR-000001 pattern)
+- Indexes on compound_id, campaign_id, program_id
+
+**Notion Agent**: **YES - REQUIRED** ✅
+- Create "🧪 Compound Features" database
+- Create "🧪 HTS Campaigns" database
+- Create "🧪 Biochemical Hits" database (optional)
+- See detailed schema in `CHEMISTRY_HTS_ARCHITECTURE.md`
+
+**Dependencies**: SQLite, RDKit (optional), Notion schema updates
+
+**Estimated Effort**: High (8-10 days)
+
+#### Phase 2: Screening Ingestion Pipeline
+
+```python
+# New modules:
+- amprenta_rag/ingestion/screening_ingestion.py
+- scripts/ingest_screening.py
+```
+
+**Features**:
+- Ingest HTS campaign summary files (metadata, QC)
+- Ingest hit lists and dose-response data into SQLite
+- Create/refresh HTS Campaigns DB entries in Notion (summary only)
+- Maintain vendor ID → internal compound_id mapping
+
+**CLI Use Cases**:
+```bash
+# Register/Update Campaign
+python scripts/ingest_screening.py --campaign-metadata-file <path>
+
+# Ingest Hit List
+python scripts/ingest_screening.py --hit-list-file <path> --campaign-id <id>
+
+# Ingest Dose-Response
+python scripts/ingest_screening.py --dose-response-file <path> --campaign-id <id>
+
+# Promote Compounds
+python scripts/ingest_screening.py --promote-compounds --program-id <id> --stage <stage>
+```
+
+**Notion Agent**: Uses existing Compound Features, HTS Campaigns, Biochemical Hits DBs
+
+**Dependencies**: Phase 1 (SQLite layer)
+
+**Estimated Effort**: Medium (4-5 days)
+
+#### Phase 3: Compound-Biology Linking
+
+**Features**:
+- Link compounds to Programs/Experiments/Datasets
+- Link compounds to Signatures (if compound affects signature features)
+- Cross-reference compound features with omics features
+- RAG embedding of compound summaries (campaign summaries, biological assay summaries)
+
+**Integration Points**:
+- `amprenta_rag/ingestion/compound_linking.py`
+- Extend existing feature linking to support compounds
+- Extend RAG embedding to include compound context
+
+**Notion Agent**: Uses existing relation properties
+
+**Dependencies**: Phase 1, Phase 2
+
+**Estimated Effort**: Medium (3-4 days)
+
+#### Phase 4: RAG Integration for Chemistry
+
+**Features**:
+- Embed HTS campaign summaries into Pinecone
+- Embed biochemical hit summaries
+- Query support: "Which compounds match this signature?", "What HTS campaigns tested this target?"
+- Cross-omics + chemistry reasoning
+
+**Integration Points**:
+- `amprenta_rag/query/chemistry_query.py`
+- Extend `cross_omics_reasoning.py` to include compound context
+
+**Dependencies**: Phase 1, Phase 2, Phase 3
+
+**Estimated Effort**: Medium (3-4 days)
+
+**Total Estimated Effort**: 18-23 days (Weeks 13-16)
+
+**See**: `context/CHEMISTRY_HTS_ARCHITECTURE.md` for complete details
+
+---
+
+### 2.7 Public Repository Ingestion for Multi-Omics 🌐 **DATA EXPANSION**
+
+**Priority**: 🔥🔥 **MEDIUM-HIGH**
+
+**Strategic Value**:
+- Expand dataset coverage across all omics types
+- Leverage public data repositories
+- Automate discovery and ingestion
+- Build comprehensive multi-omics knowledge base
+
+**Current State**:
+- ✅ Metabolomics Workbench (MW) - lipidomics and metabolomics
+- ✅ `scripts/harvest_mw_studies.py` - working MW ingestion
+- ⏳ GEO (transcriptomics) - not yet implemented
+- ⏳ PRIDE (proteomics) - not yet implemented
+- ⏳ MetaboLights (metabolomics) - not yet implemented
+
+**Implementation**:
+
+#### Phase 1: Repository Abstraction Layer
+
+```python
+# New modules:
+- amprenta_rag/ingestion/repositories/base.py
+- amprenta_rag/ingestion/repositories/geo.py
+- amprenta_rag/ingestion/repositories/pride.py
+- amprenta_rag/ingestion/repositories/metabolights.py
+- amprenta_rag/ingestion/repositories/mw.py (refactored)
+- amprenta_rag/ingestion/repositories/discovery.py
+```
+
+**Features**:
+- Unified repository interface
+- StudyMetadata model
+- Unified discovery script
+- Repository-specific harvest scripts
+
+**Estimated Effort**: Medium (3-4 days)
+
+#### Phase 2: GEO (Transcriptomics) Integration
+
+**Repository**: Gene Expression Omnibus (GEO)
+- Entrez E-utilities API
+- GSE/GSM identifiers
+- Microarray and RNA-seq data
+
+**Implementation**:
+- GEO API client
+- Study discovery and metadata fetching
+- Data file download (processed DGE tables)
+- Integration with transcriptomics ingestion
+
+**Estimated Effort**: Medium (4-5 days)
+
+#### Phase 3: PRIDE (Proteomics) Integration
+
+**Repository**: PRIDE Archive
+- PRIDE REST API
+- Mass spectrometry proteomics
+- Protein identification and quantification
+
+**Implementation**:
+- PRIDE API client
+- Study discovery and metadata fetching
+- Data file download (protein tables)
+- Integration with proteomics ingestion
+
+**Estimated Effort**: Medium (4-5 days)
+
+#### Phase 4: MetaboLights Integration
+
+**Repository**: MetaboLights
+- MetaboLights REST API
+- Metabolomics data (NMR and MS)
+
+**Implementation**:
+- MetaboLights API client
+- Study discovery and metadata fetching
+- Data file download (metabolite tables)
+- Integration with metabolomics ingestion
+
+**Estimated Effort**: Medium (3-4 days)
+
+#### Phase 5: Extended MW Support
+
+**Enhancement**:
+- Extend MW discovery beyond lipidomics
+- Support full metabolomics studies
+- Better keyword filtering
+
+**Estimated Effort**: Low (1-2 days)
+
+**Total Estimated Effort**: 15-20 days (Weeks 17-20)
+
+**Notion Agent**: None needed (uses existing Experimental Data Assets DB) ✅
+
+**Dependencies**: 
+- Existing ingestion pipelines
+- Feature linking system
+- Signature scoring system
+
+**See**: `context/PUBLIC_REPOSITORY_INGESTION.md` for complete details
+
+---
+
+## 🏗️ TIER 3: ARCHITECTURE EVOLUTION (Future)
+
+### 3.1 Postgres + FastAPI + Frontend Architecture Evolution 🏛️ **MAJOR ARCHITECTURAL CHANGE**
+
+**Priority**: 🔥🔥 **MEDIUM-HIGH** (Future Evolution)
+
+**Strategic Value**:
+- More robust, scalable architecture
+- Better multi-user support
+- Cleaner separation of concerns
+- Foundation for frontend development
+- Production-ready infrastructure
+
+**Current Architecture**:
+- Notion: Primary knowledge graph and ELN
+- SQLite: Chemistry and screening data
+- Pinecone: Semantic index for RAG
+- Python scripts: Ingestion pipelines
+
+**Target Architecture**:
+- **Postgres**: System of record for all structured data
+- **FastAPI**: Service/API layer
+- **Frontend**: Next.js/React (future)
+- **Notion**: Knowledge/documentation layer (not primary DB)
+- **SQLite**: Optional cache or prototype DB
+- **Pinecone**: Semantic index (unchanged)
+
+**Implementation Phases**:
+
+#### Phase 1: Domain Model Extraction
+- Extract and formalize domain models (Pydantic/dataclasses)
+- Create stable abstraction layer
+- Update ingestion modules to use domain models
+
+**Estimated Effort**: Medium (3-4 days)
+
+#### Phase 2: Postgres Schema Design
+- Design normalized Postgres schema
+- Create SQLAlchemy models
+- Set up Alembic migrations
+- Maintain external IDs for migration support
+
+**Estimated Effort**: High (5-7 days)
+
+#### Phase 3: FastAPI Service Layer
+- Implement core API endpoints (Programs, Experiments, Datasets, Features, Signatures, Compounds, Screening)
+- Set up FastAPI application structure
+- Add authentication (basic, later OIDC)
+
+**Estimated Effort**: High (6-8 days)
+
+#### Phase 4: Migration Utilities
+- Export Notion + SQLite data
+- Bootstrap Postgres with initial data
+- Implement dual-write capability (transition phase)
+
+**Estimated Effort**: Medium (6-8 days)
+
+#### Phase 5: RAG Integration with Postgres
+- Update RAG builders for Postgres + Notion hybrid
+- DB for structured details, Notion for narratives
+- Update metadata to use Postgres IDs
+
+**Estimated Effort**: Medium (4-5 days)
+
+#### Phase 6: Transition to Postgres SoT
+- Pivot ingestion to Postgres as primary
+- Keep Notion as documentation layer
+- Final testing and validation
+
+**Estimated Effort**: Low (1-2 days)
+
+**Total Estimated Effort**: 25-34 days (Weeks 17-23)
+
+**Key Principles**:
+1. Postgres becomes system of record for structured data
+2. SQLite remains internal detail or stepping stone
+3. Notion remains human-friendly overlay (ELN, SOPs, dashboards)
+4. Pinecone remains semantic index
+5. Keep ID semantics stable across systems
+
+**Notion Agent**: Schema changes may be needed for read-only mirroring
+
+**Dependencies**: 
+- Core features stable
+- Chemistry & HTS integration complete
+- Domain model understanding
+
+**See**: `context/ARCHITECTURE_EVOLUTION_ROADMAP.md` for complete details
+
+---
+
+## 💡 TIER 4: QUALITY & OPERATIONS (Ongoing)
 
 ### 3.1 Quality Control Extraction 📋 **DATA QUALITY**
 
@@ -701,6 +1024,26 @@ This roadmap integrates:
 2. ✅ Code refactoring for shared utilities
 3. ✅ Dashboard enhancements
 
+### Phase 7: Chemistry & HTS Integration (Weeks 13-16)
+1. ⏳ SQLite Chemistry & Screening Layer (Week 13-14)
+2. ⏳ Screening Ingestion Pipeline (Week 14-15)
+3. ⏳ Compound-Biology Linking (Week 15)
+4. ⏳ RAG Integration for Chemistry (Week 16)
+
+### Phase 8: Public Repository Ingestion (Weeks 17-20) 🌐 **NEW**
+1. ⏳ Repository Abstraction Layer (Week 17)
+2. ⏳ GEO (Transcriptomics) Integration (Week 18)
+3. ⏳ PRIDE (Proteomics) Integration (Week 19)
+4. ⏳ MetaboLights Integration + Extended MW (Week 20)
+
+### Phase 9: Architecture Evolution (Weeks 21-27) ⭐ **FUTURE EVOLUTION**
+1. ⏳ Domain Model Extraction (Week 21)
+2. ⏳ Postgres Schema Design (Week 22)
+3. ⏳ FastAPI Service Layer (Week 23-24)
+4. ⏳ Migration Utilities (Week 25)
+5. ⏳ RAG Integration with Postgres (Week 26)
+6. ⏳ Transition to Postgres SoT (Week 27)
+
 ---
 
 ## 🎯 Priority Matrix
@@ -709,6 +1052,9 @@ This roadmap integrates:
 |------------|-------|--------|--------------|----------|
 | Feature Caching | ⭐⭐⭐⭐⭐ | Medium | None | 🔥🔥🔥 |
 | Batch Ingestion | ⭐⭐⭐⭐ | Low-Medium | None | 🔥🔥🔥 |
+| Chemistry & HTS Integration | ⭐⭐⭐⭐⭐ | High | SQLite, RDKit, Notion | 🔥🔥🔥 |
+| Public Repository Ingestion | ⭐⭐⭐⭐ | Medium | GEO, PRIDE APIs | 🔥🔥 |
+| Architecture Evolution | ⭐⭐⭐⭐⭐ | Very High | Postgres, FastAPI | 🔥🔥 |
 | Signature Discovery | ⭐⭐⭐⭐⭐ | High | Stats libs | 🔥🔥 |
 | Pathway Analysis | ⭐⭐⭐⭐⭐ | High | APIs + Notion | 🔥🔥 |
 | Evidence Reports | ⭐⭐⭐⭐ | Medium | Cross-omics | 🔥🔥 |
@@ -722,24 +1068,58 @@ This roadmap integrates:
 
 ### **Required Schema Changes**:
 
-1. **Pathways Database** (for Pathway Analysis)
+1. **Chemistry & HTS Databases** (for Chemistry Integration) ⭐ **NEW**
+   - **🧪 Compound Features Database**
+     - Name (title) - internal ID (AMPR-000123)
+     - SMILES (text)
+     - InChIKey (text)
+     - Series (select)
+     - Stage (select: HTS Hit, Biochemical Hit, Cell-Based, Lead, Candidate, Tool)
+     - Programs (relation → Pipeline/Programs)
+     - Experiments (relation → Experiments)
+     - Datasets (relation → Experimental Data Assets)
+     - Signatures (relation → Signatures)
+     - Notes (text)
+   - **🧪 HTS Campaigns Database**
+     - Campaign Name (title)
+     - Program (relation → Pipeline/Programs)
+     - Assay Name (text)
+     - Target (text)
+     - Library (text or relation)
+     - Date (date)
+     - Molecules Screened (number)
+     - Hit Cutoff (text/number)
+     - Hits Found (number)
+     - QC Summary (text)
+     - Data Files (files or links)
+     - Notes (text)
+   - **🧪 Biochemical Hits Database** (Optional)
+     - Compound (relation → Compound Features)
+     - Program (relation → Pipeline/Programs)
+     - Assay Name (text)
+     - IC50 / EC50 (number)
+     - Curve Quality (number/text)
+     - Decision (select: Promote, Drop, Investigate)
+     - Notes (text)
+
+2. **Pathways Database** (for Pathway Analysis)
    - Create new database
    - Properties: Name, Pathway ID, Type, Source, Relations to features
    - See: `FEATURE_ENHANCEMENT_TOP_3_DETAILED.md` Section 3.3
 
-2. **QC Properties** (for Quality Control)
+3. **QC Properties** (for Quality Control)
    - Add "QC Metrics" (JSON/rich text)
    - Add "QC Status" (select)
 
-3. **Signature Quality** (for Validation)
+4. **Signature Quality** (for Validation)
    - Add "Quality Score" (number)
    - Add "Validation Status" (select)
 
-4. **Ingestion Status** (for Operations)
+5. **Ingestion Status** (for Operations)
    - Add "Ingestion Status" (select)
    - Verify "Last Ingested" exists
 
-5. **Dataset Relations** (for Comparison)
+6. **Dataset Relations** (for Comparison)
    - Add "Similar Datasets" (relation)
    - Optional: "Dataset Comparison Score" (number)
 

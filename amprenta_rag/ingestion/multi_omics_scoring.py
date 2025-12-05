@@ -105,6 +105,44 @@ def extract_dataset_features_by_type(
             continue
 
         try:
+            # First, try to get database schema to find all relation properties
+            # This is more robust than trying fixed candidates
+            try:
+                db_url = f"{cfg.notion.base_url}/databases/{db_id}"
+                db_resp = requests.get(db_url, headers=notion_headers(), timeout=30)
+                db_resp.raise_for_status()
+                db_schema = db_resp.json()
+                db_props = db_schema.get("properties", {}) or {}
+                
+                # Find all relation properties that might link to datasets
+                relation_properties = []
+                for prop_name, prop_data in db_props.items():
+                    if prop_data.get("type") == "relation":
+                        prop_lower = prop_name.lower()
+                        # Check if it's a dataset-related property
+                        if any(keyword in prop_lower for keyword in ["dataset", "data asset", "experimental"]):
+                            relation_properties.append(prop_name)
+                            logger.debug(
+                                "[INGEST][MULTI-OMICS-SCORE] Found relation property '%s' in %s DB",
+                                prop_name,
+                                feature_type,
+                            )
+                
+                # If we found relation properties, use them; otherwise fall back to candidates
+                if relation_properties:
+                    relation_property_candidates = relation_properties + relation_property_candidates
+                    logger.debug(
+                        "[INGEST][MULTI-OMICS-SCORE] Using discovered relation properties for %s: %s",
+                        feature_type,
+                        relation_properties,
+                    )
+            except Exception as e:
+                logger.debug(
+                    "[INGEST][MULTI-OMICS-SCORE] Could not fetch schema for %s DB, using candidates: %r",
+                    feature_type,
+                    e,
+                )
+            
             # Try each candidate relation property name
             found_features = False
             for relation_prop in relation_property_candidates:
@@ -152,7 +190,7 @@ def extract_dataset_features_by_type(
                                     found_features = True
 
                         if found_features:
-                            logger.debug(
+                            logger.info(
                                 "[INGEST][MULTI-OMICS-SCORE] Found %d %s features for dataset %s (via property '%s')",
                                 len(features_by_type[feature_type]),
                                 feature_type,

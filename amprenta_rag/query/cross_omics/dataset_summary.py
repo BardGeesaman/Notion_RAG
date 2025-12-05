@@ -10,6 +10,13 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.query.cross_omics.context_extraction import (
+    extract_aggregated_context,
+    extract_disease_context,
+    extract_matrix_context,
+    extract_model_system_context,
+    identify_comparative_context,
+)
 from amprenta_rag.query.cross_omics.helpers import (
     extract_relation_ids,
     extract_select_values,
@@ -19,6 +26,7 @@ from amprenta_rag.query.cross_omics.helpers import (
     group_chunks_by_omics_type,
     retrieve_chunks_for_objects,
 )
+from amprenta_rag.query.cross_omics.prompt_templates import build_enhanced_prompt
 from amprenta_rag.query.cross_omics.synthesis import synthesize_cross_omics_summary
 from amprenta_rag.query.pinecone_query import query_pinecone
 
@@ -54,6 +62,17 @@ def cross_omics_dataset_summary(
     signature_ids = extract_relation_ids(dataset_page, "Related Signature(s)")
     experiment_ids = extract_relation_ids(dataset_page, "Related Experiments")
     program_ids = extract_relation_ids(dataset_page, "Related Programs")
+    
+    # Extract context from dataset page
+    diseases = extract_disease_context(dataset_page)
+    matrix = extract_matrix_context(dataset_page)
+    model_systems = extract_model_system_context(dataset_page)
+    
+    dataset_context = {
+        "diseases": diseases,
+        "matrix": matrix,
+        "model_systems": model_systems,
+    }
     
     # Get dataset chunks
     dataset_chunks = retrieve_chunks_for_objects(
@@ -109,26 +128,44 @@ def cross_omics_dataset_summary(
         if chunks
     }
     
-    # Build prompt
-    prompt = f"""Generate a cross-omics summary for the dataset: {dataset_name}
-
-Dataset details:
+    # Aggregate context from related pages
+    all_related_ids = signature_ids + experiment_ids + program_ids
+    aggregated_context = extract_aggregated_context(all_related_ids, page_type="dataset")
+    
+    # Merge dataset context with aggregated context
+    if aggregated_context.get("diseases") or aggregated_context.get("matrix") or aggregated_context.get("model_systems"):
+        dataset_context["diseases"] = list(set(dataset_context["diseases"] + aggregated_context.get("diseases", [])))
+        dataset_context["matrix"] = list(set(dataset_context["matrix"] + aggregated_context.get("matrix", [])))
+        dataset_context["model_systems"] = list(set(dataset_context["model_systems"] + aggregated_context.get("model_systems", [])))
+    
+    # Identify comparative context
+    comparative_context = identify_comparative_context(dataset_context)
+    
+    # Build additional info
+    additional_info = f"""Dataset details:
 - Omics Type: {', '.join(omics_type) if omics_type else 'Not specified'}
 - Linked signatures: {len(signature_ids)}
 - Linked experiments: {len(experiment_ids)}
 - Linked programs: {len(program_ids)}
-
-Context chunks retrieved:
-- {omics_counts.get('Lipidomics', 0)} lipidomics chunks
-- {omics_counts.get('Metabolomics', 0)} metabolomics chunks
-- {omics_counts.get('Proteomics', 0)} proteomics chunks
-- {omics_counts.get('Transcriptomics', 0)} transcriptomics chunks
-- {len(signature_chunks)} signature chunks
-- {len(experiment_chunks)} experiment chunks
-"""
+- Signature chunks: {len(signature_chunks)}
+- Experiment chunks: {len(experiment_chunks)}"""
     
-    # Synthesize summary
-    summary = synthesize_cross_omics_summary(prompt, context_chunks)
+    # Build enhanced prompt
+    prompt = build_enhanced_prompt(
+        entity_name=dataset_name,
+        entity_type="dataset",
+        context_info=dataset_context if (dataset_context.get("diseases") or dataset_context.get("matrix") or dataset_context.get("model_systems")) else None,
+        omics_counts=omics_counts,
+        additional_info=additional_info,
+    )
+    
+    # Synthesize summary with comparative analysis if applicable
+    include_comparative = comparative_context is not None
+    summary = synthesize_cross_omics_summary(
+        prompt,
+        context_chunks,
+        include_comparative=include_comparative,
+    )
     
     return summary
 

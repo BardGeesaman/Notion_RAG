@@ -26,6 +26,7 @@ from amprenta_rag.ingestion.signature_matching.matching import (
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.pinecone_query import build_meta_filter, query_pinecone
 from amprenta_rag.query.rag.chunk_collection import collect_chunks
+from amprenta_rag.rag.hybrid_chunk_collection import collect_hybrid_chunks
 from amprenta_rag.query.rag.match_processing import filter_matches, summarize_match
 from amprenta_rag.query.rag.models import RAGQueryResult
 from amprenta_rag.query.rag.synthesis import synthesize_answer
@@ -44,6 +45,7 @@ def query_rag(
     target: Optional[str] = None,
     lipid: Optional[str] = None,
     signature: Optional[str] = None,
+    use_postgres: bool = True,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -104,7 +106,12 @@ def query_rag(
             answer="No matches left after filtering (tag).",
         )
 
-    chunks = collect_chunks(filtered)
+    # Use hybrid chunk collection if Postgres is enabled
+    if use_postgres:
+        chunks = collect_hybrid_chunks(filtered, prefer_postgres=True)
+    else:
+        chunks = collect_chunks(filtered)
+    
     if not chunks:
         return RAGQueryResult(
             query=user_query,

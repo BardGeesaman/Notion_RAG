@@ -28,6 +28,7 @@ from amprenta_rag.ingestion.signature_matching import (
     update_dataset_with_signature_matches,
 )
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.models.domain import OmicsType
 
 logger = get_logger(__name__)
 
@@ -93,113 +94,261 @@ def ingest_lipidomics_file(
     if not species_set:
         raise ValueError(f"No species extracted from file: {file_path}")
 
-    # Determine page ID
-    if notion_page_id:
-        # Use existing page
-        page_id = notion_page_id
-        logger.info(
-            "[INGEST][LIPIDOMICS] Using existing dataset page %s",
-            page_id,
-        )
-        # Update summary
+    # TIER 3: Create dataset in Postgres FIRST (primary)
+    cfg = get_config()
+    postgres_dataset = None
+    page_id = None
+    
+    if cfg.pipeline.use_postgres_as_sot:
         try:
-            page = fetch_dataset_page(page_id)
-            page_props = page.get("properties", {}) or {}
-            summary_prop = page_props.get("Summary", {}) or {}
-            existing_summary = "".join(
-                rt.get("plain_text", "")
-                for rt in summary_prop.get("rich_text", [])
+            from amprenta_rag.ingestion.postgres_integration import (
+                create_or_update_dataset_in_postgres,
             )
-            new_note = (
-                f"\n\n---\n\n"
-                f"Lipidomics file ingested: {file_path}\n"
-                f"Contains {raw_rows} raw entries, {len(species_set)} normalized species."
+            
+            dataset_name = f"Internal Lipidomics — {Path(file_path).stem}"
+            postgres_dataset = create_or_update_dataset_in_postgres(
+                name=dataset_name,
+                omics_type=OmicsType.LIPIDOMICS,
+                file_paths=[file_path],
+                description=f"Internal lipidomics dataset ingested from {file_path}. Contains {raw_rows} raw entries, {len(species_set)} normalized species.",
+                notion_page_id=notion_page_id,  # Link to existing Notion if provided
+                program_ids=None,  # TODO: Convert Notion IDs to Postgres UUIDs
+                experiment_ids=None,
             )
-            combined_summary = existing_summary + new_note
-
-            # Update page
-            url = f"{get_config().notion.base_url}/pages/{page_id}"
-            resp = requests.patch(
-                url,
-                headers=notion_headers(),
-                json={"properties": {"Summary": {"rich_text": [{"text": {"content": combined_summary}}]}}},
-                timeout=30,
+            logger.info(
+                "[INGEST][LIPIDOMICS] Created/updated dataset in Postgres: %s (ID: %s)",
+                postgres_dataset.name,
+                postgres_dataset.id,
             )
-            resp.raise_for_status()
+            # Use Postgres ID as primary identifier (fallback to Notion ID if provided)
+            page_id = notion_page_id or str(postgres_dataset.id)
         except Exception as e:
-            logger.warning(
-                "[INGEST][LIPIDOMICS] Could not update summary for page %s: %r",
-                page_id,
+            logger.error(
+                "[INGEST][LIPIDOMICS] Postgres creation failed: %r",
                 e,
             )
-    elif create_page:
-        # Create new page
-        page_id = create_lipidomics_dataset_page(
-            file_path=file_path,
-            species_count=len(species_set),
-            raw_rows=raw_rows,
-        )
-    else:
-        raise ValueError(
-            "Either notion_page_id must be provided or create_page must be True"
-        )
+            # If Postgres is required, fail; otherwise fallback to Notion
+            if cfg.pipeline.use_postgres_as_sot:
+                raise RuntimeError(f"Postgres creation failed (required): {e}") from e
+    
+    # Create/update Notion page (OPTIONAL - only if enabled)
+    if cfg.pipeline.enable_notion_sync or cfg.pipeline.enable_dual_write:
+        try:
+            if notion_page_id:
+                # Use existing page
+                page_id = notion_page_id
+                logger.info(
+                    "[INGEST][LIPIDOMICS] Using existing Notion dataset page %s",
+                    page_id,
+                )
+                # Update summary
+                try:
+                    page = fetch_dataset_page(page_id)
+                    page_props = page.get("properties", {}) or {}
+                    summary_prop = page_props.get("Summary", {}) or {}
+                    existing_summary = "".join(
+                        rt.get("plain_text", "")
+                        for rt in summary_prop.get("rich_text", [])
+                    )
+                    new_note = (
+                        f"\n\n---\n\n"
+                        f"Lipidomics file ingested: {file_path}\n"
+                        f"Contains {raw_rows} raw entries, {len(species_set)} normalized species."
+                    )
+                    combined_summary = existing_summary + new_note
 
-    # Attach file (noted in summary for now)
-    attach_file_to_page(page_id, file_path, "Lipidomics")
+                    # Update page
+                    url = f"{get_config().notion.base_url}/pages/{page_id}"
+                    resp = requests.patch(
+                        url,
+                        headers=notion_headers(),
+                        json={"properties": {"Summary": {"rich_text": [{"text": {"content": combined_summary}}]}}},
+                        timeout=30,
+                    )
+                    resp.raise_for_status()
+                except Exception as e:
+                    logger.warning(
+                        "[INGEST][LIPIDOMICS] Could not update Notion summary for page %s: %r",
+                        page_id,
+                        e,
+                    )
+            elif create_page:
+                # Create new Notion page
+                page_id = create_lipidomics_dataset_page(
+                    file_path=file_path,
+                    species_count=len(species_set),
+                    raw_rows=raw_rows,
+                )
+                # Update Postgres with Notion page ID if Postgres dataset exists
+                if postgres_dataset:
+                    from amprenta_rag.database.base import get_db
+                    db = next(get_db())
+                    postgres_dataset.notion_page_id = page_id
+                    db.commit()
+                    logger.info(
+                        "[INGEST][LIPIDOMICS] Linked Postgres dataset %s to Notion page %s",
+                        postgres_dataset.id,
+                        page_id,
+                    )
+            elif not cfg.pipeline.use_postgres_as_sot:
+                # Notion-only mode: require page creation
+                raise ValueError(
+                    "Either notion_page_id must be provided or create_page must be True"
+                )
+        except Exception as e:
+            logger.warning(
+                "[INGEST][LIPIDOMICS] Notion sync skipped (error): %r",
+                e,
+            )
+            # Non-blocking - continue with Postgres-only mode
+    elif not cfg.pipeline.use_postgres_as_sot:
+        # Notion-only mode (legacy)
+        if notion_page_id:
+            page_id = notion_page_id
+        elif create_page:
+            page_id = create_lipidomics_dataset_page(
+                file_path=file_path,
+                species_count=len(species_set),
+                raw_rows=raw_rows,
+            )
+        else:
+            raise ValueError(
+                "Either notion_page_id must be provided or create_page must be True"
+            )
+    
+    # Attach file (noted in summary for now) - only if Notion page exists
+    if page_id and (cfg.pipeline.enable_notion_sync or cfg.pipeline.enable_dual_write or not cfg.pipeline.use_postgres_as_sot):
+        attach_file_to_page(page_id, file_path, "Lipidomics")
 
-    # Link to Programs and Experiments
-    if program_ids or experiment_ids:
-        link_to_programs_and_experiments(
-            dataset_page_id=page_id,
-            omics_type="Lipidomics",
-            program_ids=program_ids,
-            experiment_ids=experiment_ids,
-        )
+    # Link to Programs and Experiments (Notion only if enabled)
+    if (program_ids or experiment_ids) and (cfg.pipeline.enable_notion_sync or cfg.pipeline.enable_dual_write or not cfg.pipeline.use_postgres_as_sot):
+        if page_id:
+            link_to_programs_and_experiments(
+                dataset_page_id=page_id,
+                omics_type="Lipidomics",
+                program_ids=program_ids,
+                experiment_ids=experiment_ids,
+            )
+    
+    # Link to Programs/Experiments in Postgres (if Postgres dataset exists)
+    if cfg.pipeline.use_postgres_as_sot and postgres_dataset and (program_ids or experiment_ids):
+        try:
+            from amprenta_rag.ingestion.postgres_program_experiment_linking import (
+                link_dataset_to_programs_and_experiments_in_postgres,
+            )
+            
+            logger.info(
+                "[INGEST][LIPIDOMICS] Linking dataset %s to programs/experiments in Postgres",
+                postgres_dataset.id,
+            )
+            
+            results = link_dataset_to_programs_and_experiments_in_postgres(
+                dataset_id=postgres_dataset.id,
+                notion_program_ids=program_ids,
+                notion_experiment_ids=experiment_ids,
+            )
+            
+            logger.info(
+                "[INGEST][LIPIDOMICS] Linked dataset to %d programs, %d experiments in Postgres",
+                results["programs_linked"],
+                results["experiments_linked"],
+            )
+        except Exception as e:
+            logger.warning(
+                "[INGEST][LIPIDOMICS] Postgres program/experiment linking skipped (error): %r",
+                e,
+            )
 
-    # Link lipid species to Lipid Species DB
-    try:
-        from amprenta_rag.ingestion.feature_extraction import link_feature
+    # Link features to Postgres (if Postgres dataset exists)
+    if cfg.pipeline.use_postgres_as_sot and postgres_dataset and cfg.pipeline.enable_feature_linking:
+        try:
+            from amprenta_rag.ingestion.features.postgres_linking import (
+                batch_link_features_to_dataset_in_postgres,
+            )
+            from amprenta_rag.models.domain import FeatureType
+            
+            logger.info(
+                "[INGEST][LIPIDOMICS] Batch linking %d lipid species to Postgres (dataset: %s)",
+                len(species_set),
+                postgres_dataset.id,
+            )
+            
+            feature_tuples = [(name, FeatureType.LIPID) for name in species_set]
+            
+            results = batch_link_features_to_dataset_in_postgres(
+                features=feature_tuples,
+                dataset_id=postgres_dataset.id,
+                max_workers=cfg.pipeline.feature_linking_max_workers,
+            )
+            
+            linked_count = sum(1 for v in results.values() if v)
+            logger.info(
+                "[INGEST][LIPIDOMICS] Batch linked %d/%d lipid species to Postgres",
+                linked_count,
+                len(species_set),
+            )
+        except Exception as e:
+            logger.warning(
+                "[INGEST][LIPIDOMICS] Postgres feature linking skipped (error): %r",
+                e,
+            )
 
-        logger.info(
-            "[INGEST][LIPIDOMICS] Linking %d lipid species to Lipid Species DB",
-            len(species_set),
-        )
-        linked_count = 0
-        for lipid in species_set:
+    # Link lipid species to Lipid Species DB in Notion (batch-optimized)
+    # Only if Notion sync enabled (for backward compatibility)
+    if cfg.pipeline.enable_feature_linking and (cfg.pipeline.enable_notion_sync or cfg.pipeline.enable_dual_write or not cfg.pipeline.use_postgres_as_sot):
+        if page_id:
             try:
-                link_feature("lipid", lipid, page_id)
-                linked_count += 1
+                from amprenta_rag.ingestion.features.batch_linking import batch_link_features
+
+                logger.info(
+                    "[INGEST][LIPIDOMICS] Batch linking %d lipid species to Notion Lipid Species DB (max_workers=%d)",
+                    len(species_set),
+                    cfg.pipeline.feature_linking_max_workers,
+                )
+                
+                features = [("lipid", lipid) for lipid in species_set]
+                feature_pages = batch_link_features(
+                    features=features,
+                    dataset_page_id=page_id,
+                    max_workers=cfg.pipeline.feature_linking_max_workers,
+                    enable_linking=True,
+                )
+                
+                linked_count = sum(1 for v in feature_pages.values() if v)
+                logger.info(
+                    "[INGEST][LIPIDOMICS] Batch linked %d/%d lipid species to Notion Lipid Species DB",
+                    linked_count,
+                    len(species_set),
+                )
             except Exception as e:
                 logger.warning(
-                    "[INGEST][LIPIDOMICS] Error linking lipid species '%s': %r",
-                    lipid,
+                    "[INGEST][LIPIDOMICS] Notion feature linking skipped (error): %r",
                     e,
                 )
+        else:
+            logger.info(
+                "[INGEST][LIPIDOMICS] Notion feature linking skipped (no Notion page ID)"
+            )
+    elif not cfg.pipeline.enable_feature_linking:
         logger.info(
-            "[INGEST][LIPIDOMICS] Linked %d/%d lipid species to Lipid Species DB",
-            linked_count,
-            len(species_set),
-        )
-    except Exception as e:
-        logger.warning(
-            "[INGEST][LIPIDOMICS] Feature linking skipped (error): %r",
-            e,
+            "[INGEST][LIPIDOMICS] Feature linking disabled (ENABLE_FEATURE_LINKING=false)"
         )
 
     # Score against signatures
-    cfg = get_config()
     signature_matches = []
     if cfg.pipeline.enable_signature_scoring:
+        # Use Postgres dataset ID if available, otherwise Notion page ID
+        dataset_identifier = str(postgres_dataset.id) if postgres_dataset else page_id
         logger.info(
             "[INGEST][LIPIDOMICS] Scoring dataset %s against signatures (%d species)",
-            page_id,
+            dataset_identifier,
             len(species_set),
         )
 
         matches = find_matching_signatures_for_dataset(
             dataset_species=species_set,  # Legacy support
             overlap_threshold=cfg.pipeline.signature_overlap_threshold,
-            dataset_page_id=page_id,  # Multi-omics support
+            dataset_page_id=page_id if page_id else dataset_identifier,  # Multi-omics support
             omics_type="Lipidomics",
         )
 
@@ -207,30 +356,66 @@ def ingest_lipidomics_file(
             logger.info(
                 "[INGEST][LIPIDOMICS] Found %d matching signature(s) for dataset %s",
                 len(matches),
-                page_id,
+                dataset_identifier,
             )
-            update_dataset_with_signature_matches(
-                dataset_page_id=page_id,
-                matches=matches,
-            )
+            # Update Notion if enabled
+            if page_id and (cfg.pipeline.enable_notion_sync or cfg.pipeline.enable_dual_write or not cfg.pipeline.use_postgres_as_sot):
+                update_dataset_with_signature_matches(
+                    dataset_page_id=page_id,
+                    matches=matches,
+                )
+            # TODO: Update Postgres dataset with signature matches
             signature_matches = matches
         else:
             logger.info(
                 "[INGEST][LIPIDOMICS] No signature matches found for dataset %s",
-                page_id,
+                dataset_identifier,
             )
 
     # Embed into Pinecone
     dataset_name = Path(file_path).stem
-    embed_lipidomics_dataset(
-        page_id=page_id,
-        dataset_name=dataset_name,
-        species=species_set,
-        signature_matches=signature_matches,
-    )
+    
+    # TIER 3: Use Postgres-aware embedding if Postgres dataset exists
+    cfg = get_config()
+    if cfg.pipeline.use_postgres_as_sot and postgres_dataset:
+        try:
+            from amprenta_rag.ingestion.postgres_integration import (
+                embed_dataset_with_postgres_metadata,
+            )
+            embed_dataset_with_postgres_metadata(
+                dataset_id=postgres_dataset.id,
+                dataset_name=dataset_name,
+                species_or_features=list(species_set),
+                omics_type=OmicsType.LIPIDOMICS,
+                signature_matches=signature_matches,
+                notion_page_id=page_id,
+            )
+            logger.info(
+                "[INGEST][LIPIDOMICS] Embedded dataset to Pinecone using Postgres metadata"
+            )
+        except Exception as e:
+            logger.warning(
+                "[INGEST][LIPIDOMICS] Postgres embedding failed, falling back to Notion: %r",
+                e,
+            )
+            # Fallback to Notion-based embedding
+            embed_lipidomics_dataset(
+                page_id=page_id,
+                dataset_name=dataset_name,
+                species=species_set,
+                signature_matches=signature_matches,
+            )
+    else:
+        # Use Notion-based embedding (default)
+        embed_lipidomics_dataset(
+            page_id=page_id,
+            dataset_name=dataset_name,
+            species=species_set,
+            signature_matches=signature_matches,
+        )
 
-    # Auto-ingest linked Experiment pages
-    if experiment_ids:
+    # Auto-ingest linked Experiment pages (only if Notion sync enabled)
+    if experiment_ids and (cfg.pipeline.enable_notion_sync or cfg.pipeline.enable_dual_write or not cfg.pipeline.use_postgres_as_sot):
         from amprenta_rag.ingestion.experiments_ingestion import ingest_experiment
 
         for exp_id in experiment_ids:
