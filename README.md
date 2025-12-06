@@ -138,6 +138,8 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 | [💡 Usage Examples](docs/USAGE_EXAMPLES.md) | Practical code examples |
 | [🗄️ Notion Database Setup](docs/NOTION_DATABASE_SETUP.md) | Database configuration guide |
 | [🛡️ Production Hardening](docs/PRODUCTION_HARDENING.md) | Production deployment guide |
+| [📧 Gmail Setup](docs/setup/GMAIL_SETUP.md) | Gmail API integration guide |
+| [🔐 OAuth Setup](docs/setup/OAUTH_SETUP.md) | OAuth2 authentication guide |
 
 ## Usage Examples
 
