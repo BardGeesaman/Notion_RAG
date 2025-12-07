@@ -20,13 +20,9 @@ from amprenta_rag.ingestion.feature_extraction import (
     extract_features_from_mwtab, link_features_to_notion_items)
 from amprenta_rag.ingestion.metadata_semantic import \
     get_dataset_semantic_metadata
-from amprenta_rag.ingestion.dataset_notion_utils import (
-    fetch_dataset_page, update_dataset_embedding_metadata,
-    update_dataset_scientific_metadata)
 from amprenta_rag.ingestion.mwtab_extraction import (
     extract_mwtab_from_page_content, extract_metadata_from_mwtab,
     extract_study_id_from_page_properties, fetch_mwtab_from_api)
-from amprenta_rag.ingestion.notion_pages import extract_page_content
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
 from amprenta_rag.ingestion.signature_integration import \
     detect_and_ingest_signatures_from_content
@@ -41,59 +37,25 @@ logger = get_logger(__name__)
 
 def ingest_dataset(page_id: str, force: bool = False) -> None:
     """
-    Ingest a dataset page from Notion into Pinecone.
-
-    This function performs the complete dataset ingestion pipeline:
-    1. Fetches the dataset page from Notion
-    2. Extracts mwTab data (from page content or MW API)
-    3. Extracts full text content
-    4. Extracts semantic metadata (diseases, matrix, signatures, etc.)
-    5. Chunks and embeds the text
-    6. Upserts vectors to Pinecone with metadata
-    7. Updates Notion page with embedding IDs
-    8. Extracts scientific metadata and updates Notion
-    9. Extracts metabolite features and links them
-    10. Detects and ingests signatures from content
-    11. Matches dataset against lipid signatures and updates Notion
-
+    DEPRECATED: Notion support has been removed.
+    
+    This function previously ingested datasets from Notion.
+    Postgres is now the source of truth.
+    
+    TODO: Phase 3 - Remove this function or refactor to use Postgres UUIDs.
+    
     Args:
-        page_id: Notion page ID (with or without dashes)
-        force: If True, re-ingest even if already embedded
-
-    Raises:
-        Exception: If ingestion fails at any step
+        page_id: Notion page ID (ignored)
+        force: If True, re-ingest (ignored)
     """
-    logger.info("[INGEST][DATASET] Ingesting dataset page %s", page_id)
-
-    try:
-        page = fetch_dataset_page(page_id)
-    except Exception as e:
-        logger.error(
-            "[INGEST][DATASET] Error fetching Notion page %s: %r",
-            page_id,
-            e,
-        )
-        raise
-
-    # Get the canonical page ID from the fetched page (with dashes)
-    canonical_page_id = page.get("id", page_id)
-
-    props = page.get("properties", {}) or {}
-
-    # Get title from "Name" property
-    title_prop = props.get("Name", {})
-    title_parts = title_prop.get("title", []) or []
-    dataset_title = (
-        title_parts[0].get("plain_text", "").strip()
-        if title_parts
-        else "(untitled dataset)"
+    logger.warning(
+        "[INGEST][DATASET] ingest_dataset() deprecated - Notion support removed. "
+        "Use Postgres-based ingestion instead."
     )
+    return
 
-    # Extract full content from blocks (using shared helper)
-    try:
-        # Normalize page ID (remove dashes for extract_page_content)
-        page_id_clean = page_id.replace("-", "")
-        full_text = extract_page_content(page_id_clean)
+    # Stub: All Notion-dependent code removed
+    # Original function body removed - use Postgres-based ingestion instead
     except Exception as e:
         logger.error(
             "[INGEST][DATASET] Error extracting content for %s: %r",
