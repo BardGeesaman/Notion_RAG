@@ -13,7 +13,8 @@ import pandas as pd
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.dataset_notion_utils import update_dataset_embedding_metadata
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.ingestion.dataset_notion_utils import update_dataset_embedding_metadata
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.ingestion.transcriptomics.text_building import build_dge_text_representation
@@ -97,13 +98,8 @@ def embed_transcriptomics_dataset(
             batch = vectors[i : i + batch_size]
             index.upsert(vectors=batch, namespace=cfg.pinecone.namespace)
 
-        # Update Notion with embedding metadata
-        embedding_ids = [v["id"] for v in vectors]
-        update_dataset_embedding_metadata(
-            page_id=page_id,
-            embedding_ids=embedding_ids,
-            embedding_count=len(embedding_ids),
-        )
+        # DEPRECATED: Notion metadata update removed - Postgres is now source of truth
+        # Embedding metadata is stored in Pinecone
 
         logger.info(
             "[INGEST][TRANSCRIPTOMICS] Generated %d chunk(s) for transcriptomics dataset %s",

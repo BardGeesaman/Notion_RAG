@@ -57,8 +57,14 @@ def extract_dataset_features_by_type(
             "lipid": {"Cer(d18:1/16:0)", ...}
         }
     """
-    from amprenta_rag.clients.notion_client import notion_headers
+    # DEPRECATED: Notion imports removed
+    # from amprenta_rag.clients.notion_client import notion_headers
     from amprenta_rag.config import get_config
+    
+    def notion_headers() -> Dict[str, str]:
+        """DEPRECATED: Notion support removed. Returns empty headers dict."""
+        logger.debug("[MULTI-OMICS-SCORING] notion_headers() deprecated - Notion support removed")
+        return {}
 
     # Check cache first
     if use_cache and not force_refresh:
