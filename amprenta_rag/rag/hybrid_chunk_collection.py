@@ -7,7 +7,7 @@ for comprehensive RAG context.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Any
+from typing import TYPE_CHECKING, Dict, List, Optional, Any
 
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.rag.postgres_resolver import (
@@ -16,13 +16,16 @@ from amprenta_rag.rag.postgres_resolver import (
     fetch_postgres_context,
     get_notion_id_from_postgres,
 )
-from amprenta_rag.query.rag.models import MatchSummary
+
+# Avoid circular import: only import MatchSummary for type checking
+if TYPE_CHECKING:
+    from amprenta_rag.query.rag.models import MatchSummary
 
 logger = get_logger(__name__)
 
 
 def collect_hybrid_chunks(
-    matches: List[MatchSummary],
+    matches: List["MatchSummary"],
     prefer_postgres: bool = True,
 ) -> List[str]:
     """
@@ -93,7 +96,7 @@ def collect_hybrid_chunks(
 
 
 def collect_enhanced_chunks(
-    matches: List[MatchSummary],
+    matches: List["MatchSummary"],
     include_notion_narrative: bool = True,
 ) -> List[str]:
     """
