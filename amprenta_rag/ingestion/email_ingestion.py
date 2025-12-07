@@ -32,10 +32,28 @@ from amprenta_rag.ingestion.metadata_semantic import \
     get_email_semantic_metadata
 from amprenta_rag.ingestion.email_cleanup import (
     cleanup_orphaned_chunks, delete_email_and_chunks)
-from amprenta_rag.ingestion.notion_pages import (create_rag_chunk_page,
-                                                 extract_page_content,
-                                                 fetch_not_embedded_emails,
-                                                 update_email_page)
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# Stub functions for backward compatibility
+def extract_page_content(page_id: str) -> str:
+    """DEPRECATED: Notion support removed. Returns empty string."""
+    logger.debug("[INGEST][EMAIL] extract_page_content() deprecated - Notion support removed")
+    return ""
+
+def create_rag_chunk_page(chunk_id: str, chunk_text: str, parent_type: str, parent_id: str, order: int, when_iso: str) -> Optional[str]:
+    """DEPRECATED: Notion support removed. Returns None."""
+    logger.debug("[INGEST][EMAIL] create_rag_chunk_page() deprecated - Notion support removed")
+    return None
+
+def fetch_not_embedded_emails() -> List[Dict[str, Any]]:
+    """DEPRECATED: Notion support removed. Returns empty list."""
+    logger.debug("[INGEST][EMAIL] fetch_not_embedded_emails() deprecated - Notion support removed")
+    return []
+
+def update_email_page(page_id: str, when_iso: str) -> None:
+    """DEPRECATED: Notion support removed. Does nothing."""
+    logger.debug("[INGEST][EMAIL] update_email_page() deprecated - Notion support removed")
+    return
+
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
 from amprenta_rag.ingestion.signature_integration import \
     detect_and_ingest_signatures_from_content
