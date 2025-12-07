@@ -39,7 +39,11 @@ backup_*/
 sandbox/
 
 sandbox
-ChatGPT context/
+
+# Context files - NOW TRACKED (removed from .gitignore Dec 2025)
+# These contain important AI context and historical docs
+# ChatGPT context/  # REMOVED - now tracked
+# md_archive/       # REMOVED - now tracked
 
 # Gmail API credentials (sensitive)
 credentials/gmail_credentials.json
@@ -66,6 +70,6 @@ quants/
 *.txt
 !requirements*.txt
 
-# Documentation archive (local only, not tracked)
-md_archive/
+# Documentation archive - NOW TRACKED (see note above)
+# md_archive/  # REMOVED - now tracked
 

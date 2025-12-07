@@ -1,0 +1,101 @@
+# Amprenta Notion Workspace – Structure & Conventions
+
+Last updated: November 29, 2025
+Owner: Bard Geesaman
+
+## 1. Purpose of this workspace
+
+- Give Amprenta a single “operating system” for:
+  - Projects
+  - Clients / accounts
+  - Internal knowledge (docs, SOPs, decisions)
+  - RAG system management (sources, pipelines, evaluations)
+
+## 2. Top-level pages
+
+- 🏠 Home
+- 📂 Operations
+- 📚 Knowledge Base
+- 🤖 RAG System
+- [Other key areas you already use]
+
+Brief description of each:
+
+- **Home** – High-level dashboards and navigation.
+- **Operations** – Projects, tasks, recurring processes.
+- **Knowledge Base** – Docs, SOPs, engineering/product notes.
+- **RAG System** – Pages & databases for data sources, pipelines, evaluations, and prompts.
+
+## 3. Core databases
+
+### 3.1 Projects
+
+- Purpose: Track all product / client projects.
+- Key properties:
+  - `Name` (Title)
+  - `Type` (Internal / Client / Experiment)
+  - `Status` (Idea / In progress / Blocked / Done)
+  - `Owner` (Person)
+  - `Start date`, `Target ship date`
+  - Relations:
+    - ↔ `Clients`
+    - ↔ `Docs` (Knowledge Base)
+    - ↔ `RAG Pipelines` (if relevant)
+
+### 3.2 Docs (Knowledge Base)
+
+- Purpose: Central docs (engineering, product, ops).
+- Properties:
+  - `Title` (Title)
+  - `Type` (Spec / RFC / SOP / Meeting notes / etc.)
+  - `Area` (Product / Engineering / Ops / GTM)
+  - `Status` (Draft / In review / Final)
+  - `Related projects` (Relation to Projects)
+
+### 3.3 RAG – Data Sources
+
+- Purpose: Track each logical data source the RAG system ingests.
+- Properties:
+  - `Name`
+  - `Type` (Notion DB, Notion page tree, Drive folder, DB table, API, etc.)
+  - `System` (Notion / GDrive / Postgres / etc.)
+  - `Owner`
+  - `Sensitivity` (Public / Internal / Restricted)
+  - `Sync mode` (Full / Incremental)
+  - `Sync frequency` (Hourly / Daily / Weekly)
+  - `Status` (Planned / Enabled / Disabled)
+
+### 3.4 RAG – Pipelines
+
+- Purpose: Track ingestion + indexing pipelines.
+- Properties:
+  - `Name`
+  - `Data source` (Relation → Data Sources DB)
+  - `Chunking strategy` (by heading / fixed tokens / custom)
+  - `Embedding model` (e.g. `text-embedding-3-large`)
+  - `Vector store` ([name of DB/service])
+  - `Status` (Design / Active / Deprecated)
+  - `Last full sync`, `Last incremental sync`
+
+[Add any other databases you already have – Clients, Tasks, etc.]
+
+## 4. Naming conventions
+
+- Pages: `[Area] Short description` (e.g. `[Spec] RAG pipeline v1`)
+- Databases: Singular noun (e.g. “Project”, “Client”) or clear plural (“Projects”, “Clients”) – choose one convention.
+- Properties:
+  - `snake_case` for technical config fields
+  - `Title Case` for human-friendly labels
+
+## 5. RAG-specific considerations
+
+- Pages intended for RAG ingestion should:
+  - Avoid huge, unstructured walls of text.
+  - Use clear headings (`H1`, `H2`, `H3`) to align with chunking.
+  - Keep important IDs and references in separate fields (for metadata).
+
+## 6. Open questions
+
+- [Which Notion DBs should be in the first RAG MVP?]
+- [How do we handle per-client access controls, if needed?]
+- [Any performance limits we’re worried about in Notion?]

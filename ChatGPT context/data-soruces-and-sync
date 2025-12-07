@@ -1,0 +1,26 @@
+# Data Sources & Sync Strategy
+
+## 1. Data sources overview
+
+- Notion
+  - [DB name] – [short description]
+  - [DB name] – [short description]
+- Files
+  - [Location] – [e.g. “Design docs folder in Drive”]
+- Structured data
+  - [DB / table / API] – [what it contains]
+
+## 2. Sync policies
+
+For each source, define:
+
+- Sync frequency
+- Incremental logic
+- Owner (who can change config)
+
+[Create a table-like list for each source.]
+
+## 3. Access control implications
+
+- Which sources are internal-only?
+- Any sources that should NEVER be included in RAG?
