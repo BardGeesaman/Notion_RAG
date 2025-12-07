@@ -1,7 +1,9 @@
 import pandas as pd
 import streamlit as st
+import threading
 
 from amprenta_rag.database.models import Dataset
+from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
 from scripts.dashboard.db_session import db_session
 
 repo_map = {
@@ -254,17 +256,27 @@ def render_repositories_page():
                                                     omics_type_enum = OmicsType.METABOLOMICS
                                         
                                         with db_session() as db:
-                                            dataset_id = create_or_update_dataset_in_postgres(
+                                            dataset = create_or_update_dataset_in_postgres(
                                                 db=db,
                                                 name=metadata.title or accession,
                                                 omics_type=omics_type_enum,
                                                 description=metadata.summary or "",
                                                 organism=organism_list,
                                                 external_ids=ext_ids,
-                                                auto_ingest=True,  # Automatically trigger ingestion
+                                                auto_ingest=True,
                                             )
+                                            dataset_uuid = dataset.id
                                         
                                         st.success(f"✅ Imported: {accession} - {title[:50]}...")
+                                        
+                                        # Trigger Pinecone ingestion in background
+                                        try:
+                                            st.info(f"🔄 Starting Pinecone ingestion for {accession}...")
+                                            ingest_dataset_from_postgres(dataset_uuid, force=False, update_notion=False)
+                                            st.success(f"✅ Ingested to Pinecone: {accession}")
+                                        except Exception as ingest_err:
+                                            st.warning(f"⚠️ Pinecone ingestion pending for {accession}: {str(ingest_err)[:50]}")
+                                        
                                         imported_count += 1
                                         
                                     except Exception as e:
