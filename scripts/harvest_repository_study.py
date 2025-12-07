@@ -18,7 +18,14 @@ from typing import Optional
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.clients.notion_client import notion_headers
+# NOTE: Notion support removed - notion_headers stubbed for backward compatibility
+try:
+    from amprenta_rag.clients.notion_client import notion_headers
+except ImportError:
+    def notion_headers():
+        """Stub for removed Notion support."""
+        return {"Authorization": "Bearer NOTION_REMOVED", "Notion-Version": "2022-06-28"}
+
 from amprenta_rag.config import NOTION_EXP_DATA_DB_ID, get_config
 from amprenta_rag.ingestion.dataset_ingestion import ingest_dataset
 from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
