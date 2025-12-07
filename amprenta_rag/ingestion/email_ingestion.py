@@ -32,6 +32,14 @@ from amprenta_rag.ingestion.metadata_semantic import \
     get_email_semantic_metadata
 from amprenta_rag.ingestion.email_cleanup import (
     cleanup_orphaned_chunks, delete_email_and_chunks)
+from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.ingestion.signature_integration import \
+    detect_and_ingest_signatures_from_content
+from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
 # DEPRECATED: Notion imports removed - Postgres is now source of truth
 # Stub functions for backward compatibility
 def extract_page_content(page_id: str) -> str:
@@ -53,14 +61,6 @@ def update_email_page(page_id: str, when_iso: str) -> None:
     """DEPRECATED: Notion support removed. Does nothing."""
     logger.debug("[INGEST][EMAIL] update_email_page() deprecated - Notion support removed")
     return
-
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
-from amprenta_rag.ingestion.signature_integration import \
-    detect_and_ingest_signatures_from_content
-from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
 
 # Backward compatibility wrappers for cleanup functions moved to email_cleanup.py
 def cleanup_orphaned_chunks() -> None:
