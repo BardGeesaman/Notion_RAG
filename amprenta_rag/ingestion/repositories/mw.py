@@ -329,3 +329,80 @@ class MWRepository(RepositoryInterface):
             )
             return []
 
+
+# Convenience function for dashboard compatibility
+def search_mw_studies(
+    keyword: str = "",
+    disease: str = "",
+    species: str = "",
+    omics_type: str = "",
+    matrix: str = "",
+    platform: str = "",
+    max_results: int = 25,
+) -> List[Dict[str, Any]]:
+    """
+    Search MW studies with filters (dashboard-compatible interface).
+    
+    Args:
+        keyword: Search keyword
+        disease: Disease filter
+        species: Species/organism filter
+        omics_type: Omics type filter
+        matrix: Matrix/sample type filter
+        platform: Analytical platform filter
+        max_results: Maximum results to return
+        
+    Returns:
+        List of study dictionaries with id, title, description, etc.
+    """
+    repo = MWRepository(omics_type=omics_type if omics_type else "metabolomics")
+    
+    # Build keywords list
+    keywords = [kw.strip() for kw in keyword.split() if kw.strip()] if keyword else []
+    if not keywords:
+        keywords = ["*"]  # Match all if no keyword
+    
+    # Build filters
+    filters = {}
+    if disease:
+        filters["disease"] = disease
+    if species:
+        filters["organism"] = species
+    if matrix:
+        filters["sample_type"] = matrix
+    
+    # Search studies
+    try:
+        study_ids = repo.search_studies(keywords, filters, max_results)
+    except Exception as e:
+        logger.error("[REPO][MW] Search failed: %r", e)
+        return []
+    
+    # Fetch metadata for each study
+    results = []
+    for study_id in study_ids:
+        try:
+            metadata = repo.fetch_study_metadata(study_id)
+            if metadata:
+                results.append({
+                    "id": study_id,
+                    "title": metadata.title,
+                    "description": metadata.summary or "",
+                    "disease": ", ".join(metadata.disease) if metadata.disease else "",
+                    "organism": ", ".join(metadata.organism) if metadata.organism else "",
+                    "omics_type": metadata.omics_type,
+                })
+        except Exception as e:
+            logger.warning("[REPO][MW] Failed to fetch metadata for %s: %r", study_id, e)
+            # Add basic entry
+            results.append({
+                "id": study_id,
+                "title": f"MW Study {study_id}",
+                "description": "",
+                "disease": "",
+                "organism": "",
+                "omics_type": omics_type or "metabolomics",
+            })
+    
+    return results
+
