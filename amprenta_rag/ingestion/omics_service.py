@@ -33,6 +33,11 @@ from uuid import UUID
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.domain.omics import OmicsDatasetIngestRequest
+from amprenta_rag.config import AUTO_LINK_ENABLED, AUTO_LINK_MIN_CONFIDENCE
+from amprenta_rag.ingestion.auto_linking import (
+    infer_experiment_from_metadata,
+    infer_program_from_metadata,
+)
 
 
 def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
@@ -117,7 +122,50 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
         from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
 
         dataset_uuid = ingest_dataset_from_postgres(parsed)
-        
+
+        if AUTO_LINK_ENABLED:
+            dataset_obj = db.query(DatasetModel).get(dataset_uuid)
+            if dataset_obj:
+                # Auto-link Program
+                if not getattr(parsed, "program_ids", None) and not dataset_obj.programs:
+                    prog_id, prog_conf = infer_program_from_metadata(
+                        diseases=getattr(dataset_obj, "disease", []) or [],
+                        keywords=[dataset_obj.name] if dataset_obj.name else [],
+                        filename=dataset_obj.file_paths[0] if getattr(dataset_obj, "file_paths", None) else None,
+                        min_confidence=AUTO_LINK_MIN_CONFIDENCE,
+                    )
+                    if prog_id:
+                        program = db.query(type(dataset_obj.programs.property.mapper.class_)).get(prog_id)  # type: ignore
+                        if program and program not in dataset_obj.programs:
+                            dataset_obj.programs.append(program)
+                            db.commit()
+                            logger.info(
+                                "[INGEST][AUTO-LINK] Linked dataset %s to program %s (conf=%.2f)",
+                                dataset_uuid,
+                                prog_id,
+                                prog_conf,
+                            )
+
+                # Auto-link Experiment
+                if not getattr(parsed, "experiment_ids", None) and not dataset_obj.experiments:
+                    exp_id, exp_conf = infer_experiment_from_metadata(
+                        diseases=getattr(dataset_obj, "disease", []) or [],
+                        matrix=getattr(dataset_obj, "matrix", []) if hasattr(dataset_obj, "matrix") else [],
+                        model_systems=getattr(dataset_obj, "model_systems", []) if hasattr(dataset_obj, "model_systems") else [],
+                        min_confidence=AUTO_LINK_MIN_CONFIDENCE,
+                    )
+                    if exp_id:
+                        experiment = db.query(type(dataset_obj.experiments.property.mapper.class_)).get(exp_id)  # type: ignore
+                        if experiment and experiment not in dataset_obj.experiments:
+                            dataset_obj.experiments.append(experiment)
+                            db.commit()
+                            logger.info(
+                                "[INGEST][AUTO-LINK] Linked dataset %s to experiment %s (conf=%.2f)",
+                                dataset_uuid,
+                                exp_id,
+                                exp_conf,
+                            )
+
         # Mark ingestion as complete
         if dataset:
             dataset.ingestion_status = "complete"

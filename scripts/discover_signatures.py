@@ -8,70 +8,35 @@ candidate signatures based on feature co-occurrence and direction consistency.
 
 import argparse
 import sys
+from uuid import UUID
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.clients.notion_client import notion_headers
-from amprenta_rag.config import get_config
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.signatures.discovery import (
     discover_signature_candidates,
     export_candidates_to_tsv,
     export_candidates_to_json,
 )
-import requests
 
 logger = get_logger(__name__)
 
 
 def list_datasets():
-    """List all datasets from Experimental Data Assets database."""
-    cfg = get_config()
-    db_id = cfg.notion.exp_data_db_id
-    
-    if not db_id:
-        logger.error("[SIG-DISC] Experimental Data Assets DB ID not configured")
-        return []
-    
-    datasets = []
-    url = f"{cfg.notion.base_url}/databases/{db_id}/query"
-    
+    """List all datasets from Postgres."""
+    db = next(get_db())
     try:
-        has_more = True
-        start_cursor = None
-        
-        while has_more:
-            payload = {"page_size": 100}
-            if start_cursor:
-                payload["start_cursor"] = start_cursor
-            
-            resp = requests.post(
-                url,
-                headers=notion_headers(),
-                json=payload,
-                timeout=30,
-            )
-            resp.raise_for_status()
-            
-            data = resp.json()
-            for page in data.get("results", []):
-                props = page.get("properties", {}) or {}
-                name_prop = props.get("Experiment Name", {}).get("title", []) or []
-                name = name_prop[0].get("plain_text", "") if name_prop else "Unknown"
-                page_id = page.get("id", "")
-                
-                datasets.append({"id": page_id, "name": name})
-            
-            has_more = data.get("has_more", False)
-            start_cursor = data.get("next_cursor")
-        
-        return datasets
-    
+        datasets_query = db.query(DatasetModel).all()
+        return [{"id": str(dataset.id), "name": dataset.name} for dataset in datasets_query]
     except Exception as e:
         logger.error("[SIG-DISC] Error listing datasets: %r", e)
         return []
+    finally:
+        db.close()
 
 
 def main() -> None:

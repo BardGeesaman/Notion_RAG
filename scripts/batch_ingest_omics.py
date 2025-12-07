@@ -1,5 +1,206 @@
 #!/usr/bin/env python3
 """
+Batch ingest omics datasets with automatic type detection and parallel processing.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from typing import Dict, List, Optional
+
+from tqdm import tqdm
+
+# Ensure repository imports work
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from amprenta_rag.ingestion.lipidomics_ingestion import ingest_lipidomics_file
+from amprenta_rag.ingestion.metabolomics_ingestion import ingest_metabolomics_file
+from amprenta_rag.ingestion.omics_type_detection import detect_omics_type
+from amprenta_rag.ingestion.proteomics_ingestion import ingest_proteomics_file
+from amprenta_rag.ingestion.transcriptomics_ingestion import ingest_transcriptomics_file
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
+
+def _ingest_one(
+    file_path: Path,
+    detected_type: Optional[str],
+    create_pages: bool,
+    program_ids: Optional[List[str]],
+    experiment_ids: Optional[List[str]],
+) -> Dict[str, str]:
+    start = time.time()
+    result: Dict[str, str] = {
+        "filename": file_path.name,
+        "type": detected_type or "unknown",
+        "status": "FAILED",
+        "page_id": "-",
+        "error": "-",
+    }
+
+    try:
+        ingestion_kwargs = {
+            "file_path": str(file_path),
+            "create_page": create_pages,
+            "program_ids": program_ids,
+            "experiment_ids": experiment_ids,
+        }
+
+        if detected_type == "lipidomics":
+            page_id = ingest_lipidomics_file(**ingestion_kwargs)
+        elif detected_type == "metabolomics":
+            page_id = ingest_metabolomics_file(**ingestion_kwargs)
+        elif detected_type == "proteomics":
+            page_id = ingest_proteomics_file(**ingestion_kwargs)
+        elif detected_type == "transcriptomics":
+            page_id = ingest_transcriptomics_file(**ingestion_kwargs)
+        else:
+            raise ValueError("Unknown or undetected omics type")
+
+        result["status"] = "SUCCESS"
+        result["page_id"] = page_id or "-"
+        elapsed = time.time() - start
+        logger.info(
+            "[BATCH-INGEST] %s | type=%s | page_id=%s | elapsed=%.2fs",
+            file_path.name,
+            detected_type,
+            page_id,
+            elapsed,
+        )
+    except Exception as exc:
+        result["error"] = f"{type(exc).__name__}: {exc}"
+        logger.warning(
+            "[BATCH-INGEST] Error ingesting %s (type=%s): %r",
+            file_path.name,
+            detected_type,
+            exc,
+        )
+
+    return result
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Batch ingest omics files with automatic type detection.",
+    )
+    parser.add_argument(
+        "--directory",
+        required=True,
+        help="Directory containing omics files",
+    )
+    parser.add_argument(
+        "--pattern",
+        default="*.csv",
+        help="Glob pattern for files (default: *.csv)",
+    )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=4,
+        help="Number of parallel workers (default: 4)",
+    )
+    parser.add_argument(
+        "--create-pages",
+        action="store_true",
+        help="Create dataset pages when needed",
+    )
+    parser.add_argument(
+        "--program-id",
+        dest="program_ids",
+        action="append",
+        default=[],
+        help="Program ID to link (can be provided multiple times)",
+    )
+    parser.add_argument(
+        "--experiment-id",
+        dest="experiment_ids",
+        action="append",
+        default=[],
+        help="Experiment ID to link (can be provided multiple times)",
+    )
+    parser.add_argument(
+        "--type",
+        dest="override_type",
+        choices=["lipidomics", "metabolomics", "proteomics", "transcriptomics"],
+        help="Override detected type for all files",
+    )
+
+    args = parser.parse_args()
+
+    directory = Path(args.directory)
+    if not directory.is_dir():
+        parser.error(f"Directory not found: {directory}")
+
+    files = sorted(directory.glob(args.pattern))
+    if not files:
+        print("No files matched the pattern.")
+        return
+
+    logger.info(
+        "[BATCH-INGEST] Starting batch: %d files, pattern=%s, parallel=%d",
+        len(files),
+        args.pattern,
+        args.parallel,
+    )
+
+    results: List[Dict[str, str]] = []
+    with ThreadPoolExecutor(max_workers=args.parallel) as executor:
+        futures = {}
+        for file_path in files:
+            detected = args.override_type or detect_omics_type(str(file_path))
+            futures[executor.submit(
+                _ingest_one,
+                file_path,
+                detected,
+                args.create_pages,
+                args.program_ids or None,
+                args.experiment_ids or None,
+            )] = file_path
+
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Batch"):
+            results.append(future.result())
+
+    # Summary table
+    print("\nSummary:")
+    headers = ["Filename", "Type", "Status", "Page ID", "Error"]
+    rows = [headers]
+    for res in results:
+        rows.append([
+            res.get("filename", ""),
+            res.get("type", ""),
+            res.get("status", ""),
+            res.get("page_id", ""),
+            res.get("error", ""),
+        ])
+
+    col_widths = [max(len(str(row[i])) for row in rows) for i in range(len(headers))]
+
+    def fmt_row(row: List[str]) -> str:
+        return " | ".join(str(cell).ljust(col_widths[i]) for i, cell in enumerate(row))
+
+    sep = "-+-".join("-" * w for w in col_widths)
+    print(fmt_row(headers))
+    print(sep)
+    for row in rows[1:]:
+        print(fmt_row(row))
+
+    failures = [r for r in results if r.get("status") != "SUCCESS"]
+    logger.info(
+        "[BATCH-INGEST] Completed batch: %d success, %d failed",
+        len(results) - len(failures),
+        len(failures),
+    )
+
+
+if __name__ == "__main__":
+    main()
+#!/usr/bin/env python3
+"""
 Batch ingestion framework for multi-omics datasets.
 
 Automatically detects omics type from files and ingests them in batch.

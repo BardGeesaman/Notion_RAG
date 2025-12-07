@@ -123,7 +123,7 @@ def clear_cache_for_datasets(dataset_page_ids: Optional[List[str]] = None) -> No
 
     if dataset_page_ids:
         for dataset_page_id in dataset_page_ids:
-            cache.clear(dataset_page_id=dataset_page_id)
+            cache.invalidate(dataset_page_id)
         logger.info(
             "[INGEST][BATCH-SCORE] Cleared cache for %d datasets",
             len(dataset_page_ids),

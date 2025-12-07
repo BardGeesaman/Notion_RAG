@@ -1,8 +1,8 @@
 """
 Context extraction for cross-omics reasoning.
 
-Extracts disease, model system, matrix, and other contextual information
-from Notion pages to enhance cross-omics summaries.
+NOTE: Notion-based helpers are DEPRECATED. Use Postgres-backed helpers in
+`program_summary_postgres.py` and related *_postgres modules.
 """
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ def extract_aggregated_context(
     page_type: str = "dataset",
 ) -> Dict[str, Any]:
     """
-    Extract and aggregate context from multiple Notion pages.
+    DEPRECATED: Extract and aggregate context from multiple Notion pages.
     
     Aggregates disease, matrix, and model system information across
     multiple pages to provide comprehensive context.

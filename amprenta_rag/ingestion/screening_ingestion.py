@@ -350,102 +350,11 @@ def promote_compounds_to_notion(
     max_compounds: Optional[int] = None,
 ) -> List[str]:
     """
-    Promote selected compounds from an HTS campaign to Notion.
-    
-    Args:
-        campaign_id: Campaign ID
-        program_id: Optional program ID to link compounds to
-        min_hit_value: Minimum value threshold for promotion
-        max_compounds: Maximum number of compounds to promote
-        
-    Returns:
-        List of promoted compound Notion page IDs
+    DEPRECATED: Notion promotion removed. No action taken.
     """
     logger.info(
-        "[INGEST][SCREENING] Promoting compounds from campaign %s to Notion",
+        "[INGEST][SCREENING] promote_compounds_to_notion is deprecated; skipping (campaign=%s)",
         campaign_id,
     )
-    
-    # Get hits from campaign
-    hits = get_hits_for_campaign(campaign_id)
-    
-    # Filter by threshold if provided
-    if min_hit_value is not None:
-        hits = [h for h in hits if h.normalized_value and h.normalized_value >= min_hit_value]
-    
-    # Sort by value (descending)
-    hits.sort(key=lambda h: h.normalized_value or 0.0, reverse=True)
-    
-    # Limit if requested
-    if max_compounds:
-        hits = hits[:max_compounds]
-    
-    # Import Notion integration
-    from amprenta_rag.chemistry.notion_integration import find_or_create_compound_page
-    from amprenta_rag.chemistry.database import get_chemistry_db_path
-    import sqlite3
-    
-    promoted_page_ids = []
-    
-    # Fetch compound details from database
-    db_path = get_chemistry_db_path()
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    
-    try:
-        for hit in hits:
-            # Fetch compound from database
-            cursor.execute(
-                "SELECT * FROM compounds WHERE compound_id = ?",
-                (hit.compound_id,),
-            )
-            row = cursor.fetchone()
-            
-            if not row:
-                logger.warning(
-                    "[INGEST][SCREENING] Compound %s not found in database",
-                    hit.compound_id,
-                )
-                continue
-            
-            # Create Compound object
-            compound = Compound(
-                compound_id=row[0],
-                smiles=row[1],
-                inchi_key=row[2],
-                canonical_smiles=row[3],
-                molecular_formula=row[4],
-                molecular_weight=row[5],
-                logp=row[6],
-                hbd_count=row[7],
-                hba_count=row[8],
-                rotatable_bonds=row[9],
-            )
-            
-            # Create/find Notion page
-            page_id = find_or_create_compound_page(compound, program_id=program_id)
-            if page_id:
-                promoted_page_ids.append(page_id)
-                logger.info(
-                    "[INGEST][SCREENING] Promoted compound %s to Notion page %s (value: %s)",
-                    hit.compound_id,
-                    page_id,
-                    hit.normalized_value,
-                )
-            else:
-                logger.warning(
-                    "[INGEST][SCREENING] Could not create Notion page for compound %s",
-                    hit.compound_id,
-                )
-    
-    finally:
-        conn.close()
-    
-    logger.info(
-        "[INGEST][SCREENING] Promoted %d/%d compounds to Notion",
-        len(promoted_page_ids),
-        len(hits),
-    )
-    
-    return promoted_page_ids
+    return []
 

@@ -137,20 +137,32 @@ FEATURE_LINKING_MAX_WORKERS = int(os.getenv("FEATURE_LINKING_MAX_WORKERS", "10")
 ENABLE_LLM_SEMANTIC_EXTRACTION = os.getenv("ENABLE_LLM_SEMANTIC_EXTRACTION", "false").lower() == "true"
 
 # Feature cache configuration
-FEATURE_CACHE_TTL_SECONDS = int(os.getenv("FEATURE_CACHE_TTL_SECONDS", "3600"))
-FEATURE_CACHE_MAX_SIZE = os.getenv("FEATURE_CACHE_MAX_SIZE", "")
-FEATURE_CACHE_MAX_SIZE = int(FEATURE_CACHE_MAX_SIZE) if FEATURE_CACHE_MAX_SIZE else None
+FEATURE_CACHE_ENABLED = os.getenv("FEATURE_CACHE_ENABLED", "true").lower() == "true"
+
+# Prefer FEATURE_CACHE_TTL but fall back to legacy FEATURE_CACHE_TTL_SECONDS
+_FEATURE_CACHE_TTL_RAW = os.getenv("FEATURE_CACHE_TTL")
+if _FEATURE_CACHE_TTL_RAW is None:
+    _FEATURE_CACHE_TTL_RAW = os.getenv("FEATURE_CACHE_TTL_SECONDS", "3600")
+FEATURE_CACHE_TTL = int(_FEATURE_CACHE_TTL_RAW)
+
+# Max size defaults to 1000 datasets unless explicitly overridden
+_FEATURE_CACHE_MAX_SIZE_RAW = os.getenv("FEATURE_CACHE_MAX_SIZE")
+if _FEATURE_CACHE_MAX_SIZE_RAW is None or _FEATURE_CACHE_MAX_SIZE_RAW == "":
+    FEATURE_CACHE_MAX_SIZE = 1000
+else:
+    FEATURE_CACHE_MAX_SIZE = int(_FEATURE_CACHE_MAX_SIZE_RAW)
+
+# Additional cache tuning settings (used by enhanced cache paths)
 FEATURE_CACHE_ENABLE_PERSISTENCE = os.getenv("FEATURE_CACHE_ENABLE_PERSISTENCE", "true").lower() == "true"
 FEATURE_CACHE_DIR = os.getenv("FEATURE_CACHE_DIR", "")
 FEATURE_CACHE_PARALLEL_WORKERS = int(os.getenv("FEATURE_CACHE_PARALLEL_WORKERS", "5"))
 
-# Feature cache configuration
-FEATURE_CACHE_TTL_SECONDS = int(os.getenv("FEATURE_CACHE_TTL_SECONDS", "3600"))
-FEATURE_CACHE_MAX_SIZE = os.getenv("FEATURE_CACHE_MAX_SIZE", "")
-FEATURE_CACHE_MAX_SIZE = int(FEATURE_CACHE_MAX_SIZE) if FEATURE_CACHE_MAX_SIZE else None
-FEATURE_CACHE_ENABLE_PERSISTENCE = os.getenv("FEATURE_CACHE_ENABLE_PERSISTENCE", "true").lower() == "true"
-FEATURE_CACHE_DIR = os.getenv("FEATURE_CACHE_DIR", "")
-FEATURE_CACHE_PARALLEL_WORKERS = int(os.getenv("FEATURE_CACHE_PARALLEL_WORKERS", "5"))
+# Backward-compatibility alias
+FEATURE_CACHE_TTL_SECONDS = FEATURE_CACHE_TTL
+
+# Auto-linking configuration
+AUTO_LINK_ENABLED = os.getenv("AUTO_LINK_ENABLED", "true").lower() == "true"
+AUTO_LINK_MIN_CONFIDENCE = float(os.getenv("AUTO_LINK_MIN_CONFIDENCE", "0.8"))
 
 
 # ---------------------------------------------------------
@@ -242,6 +254,8 @@ class PipelineConfig:
     enable_feature_linking: bool = ENABLE_FEATURE_LINKING
     enable_llm_semantic_extraction: bool = ENABLE_LLM_SEMANTIC_EXTRACTION
     feature_linking_max_workers: int = FEATURE_LINKING_MAX_WORKERS
+    auto_link_enabled: bool = AUTO_LINK_ENABLED
+    auto_link_min_confidence: float = AUTO_LINK_MIN_CONFIDENCE
     # TIER 3: Postgres as Source of Truth (PRIMARY for performance)
     # Set to true to use Postgres as primary database (recommended for bulk ingestion)
     use_postgres_as_sot: bool = os.getenv("USE_POSTGRES_AS_SOT", "true").lower() == "true"
@@ -249,6 +263,13 @@ class PipelineConfig:
     enable_notion_sync: bool = os.getenv("ENABLE_NOTION_SYNC", "false").lower() == "true"
     # Dual-write mode (transition period only - writes to both Postgres and Notion)
     enable_dual_write: bool = os.getenv("ENABLE_DUAL_WRITE", "false").lower() == "true"
+
+
+@dataclass(frozen=True)
+class FeatureCacheConfig:
+    enabled: bool = FEATURE_CACHE_ENABLED
+    ttl: int = FEATURE_CACHE_TTL
+    max_size: int = FEATURE_CACHE_MAX_SIZE
 
 
 @dataclass(frozen=True)
@@ -270,6 +291,7 @@ class AppConfig:
     notion: NotionConfig
     zotero: ZoteroConfig
     pipeline: PipelineConfig
+    feature_cache: FeatureCacheConfig
     postgres: PostgresConfig
 
 
@@ -289,6 +311,7 @@ def get_config() -> AppConfig:
             notion=NotionConfig(),
             zotero=ZoteroConfig(),
             pipeline=PipelineConfig(),
+            feature_cache=FeatureCacheConfig(),
             postgres=PostgresConfig(),
         )
     return _config_singleton

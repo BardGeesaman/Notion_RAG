@@ -12,6 +12,9 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import Program as ProgramModel
+from uuid import UUID
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.signatures.signature_loader import Signature
 
@@ -90,69 +93,33 @@ def get_program_datasets(program_page_id: str) -> List[str]:
     Get all dataset IDs linked to a program.
     
     Args:
-        program_page_id: Notion page ID of program (with dashes)
+        program_page_id: Program identifier (UUID or legacy Notion page ID)
         
     Returns:
-        List of dataset page IDs
+        List of dataset IDs (as strings)
     """
-    from amprenta_rag.query.cross_omics.helpers import fetch_notion_page, extract_relation_ids
-    
+    db = next(get_db())
     try:
-        page = fetch_notion_page(program_page_id)
-        props = page.get("properties", {}) or {}
-        
-        # Try to find datasets via experiments or directly
-        dataset_ids: Set[str] = set()
-        
-        # Check for direct dataset relations
-        dataset_relation_candidates = [
-            "Related Datasets",
-            "Datasets",
-            "Experimental Data Assets",
-            "Program Datasets",
-        ]
-        
-        for candidate in dataset_relation_candidates:
-            if candidate in props:
-                dataset_ids.update(extract_relation_ids(page, candidate))
-        
-        # Also check via experiments
-        experiment_relation_candidates = [
-            "Related Experiments",
-            "Experiments",
-        ]
-        
-        for candidate in experiment_relation_candidates:
-            if candidate in props:
-                experiment_ids = extract_relation_ids(page, candidate)
-                # Fetch each experiment and get its datasets
-                for exp_id in experiment_ids:
-                    try:
-                        exp_page = fetch_notion_page(exp_id)
-                        if exp_page:
-                            exp_dataset_candidates = [
-                                "Related Datasets",
-                                "Datasets",
-                            ]
-                            for exp_candidate in exp_dataset_candidates:
-                                dataset_ids.update(extract_relation_ids(exp_page, exp_candidate))
-                    except Exception as e:
-                        logger.debug(
-                            "[ANALYSIS][PROGRAM-MAPS] Error fetching experiment %s: %r",
-                            exp_id,
-                            e,
-                        )
-                        continue
-        
-        return list(dataset_ids)
-        
+        program = None
+        try:
+            program_uuid = UUID(program_page_id)
+            program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
+        except ValueError:
+            program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
+
+        if not program:
+            return []
+
+        return [str(dataset.id) for dataset in program.datasets]
     except Exception as e:
-        logger.error(
+        logger.warning(
             "[ANALYSIS][PROGRAM-MAPS] Error getting datasets for program %s: %r",
             program_page_id,
             e,
         )
         return []
+    finally:
+        db.close()
 
 
 def compute_program_signature_scores(
@@ -561,99 +528,8 @@ def generate_program_map_report(
 
 
 def update_notion_with_program_map(program_map: ProgramSignatureMap) -> None:
-    """
-    Update Notion program page with program-signature map summary.
-    
-    Args:
-        program_map: ProgramSignatureMap object
-    """
-    # DEPRECATED: Notion imports removed
-    # from amprenta_rag.clients.notion_client import notion_headers
-    from amprenta_rag.config import get_config
-    import requests
-    
-    def notion_headers() -> Dict[str, str]:
-        """DEPRECATED: Notion support removed. Returns empty headers dict."""
-        logger.debug("[PROGRAM-SIGNATURE-MAPS] notion_headers() deprecated - Notion support removed")
-        return {}
-    
-    cfg = get_config()
-    
-    try:
-        # Fetch current page to check for summary properties
-        url = f"{cfg.notion.base_url}/pages/{program_map.program_id}"
-        resp = requests.get(url, headers=notion_headers(), timeout=30)
-        resp.raise_for_status()
-        page = resp.json()
-        props = page.get("properties", {}) or {}
-        
-        # Try to find suitable properties for summary
-        updates: Dict[str, Any] = {}
-        
-        # Update omics coverage if property exists
-        if program_map.omics_coverage:
-            coverage_prop_candidates = ["Omics Coverage", "Coverage Summary", "Summary"]
-            for candidate in coverage_prop_candidates:
-                if candidate in props:
-                    prop_data = props[candidate]
-                    if prop_data.get("type") in ["rich_text", "text"]:
-                        coverage_text = program_map.omics_coverage.coverage_summary
-                        updates[candidate] = {
-                            "rich_text": [
-                                {
-                                    "type": "text",
-                                    "text": {"content": coverage_text[:2000]},  # Notion limit
-                                }
-                            ],
-                        }
-                        break
-        
-        # Update top signatures if property exists
-        if program_map.top_signatures:
-            top_sigs_prop_candidates = ["Top Signatures", "Signature Map Summary", "Summary"]
-            for candidate in top_sigs_prop_candidates:
-                if candidate in props:
-                    prop_data = props[candidate]
-                    if prop_data.get("type") in ["rich_text", "text"]:
-                        top_sigs_text = "\n".join(
-                            f"{i+1}. {sig.signature_name} (score: {sig.overall_score:.3f}, coverage: {sig.coverage_fraction:.1%})"
-                            for i, sig in enumerate(program_map.top_signatures[:5])
-                        )
-                        updates[candidate] = {
-                            "rich_text": [
-                                {
-                                    "type": "text",
-                                    "text": {"content": top_sigs_text[:2000]},
-                                }
-                            ],
-                        }
-                        break
-        
-        if updates:
-            payload = {"properties": updates}
-            resp = requests.patch(
-                url,
-                headers=notion_headers(),
-                json=payload,
-                timeout=30,
-            )
-            resp.raise_for_status()
-            
-            logger.info(
-                "[ANALYSIS][PROGRAM-MAPS] Updated Notion program page %s with map summary",
-                program_map.program_id,
-            )
-        else:
-            logger.debug(
-                "[ANALYSIS][PROGRAM-MAPS] No suitable properties found for program %s. "
-                "Consider adding 'Omics Coverage' or 'Top Signatures' properties.",
-                program_map.program_id,
-            )
-        
-    except Exception as e:
-        logger.warning(
-            "[ANALYSIS][PROGRAM-MAPS] Error updating Notion with program map for %s: %r",
-            program_map.program_id,
-            e,
-        )
-        # Non-blocking - continue even if Notion update fails
+    """DEPRECATED: No-op placeholder (Notion updates removed)."""
+    logger.debug(
+        "[ANALYSIS][PROGRAM-MAPS] Skipping Notion update for %s (deprecated)",
+        program_map.program_id,
+    )

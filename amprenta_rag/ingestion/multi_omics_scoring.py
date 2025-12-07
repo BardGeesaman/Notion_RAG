@@ -12,23 +12,17 @@ Extends signature scoring to work across all omics types:
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Set
+from uuid import UUID
 
-import requests
+from sqlalchemy.orm import Session
 
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.clients.notion_client import notion_headers
-from amprenta_rag.config import get_config
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import Dataset, Feature, dataset_feature_assoc
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.signatures.signature_loader import Signature, SignatureComponent
 from amprenta_rag.signatures.signature_scoring import SignatureScoreResult
 
 logger = get_logger(__name__)
-
-def notion_headers() -> Dict[str, str]:
-    """DEPRECATED: Notion support removed. Returns empty headers dict."""
-    logger.debug("[MULTI-OMICS-SCORING] notion_headers() deprecated - Notion support removed")
-    return {}
-
 
 def extract_dataset_features_by_type(
     dataset_page_id: str,
@@ -37,36 +31,17 @@ def extract_dataset_features_by_type(
     force_refresh: bool = False,
 ) -> Dict[str, Set[str]]:
     """
-    Extract features from a dataset grouped by feature type.
-
-    Queries feature databases for features that are linked to this dataset.
-    Uses caching to avoid repeated Notion API calls.
+    Extract features from Postgres grouped by feature type.
 
     Args:
-        dataset_page_id: Notion page ID of dataset (with dashes)
-        omics_type: Optional omics type hint (Lipidomics, Metabolomics, Proteomics, Transcriptomics)
+        dataset_page_id: Dataset identifier (UUID or legacy Notion page ID)
+        omics_type: Optional omics type hint (unused in Postgres path)
         use_cache: Whether to use feature cache (default: True)
         force_refresh: Force refresh even if cached (default: False)
 
     Returns:
-        Dictionary mapping feature_type → set of feature names:
-        {
-            "gene": {"TP53", "TNF", ...},
-            "protein": {"P04637", ...},
-            "metabolite": {"Glutamate", ...},
-            "lipid": {"Cer(d18:1/16:0)", ...}
-        }
+        Dictionary mapping feature_type → set of feature names.
     """
-    # DEPRECATED: Notion imports removed
-    # from amprenta_rag.clients.notion_client import notion_headers
-    from amprenta_rag.config import get_config
-    
-    def notion_headers() -> Dict[str, str]:
-        """DEPRECATED: Notion support removed. Returns empty headers dict."""
-        logger.debug("[MULTI-OMICS-SCORING] notion_headers() deprecated - Notion support removed")
-        return {}
-
-    # Check cache first
     if use_cache and not force_refresh:
         from amprenta_rag.ingestion.dataset_feature_cache import get_feature_cache
 
@@ -79,7 +54,6 @@ def extract_dataset_features_by_type(
             )
             return cached_features
 
-    cfg = get_config()
     features_by_type: Dict[str, Set[str]] = {
         "gene": set(),
         "protein": set(),
@@ -87,228 +61,60 @@ def extract_dataset_features_by_type(
         "lipid": set(),
     }
 
-    # Map feature types to database IDs and relation property names
-    feature_db_map = {
-        "gene": (
-            cfg.notion.gene_features_db_id if hasattr(cfg.notion, "gene_features_db_id") else None,
-            ["Transcriptomics Datasets", "Datasets", "Related Datasets"],
-        ),
-        "protein": (
-            cfg.notion.protein_features_db_id if hasattr(cfg.notion, "protein_features_db_id") else None,
-            ["Proteomics Datasets", "Datasets", "Related Datasets"],
-        ),
-        "metabolite": (
-            cfg.notion.metabolite_features_db_id if hasattr(cfg.notion, "metabolite_features_db_id") else None,
-            ["Metabolomics Datasets", "Datasets", "Related Datasets"],
-        ),
-        "lipid": (
-            cfg.notion.lipid_species_db_id if hasattr(cfg.notion, "lipid_species_db_id") else None,
-            ["Experimental Data Assets", "Datasets", "Related Datasets"],
-        ),
-    }
+    db_gen = get_db()
+    db: Session = next(db_gen)
+    try:
+        dataset: Optional[Dataset] = None
 
-    # Query each feature database for features linked to this dataset
-    for feature_type, (db_id, relation_property_candidates) in feature_db_map.items():
-        if not db_id:
-            logger.debug(
-                "[INGEST][MULTI-OMICS-SCORE] %s database ID not configured, skipping",
-                feature_type,
-            )
-            continue
-
+        # Try UUID lookup first
         try:
-            # First, try to get database schema to find all relation properties
-            # This is more robust than trying fixed candidates
-            try:
-                db_url = f"{cfg.notion.base_url}/databases/{db_id}"
-                db_resp = requests.get(db_url, headers=notion_headers(), timeout=30)
-                db_resp.raise_for_status()
-                db_schema = db_resp.json()
-                db_props = db_schema.get("properties", {}) or {}
-                
-                # Find all relation properties that might link to datasets
-                relation_properties = []
-                for prop_name, prop_data in db_props.items():
-                    if prop_data.get("type") == "relation":
-                        prop_lower = prop_name.lower()
-                        # Check if it's a dataset-related property
-                        if any(keyword in prop_lower for keyword in ["dataset", "data asset", "experimental"]):
-                            relation_properties.append(prop_name)
-                            logger.debug(
-                                "[INGEST][MULTI-OMICS-SCORE] Found relation property '%s' in %s DB",
-                                prop_name,
-                                feature_type,
-                            )
-                
-                # If we found relation properties, use them; otherwise fall back to candidates
-                if relation_properties:
-                    relation_property_candidates = relation_properties + relation_property_candidates
-                    logger.debug(
-                        "[INGEST][MULTI-OMICS-SCORE] Using discovered relation properties for %s: %s",
-                        feature_type,
-                        relation_properties,
-                    )
-            except Exception as e:
-                logger.debug(
-                    "[INGEST][MULTI-OMICS-SCORE] Could not fetch schema for %s DB, using candidates: %r",
-                    feature_type,
-                    e,
-                )
-            
-            # Try each candidate relation property name
-            found_features = False
-            for relation_prop in relation_property_candidates:
-                try:
-                    url = f"{cfg.notion.base_url}/databases/{db_id}/query"
-                    all_features = []
-                    has_more = True
-                    start_cursor = None
+            dataset_uuid = UUID(dataset_page_id)
+            dataset = db.query(Dataset).filter(Dataset.id == dataset_uuid).first()
+        except ValueError:
+            dataset = None
 
-                    while has_more:
-                        payload = {
-                            "filter": {
-                                "property": relation_prop,
-                                "relation": {"contains": dataset_page_id},
-                            },
-                            "page_size": 100,
-                        }
-                        if start_cursor:
-                            payload["start_cursor"] = start_cursor
-
-                        resp = requests.post(
-                            url,
-                            headers=notion_headers(),
-                            json=payload,
-                            timeout=30,
-                        )
-                        resp.raise_for_status()
-
-                        data = resp.json()
-                        all_features.extend(data.get("results", []))
-                        has_more = data.get("has_more", False)
-                        start_cursor = data.get("next_cursor")
-
-                    # Extract feature names from pages
-                    if all_features:
-                        for feature_page in all_features:
-                            props = feature_page.get("properties", {}) or {}
-                            
-                            # Get feature name (usually "Name" title property)
-                            name_prop = props.get("Name", {}).get("title", []) or []
-                            if name_prop:
-                                feature_name = name_prop[0].get("plain_text", "").strip()
-                                if feature_name:
-                                    features_by_type[feature_type].add(feature_name)
-                                    found_features = True
-
-                        if found_features:
-                            logger.info(
-                                "[INGEST][MULTI-OMICS-SCORE] Found %d %s features for dataset %s (via property '%s')",
-                                len(features_by_type[feature_type]),
-                                feature_type,
-                                dataset_page_id,
-                                relation_prop,
-                            )
-                            break  # Found features with this property, no need to try others
-
-                except Exception as e:
-                    # Property doesn't exist or query failed, try next candidate
-                    logger.debug(
-                        "[INGEST][MULTI-OMICS-SCORE] Could not query %s via property '%s': %r",
-                        feature_type,
-                        relation_prop,
-                        e,
-                    )
-                    continue
-
-            # If no features found with standard properties, try dynamic search
-            if not found_features:
-                try:
-                    url = f"{cfg.notion.base_url}/databases/{db_id}/query"
-                    # Query all pages and check properties dynamically
-                    all_pages = []
-                    has_more = True
-                    start_cursor = None
-
-                    while has_more:
-                        payload = {"page_size": 100}
-                        if start_cursor:
-                            payload["start_cursor"] = start_cursor
-
-                        resp = requests.post(
-                            url,
-                            headers=notion_headers(),
-                            json=payload,
-                            timeout=30,
-                        )
-                        resp.raise_for_status()
-
-                        data = resp.json()
-                        all_pages.extend(data.get("results", []))
-                        has_more = data.get("has_more", False)
-                        start_cursor = data.get("next_cursor")
-
-                    # Check each page for dataset relation
-                    for page in all_pages:
-                        props = page.get("properties", {}) or {}
-                        for prop_name, prop_data in props.items():
-                            if prop_data.get("type") == "relation":
-                                relations = prop_data.get("relation", []) or []
-                                if any(r.get("id") == dataset_page_id for r in relations):
-                                    # This feature is linked to the dataset
-                                    name_prop = props.get("Name", {}).get("title", []) or []
-                                    if name_prop:
-                                        feature_name = name_prop[0].get("plain_text", "").strip()
-                                        if feature_name:
-                                            features_by_type[feature_type].add(feature_name)
-                                            found_features = True
-                                            break
-
-                    if found_features:
-                        logger.debug(
-                            "[INGEST][MULTI-OMICS-SCORE] Found %d %s features for dataset %s (via dynamic search)",
-                            len(features_by_type[feature_type]),
-                            feature_type,
-                            dataset_page_id,
-                        )
-
-                except Exception as e:
-                    logger.debug(
-                        "[INGEST][MULTI-OMICS-SCORE] Error in dynamic search for %s features: %r",
-                        feature_type,
-                        e,
-                    )
-
-        except Exception as e:
-            logger.warning(
-                "[INGEST][MULTI-OMICS-SCORE] Error extracting %s features for dataset %s: %r",
-                feature_type,
-                dataset_page_id,
-                e,
+        if dataset is None:
+            dataset = (
+                db.query(Dataset)
+                .filter(Dataset.notion_page_id == dataset_page_id)
+                .first()
             )
-            continue
 
-    total_features = sum(len(features) for features in features_by_type.values())
-    logger.info(
-        "[INGEST][MULTI-OMICS-SCORE] Extracted %d total features for dataset %s: "
-        "genes=%d, proteins=%d, metabolites=%d, lipids=%d",
-        total_features,
-        dataset_page_id,
-        len(features_by_type["gene"]),
-        len(features_by_type["protein"]),
-        len(features_by_type["metabolite"]),
-        len(features_by_type["lipid"]),
-    )
+        if dataset is None:
+            logger.warning(
+                "[INGEST][MULTI-OMICS-SCORE] Dataset not found for id=%s",
+                dataset_page_id,
+            )
+            return features_by_type
 
-    # Cache the extracted features
+        rows = (
+            db.query(Feature.feature_type, Feature.name)
+            .join(dataset_feature_assoc, Feature.id == dataset_feature_assoc.c.feature_id)
+            .filter(dataset_feature_assoc.c.dataset_id == dataset.id)
+            .all()
+        )
+
+        for feature_type, name in rows:
+            ft = (feature_type or "").lower()
+            if ft in features_by_type:
+                features_by_type[ft].add(name)
+
+        total_features = sum(len(v) for v in features_by_type.values())
+        logger.info(
+            "[INGEST][MULTI-OMICS-SCORE] Extracted %d total features for dataset %s",
+            total_features,
+            dataset_page_id,
+        )
+    finally:
+        db.close()
+
     if use_cache:
         from amprenta_rag.ingestion.dataset_feature_cache import get_feature_cache
 
         cache = get_feature_cache()
         cache.set_features(
-            dataset_page_id=dataset_page_id,
-            features_by_type=features_by_type,
-            omics_type=omics_type,
+            dataset_id=dataset_page_id,
+            features=features_by_type,
         )
 
     return features_by_type
