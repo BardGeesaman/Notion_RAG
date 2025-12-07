@@ -53,14 +53,6 @@ def ingest_dataset(page_id: str, force: bool = False) -> None:
         "Use Postgres-based ingestion instead."
     )
     return
-        logger.error(
-            "[INGEST][DATASET] Error extracting content for %s: %r",
-            page_id,
-            e,
-        )
-        raise
-
-    if not full_text or len(full_text.strip()) < 50:
         logger.info(
             "[INGEST][DATASET] Dataset %s has very little text; skipping.", page_id
         )
