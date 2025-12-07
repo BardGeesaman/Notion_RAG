@@ -47,6 +47,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 - **Transcriptomics**: Gene identifier normalization (Ensembl, gene symbols)
 - **Batch Processing**: Auto-detect omics type from filename and content, 4x speedup with parallel workers
 - **Postgres-First Architecture**: All omics pipelines use Postgres as primary database for fast, scalable ingestion
+- **Automatic Linking**: Intelligent program/experiment linking based on metadata confidence scoring
 
 ### 📊 Signature Management
 
@@ -75,6 +76,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 - **Parallel Processing**: Configurable worker pools for batch operations
 - **Production Hardening**: Error handling, retry logic, circuit breakers
 - **Health Monitoring**: Comprehensive health checks and performance metrics
+- **REST API**: FastAPI endpoints for programmatic access (compounds, screening, multi-omics data)
 
 ## Architecture
 
@@ -134,9 +136,10 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 | [🔧 Troubleshooting Guide](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 | [⚙️ Configuration Guide](docs/CONFIGURATION.md) | Detailed configuration options |
 | [🏗️ Architecture Overview](docs/ARCHITECTURE.md) | System design and components |
-| [📋 API Reference](docs/API_REFERENCE.md) | Module and function documentation |
+| [📋 API Reference](docs/API_REFERENCE.md) | REST API & module documentation |
 | [💡 Usage Examples](docs/USAGE_EXAMPLES.md) | Practical code examples |
 | [⚡ Feature Caching Guide](docs/FEATURE_CACHING.md) | Performance optimization with caching |
+| [🔗 Auto-Linking Guide](docs/AUTO_LINKING.md) | Automatic program/experiment linking |
 | [🗄️ Notion Database Setup](docs/NOTION_DATABASE_SETUP.md) | Database configuration guide |
 | [🛡️ Production Hardening](docs/PRODUCTION_HARDENING.md) | Production deployment guide |
 | [📧 Gmail Setup](docs/setup/GMAIL_SETUP.md) | Gmail API integration guide |
@@ -205,6 +208,22 @@ python scripts/compare_datasets.py --dataset-id-1 ID1 --dataset-id-2 ID2
 
 # Program signature map
 python scripts/generate_program_signature_map.py --program-id PROGRAM_ID
+```
+
+### REST API Access
+
+```bash
+# Start FastAPI server
+uvicorn amprenta_rag.api.main:app --reload --port 8000
+
+# Access chemistry compounds
+curl http://localhost:8000/api/v1/compounds/
+
+# Get HTS screening campaigns
+curl http://localhost:8000/api/v1/screening/campaigns
+
+# Interactive API docs
+open http://localhost:8000/docs
 ```
 
 📖 **See [Usage Examples](docs/USAGE_EXAMPLES.md) for more examples**

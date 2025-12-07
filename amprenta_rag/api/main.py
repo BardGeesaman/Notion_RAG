@@ -14,6 +14,8 @@ from amprenta_rag.api.routers import (
     features,
     programs,
     signatures,
+    compounds,
+    screening,
 )
 from amprenta_rag.config import get_config
 
@@ -42,6 +44,8 @@ app.include_router(experiments.router, prefix="/api/v1/experiments", tags=["Expe
 app.include_router(datasets.router, prefix="/api/v1/datasets", tags=["Datasets"])
 app.include_router(features.router, prefix="/api/v1/features", tags=["Features"])
 app.include_router(signatures.router, prefix="/api/v1/signatures", tags=["Signatures"])
+app.include_router(compounds.router, prefix="/api/v1/compounds", tags=["Compounds"])
+app.include_router(screening.router, prefix="/api/v1/screening", tags=["Screening"])
 
 
 @app.get("/")

@@ -8,12 +8,338 @@ This document provides a comprehensive API reference for the Amprenta RAG multi-
 
 ## Table of Contents
 
-1. [Ingestion Modules](#ingestion-modules)
-2. [Query Modules](#query-modules)
-3. [Signature Modules](#signature-modules)
-4. [Feature Modules](#feature-modules)
-5. [Metadata Modules](#metadata-modules)
-6. [Client Modules](#client-modules)
+1. [REST API Endpoints](#rest-api-endpoints)
+2. [Ingestion Modules](#ingestion-modules)
+3. [Query Modules](#query-modules)
+4. [Signature Modules](#signature-modules)
+5. [Feature Modules](#feature-modules)
+6. [Metadata Modules](#metadata-modules)
+7. [Client Modules](#client-modules)
+
+---
+
+## REST API Endpoints
+
+The Amprenta platform exposes a **FastAPI REST API** for programmatic access to multi-omics data, chemistry compounds, and HTS screening campaigns.
+
+### Base URL
+
+```
+http://localhost:8000
+```
+
+### API Version
+
+All endpoints are prefixed with `/api/v1/`
+
+---
+
+### Compounds API
+
+#### List All Compounds
+
+```http
+GET /api/v1/compounds/
+```
+
+**Description**: Retrieve all compounds from the chemistry database.
+
+**Response** (200 OK):
+```json
+[
+  {
+    "compound_id": "AMPR-001",
+    "smiles": "CC(C)Cc1ccc(cc1)C(C)C(=O)O",
+    "inchi_key": "HEFNNWSXXWATRW-UHFFFAOYSA-N",
+    "canonical_smiles": "CC(C)Cc1ccc(cc1)C(C)C(=O)O",
+    "molecular_formula": "C13H18O2",
+    "molecular_weight": 206.28,
+    "logp": 3.5,
+    "hbd_count": 1,
+    "hba_count": 2,
+    "rotatable_bonds": 4
+  },
+  ...
+]
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/v1/compounds/
+```
+
+---
+
+#### Get Compound by ID
+
+```http
+GET /api/v1/compounds/{compound_id}
+```
+
+**Description**: Retrieve a specific compound by its ID.
+
+**Parameters**:
+- `compound_id` (path, required): Compound identifier (e.g., "AMPR-001")
+
+**Response** (200 OK):
+```json
+{
+  "compound_id": "AMPR-001",
+  "smiles": "CC(C)Cc1ccc(cc1)C(C)C(=O)O",
+  "inchi_key": "HEFNNWSXXWATRW-UHFFFAOYSA-N",
+  "canonical_smiles": "CC(C)Cc1ccc(cc1)C(C)C(=O)O",
+  "molecular_formula": "C13H18O2",
+  "molecular_weight": 206.28,
+  "logp": 3.5,
+  "hbd_count": 1,
+  "hba_count": 2,
+  "rotatable_bonds": 4
+}
+```
+
+**Response** (404 Not Found):
+```json
+{
+  "detail": "Compound not found"
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/v1/compounds/AMPR-001
+```
+
+---
+
+#### Get Programs Linked to Compound
+
+```http
+GET /api/v1/compounds/{compound_id}/programs
+```
+
+**Description**: Retrieve all programs linked to a compound.
+
+**Parameters**:
+- `compound_id` (path, required): Compound identifier
+
+**Response** (200 OK):
+```json
+[
+  {
+    "program_id": "2b9adf6142ab8026853ef58f725665a6",
+    "status": "Active",
+    "notes": "Lead compound for ALS program",
+    "created_at": "2025-01-15T10:30:00Z"
+  },
+  ...
+]
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/v1/compounds/AMPR-001/programs
+```
+
+---
+
+### Screening API
+
+#### List HTS Campaigns
+
+```http
+GET /api/v1/screening/campaigns
+```
+
+**Description**: List all high-throughput screening campaigns.
+
+**Response** (200 OK):
+```json
+[
+  {
+    "campaign_id": "HTS-2024-001",
+    "campaign_name": "Cer Synthesis Inhibitor Screen",
+    "description": "384-well primary screen for ceramide synthesis inhibitors",
+    "assay_type": "Enzymatic",
+    "target": "CerS1",
+    "library_id": "DIVERSet-CL",
+    "total_wells": 5120,
+    "hit_count": 47,
+    "run_date": "2024-03-15"
+  },
+  ...
+]
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/v1/screening/campaigns
+```
+
+---
+
+#### Get HTS Campaign by ID
+
+```http
+GET /api/v1/screening/campaigns/{campaign_id}
+```
+
+**Description**: Retrieve details for a specific HTS campaign.
+
+**Parameters**:
+- `campaign_id` (path, required): Campaign identifier
+
+**Response** (200 OK):
+```json
+{
+  "campaign_id": "HTS-2024-001",
+  "campaign_name": "Cer Synthesis Inhibitor Screen",
+  "description": "384-well primary screen for ceramide synthesis inhibitors",
+  "assay_type": "Enzymatic",
+  "target": "CerS1",
+  "library_id": "DIVERSet-CL",
+  "total_wells": 5120,
+  "hit_count": 47,
+  "run_date": "2024-03-15"
+}
+```
+
+**Response** (404 Not Found):
+```json
+{
+  "detail": "Campaign not found"
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/v1/screening/campaigns/HTS-2024-001
+```
+
+---
+
+#### Get HTS Hits for Campaign
+
+```http
+GET /api/v1/screening/campaigns/{campaign_id}/hits
+```
+
+**Description**: Retrieve all hits (positive results) for a screening campaign.
+
+**Parameters**:
+- `campaign_id` (path, required): Campaign identifier
+
+**Response** (200 OK):
+```json
+[
+  {
+    "result_id": "RES-001",
+    "compound_id": "AMPR-123",
+    "well_position": "A01",
+    "raw_value": 1250.5,
+    "normalized_value": 85.3,
+    "z_score": 3.2,
+    "hit_flag": 1,
+    "hit_category": "Strong"
+  },
+  {
+    "result_id": "RES-002",
+    "compound_id": "AMPR-456",
+    "well_position": "B03",
+    "raw_value": 980.2,
+    "normalized_value": 72.1,
+    "z_score": 2.5,
+    "hit_flag": 1,
+    "hit_category": "Moderate"
+  },
+  ...
+]
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/api/v1/screening/campaigns/HTS-2024-001/hits
+```
+
+---
+
+### Other API Endpoints
+
+The platform also exposes REST APIs for:
+
+- **Programs** (`/api/v1/programs/`)
+- **Experiments** (`/api/v1/experiments/`)
+- **Datasets** (`/api/v1/datasets/`)
+- **Features** (`/api/v1/features/`)
+- **Signatures** (`/api/v1/signatures/`)
+
+See FastAPI interactive documentation at `/docs` when server is running.
+
+---
+
+### Running the API Server
+
+#### Development Server
+
+```bash
+# Start FastAPI development server
+cd /path/to/RAG
+uvicorn amprenta_rag.api.main:app --reload --port 8000
+
+# API available at: http://localhost:8000
+# Interactive docs: http://localhost:8000/docs
+# OpenAPI spec: http://localhost:8000/openapi.json
+```
+
+#### Production Server
+
+```bash
+# Use gunicorn with uvicorn workers
+gunicorn amprenta_rag.api.main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8000
+```
+
+---
+
+### API Error Handling
+
+All endpoints follow consistent error handling:
+
+#### HTTP Status Codes
+
+- **200 OK**: Successful request
+- **201 Created**: Resource created successfully
+- **204 No Content**: Resource deleted successfully
+- **400 Bad Request**: Invalid request parameters
+- **404 Not Found**: Resource not found
+- **500 Internal Server Error**: Server error (check logs)
+
+#### Error Response Format
+
+```json
+{
+  "detail": "Human-readable error message"
+}
+```
+
+**Example Error**:
+```bash
+curl http://localhost:8000/api/v1/compounds/INVALID-ID
+
+# Response (404):
+{
+  "detail": "Compound not found"
+}
+```
+
+---
+
+### API Authentication
+
+**Current**: No authentication (development mode)
+
+**Future**: OAuth2/JWT authentication for production deployments
 
 ---
 
