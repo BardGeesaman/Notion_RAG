@@ -13,7 +13,16 @@ from typing import Any, Dict, List
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.notion_pages import create_rag_chunk_page
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.ingestion.notion_pages import create_rag_chunk_page
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
+def create_rag_chunk_page(chunk_id: str, chunk_text: str, parent_type: str, parent_id: str, order: int, when_iso: str) -> Optional[str]:
+    """DEPRECATED: Notion support removed. Returns None."""
+    logger.debug("[ZOTERO][ATTACHMENT] create_rag_chunk_page() deprecated - Notion support removed")
+    return None
 from amprenta_rag.ingestion.pinecone_utils import (
     attachment_already_ingested,
     sanitize_metadata,

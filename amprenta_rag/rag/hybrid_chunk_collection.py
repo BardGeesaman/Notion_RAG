@@ -65,26 +65,8 @@ def collect_hybrid_chunks(
                 )
                 continue
         
-        # Fall back to Notion (existing behavior)
-        # Check for notion_page_id in metadata
-        notion_id = metadata.get("notion_page_id") or metadata.get("dataset_page_id")
-        if notion_id:
-            try:
-                from amprenta_rag.ingestion.notion_pages import extract_page_content
-                notion_content = extract_page_content(notion_id)
-                if notion_content:
-                    chunks.append(notion_content)
-                    logger.debug(
-                        "[RAG][HYBRID] Collected chunk from Notion: %s",
-                        notion_id,
-                    )
-                    continue
-            except Exception as e:
-                logger.debug(
-                    "[RAG][HYBRID] Could not fetch Notion content for %s: %r",
-                    notion_id,
-                    e,
-                )
+        # DEPRECATED: Notion fallback removed
+        # Fall back to snippet from metadata
         
         # Last resort: use snippet from metadata
         snippet = metadata.get("snippet") or match.snippet
@@ -134,18 +116,7 @@ def collect_enhanced_chunks(
                 chunks.append(postgres_text)
                 continue
         
-        # Fallback to Notion or snippet
-        notion_id = metadata.get("notion_page_id") or metadata.get("dataset_page_id")
-        if notion_id:
-            try:
-                from amprenta_rag.ingestion.notion_pages import extract_page_content
-                notion_content = extract_page_content(notion_id)
-                if notion_content:
-                    chunks.append(notion_content)
-                    continue
-            except Exception:
-                pass
-        
+        # DEPRECATED: Notion fallback removed
         # Use snippet as last resort
         snippet = metadata.get("snippet") or match.snippet
         if snippet:
