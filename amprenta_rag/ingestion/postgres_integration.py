@@ -8,7 +8,7 @@ Postgres as the system of record, replacing Notion as the primary database.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -44,6 +44,8 @@ def create_or_update_dataset_in_postgres(
     notion_page_id: Optional[str] = None,
     program_ids: Optional[List[str]] = None,
     experiment_ids: Optional[List[str]] = None,
+    external_ids: Optional[Dict[str, str]] = None,
+    auto_ingest: bool = False,
     db: Optional[Session] = None,
 ) -> Dataset:
     """
@@ -60,6 +62,8 @@ def create_or_update_dataset_in_postgres(
         notion_page_id: Notion page ID for migration compatibility
         program_ids: List of program IDs (Notion or Postgres UUIDs)
         experiment_ids: List of experiment IDs (Notion or Postgres UUIDs)
+        external_ids: Dict of external IDs (e.g., {"mw_study_id": "ST001234"})
+        auto_ingest: Whether to trigger automatic ingestion (not yet implemented)
         db: Database session (optional, will create if not provided)
     
     Returns:
@@ -89,12 +93,21 @@ def create_or_update_dataset_in_postgres(
             notion_page_id=notion_page_id,
         )
         
+        # Set external_ids if provided
+        if external_ids:
+            if dataset.external_ids:
+                dataset.external_ids.update(external_ids)
+            else:
+                dataset.external_ids = external_ids
+            db.commit()
+        
         action = "Created" if created else "Found existing"
         logger.info(
-            "[POSTGRES][DATASET] %s dataset: %s (ID: %s)",
+            "[POSTGRES][DATASET] %s dataset: %s (ID: %s, external_ids: %s)",
             action,
             dataset.name,
             dataset.id,
+            external_ids,
         )
         
         return dataset
