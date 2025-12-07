@@ -10,10 +10,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List
 
-import requests
-
-from amprenta_rag.clients.notion_client import notion_headers
-from amprenta_rag.config import get_config
+from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.ingestion.metadata.helpers import (
     fetch_notion_page,
     get_multi_names,
@@ -28,63 +25,16 @@ def enforce_signature_reverse_link(
     signature_page_id: str, source_page_id: str
 ) -> None:
     """
-    Create reverse link from signature page to source page (literature/email/experiment/dataset).
-
-    Updates the signature page's "Source Papers" relation to include the source page.
+    DEPRECATED: Notion support has been removed.
+    
+    This function previously created reverse links from signature pages to source pages.
+    Postgres is now the source of truth.
+    
+    TODO: Phase 3 - Implement Postgres-based reverse linking if needed.
     """
-    cfg = get_config().notion
-    try:
-        # Fetch current signature page
-        sig_page = fetch_notion_page(signature_page_id)
-        props = sig_page.get("properties", {}) or {}
-        current_rel = props.get("Source Papers", {}).get("relation", []) or []
-        existing_ids = {
-            r.get("id", "").replace("-", "") for r in current_rel if r.get("id")
-        }
-
-        # Check if source page is already linked
-        source_page_id_clean = source_page_id.replace("-", "")
-        if source_page_id_clean in existing_ids:
-            return  # Already linked, skip
-
-        # Add source page to relation
-        updated_rel = [{"id": source_page_id_clean}] + current_rel
-
-        # Update signature page
-        payload = {
-            "properties": {
-                "Source Papers": {"relation": updated_rel},
-            },
-        }
-
-        url = f"{cfg.base_url}/pages/{signature_page_id}"
-        resp = requests.patch(
-            url,
-            headers=notion_headers(),
-            data=json.dumps(payload),
-            timeout=30,
-        )
-
-        if resp.status_code >= 300:
-            logger.error(
-                "[METADATA] Failed to update signature page %s reverse link: %s",
-                signature_page_id,
-                resp.text,
-            )
-        else:
-            logger.info(
-                "[METADATA] Added reverse link: signature %s -> source %s",
-                signature_page_id,
-                source_page_id,
-            )
-
-    except Exception as e:
-        logger.error(
-            "[METADATA] Error creating reverse link for signature %s -> source %s: %r",
-            signature_page_id,
-            source_page_id,
-            e,
-        )
+    logger.debug(
+        "[METADATA] enforce_signature_reverse_link() deprecated - Notion support removed"
+    )
 
 
 def collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
