@@ -9,16 +9,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from amprenta_rag.ingestion.dataset_notion_utils import fetch_dataset_page
 from amprenta_rag.ingestion.feature_extraction import extract_features_from_mwtab
 from amprenta_rag.ingestion.mwtab_extraction import (
     extract_mwtab_from_page_content,
     fetch_mwtab_from_api,
-)
-from amprenta_rag.ingestion.notion_pages import extract_page_content
-from amprenta_rag.ingestion.signature_matching.signature_loader import (
-    fetch_all_signatures_from_notion,
-    load_signature_from_notion_page,
 )
 from amprenta_rag.ingestion.signature_matching.matching import (
     score_signature_against_dataset,
@@ -186,23 +180,20 @@ def signature_similarity_query(
     )
 
     try:
-        # Fetch dataset page
-        dataset_page = fetch_dataset_page(dataset_page_id)
-        if not dataset_page:
-            logger.error(
-                "[RAG][SIGNATURE-SCORE] Dataset page %s not found",
-                dataset_page_id,
-            )
-            return []
-
-        # Extract page content to get mwTab data
-        page_content = extract_page_content(dataset_page_id)
-        if not page_content:
-            logger.warning(
-                "[RAG][SIGNATURE-SCORE] Could not extract content from dataset page %s",
-                dataset_page_id,
-            )
-            return []
+        # DEPRECATED: Notion support removed
+        # TODO: Phase 3 - Update to use Postgres dataset_id instead of Notion page_id
+        logger.warning(
+            "[RAG][SIGNATURE-SCORE] signature_similarity_query() using Notion page_id is deprecated. "
+            "Use Postgres dataset_id instead."
+        )
+        
+        # Stub: Return empty for now
+        # In Phase 3, this should:
+        # 1. Accept dataset_id: UUID instead of dataset_page_id: str
+        # 2. Fetch dataset from Postgres
+        # 3. Extract features from Postgres or mwTab API
+        # 4. Use fetch_all_signatures_from_postgres() and load_signature_from_postgres()
+        return []
 
         # Extract mwTab data
         mwtab_data = extract_mwtab_from_page_content(page_content)
@@ -279,93 +270,18 @@ def signature_similarity_query(
             dataset_page_id,
         )
 
-        # Fetch all signatures from Notion
-        signature_pages = fetch_all_signatures_from_notion()
-        if not signature_pages:
-            logger.warning(
-                "[RAG][SIGNATURE-SCORE] No signatures found in Notion",
-            )
-            return []
-
-        # Score each signature
+        # DEPRECATED: Notion signature loading removed
+        # TODO: Phase 3 - Use Postgres signature loading:
+        # from amprenta_rag.ingestion.postgres_signature_loader import (
+        #     fetch_all_signatures_from_postgres,
+        #     load_signature_from_postgres,
+        # )
+        # signature_models = fetch_all_signatures_from_postgres()
+        # for sig_model in signature_models:
+        #     signature = load_signature_from_postgres(sig_model)
+        #     ... (rest of scoring logic)
+        
         results: List[Dict[str, Any]] = []
-        for sig_page in signature_pages:
-            try:
-                signature = load_signature_from_notion_page(sig_page)
-                if not signature:
-                    continue
-
-                # Score signature against dataset
-                score_result = score_signature_against_dataset(
-                    signature=signature,
-                    dataset_species=dataset_species_set,
-                    dataset_directions=None,  # Could extract from mwTab if available
-                )
-
-                # Calculate overlap fraction
-                total_components = len(signature.components)
-                matched_count = len(score_result.matched_species)
-                overlap_fraction = (
-                    matched_count / total_components if total_components > 0 else 0.0
-                )
-
-                # Get signature metadata
-                props = sig_page.get("properties", {}) or {}
-                name_prop = props.get("Name", {}).get("title", []) or []
-                signature_name = (
-                    name_prop[0].get("plain_text", "") if name_prop else "Unknown"
-                )
-
-                # Get Short ID if available
-                short_id_prop = props.get("Short ID", {})
-                signature_short_id = None
-                if short_id_prop.get("rich_text"):
-                    signature_short_id = short_id_prop["rich_text"][0].get(
-                        "plain_text", ""
-                    )
-
-                # Get disease if available
-                disease_prop = props.get("Disease", {})
-                disease = None
-                if disease_prop.get("multi_select"):
-                    disease = [d.get("name", "") for d in disease_prop["multi_select"]]
-
-                # Get matrix if available
-                matrix_prop = props.get("Matrix", {})
-                matrix = None
-                if matrix_prop.get("multi_select"):
-                    matrix = [m.get("name", "") for m in matrix_prop["multi_select"]]
-
-                result = {
-                    "signature_page_id": sig_page.get("id", ""),
-                    "signature_name": signature_name,
-                    "signature_short_id": signature_short_id,
-                    "disease": disease,
-                    "matrix": matrix,
-                    "score": score_result.total_score,
-                    "overlap_fraction": overlap_fraction,
-                    "matched_components": list(score_result.matched_species),
-                    "missing_components": list(score_result.missing_species),
-                    "conflicting_components": list(score_result.conflicting_species),
-                }
-                results.append(result)
-
-                logger.debug(
-                    "[RAG][SIGNATURE-SCORE] Match: %s (score=%.3f, overlap=%.2f, matched=%d, missing=%d)",
-                    signature_name,
-                    score_result.total_score,
-                    overlap_fraction,
-                    len(score_result.matched_species),
-                    len(score_result.missing_species),
-                )
-
-            except Exception as e:
-                logger.warning(
-                    "[RAG][SIGNATURE-SCORE] Error processing signature %s: %r",
-                    sig_page.get("id", ""),
-                    e,
-                )
-                continue
 
         # Sort by score (descending), then by overlap_fraction (descending)
         results.sort(key=lambda x: (x["score"], x["overlap_fraction"]), reverse=True)

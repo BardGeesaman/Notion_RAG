@@ -8,19 +8,21 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-import requests
+from amprenta_rag.logging_utils import get_logger
 
-from amprenta_rag.clients.notion_client import notion_headers
-from amprenta_rag.config import get_config
+logger = get_logger(__name__)
 
 
 def fetch_notion_page(page_id: str) -> Dict[str, Any]:
-    """Fetch a Notion page by ID."""
-    cfg = get_config().notion
-    url = f"{cfg.base_url}/pages/{page_id}"
-    resp = requests.get(url, headers=notion_headers(), timeout=30)
-    resp.raise_for_status()
-    return resp.json()
+    """
+    DEPRECATED: Notion support has been removed.
+    Returns empty page structure for backward compatibility.
+    """
+    logger.debug(
+        "[METADATA] fetch_notion_page(%s) deprecated - returning empty dict",
+        page_id,
+    )
+    return {"id": page_id, "properties": {}}
 
 
 def get_select_name(props: Dict[str, Any], name: str) -> Optional[str]:
