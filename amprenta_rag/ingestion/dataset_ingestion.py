@@ -53,10 +53,6 @@ def ingest_dataset(page_id: str, force: bool = False) -> None:
         "Use Postgres-based ingestion instead."
     )
     return
-
-    # Stub: All Notion-dependent code removed
-    # Original function body removed - use Postgres-based ingestion instead
-    except Exception as e:
         logger.error(
             "[INGEST][DATASET] Error extracting content for %s: %r",
             page_id,
