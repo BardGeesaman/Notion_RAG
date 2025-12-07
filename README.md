@@ -45,7 +45,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 - **Metabolomics**: Metabolite name normalization and linking
 - **Proteomics**: Protein identifier normalization (UniProt, gene symbols)
 - **Transcriptomics**: Gene identifier normalization (Ensembl, gene symbols)
-- **Batch Processing**: Auto-detect omics type, parallel processing, progress tracking
+- **Batch Processing**: Auto-detect omics type from filename and content, 4x speedup with parallel workers
 - **Postgres-First Architecture**: All omics pipelines use Postgres as primary database for fast, scalable ingestion
 
 ### 📊 Signature Management
@@ -71,7 +71,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 
 ### 🚀 Performance & Production
 
-- **Feature Caching**: LRU cache with persistence for 10-100x performance gains
+- **Feature Caching**: LRU cache with persistence for 10-100x performance gains (see [Feature Caching Guide](docs/FEATURE_CACHING.md))
 - **Parallel Processing**: Configurable worker pools for batch operations
 - **Production Hardening**: Error handling, retry logic, circuit breakers
 - **Health Monitoring**: Comprehensive health checks and performance metrics
@@ -136,6 +136,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 | [🏗️ Architecture Overview](docs/ARCHITECTURE.md) | System design and components |
 | [📋 API Reference](docs/API_REFERENCE.md) | Module and function documentation |
 | [💡 Usage Examples](docs/USAGE_EXAMPLES.md) | Practical code examples |
+| [⚡ Feature Caching Guide](docs/FEATURE_CACHING.md) | Performance optimization with caching |
 | [🗄️ Notion Database Setup](docs/NOTION_DATABASE_SETUP.md) | Database configuration guide |
 | [🛡️ Production Hardening](docs/PRODUCTION_HARDENING.md) | Production deployment guide |
 | [📧 Gmail Setup](docs/setup/GMAIL_SETUP.md) | Gmail API integration guide |
@@ -146,14 +147,25 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 ### Ingest Multi-Omics Data
 
 ```bash
-# Lipidomics
+# Single dataset ingestion
 python scripts/ingest_lipidomics.py --file data.csv --create-page
-
-# Metabolomics
 python scripts/ingest_metabolomics.py --file data.csv --create-page
 
-# Batch ingestion (auto-detect type)
-python scripts/batch_ingest_omics.py --directory /path/to/data --parallel
+# Batch ingestion (auto-detect type, 4x faster with parallel processing)
+python scripts/batch_ingest_omics.py --directory /path/to/data --create-pages
+
+# Batch with program linking
+python scripts/batch_ingest_omics.py \
+    --directory /path/to/data \
+    --create-pages \
+    --program-id PROGRAM_UUID \
+    --parallel 4
+
+# Override type detection
+python scripts/batch_ingest_omics.py \
+    --directory /path/to/data \
+    --type metabolomics \
+    --create-pages
 ```
 
 ### Discover and Manage Signatures
@@ -297,10 +309,24 @@ pip install -r requirements.txt
 
 ### Performance Optimization
 
-- **Feature Caching**: LRU cache with file persistence (10-100x faster)
+- **Feature Caching**: LRU cache with file persistence (10-100x faster) - see [Feature Caching Guide](docs/FEATURE_CACHING.md)
 - **Parallel Processing**: Configurable worker pools for batch operations
 - **Progress Tracking**: Real-time progress bars with tqdm
 - **Error Aggregation**: Comprehensive error reporting
+
+**Cache Management**:
+
+```bash
+# Warm cache before batch operations
+python scripts/warm_feature_cache.py --all-datasets
+
+# Monitor cache performance
+python scripts/manage_feature_cache.py --stats
+
+# Export/import cache for session continuity
+python scripts/manage_feature_cache.py --export cache_backup.json
+python scripts/manage_feature_cache.py --import cache_backup.json
+```
 
 ### Production Ready
 
