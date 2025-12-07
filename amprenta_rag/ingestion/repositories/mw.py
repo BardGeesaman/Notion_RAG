@@ -407,6 +407,7 @@ def search_mw_studies(
         # Study matches all filters
         results.append({
             "id": study_id,
+            "accession": study_id,  # Dashboard expects this field
             "title": title or f"MW Study {study_id}",
             "description": summary_text[:200] + "..." if len(summary_text) > 200 else summary_text,
             "disease": study_disease,
