@@ -71,4 +71,3 @@ NUCLEOTIDES: List[str] = [
     "udp",
     "ump",
 ]
-

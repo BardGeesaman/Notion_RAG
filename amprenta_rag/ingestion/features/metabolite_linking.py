@@ -31,10 +31,7 @@ def _find_or_create_metabolite_page(metabolite_name: str) -> Optional[str]:
     cfg = get_config()
 
     # Check if metabolite_features_db_id is configured
-    if (
-        not hasattr(cfg.notion, "metabolite_features_db_id")
-        or not cfg.notion.metabolite_features_db_id
-    ):
+    if not hasattr(cfg.notion, "metabolite_features_db_id") or not cfg.notion.metabolite_features_db_id:
         logger.warning(
             "[INGEST][FEATURES] Metabolite Features database ID not configured. "
             "Set NOTION_METABOLITE_FEATURES_DB_ID in config."
@@ -263,4 +260,3 @@ def link_features_to_notion_items(
         item_type,
         item_page_id,
     )
-

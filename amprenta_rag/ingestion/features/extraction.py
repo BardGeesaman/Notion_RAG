@@ -137,4 +137,3 @@ def extract_features_from_text(text: str) -> List[str]:
             found_metabolites.add(normalize_metabolite_name(metabolite))
 
     return sorted(list(found_metabolites))
-

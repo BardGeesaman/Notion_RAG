@@ -17,14 +17,22 @@ from __future__ import annotations
 # Re-export all public functions from the new modular structure
 from amprenta_rag.query.cross_omics import (
     cross_omics_dataset_summary,
+    cross_omics_dataset_summary_postgres,
     cross_omics_feature_summary,
+    cross_omics_feature_summary_postgres,
     cross_omics_program_summary,
+    cross_omics_program_summary_postgres,
     cross_omics_signature_summary,
+    cross_omics_signature_summary_postgres,
 )
 
 __all__ = [
     "cross_omics_program_summary",
+    "cross_omics_program_summary_postgres",
     "cross_omics_signature_summary",
+    "cross_omics_signature_summary_postgres",
     "cross_omics_feature_summary",
+    "cross_omics_feature_summary_postgres",
     "cross_omics_dataset_summary",
+    "cross_omics_dataset_summary_postgres",
 ]

@@ -23,6 +23,14 @@ import re
 
 from amprenta_rag.ingestion.features.constants import METABOLITE_SYNONYMS
 
+# Add or update mapping and docstring with supported column name variants
+FEATURE_COLUMN_SYNONYMS = {
+    "metabolite_name": ["metabolite", "metabolite name", "compound", "name", "analyte"],
+    "lipid_name": ["lipid", "lipid species", "lipid_name", "species"],
+    "protein_id": ["protein", "protein id", "accession"],
+    "gene_symbol": ["gene", "gene symbol", "gene_id"],
+}
+
 
 def normalize_metabolite_name(raw: str) -> str:
     """
@@ -41,9 +49,7 @@ def normalize_metabolite_name(raw: str) -> str:
     normalized = raw.lower().strip()
 
     # Remove prefixes like "HMDB:", "KEGG:", "CHEBI:", etc.
-    normalized = re.sub(
-        r"^(hmdb|kegg|chebi|pubchem|cas)[:\s]+", "", normalized, flags=re.IGNORECASE
-    )
+    normalized = re.sub(r"^(hmdb|kegg|chebi|pubchem|cas)[:\s]+", "", normalized, flags=re.IGNORECASE)
 
     # Remove common prefixes/suffixes
     normalized = re.sub(r"^\d+\s*[-:]?\s*", "", normalized)  # Leading numbers
@@ -59,11 +65,6 @@ def normalize_metabolite_name(raw: str) -> str:
 
     # Capitalize first letter for canonical form
     if normalized:
-        normalized = (
-            normalized[0].upper() + normalized[1:]
-            if len(normalized) > 1
-            else normalized.upper()
-        )
+        normalized = normalized[0].upper() + normalized[1:] if len(normalized) > 1 else normalized.upper()
 
     return normalized
-

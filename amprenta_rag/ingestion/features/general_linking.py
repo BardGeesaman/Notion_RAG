@@ -67,9 +67,7 @@ def _find_or_create_feature_page(feature_type: str, feature_name: str) -> Option
 
     # Special handling for lipid species (uses existing function)
     if feature_type == "lipid":
-        from amprenta_rag.ingestion.signature_notion_crud import (
-            find_or_create_lipid_species_page,
-        )
+        from amprenta_rag.ingestion.signature_notion_crud import find_or_create_lipid_species_page
 
         page_id = find_or_create_lipid_species_page(feature_name)
         if page_id:
@@ -163,9 +161,7 @@ def _find_or_create_feature_page(feature_type: str, feature_name: str) -> Option
         return None
 
 
-def _add_dataset_relation(
-    feature_page_id: str, dataset_page_id: str, feature_type: str
-) -> None:
+def _add_dataset_relation(feature_page_id: str, dataset_page_id: str, feature_type: str) -> None:
     """
     Add dataset_page_id to the correct Feature → Dataset relation.
 
@@ -237,11 +233,7 @@ def _add_dataset_relation(
 
         # If still no suitable property found, log and return
         if not relation_property:
-            available_relations = [
-                name
-                for name, data in props.items()
-                if data.get("type") == "relation"
-            ]
+            available_relations = [name for name, data in props.items() if data.get("type") == "relation"]
             logger.debug(
                 "[INGEST][FEATURE] No suitable dataset relation property found for %s feature %s. "
                 "Available relations: %s. Skipping relation update.",
@@ -333,4 +325,3 @@ def link_feature(
             e,
         )
         # Non-blocking - continue with other features
-
