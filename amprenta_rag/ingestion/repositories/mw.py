@@ -359,52 +359,64 @@ def search_mw_studies(
     """
     repo = MWRepository(omics_type=omics_type if omics_type else "metabolomics")
     
-    # Build keywords list
-    keywords = [kw.strip() for kw in keyword.split() if kw.strip()] if keyword else []
-    if not keywords:
-        keywords = ["*"]  # Match all if no keyword
-    
-    # Build filters
-    filters = {}
-    if disease:
-        filters["disease"] = disease
-    if species:
-        filters["organism"] = species
-    if matrix:
-        filters["sample_type"] = matrix
-    
-    # Search studies
+    # Fetch all study summaries
     try:
-        study_ids = repo.search_studies(keywords, filters, max_results)
+        summaries = repo._fetch_all_study_summaries()
     except Exception as e:
-        logger.error("[REPO][MW] Search failed: %r", e)
+        logger.error("[REPO][MW] Failed to fetch study summaries: %r", e)
         return []
     
-    # Fetch metadata for each study
+    # Filter studies
     results = []
-    for study_id in study_ids:
-        try:
-            metadata = repo.fetch_study_metadata(study_id)
-            if metadata:
-                results.append({
-                    "id": study_id,
-                    "title": metadata.title,
-                    "description": metadata.summary or "",
-                    "disease": ", ".join(metadata.disease) if metadata.disease else "",
-                    "organism": ", ".join(metadata.organism) if metadata.organism else "",
-                    "omics_type": metadata.omics_type,
-                })
-        except Exception as e:
-            logger.warning("[REPO][MW] Failed to fetch metadata for %s: %r", study_id, e)
-            # Add basic entry
-            results.append({
-                "id": study_id,
-                "title": f"MW Study {study_id}",
-                "description": "",
-                "disease": "",
-                "organism": "",
-                "omics_type": omics_type or "metabolomics",
-            })
+    keyword_lower = keyword.lower().strip() if keyword else ""
+    disease_lower = disease.lower().strip() if disease else ""
+    species_lower = species.lower().strip() if species else ""
+    matrix_lower = matrix.lower().strip() if matrix else ""
     
+    for study in summaries:
+        study_id = study.get("study_id", "")
+        if not study_id:
+            continue
+        
+        title = str(study.get("study_title", "") or "")
+        summary_text = str(study.get("study_summary", "") or "")
+        study_disease = str(study.get("disease", "") or "")
+        study_organism = str(study.get("organism", "") or "")
+        study_sample_type = str(study.get("sample_type", "") or "")
+        
+        # Apply keyword filter (searches title and summary)
+        if keyword_lower:
+            if keyword_lower not in title.lower() and keyword_lower not in summary_text.lower():
+                continue
+        
+        # Apply disease filter
+        if disease_lower:
+            if disease_lower not in study_disease.lower() and disease_lower not in title.lower() and disease_lower not in summary_text.lower():
+                continue
+        
+        # Apply species filter
+        if species_lower:
+            if species_lower not in study_organism.lower():
+                continue
+        
+        # Apply matrix filter
+        if matrix_lower:
+            if matrix_lower not in study_sample_type.lower():
+                continue
+        
+        # Study matches all filters
+        results.append({
+            "id": study_id,
+            "title": title or f"MW Study {study_id}",
+            "description": summary_text[:200] + "..." if len(summary_text) > 200 else summary_text,
+            "disease": study_disease,
+            "organism": study_organism,
+            "omics_type": omics_type or "metabolomics",
+        })
+        
+        if len(results) >= max_results:
+            break
+    
+    logger.info("[REPO][MW] Search returned %d results", len(results))
     return results
 
