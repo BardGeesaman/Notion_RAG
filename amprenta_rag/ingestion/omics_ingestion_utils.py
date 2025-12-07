@@ -12,11 +12,17 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from amprenta_rag.clients.notion_client import notion_headers
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+def notion_headers() -> Dict[str, str]:
+    """DEPRECATED: Notion support removed. Returns empty headers dict."""
+    logger.debug("[OMICS-INGESTION-UTILS] notion_headers() deprecated - Notion support removed")
+    return {}
 
 __all__ = [
     "create_omics_dataset_page",

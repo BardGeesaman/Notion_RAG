@@ -6,13 +6,19 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 
 import requests
 
-from amprenta_rag.clients.notion_client import notion_headers
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.zotero_ingest import ingest_zotero_item
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+def notion_headers() -> Dict[str, str]:
+    """DEPRECATED: Notion support removed. Returns empty headers dict."""
+    logger.debug("[ZOTERO-COLLECTION] notion_headers() deprecated - Notion support removed")
+    return {}
 
 # Default set of "literature-like" item types
 DEFAULT_ALLOWED_TYPES: Set[str] = {

@@ -10,13 +10,19 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from amprenta_rag.clients.notion_client import notion_headers
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.signatures.signature_loader import Signature
 from amprenta_rag.ingestion.signatures.short_id import generate_signature_short_id
 
 logger = get_logger(__name__)
+
+def notion_headers() -> Dict[str, str]:
+    """DEPRECATED: Notion support removed. Returns empty headers dict."""
+    logger.debug("[SIGNATURES][SIGNATURE-CRUD] notion_headers() deprecated - Notion support removed")
+    return {}
 
 
 def find_or_create_signature_page(

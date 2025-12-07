@@ -13,9 +13,23 @@ from typing import List, Optional
 
 import requests
 
-from amprenta_rag.clients.notion_client import notion_headers
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.clients.notion_client import notion_headers
+# from amprenta_rag.ingestion.dataset_notion_utils import fetch_dataset_page
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.dataset_notion_utils import fetch_dataset_page
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
+def notion_headers() -> Dict[str, str]:
+    """DEPRECATED: Notion support removed. Returns empty headers dict."""
+    logger.debug("[PROTEOMICS][INGESTION] notion_headers() deprecated - Notion support removed")
+    return {}
+
+def fetch_dataset_page(page_id: str) -> Dict[str, Any]:
+    """DEPRECATED: Notion support removed. Returns empty dict."""
+    logger.debug("[PROTEOMICS][INGESTION] fetch_dataset_page() deprecated - Notion support removed")
+    return {"id": page_id, "properties": {}}
 from amprenta_rag.ingestion.omics_ingestion_utils import (
     attach_file_to_page,
     create_omics_dataset_page,

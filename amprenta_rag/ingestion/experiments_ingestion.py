@@ -19,7 +19,16 @@ from amprenta_rag.ingestion.feature_extraction import (
     extract_features_from_text, link_features_to_notion_items)
 from amprenta_rag.ingestion.metadata_semantic import \
     get_experiment_semantic_metadata
-from amprenta_rag.ingestion.notion_pages import extract_page_content
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.ingestion.notion_pages import extract_page_content
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
+def extract_page_content(page_id: str) -> str:
+    """DEPRECATED: Notion support removed. Returns empty string."""
+    logger.debug("[INGESTION][EXPERIMENTS] extract_page_content() deprecated - Notion support removed")
+    return ""
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
 from amprenta_rag.ingestion.signature_integration import \
     detect_and_ingest_signatures_from_content
