@@ -26,9 +26,14 @@ def render_coverage_page():
                 for d in datasets
             ]
         )
-        filter_status = st.selectbox("Filter by ingestion status", ["All"] + sorted(df["status"].dropna().unique()))
-        filter_prog = st.selectbox("Filter by program", ["All"] + sorted(df["program"].dropna().unique()))
-        filter_dis = st.selectbox("Filter by disease", ["All"] + sorted(df["disease"].dropna().unique()))
+        # Handle empty DataFrame gracefully
+        if df.empty:
+            st.warning("No datasets found. Ingest some data to see the coverage map.")
+            return
+        
+        filter_status = st.selectbox("Filter by ingestion status", ["All"] + sorted(df["status"].dropna().unique().tolist()))
+        filter_prog = st.selectbox("Filter by program", ["All"] + sorted(df["program"].dropna().unique().tolist()))
+        filter_dis = st.selectbox("Filter by disease", ["All"] + sorted(df["disease"].dropna().unique().tolist()))
         abs_toggle = st.toggle("Show absolute counts", value=True)
         view = df
         if filter_status != "All":
