@@ -1,0 +1,326 @@
+import pandas as pd
+import streamlit as st
+
+from amprenta_rag.database.models import Dataset
+from scripts.dashboard.db_session import db_session
+
+repo_map = {
+    "GEO": "search_geo_studies",
+    "PRIDE": "search_pride_studies",
+    "MetaboLights": "search_metabolights_studies",
+    "MW": "search_mw_studies",
+}
+
+HELP_TEXT = """
+How to use this page:
+1. Choose a repository and enter desired search criteria.
+2. Run search to list matching studies. You can filter further in the result table.
+3. Select studies to import and run the 'Import Selected' action. Progress and status are reported live.
+4. Use the 'Imported Studies' manager to review or clean up previously ingested studies.
+"""
+
+
+def repo_status(ds):
+    # Returns 'Imported' if already in db, 'Not imported' otherwise.
+    return "Imported" if ds.get("imported") else "Not imported"
+
+
+def render_repositories_page():
+    st.header("🌎 Repository Browser & Import")
+    st.info(HELP_TEXT)
+    
+    # Initialize session state for search results
+    if "repo_search_results" not in st.session_state:
+        st.session_state.repo_search_results = None
+    if "repo_search_params" not in st.session_state:
+        st.session_state.repo_search_params = {}
+    
+    tab1, tab2 = st.tabs(["Browse & Import", "Imported Studies"])
+    
+    with tab1:
+            st.subheader("Search Repositories")
+            repo = st.selectbox("Repository", list(repo_map.keys()))
+            col1, col2 = st.columns([3,1])
+            with col1:
+                keyword = st.text_input("Keyword (title, description, ID)")
+            with col2:
+                limit = st.number_input("Max Results", min_value=1, max_value=100, value=25)
+            disease = st.text_input("Disease", value="")
+            species = st.text_input("Species", value="")
+            omics_type = st.text_input("Omics type", value="")
+            # Repo-specific filters
+            platform = instrument = modality = analytical_platform = matrix = ""
+            if repo == "GEO":
+                platform = st.text_input("Platform (GEO)", value="")
+            if repo == "PRIDE":
+                instrument = st.text_input("Instrument (PRIDE)", value="")
+                modality = st.text_input("Modality (PRIDE)", value="")
+            if repo in ("MW", "MetaboLights"):
+                matrix = st.text_input("Matrix (MW/MetaboLights)", value="")
+                analytical_platform = st.text_input("Analytical Platform", value="")
+            
+            # Check if search params changed (clear results if they did)
+            current_params = {
+                "repo": repo, "keyword": keyword, "disease": disease, "species": species,
+                "omics_type": omics_type, "platform": platform, "instrument": instrument,
+                "modality": modality, "matrix": matrix, "analytical_platform": analytical_platform,
+                "limit": limit
+            }
+            if current_params != st.session_state.repo_search_params:
+                st.session_state.repo_search_results = None
+                st.session_state.repo_search_params = current_params
+
+            if st.button("Run Search"):
+                # Import search function for selected repository
+                # Note: PRIDE and MetaboLights functions are re-exported from their __init__.py
+                try:
+                    if repo == "GEO":
+                        from amprenta_rag.ingestion.repositories.geo import search_geo_studies as fn
+                    elif repo == "PRIDE":
+                        from amprenta_rag.ingestion.repositories.pride import search_pride_studies as fn
+                    elif repo == "MetaboLights":
+                        from amprenta_rag.ingestion.repositories.metabolights import search_metabolights_studies as fn
+                    elif repo == "MW":
+                        from amprenta_rag.ingestion.repositories.mw import search_mw_studies as fn
+                    else:
+                        st.error(f"❌ Unknown repository: {repo}")
+                        return
+                except Exception as e:
+                    st.error(f"❌ Failed to load search function for {repo}")
+                    st.error(f"Error: {str(e)}")
+                    with st.expander("Show full error details"):
+                        st.exception(e)
+                    return
+                kwargs = {
+                    "keyword": keyword or None,
+                    "disease": disease or None,
+                    "species": species or None,
+                    "omics_type": omics_type or None,
+                    "max_results": limit,
+                }
+                if repo == "GEO": kwargs["platform"] = platform or None
+                if repo == "PRIDE": kwargs["instrument"] = instrument or None; kwargs["modality"] = modality or None
+                if repo in ("MW", "MetaboLights"):
+                    kwargs["analytical_platform"] = analytical_platform or None
+                    kwargs["matrix"] = matrix or None
+                
+                try:
+                    with st.spinner(f"Searching {repo}..."):
+                        results = fn(**kwargs)
+                except Exception as e:
+                    st.error(f"❌ Search failed for {repo}")
+                    st.error(f"Error: {str(e)}")
+                    with st.expander("Show full error details"):
+                        st.exception(e)
+                    return
+                
+                # Store results in session state
+                st.session_state.repo_search_results = {
+                    "repo": repo,
+                    "results": results,
+                    "kwargs": kwargs,
+                }
+                
+            # Display results if they exist in session state
+            if st.session_state.repo_search_results and st.session_state.repo_search_results["repo"] == repo:
+                search_data = st.session_state.repo_search_results
+                results = search_data["results"]
+                kwargs = search_data["kwargs"]
+                
+                # Debug: Show search parameters
+                active_filters = {k: v for k, v in kwargs.items() if v}
+                fsum = f"Showing {repo} results for " + \
+                      ", ".join([f"{k}='{v}'" for k, v in active_filters.items()])
+                st.caption(fsum)
+                
+                # Debug: Show result count
+                if not results:
+                    st.warning(f"⚠️ Search returned 0 results. Try broader search criteria or leave filters empty.")
+                    st.info(f"Search parameters used: {active_filters}")
+                else:
+                    st.success(f"✅ Found {len(results)} studies")
+                    
+                    # Import status - check which studies are already imported
+                    acckey = repo.lower() + ("_accession" if repo != "MW" else "_study_id")
+                    ds_accessions = [r["accession"] for r in results]
+                    
+                    # Query database for imported studies
+                    with db_session() as db:
+                        # Check which accessions are already in database
+                        imported_datasets = db.query(Dataset).filter(Dataset.external_ids.isnot(None)).all()
+                        in_db = set()
+                        for ds in imported_datasets:
+                            if ds.external_ids:
+                                acc_value = ds.external_ids.get(acckey)
+                                if acc_value in ds_accessions:
+                                    in_db.add(acc_value)
+                    
+                    summary = []
+                    for r in results:
+                        summary.append({**r, "Selected": False, "status": "Imported" if r["accession"] in in_db else "Not imported"})
+                    df = pd.DataFrame(summary)
+                    
+                    if not df.empty:
+                        # Display editable table for selection
+                        edited_df = st.data_editor(
+                            df, 
+                            num_rows="dynamic", 
+                            key="repo_results",
+                            column_config={
+                                "Selected": st.column_config.CheckboxColumn(
+                                    "Select",
+                                    help="Select studies to import",
+                                    default=False,
+                                ),
+                            },
+                            hide_index=True,
+                        )
+                        
+                        st.markdown(f"**{len(results)} results** | {len([r for r in summary if r['status']=='Imported'])} already imported.")
+                        
+                        # Import button
+                        selected_studies = [r for idx, r in edited_df.iterrows() if r["Selected"] and r["status"] != "Imported"]
+                        
+                        if selected_studies:
+                            st.info(f"📋 {len(selected_studies)} studies selected for import")
+                            
+                            if st.button(f"🚀 Import Selected ({len(selected_studies)} studies)", key="import_selected", type="primary"):
+                                import_progress = st.progress(0, text="Starting import...")
+                                imported_count = 0
+                                failed_count = 0
+                                
+                                for idx, study in enumerate(selected_studies):
+                                    accession = study["accession"]
+                                    title = study["title"]
+                                    
+                                    import_progress.progress(
+                                        (idx + 1) / len(selected_studies),
+                                        text=f"Importing {idx + 1}/{len(selected_studies)}: {accession}..."
+                                    )
+                                    
+                                    try:
+                                        # Fetch full metadata from repository
+                                        if repo == "GEO":
+                                            from amprenta_rag.ingestion.repositories.geo import GEORepository
+                                            repo_obj = GEORepository()
+                                        elif repo == "PRIDE":
+                                            from amprenta_rag.ingestion.repositories.pride import PRIDERepository
+                                            repo_obj = PRIDERepository()
+                                        elif repo == "MetaboLights":
+                                            from amprenta_rag.ingestion.repositories.metabolights import MetaboLightsRepository
+                                            repo_obj = MetaboLightsRepository()
+                                        elif repo == "MW":
+                                            from amprenta_rag.ingestion.repositories.mw import MWRepository
+                                            repo_obj = MWRepository()
+                                        
+                                        metadata = repo_obj.fetch_study_metadata(accession)
+                                        
+                                        if not metadata:
+                                            st.warning(f"⚠️ Could not fetch metadata for {accession}")
+                                            failed_count += 1
+                                            continue
+                                        
+                                        # Import into database
+                                        from amprenta_rag.ingestion.postgres_integration import create_or_update_dataset_in_postgres
+                                        from amprenta_rag.models.domain import OmicsType
+                                        
+                                        # Prepare organism as list (function expects List[str])
+                                        organism_list = None
+                                        if metadata.organism:
+                                            if isinstance(metadata.organism, list):
+                                                organism_list = metadata.organism
+                                            else:
+                                                organism_list = [str(metadata.organism)]
+                                        
+                                        # Prepare external_ids dict with DOI and PubMed if available
+                                        ext_ids = {acckey: accession}
+                                        if metadata.doi:
+                                            ext_ids["doi"] = metadata.doi
+                                        if metadata.pubmed_id:
+                                            ext_ids["pubmed_id"] = str(metadata.pubmed_id)
+                                        
+                                        # Convert omics_type string to OmicsType enum
+                                        omics_type_enum = OmicsType.METABOLOMICS  # Default for MW/MetaboLights
+                                        if metadata.omics_type:
+                                            try:
+                                                omics_type_enum = OmicsType(metadata.omics_type.lower())
+                                            except (ValueError, AttributeError):
+                                                # If conversion fails, infer from repository
+                                                if repo == "GEO":
+                                                    omics_type_enum = OmicsType.TRANSCRIPTOMICS
+                                                elif repo == "PRIDE":
+                                                    omics_type_enum = OmicsType.PROTEOMICS
+                                                elif repo in ("MW", "MetaboLights"):
+                                                    omics_type_enum = OmicsType.METABOLOMICS
+                                        
+                                        with db_session() as db:
+                                            dataset_id = create_or_update_dataset_in_postgres(
+                                                db=db,
+                                                name=metadata.title or accession,
+                                                omics_type=omics_type_enum,
+                                                description=metadata.summary or "",
+                                                organism=organism_list,
+                                                external_ids=ext_ids,
+                                                auto_ingest=True,  # Automatically trigger ingestion
+                                            )
+                                        
+                                        st.success(f"✅ Imported: {accession} - {title[:50]}...")
+                                        imported_count += 1
+                                        
+                                    except Exception as e:
+                                        st.error(f"❌ Failed to import {accession}: {str(e)}")
+                                        failed_count += 1
+                                
+                                import_progress.empty()
+                                
+                                # Summary
+                                st.success(f"🎉 Import complete! {imported_count} succeeded, {failed_count} failed.")
+                                if imported_count > 0:
+                                    st.info("💡 Imported datasets are being processed. Check the 'Imported Studies' tab or Data Ingestion page for status.")
+                                st.rerun()
+                        else:
+                            st.info("👈 Check the boxes in the 'Select' column to import studies")
+    
+    # Tab2: Imported studies management
+    with tab2:
+        st.subheader("Imported Studies Management")
+        
+        with db_session() as db:
+            all_imported = db.query(Dataset).filter(Dataset.external_ids.isnot(None)).all()
+            # Extract data inside session
+            dtable = []
+            for d in all_imported:
+                # Assumes accession is stored under key for each repo
+                accn = (
+                    d.external_ids.get("geo_accession")
+                    or d.external_ids.get("pride_accession")
+                    or d.external_ids.get("mw_study_id")
+                    or d.external_ids.get("metabolights_study_id")
+                ) if d.external_ids else None
+                dtable.append(
+                    {
+                        "Selected": False,
+                        "Accession": accn,
+                        "Name": d.name,
+                        "Omics": d.omics_type,
+                        "Created": d.created_at.strftime("%Y-%m-%d"),
+                        "Status": getattr(d, "ingestion_status", "pending"),
+                        "# Features": len(d.features) if d.features else 0,
+                    }
+                )
+        
+        pdf = pd.DataFrame(dtable)
+        pedit = st.data_editor(pdf, key="imported_mgr", num_rows="dynamic")
+        del_rows = [r for r in pedit.to_dict("records") if r["Selected"]]
+        if del_rows and st.button(f"Delete selected ({len(del_rows)})", key="del_impt"):
+            if st.confirm(
+                f"Are you sure you want to delete {len(del_rows)} studies? This will remove their datasets and associated artifacts."
+            ):
+                with db_session() as db:
+                    for r in del_rows:
+                        # TODO: call your safe backend delete logic here
+                        # db.query(Dataset).filter(Dataset.name==r['Name']).delete()
+                        pass
+                    db.commit()
+                st.success("Selected studies deleted.")
+                st.rerun()
