@@ -338,6 +338,7 @@ def search_mw_studies(
     omics_type: str = "",
     matrix: str = "",
     platform: str = "",
+    analytical_platform: str = "",
     max_results: int = 25,
 ) -> List[Dict[str, Any]]:
     """
@@ -349,7 +350,8 @@ def search_mw_studies(
         species: Species/organism filter
         omics_type: Omics type filter
         matrix: Matrix/sample type filter
-        platform: Analytical platform filter
+        platform: Analytical platform filter (alias)
+        analytical_platform: Analytical platform filter
         max_results: Maximum results to return
         
     Returns:
