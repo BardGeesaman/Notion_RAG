@@ -9,7 +9,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from amprenta_rag.clients.notion_client import get_page_text
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.clients.notion_client import get_page_text
+
+def get_page_text(page_id: str) -> str:
+    """DEPRECATED: Notion support removed. Returns empty string."""
+    logger.debug("[CROSS-OMICS][PROGRAM-SUMMARY] get_page_text() deprecated - Notion support removed")
+    return ""
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.cross_omics.context_extraction import (
     extract_aggregated_context,

@@ -567,9 +567,15 @@ def update_notion_with_program_map(program_map: ProgramSignatureMap) -> None:
     Args:
         program_map: ProgramSignatureMap object
     """
-    from amprenta_rag.clients.notion_client import notion_headers
+    # DEPRECATED: Notion imports removed
+    # from amprenta_rag.clients.notion_client import notion_headers
     from amprenta_rag.config import get_config
     import requests
+    
+    def notion_headers() -> Dict[str, str]:
+        """DEPRECATED: Notion support removed. Returns empty headers dict."""
+        logger.debug("[PROGRAM-SIGNATURE-MAPS] notion_headers() deprecated - Notion support removed")
+        return {}
     
     cfg = get_config()
     

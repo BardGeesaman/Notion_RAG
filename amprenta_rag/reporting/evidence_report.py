@@ -471,8 +471,14 @@ def write_evidence_report_to_notion(
     try:
         import requests
 
-        from amprenta_rag.clients.notion_client import notion_headers
+        # DEPRECATED: Notion imports removed
+        # from amprenta_rag.clients.notion_client import notion_headers
         from amprenta_rag.config import get_config
+        
+        def notion_headers() -> Dict[str, str]:
+            """DEPRECATED: Notion support removed. Returns empty headers dict."""
+            logger.debug("[REPORTING][EVIDENCE] notion_headers() deprecated - Notion support removed")
+            return {}
 
         cfg = get_config()
 

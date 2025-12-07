@@ -11,12 +11,23 @@ from typing import Any, Dict, List, Optional, Set
 
 import requests
 
-from amprenta_rag.clients.notion_client import get_page_text, notion_headers
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.clients.notion_client import get_page_text, notion_headers
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.pinecone_query import query_pinecone
 
 logger = get_logger(__name__)
+
+def notion_headers() -> Dict[str, str]:
+    """DEPRECATED: Notion support removed. Returns empty headers dict."""
+    logger.debug("[CROSS-OMICS][HELPERS] notion_headers() deprecated - Notion support removed")
+    return {}
+
+def get_page_text(page_id: str) -> str:
+    """DEPRECATED: Notion support removed. Returns empty string."""
+    logger.debug("[CROSS-OMICS][HELPERS] get_page_text() deprecated - Notion support removed")
+    return ""
 
 
 def fetch_notion_page(page_id: str) -> Optional[Dict[str, Any]]:

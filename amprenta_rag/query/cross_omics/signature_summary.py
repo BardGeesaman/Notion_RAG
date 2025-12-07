@@ -11,9 +11,15 @@ from typing import Any, Dict, List
 
 import requests
 
-from amprenta_rag.clients.notion_client import notion_headers
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+# from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
+
+def notion_headers() -> Dict[str, str]:
+    """DEPRECATED: Notion support removed. Returns empty headers dict."""
+    logger.debug("[CROSS-OMICS][SIGNATURE-SUMMARY] notion_headers() deprecated - Notion support removed")
+    return {}
 from amprenta_rag.query.cross_omics.context_extraction import (
     extract_aggregated_context,
     extract_disease_context,
