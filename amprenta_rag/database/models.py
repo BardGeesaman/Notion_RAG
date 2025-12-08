@@ -206,6 +206,11 @@ class Dataset(Base):
         String(32), nullable=False, default="pending"
     )  # values: pending, in_progress, complete, failed
 
+    # Quality metrics
+    quality_score = Column(Float, nullable=True)
+    quality_status = Column(String(32), nullable=True)
+    quality_issues = Column(JSON, nullable=True)
+
     # Relationships
     programs = relationship("Program", secondary=program_dataset_assoc, back_populates="datasets")
     experiments = relationship("Experiment", secondary=experiment_dataset_assoc, back_populates="datasets")

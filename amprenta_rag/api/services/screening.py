@@ -3,7 +3,12 @@ from __future__ import annotations
 import sqlite3
 from typing import List, Optional
 
+from fastapi import HTTPException
+
 from amprenta_rag.chemistry.database import get_chemistry_db_path
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def list_campaigns() -> List[dict]:
@@ -34,6 +39,9 @@ def list_campaigns() -> List[dict]:
             }
             for r in rows
         ]
+    except sqlite3.Error as e:
+        logger.error("[API][SCREENING] Database error listing campaigns: %r", e)
+        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
     finally:
         conn.close()
 
@@ -66,6 +74,9 @@ def get_campaign(campaign_id: str) -> Optional[dict]:
             "hit_count": r[7],
             "run_date": r[8],
         }
+    except sqlite3.Error as e:
+        logger.error("[API][SCREENING] Database error fetching campaign %s: %r", campaign_id, e)
+        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
     finally:
         conn.close()
 
@@ -100,6 +111,9 @@ def get_campaign_hits(campaign_id: str) -> List[dict]:
             }
             for r in rows
         ]
+    except sqlite3.Error as e:
+        logger.error("[API][SCREENING] Database error fetching hits for %s: %r", campaign_id, e)
+        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
     finally:
         conn.close()
 

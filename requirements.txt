@@ -104,3 +104,10 @@ xlrd @ file:///croot/xlrd_1685030938141/work
 xlutils @ file:///Users/ktietz/demo/mc3/conda-bld/xlutils_1629302327574/work
 xlwt==1.3.0
 yake==0.6.0
+
+# UI Testing
+playwright>=1.40.0
+pytest-playwright>=0.4.0
+
+# Visualization / ML
+scikit-learn>=1.3.0

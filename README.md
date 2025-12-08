@@ -140,6 +140,8 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 | [💡 Usage Examples](docs/USAGE_EXAMPLES.md) | Practical code examples |
 | [⚡ Feature Caching Guide](docs/FEATURE_CACHING.md) | Performance optimization with caching |
 | [🔗 Auto-Linking Guide](docs/AUTO_LINKING.md) | Automatic program/experiment linking |
+| [📊 Visualization Guide](docs/VISUALIZATIONS.md) | Interactive plots and dashboards |
+| [✅ Quality Checks Guide](docs/QUALITY_CHECKS.md) | Dataset quality scoring system |
 | [🗄️ Notion Database Setup](docs/NOTION_DATABASE_SETUP.md) | Database configuration guide |
 | [🛡️ Production Hardening](docs/PRODUCTION_HARDENING.md) | Production deployment guide |
 | [📧 Gmail Setup](docs/setup/GMAIL_SETUP.md) | Gmail API integration guide |
@@ -226,7 +228,38 @@ curl http://localhost:8000/api/v1/screening/campaigns
 open http://localhost:8000/docs
 ```
 
-📖 **See [Usage Examples](docs/USAGE_EXAMPLES.md) for more examples**
+### Interactive Visualizations
+
+```bash
+# Start Streamlit dashboard
+cd scripts/dashboard
+streamlit run app.py
+
+# Access at: http://localhost:8501
+
+# Available visualizations:
+# - Volcano Plot (differential expression)
+# - Heatmap (feature × dataset matrix)
+# - PCA Scatter (dataset clustering)
+# - Signature Network (feature co-occurrence)
+```
+
+### Quality Checks
+
+```bash
+# Run quality checks on all datasets (updates database)
+python scripts/check_dataset_quality.py
+
+# View quality scores in dashboard
+# Dashboard → Quality Checks page
+
+# Quality scoring (0-100):
+# - 80-100: High quality (🟢)
+# - 50-79: Medium quality (🟡)
+# - 0-49: Low quality (🔴)
+```
+
+📖 **See [Usage Examples](docs/USAGE_EXAMPLES.md), [Visualization Guide](docs/VISUALIZATIONS.md), and [Quality Checks Guide](docs/QUALITY_CHECKS.md) for more**
 
 ## Project Structure
 

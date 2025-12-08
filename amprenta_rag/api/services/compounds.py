@@ -3,8 +3,12 @@ from __future__ import annotations
 from typing import List, Optional
 
 import sqlite3
+from fastapi import HTTPException
 
 from amprenta_rag.chemistry.database import get_chemistry_db_path
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def list_compounds() -> List[dict]:
@@ -38,6 +42,9 @@ def list_compounds() -> List[dict]:
             }
             for r in rows
         ]
+    except sqlite3.Error as e:
+        logger.error("[API][COMPOUNDS] Database error listing compounds: %r", e)
+        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
     finally:
         conn.close()
 
@@ -73,6 +80,9 @@ def get_compound_by_id(compound_id: str) -> Optional[dict]:
             "hba_count": r[8],
             "rotatable_bonds": r[9],
         }
+    except sqlite3.Error as e:
+        logger.error("[API][COMPOUNDS] Database error fetching %s: %r", compound_id, e)
+        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
     finally:
         conn.close()
 
@@ -101,6 +111,9 @@ def get_compound_programs(compound_id: str) -> List[dict]:
             }
             for r in rows
         ]
+    except sqlite3.Error as e:
+        logger.error("[API][COMPOUNDS] Database error fetching programs for %s: %r", compound_id, e)
+        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
     finally:
         conn.close()
 

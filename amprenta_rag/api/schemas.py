@@ -199,6 +199,54 @@ class Feature(FeatureBase):
 
 
 # ============================================================================
+# Chemistry / Screening schemas
+# ============================================================================
+
+
+class CompoundResponse(BaseSchema):
+    compound_id: str
+    smiles: str
+    inchi_key: Optional[str] = None
+    canonical_smiles: Optional[str] = None
+    molecular_formula: Optional[str] = None
+    molecular_weight: Optional[float] = None
+    logp: Optional[float] = None
+    hbd_count: Optional[int] = None
+    hba_count: Optional[int] = None
+    rotatable_bonds: Optional[int] = None
+
+
+class ProgramLinkResponse(BaseSchema):
+    program_id: str
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class CampaignResponse(BaseSchema):
+    campaign_id: str
+    campaign_name: str
+    description: Optional[str] = None
+    assay_type: Optional[str] = None
+    target: Optional[str] = None
+    library_id: Optional[str] = None
+    total_wells: Optional[int] = None
+    hit_count: Optional[int] = None
+    run_date: Optional[str] = None
+
+
+class HTSHitResponse(BaseSchema):
+    result_id: str
+    compound_id: str
+    well_position: Optional[str] = None
+    raw_value: Optional[float] = None
+    normalized_value: Optional[float] = None
+    z_score: Optional[float] = None
+    hit_flag: int
+    hit_category: Optional[str] = None
+
+
+# ============================================================================
 # Signature schemas
 # ============================================================================
 
