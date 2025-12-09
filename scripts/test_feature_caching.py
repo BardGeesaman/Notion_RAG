@@ -18,7 +18,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from amprenta_rag.ingestion.dataset_feature_cache import (
-    get_feature_cache,
     clear_feature_cache,
 )
 from amprenta_rag.ingestion.multi_omics_scoring import (

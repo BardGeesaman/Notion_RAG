@@ -8,9 +8,8 @@ and ingesting them using Postgres-only ingestion.
 from __future__ import annotations
 
 import base64
-import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 

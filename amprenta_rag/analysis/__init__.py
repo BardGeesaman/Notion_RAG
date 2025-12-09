@@ -9,5 +9,17 @@ This package provides functionality for:
 
 from __future__ import annotations
 
-__all__ = []
+__all__ = [
+    "statistical_tests",
+    "quality_metrics",
+    "program_signature_maps",
+    "cross_feature_mapping",
+    "dataset_comparison",
+    "enrichment",
+    "id_mapping",
+    "pathway_analysis",
+    "pathway_summaries",
+    "pathway",
+    "program_maps",
+]
 

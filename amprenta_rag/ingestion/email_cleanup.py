@@ -8,11 +8,7 @@ This module handles cleanup operations for email/note ingestion:
 
 from __future__ import annotations
 
-import time
-from typing import Any, Dict, List, Optional
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
-from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)

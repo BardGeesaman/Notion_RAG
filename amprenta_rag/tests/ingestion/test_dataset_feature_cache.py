@@ -4,7 +4,7 @@ Tests for dataset feature cache.
 
 import threading
 import time
-from typing import Dict, List
+from typing import List
 
 import pytest
 

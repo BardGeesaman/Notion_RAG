@@ -29,7 +29,6 @@ class RepositoryInterface(ABC):
         Returns:
             Repository name (e.g., "GEO", "PRIDE", "MetaboLights", "MW")
         """
-        pass
     
     @abstractmethod
     def get_omics_type(self) -> str:
@@ -39,7 +38,6 @@ class RepositoryInterface(ABC):
         Returns:
             Omics type (e.g., "transcriptomics", "proteomics", "metabolomics", "lipidomics")
         """
-        pass
     
     @abstractmethod
     def search_studies(
@@ -59,7 +57,6 @@ class RepositoryInterface(ABC):
         Returns:
             List of study IDs matching the search criteria
         """
-        pass
     
     @abstractmethod
     def fetch_study_metadata(self, study_id: str) -> Optional[StudyMetadata]:
@@ -72,7 +69,6 @@ class RepositoryInterface(ABC):
         Returns:
             StudyMetadata object, or None if study not found
         """
-        pass
     
     @abstractmethod
     def fetch_study_data_files(
@@ -90,7 +86,6 @@ class RepositoryInterface(ABC):
         Returns:
             List of DataFile objects
         """
-        pass
     
     def download_data_file(
         self,

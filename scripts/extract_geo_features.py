@@ -311,7 +311,7 @@ def extract_genes_from_supplementary_tsv(
                         if lines_processed >= max_rows:
                             break
                             
-                except Exception as e:
+                except Exception:
                     # May not have enough data yet, continue
                     continue
             

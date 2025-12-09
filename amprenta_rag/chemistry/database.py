@@ -37,7 +37,7 @@ def get_chemistry_db_path() -> Path:
     Returns:
         Path to the database file
     """
-    cfg = get_config()
+    get_config()
     # Use a default path if not configured
     db_dir = Path.cwd() / "data" / "chemistry"
     db_dir.mkdir(parents=True, exist_ok=True)

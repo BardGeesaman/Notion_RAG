@@ -6,13 +6,11 @@ Enhances cross-omics summaries with pathway-level insights and enrichment result
 
 from __future__ import annotations
 
-from typing import List, Optional
 
 from amprenta_rag.analysis.enrichment import (
     enrich_dataset_pathways,
     enrich_signature_pathways,
 )
-from amprenta_rag.analysis.pathway_analysis import PathwayEnrichmentResult
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)

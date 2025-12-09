@@ -206,7 +206,7 @@ def perform_pathway_enrichment(
             logger.warning("[ANALYSIS][PATHWAY] scipy not available, using simplified p-value calculation")
             # Simplified p-value approximation
             p_value = _calculate_simplified_p_value(a, b, c, d)
-            odds_ratio = (a * d) / (b * c) if (b * c) > 0 else 0.0
+            (a * d) / (b * c) if (b * c) > 0 else 0.0
 
             if p_value < 1.0:  # Only add if significant
                 expected = (len(input_features) * pathway_size) / background_size if background_size > 0 else 0

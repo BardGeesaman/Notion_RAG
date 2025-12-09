@@ -17,9 +17,6 @@ SQLAlchemy model instances and lightweight dummy Session/Query objects.
 from typing import Dict, Iterable, List
 from uuid import uuid4
 
-import numpy as np
-import pandas as pd
-import pytest
 
 from amprenta_rag.database.models import Dataset, Feature, Program, Signature
 from scripts.dashboard.pages.visualizations.heatmap import _build_matrix as build_heatmap_matrix

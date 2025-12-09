@@ -15,14 +15,13 @@ from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import (
     Signature as SignatureModel,
     SignatureComponent as SignatureComponentModel,
-    Feature as FeatureModel,
 )
 from amprenta_rag.ingestion.features.postgres_linking import (
     find_or_create_feature_in_postgres,
 )
 from amprenta_rag.ingestion.signatures.short_id import generate_signature_short_id
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.signatures.signature_loader import Signature, SignatureComponent
+from amprenta_rag.signatures.signature_loader import Signature
 
 logger = get_logger(__name__)
 

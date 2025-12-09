@@ -46,7 +46,6 @@ class ProgramBase(BaseSchema):
 
 class ProgramCreate(ProgramBase):
     """Schema for creating a program."""
-    pass
 
 
 class ProgramUpdate(BaseSchema):

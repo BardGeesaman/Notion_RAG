@@ -278,7 +278,7 @@ class ENARepository(RepositoryInterface):
             sample_accession = run_data.get("sample_accession", "")
             scientific_name = run_data.get("scientific_name", "")
             library_strategy = run_data.get("library_strategy", "")
-            library_source = run_data.get("library_source", "")
+            run_data.get("library_source", "")
             instrument_platform = run_data.get("instrument_platform", "")
             
             # Extract FASTQ FTP links (Master Protocol: generate links, don't download)

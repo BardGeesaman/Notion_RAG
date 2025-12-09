@@ -12,7 +12,6 @@ from __future__ import annotations
 from typing import Any, Generator, List
 from uuid import uuid4
 
-import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 

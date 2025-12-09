@@ -12,16 +12,18 @@ Otherwise, it falls back to environment variables.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
-from typing import Optional
-from typing import Optional
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import List
 
 # Load .env file if python-dotenv is installed (optional dependency)
 try:
     from dotenv import load_dotenv
 
-    load_dotenv()
+    try:
+        load_dotenv()
+    except (PermissionError, OSError):
+        # Skip silently if .env is not readable in sandbox/test environments
+        pass
 except ImportError:
     # If dotenv is not installed, silently ignore; env vars still work.
     pass
@@ -29,49 +31,27 @@ except ImportError:
 
 # ---------------------------------------------------------
 #  🔐 REQUIRED: API Keys (from environment or .env file)
+#     (validated lazily at get_config() time)
 # ---------------------------------------------------------
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-if not OPENAI_API_KEY:
-    raise RuntimeError(
-        "OPENAI_API_KEY is not set. "
-        "Please define it in your environment or in a .env file. "
-        "See .env.example for a template."
-    )
-
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")
-if not PINECONE_API_KEY:
-    raise RuntimeError(
-        "PINECONE_API_KEY is not set. "
-        "Please define it in your environment or in a .env file. "
-        "See .env.example for a template."
-    )
 
 # Notion API key - OPTIONAL (only required if ENABLE_NOTION_SYNC=true)
-# Check if Notion sync is enabled first, then validate API key if needed
 ENABLE_NOTION_SYNC_ENV = os.getenv("ENABLE_NOTION_SYNC", "false").lower() == "true"
 NOTION_API_KEY = os.getenv("NOTION_API_KEY", "")
 
-# Only require Notion API key if Notion sync is explicitly enabled
-if ENABLE_NOTION_SYNC_ENV and not NOTION_API_KEY:
-    raise RuntimeError(
-        "NOTION_API_KEY is not set but ENABLE_NOTION_SYNC is true. "
-        "Either set NOTION_API_KEY in your environment/.env file, "
-        "or set ENABLE_NOTION_SYNC=false to disable Notion entirely. "
-        "Notion is now optional and disabled by default."
-    )
-
+# Zotero API key (required)
 ZOTERO_API_KEY = os.getenv("ZOTERO_API_KEY", "")
-if not ZOTERO_API_KEY:
-    raise RuntimeError(
-        "ZOTERO_API_KEY is not set. "
-        "Please define it in your environment or in a .env file. "
-        "See .env.example for a template."
-    )
 
 # Optional API keys for public repositories
 GEO_API_KEY = os.getenv("GEO_API_KEY", "")  # Optional, for higher NCBI rate limits
 NCBI_EMAIL = os.getenv("NCBI_EMAIL", "")  # Required by NCBI for API access
+
+# API server configuration
+def _parse_cors_origins() -> List[str]:
+    raw = os.getenv("CORS_ORIGINS", "http://localhost:8501")
+    return [o.strip() for o in raw.split(",") if o.strip()]
 
 # Postgres Database Configuration (optional - for TIER 3 architecture evolution)
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")  # Full connection string (optional)
@@ -273,6 +253,11 @@ class FeatureCacheConfig:
 
 
 @dataclass(frozen=True)
+class ServerConfig:
+    cors_origins: List[str] = field(default_factory=_parse_cors_origins)
+
+
+@dataclass(frozen=True)
 class PostgresConfig:
     """Postgres database configuration for TIER 3 architecture evolution."""
     url: str = POSTGRES_URL
@@ -293,6 +278,7 @@ class AppConfig:
     pipeline: PipelineConfig
     feature_cache: FeatureCacheConfig
     postgres: PostgresConfig
+    server: ServerConfig
 
 
 # ---------------------------------------------------------
@@ -302,9 +288,26 @@ class AppConfig:
 _config_singleton: AppConfig | None = None
 
 
+def _validate_required_keys():
+    missing = []
+    if not OPENAI_API_KEY:
+        missing.append("OPENAI_API_KEY")
+    if not PINECONE_API_KEY:
+        missing.append("PINECONE_API_KEY")
+    if not ZOTERO_API_KEY:
+        missing.append("ZOTERO_API_KEY")
+    if ENABLE_NOTION_SYNC_ENV and not NOTION_API_KEY:
+        missing.append("NOTION_API_KEY (required because ENABLE_NOTION_SYNC=true)")
+    if missing:
+        raise RuntimeError(
+            "Missing required configuration values: " + ", ".join(missing)
+        )
+
+
 def get_config() -> AppConfig:
     global _config_singleton
     if _config_singleton is None:
+        _validate_required_keys()
         _config_singleton = AppConfig(
             openai=OpenAIConfig(),
             pinecone=PineconeConfig(),
@@ -313,5 +316,6 @@ def get_config() -> AppConfig:
             pipeline=PipelineConfig(),
             feature_cache=FeatureCacheConfig(),
             postgres=PostgresConfig(),
+            server=ServerConfig(),
         )
     return _config_singleton

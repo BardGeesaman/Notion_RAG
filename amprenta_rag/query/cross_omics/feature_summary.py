@@ -4,7 +4,7 @@ Cross-omics feature summary generation (Postgres-backed wrapper).
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import requests
 
@@ -29,7 +29,6 @@ from amprenta_rag.query.cross_omics.context_extraction import (
 from amprenta_rag.query.cross_omics.helpers import (
     extract_relation_ids,
     fetch_notion_page,
-    get_chunk_text,
     group_chunks_by_omics_type,
     retrieve_chunks_for_objects,
 )

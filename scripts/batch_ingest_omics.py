@@ -218,7 +218,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -650,7 +650,7 @@ def main() -> None:
     print("\n📋 Results by Omics Type:")
     for omics_type, omics_results in sorted(by_omics.items()):
         omics_successful = [r for r in omics_results if r[1]]
-        omics_failed = [r for r in omics_results if not r[1]]
+        [r for r in omics_results if not r[1]]
         print(
             f"  {omics_type.upper()}: {len(omics_successful)}/{len(omics_results)} successful"
         )

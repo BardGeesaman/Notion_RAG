@@ -7,14 +7,12 @@ and optionally creates/updates Notion pages for promoted compounds.
 
 from __future__ import annotations
 
-import csv
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import pandas as pd
 
 from amprenta_rag.chemistry.database import (
-    get_hits_for_campaign,
     insert_compound,
     insert_hts_campaign,
     insert_hts_results,
@@ -184,7 +182,7 @@ def ingest_hts_hit_list(
         
         # Create result
         result_id = f"{campaign_id}_{compound_id}_{idx}"
-        vendor_id = row.get(vendor_id_column) if vendor_id_column else None
+        row.get(vendor_id_column) if vendor_id_column else None
         
         result = HTSResult(
             result_id=result_id,

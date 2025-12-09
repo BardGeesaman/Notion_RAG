@@ -11,7 +11,7 @@ Extends signature scoring to work across all omics types:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Dataset, Feature, dataset_feature_assoc
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.signatures.signature_loader import Signature, SignatureComponent
+from amprenta_rag.signatures.signature_loader import Signature
 from amprenta_rag.signatures.signature_scoring import SignatureScoreResult
 
 logger = get_logger(__name__)

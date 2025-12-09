@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from amprenta_rag.ingestion.repositories import REPOSITORY_USER_AGENT, repo_rate_limit
 from amprenta_rag.ingestion.repositories.base import RepositoryInterface
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.repository import DataFile, StudyMetadata
@@ -58,8 +59,8 @@ class MWRepository(RepositoryInterface):
             return self._study_summaries_cache
         
         try:
-            from amprenta_rag.ingestion.repositories import REPOSITORY_USER_AGENT
             headers = {"User-Agent": REPOSITORY_USER_AGENT}
+            repo_rate_limit()
             resp = requests.get(MW_STUDY_SUMMARY_URL, params={"format": "json"}, headers=headers, timeout=60)
             resp.raise_for_status()
             data = resp.json()

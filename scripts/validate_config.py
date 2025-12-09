@@ -19,7 +19,6 @@ sys.path.insert(0, str(project_root))
 from amprenta_rag.utils.config_validation import (
     print_config_summary,
     validate_all_config,
-    ConfigValidationError,
 )
 from amprenta_rag.logging_utils import get_logger
 

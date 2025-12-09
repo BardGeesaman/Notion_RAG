@@ -20,7 +20,6 @@ from amprenta_rag.ingestion.signature_detection import (
     infer_signature_metadata_from_source,
     save_extracted_signature_to_file,
 )
-from amprenta_rag.ingestion.signature_embedding import embed_signature
 from amprenta_rag.ingestion.postgres_signature_creation import (
     create_signature_from_file_in_postgres,
     link_signature_to_postgres_source,

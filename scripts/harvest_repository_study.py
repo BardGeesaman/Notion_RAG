@@ -31,7 +31,6 @@ from amprenta_rag.ingestion.dataset_ingestion import ingest_dataset
 from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
 from amprenta_rag.ingestion.postgres_integration import create_or_update_dataset_in_postgres
 from amprenta_rag.ingestion.repositories.discovery import fetch_study_metadata, get_repository
-from amprenta_rag.ingestion.repositories.mw import MWRepository
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.domain import OmicsType
 

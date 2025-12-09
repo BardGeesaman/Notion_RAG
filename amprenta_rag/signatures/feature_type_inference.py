@@ -6,7 +6,6 @@ metabolite, or lipid species using pattern matching and heuristics.
 """
 
 import re
-from typing import Optional
 
 from amprenta_rag.logging_utils import get_logger
 

@@ -12,10 +12,6 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.analysis.enrichment import (
-    enrich_dataset_pathways,
-    enrich_signature_pathways,
-)
 from amprenta_rag.analysis.pathway_summaries import (
     generate_pathway_aware_dataset_summary,
     generate_pathway_aware_signature_summary,

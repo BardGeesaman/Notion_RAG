@@ -12,7 +12,7 @@ LLM-based extraction for better accuracy. Set ENABLE_LLM_SEMANTIC_EXTRACTION=tru
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from amprenta_rag.logging_utils import get_logger
 
@@ -20,9 +20,7 @@ logger = get_logger(__name__)
 
 # Try to import LLM extraction (optional enhancement)
 try:
-    from amprenta_rag.ingestion.metadata.llm_semantic_extraction import (
-        enhance_metadata_with_llm as llm_enhance_metadata,
-    )
+    pass
     
     LLM_AVAILABLE = True
 except ImportError:

@@ -19,7 +19,7 @@ import csv
 import io
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 from amprenta_rag.logging_utils import get_logger
 

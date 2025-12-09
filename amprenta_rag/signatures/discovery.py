@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from amprenta_rag.logging_utils import get_logger
 

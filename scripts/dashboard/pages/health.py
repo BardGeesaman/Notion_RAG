@@ -67,7 +67,7 @@ def render_health_page() -> None:
             )
         total = len(datasets)
         pct_comp = 100 * status_counts["complete"] / total if total else 0
-        pct_pending = 100 * status_counts["pending"] / total if total else 0
+        100 * status_counts["pending"] / total if total else 0
         stuck = [r for r in rows if r["Status"] == "stuck"]
         # Summary metrics
         col1, col2, col3 = st.columns(3)

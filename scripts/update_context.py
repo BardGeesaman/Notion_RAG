@@ -16,7 +16,6 @@ Or from root directory:
 
 from __future__ import annotations
 
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path

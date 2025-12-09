@@ -318,7 +318,115 @@ This roadmap integrates:
 
 ---
 
-### 2.6 Chemistry & HTS Integration 🧪 **NEW ARCHITECTURE**
+### 2.6 Experimental Design Metadata System 🔬 **STRATEGIC CAPABILITY**
+
+**Priority**: 🔥🔥🔥 **HIGH**
+
+**Strategic Value**:
+- Enable proper case/control comparisons
+- Support time course analysis
+- Track intervention groups (drug A vs B vs control)
+- Understand experimental context for accurate interpretation
+- Enable design-aware statistical analysis
+
+**Current Gap**:
+- No structured capture of experimental design
+- Case/control relationships not explicit
+- Time course data not tracked
+- Intervention groups not modeled
+
+**Implementation**:
+
+#### Phase 1: Database Schema (1-2 days)
+
+```python
+# Extend experiment/dataset models:
+- design_type (enum: case_control, time_course, intervention, dose_response, multi_factorial)
+- sample_groups (JSON array of groups with labels and sample IDs)
+- timepoints (JSON array for time course studies)
+- interventions (JSON array for treatment groups)
+- control_group (reference to control group ID)
+```
+
+**Schema Extensions**:
+- `experiments` table:
+  - `design_type` (text)
+  - `design_metadata` (JSONB)
+- `datasets` table:
+  - `sample_group` (text, e.g., "case", "control", "drug_a", "timepoint_0h")
+  - `timepoint` (text, for time course)
+  - `intervention` (text, for intervention studies)
+
+#### Phase 2: Repository Metadata Extraction (2-3 days)
+
+```python
+# New module: amprenta_rag/ingestion/design_extraction.py
+- Parse GEO sample groups from SOFT files
+- Parse MW study design from metadata
+- LLM-based design extraction as fallback
+- Automatic case/control detection
+- Timepoint extraction from sample names
+```
+
+**Features**:
+- GEO GSM group parsing
+- MW analysis name parsing
+- Pattern matching for common designs
+- GPT-4 extraction for complex designs
+
+#### Phase 3: Design-Aware Statistical Analysis (2 days)
+
+```python
+# New module: amprenta_rag/analysis/design_aware_stats.py
+- Case vs control comparisons (respects design)
+- Time course analysis (repeated measures, trend tests)
+- Intervention group comparisons (multi-group ANOVA)
+- Pairwise comparisons with design context
+```
+
+**Design Types Supported**:
+
+1. **Case vs Control**
+   - Two-group comparisons (t-test, Mann-Whitney)
+   - Explicit case/control labels
+   - Example: ALS patients (n=30) vs healthy controls (n=30)
+
+2. **Time Course (Longitudinal)**
+   - Repeated measures ANOVA
+   - Trend analysis over time
+   - Example: Drug response at 0h, 4h, 8h, 24h
+
+3. **Intervention Groups**
+   - Multi-group comparisons
+   - Drug A vs Drug B vs control
+   - Example: Vehicle, Compound 1 (10µM), Compound 1 (100µM)
+
+4. **Dose Response**
+   - Dose-dependent trend tests
+   - EC50/IC50 estimation
+   - Example: 0, 1, 10, 100, 1000 nM doses
+
+5. **Multi-factorial**
+   - Two-way ANOVA
+   - Interaction effects
+   - Example: Disease (ALS vs control) × Treatment (treated vs untreated)
+
+**Notion Agent**: **YES - OPTIONAL** ✅
+- Add "Design Type" property to Experiments/Datasets
+- Add "Sample Groups" property (rich text/JSON)
+- Add "Timepoints" property (for time course)
+- Add "Control Group" relation
+
+**Dependencies**: 
+- Repository metadata parsers (GEO, MW)
+- Statistical libraries (scipy, statsmodels)
+- Optional: GPT-4 for complex design extraction
+
+**Estimated Effort**: Medium (5-6 days total)
+
+---
+
+### 2.7 Chemistry & HTS Integration 🧪 **NEW ARCHITECTURE**
 
 **Priority**: 🔥🔥🔥 **HIGH STRATEGIC VALUE**
 
@@ -444,7 +552,7 @@ python scripts/ingest_screening.py --promote-compounds --program-id <id> --stage
 
 ---
 
-### 2.7 Public Repository Ingestion for Multi-Omics 🌐 **DATA EXPANSION**
+### 2.8 Public Repository Ingestion for Multi-Omics 🌐 **DATA EXPANSION**
 
 **Priority**: 🔥🔥 **MEDIUM-HIGH**
 

@@ -4,10 +4,9 @@ Tests for automatic Program inference from dataset metadata.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List
 from uuid import uuid4
 
-import pytest
 
 from amprenta_rag.database.models import Program
 from amprenta_rag.ingestion.auto_linking import infer_program_from_metadata

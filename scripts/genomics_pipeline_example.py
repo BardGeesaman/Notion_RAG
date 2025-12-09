@@ -19,10 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from amprenta_rag.ingestion.genomics.pipeline import (
     download_fastq,
-    extract_gene_counts_from_salmon,
     get_ena_fastqs,
-    quantify_with_kallisto,
-    quantify_with_salmon,
 )
 from amprenta_rag.logging_utils import get_logger
 

@@ -8,7 +8,7 @@ from unstructured text content. Provides more accurate extraction than pattern m
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from amprenta_rag.clients.openai_client import get_openai_client
 from amprenta_rag.config import get_config

@@ -19,9 +19,8 @@ from typing import List, Optional, Dict, Any
 from uuid import UUID
 import uuid
 
-from sqlalchemy import select, and_, or_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
 from amprenta_rag.database.models import (
     Program,

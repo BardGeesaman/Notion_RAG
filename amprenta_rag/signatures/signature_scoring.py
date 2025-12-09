@@ -10,7 +10,7 @@ Computes signature scores based on:
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 
-from .signature_loader import Signature, SignatureComponent
+from .signature_loader import Signature
 from .species_matching import match_species, normalize_species_name
 
 

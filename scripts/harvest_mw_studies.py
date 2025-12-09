@@ -282,7 +282,7 @@ def find_existing_dataset_page(study_id: str) -> Optional[str]:
                 results = resp.json().get("results", [])
                 if results:
                     return results[0]["id"]
-        except Exception as e:
+        except Exception:
             # Try next property name
             continue
 

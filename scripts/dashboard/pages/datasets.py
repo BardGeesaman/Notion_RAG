@@ -30,14 +30,22 @@ def render_datasets_page() -> None:
         col1, col2, col3 = st.columns(3)
         with col1:
             # Get distinct omics types
-            omics_types = [row[0] for row in db.query(Dataset.omics_type).distinct().all() if row[0]]
+            omics_types = [
+                row[0]
+                for row in db.query(Dataset.omics_type).distinct().limit(200).all()
+                if row[0]
+            ]
             omics_filter = st.selectbox(
                 "Filter by Omics Type",
                 ["All"] + omics_types,
             )
         with col2:
             # Use ingestion_status instead of qc_status (which doesn't exist)
-            status_opts = [x[0] for x in db.query(Dataset.ingestion_status).distinct().all() if x[0]]
+            status_opts = [
+                x[0]
+                for x in db.query(Dataset.ingestion_status).distinct().limit(200).all()
+                if x[0]
+            ]
             qc_filter = st.selectbox("Ingestion Status", ["All"] + status_opts)
         with col3:
             search_term = st.text_input("Search by name", "")
@@ -54,7 +62,7 @@ def render_datasets_page() -> None:
         if search_term:
             query = query.filter(Dataset.name.ilike(f"%{search_term}%"))
 
-        datasets = query.order_by(Dataset.created_at.desc()).all()
+        datasets = query.order_by(Dataset.created_at.desc()).limit(200).all()
 
         st.metric("Total Datasets", len(datasets))
 

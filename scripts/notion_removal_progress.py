@@ -6,12 +6,11 @@ Generates a detailed progress report comparing current state to Phase 1.1 baseli
 Shows which Phase 2 tasks are complete and which remain.
 """
 
-import json
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))

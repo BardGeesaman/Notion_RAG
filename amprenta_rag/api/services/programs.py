@@ -6,7 +6,6 @@ from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 
 from amprenta_rag.database.models import Program as ProgramModel
 from amprenta_rag.api.schemas import ProgramCreate, ProgramUpdate

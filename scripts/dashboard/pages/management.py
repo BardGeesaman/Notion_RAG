@@ -49,8 +49,8 @@ def render_management_page() -> None:
 
         with db_session() as db:
             if link_type == "Dataset → Program":
-                datasets = db.query(Dataset).order_by(Dataset.name).all()
-                programs = db.query(Program).order_by(Program.name).all()
+                datasets = db.query(Dataset).order_by(Dataset.name).limit(200).all()
+                programs = db.query(Program).order_by(Program.name).limit(200).all()
 
                 if datasets and programs:
                     selected_dataset = st.selectbox(
@@ -91,8 +91,8 @@ def render_management_page() -> None:
                         st.warning("No programs available.")
 
             elif link_type == "Dataset → Experiment":
-                datasets = db.query(Dataset).order_by(Dataset.name).all()
-                experiments = db.query(Experiment).order_by(Experiment.name).all()
+                datasets = db.query(Dataset).order_by(Dataset.name).limit(200).all()
+                experiments = db.query(Experiment).order_by(Experiment.name).limit(200).all()
 
                 if datasets and experiments:
                     selected_dataset = st.selectbox(
@@ -140,7 +140,7 @@ def render_management_page() -> None:
 
             elif link_type == "Feature → Dataset":
                 features = db.query(Feature).order_by(Feature.name).limit(100).all()  # Limit for performance
-                datasets = db.query(Dataset).order_by(Dataset.name).all()
+                datasets = db.query(Dataset).order_by(Dataset.name).limit(200).all()
 
                 if features and datasets:
                     feature_search = st.text_input("Search Feature", key="feat_search")
@@ -201,8 +201,8 @@ def render_management_page() -> None:
                         st.warning("No datasets available.")
 
             elif link_type == "Signature → Dataset":
-                signatures = db.query(Signature).order_by(Signature.name).all()
-                datasets = db.query(Dataset).order_by(Dataset.name).all()
+                signatures = db.query(Signature).order_by(Signature.name).limit(200).all()
+                datasets = db.query(Dataset).order_by(Dataset.name).limit(200).all()
 
                 if signatures and datasets:
                     selected_signature = st.selectbox(
@@ -263,7 +263,7 @@ def render_management_page() -> None:
 
         with db_session() as db:
             if entity_type == "Dataset":
-                datasets = db.query(Dataset).order_by(Dataset.name).all()
+                datasets = db.query(Dataset).order_by(Dataset.name).limit(200).all()
                 if datasets:
                     selected = st.selectbox(
                         "Select Dataset", [(d.id, d.name) for d in datasets], format_func=lambda x: x[1], key="edit_ds"
@@ -413,7 +413,7 @@ def render_management_page() -> None:
                     st.warning("No datasets available.")
 
             elif entity_type == "Program":
-                programs = db.query(Program).order_by(Program.name).all()
+                programs = db.query(Program).order_by(Program.name).limit(200).all()
                 if programs:
                     selected = st.selectbox(
                         "Select Program",
@@ -469,7 +469,7 @@ def render_management_page() -> None:
                     st.warning("No programs available.")
 
             elif entity_type == "Experiment":
-                experiments = db.query(Experiment).order_by(Experiment.name).all()
+                experiments = db.query(Experiment).order_by(Experiment.name).limit(200).all()
                 if experiments:
                     selected = st.selectbox(
                         "Select Experiment",
@@ -550,8 +550,8 @@ def render_management_page() -> None:
 
         if operation_type == "Bulk Link Datasets to Program":
             with db_session() as db:
-                datasets = db.query(Dataset).order_by(Dataset.name).all()
-                programs = db.query(Program).order_by(Program.name).all()
+                datasets = db.query(Dataset).order_by(Dataset.name).limit(200).all()
+                programs = db.query(Program).order_by(Program.name).limit(200).all()
 
                 if datasets and programs:
                     selected_datasets = st.multiselect(

@@ -25,7 +25,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional
 
 try:
     from tqdm import tqdm
@@ -41,7 +41,7 @@ from amprenta_rag.ingestion.metabolomics_ingestion import ingest_metabolomics_fi
 from amprenta_rag.ingestion.proteomics_ingestion import ingest_proteomics_file
 from amprenta_rag.ingestion.transcriptomics_ingestion import ingest_transcriptomics_file
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.utils.performance import timer, get_performance_metrics
+from amprenta_rag.utils.performance import timer
 
 logger = get_logger(__name__)
 

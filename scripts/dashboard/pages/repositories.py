@@ -1,14 +1,12 @@
-import os
 from pathlib import Path
 import requests
 import pandas as pd
 import streamlit as st
-import threading
 
 from amprenta_rag.database.models import Dataset, Experiment
 from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
 from scripts.dashboard.db_session import db_session
-from scripts.harvest_mw_studies import fetch_mw_study_summary, fetch_mw_mwtab
+from scripts.harvest_mw_studies import fetch_mw_mwtab
 
 repo_map = {
     "GEO": "search_geo_studies",
@@ -223,7 +221,12 @@ def render_repositories_page():
                     # Query database for imported studies
                     with db_session() as db:
                         # Check which accessions are already in database
-                        imported_datasets = db.query(Dataset).filter(Dataset.external_ids.isnot(None)).all()
+                        imported_datasets = (
+                            db.query(Dataset)
+                            .filter(Dataset.external_ids.isnot(None))
+                            .limit(200)
+                            .all()
+                        )
                         in_db = set()
                         for ds in imported_datasets:
                             if ds.external_ids:
@@ -233,15 +236,38 @@ def render_repositories_page():
                     
                     summary = []
                     for r in results:
-                        summary.append({**r, "Selected": False, "status": "Imported" if r["accession"] in in_db else "Not imported"})
+                        summary.append(
+                            {
+                                "Selected": False,
+                                **r,
+                                "status": "Imported" if r["accession"] in in_db else "Not imported",
+                            }
+                        )
                     df = pd.DataFrame(summary)
+                    # Reorder columns: Select first, then other fields
+                    desired_cols = [
+                        "Selected",
+                        "id",
+                        "accession",
+                        "title",
+                        "description",
+                        "disease",
+                        "organism",
+                        "omics_type",
+                        "status",
+                    ]
+                    # Keep any extra columns at the end
+                    remaining = [c for c in df.columns if c not in desired_cols]
+                    df = df[[c for c in desired_cols if c in df.columns] + remaining]
                     
                     if not df.empty:
-                        # Display editable table for selection
                         edited_df = st.data_editor(
-                            df, 
-                            num_rows="dynamic", 
+                            df,
+                            num_rows="dynamic",
                             key="repo_results",
+                            use_container_width=False,
+                            height=600,
+                            hide_index=True,
                             column_config={
                                 "Selected": st.column_config.CheckboxColumn(
                                     "Select",
@@ -249,13 +275,16 @@ def render_repositories_page():
                                     default=False,
                                 ),
                             },
-                            hide_index=True,
                         )
                         
                         st.markdown(f"**{len(results)} results** | {len([r for r in summary if r['status']=='Imported'])} already imported.")
-                        
-                        # Import button
-                        selected_studies = [r for idx, r in edited_df.iterrows() if r["Selected"] and r["status"] != "Imported"]
+
+                        # Collect selected studies, skipping already imported
+                        selected_studies = [
+                            results[idx]
+                            for idx, row in edited_df.iterrows()
+                            if row.get("Selected") and row.get("accession") not in in_db
+                        ]
                         
                         if selected_studies:
                             st.info(f"📋 {len(selected_studies)} studies selected for import")
@@ -405,7 +434,12 @@ def render_repositories_page():
         st.subheader("Imported Studies Management")
         
         with db_session() as db:
-            all_imported = db.query(Dataset).filter(Dataset.external_ids.isnot(None)).all()
+            all_imported = (
+                db.query(Dataset)
+                .filter(Dataset.external_ids.isnot(None))
+                .limit(200)
+                .all()
+            )
             # Extract data inside session
             dtable = []
             for d in all_imported:

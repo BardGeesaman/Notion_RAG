@@ -8,7 +8,6 @@ candidate signatures based on feature co-occurrence and direction consistency.
 
 import argparse
 import sys
-from uuid import UUID
 from pathlib import Path
 
 # Add parent directory to path
@@ -20,7 +19,6 @@ from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.signatures.discovery import (
     discover_signature_candidates,
     export_candidates_to_tsv,
-    export_candidates_to_json,
 )
 
 logger = get_logger(__name__)

@@ -21,8 +21,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.signatures import (load_signature_from_tsv, match_species,
-                                     score_signature)
+from amprenta_rag.signatures import (load_signature_from_tsv, score_signature)
 from scripts.scan_sphingolipids_in_mwtab_csv import scan_sphingolipids
 
 

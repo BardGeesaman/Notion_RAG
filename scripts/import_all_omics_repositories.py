@@ -42,7 +42,6 @@ from amprenta_rag.ingestion.repositories.discovery import (
     discover_studies,
     list_available_repositories,
 )
-from scripts.batch_import_repository_studies import main as batch_import_main
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -381,7 +380,6 @@ Examples:
     
     try:
         # Call batch import script
-        import sys
         batch_args = [
             str(tmp_path),
             "--create-postgres",

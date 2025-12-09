@@ -19,18 +19,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.exc import OperationalError
 
 from amprenta_rag.config import get_config
-from amprenta_rag.database.base import Base
-from amprenta_rag.database.models import (
-    Program,
-    Experiment,
-    Dataset,
-    Feature,
-    Signature,
-    SignatureComponent,
-)
 
 
 def get_postgres_url() -> str:

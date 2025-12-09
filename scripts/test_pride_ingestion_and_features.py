@@ -16,7 +16,7 @@ from uuid import UUID
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from amprenta_rag.database.base import get_db
-from amprenta_rag.database.models import Dataset, Feature
+from amprenta_rag.database.models import Dataset
 from amprenta_rag.ingestion.repository_feature_extraction import (
     extract_features_from_repository_dataset,
 )

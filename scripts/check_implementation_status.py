@@ -6,10 +6,9 @@ Verifies what's actually implemented vs what the roadmap claims.
 This helps avoid confusion about what's built vs what's planned.
 """
 
-import ast
 import sys
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))

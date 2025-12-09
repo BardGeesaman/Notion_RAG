@@ -12,6 +12,10 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from amprenta_rag.ingestion.repositories import (
+    REPOSITORY_USER_AGENT,
+    repo_rate_limit,
+)
 from amprenta_rag.ingestion.repositories.base import RepositoryInterface
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.repository import DataFile, StudyMetadata
@@ -68,14 +72,13 @@ class PRIDERepository(RepositoryInterface):
         Returns:
             Response object if successful, None otherwise
         """
-        from amprenta_rag.ingestion.repositories import REPOSITORY_USER_AGENT
-        
         headers = {
             "Accept": "application/json",
             "User-Agent": REPOSITORY_USER_AGENT,
         }
         
         try:
+            repo_rate_limit()
             response = requests.get(url, params=params, headers=headers, timeout=timeout)
             
             # Retry on 500/503 after 5 seconds
@@ -85,6 +88,7 @@ class PRIDERepository(RepositoryInterface):
                     response.status_code,
                 )
                 time.sleep(5)
+                repo_rate_limit()
                 response = requests.get(url, params=params, headers=headers, timeout=timeout)
             
             # Check status code before parsing
@@ -288,7 +292,7 @@ class PRIDERepository(RepositoryInterface):
             organism_list = [org.get("name", "") for org in organisms if org.get("name")]
             
             # Extract sample processing protocol (may contain disease info)
-            sample_processing = data.get("sampleProcessingProtocol", "") or ""
+            data.get("sampleProcessingProtocol", "") or ""
             
             # Extract instrument info
             instruments = data.get("instruments", [])

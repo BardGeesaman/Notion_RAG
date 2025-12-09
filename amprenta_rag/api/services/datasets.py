@@ -7,7 +7,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from amprenta_rag.database.models import Dataset as DatasetModel, Feature
+from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.api.schemas import DatasetCreate, DatasetUpdate
 from amprenta_rag.models.domain import FeatureType
 import uuid
@@ -67,6 +67,8 @@ def get_datasets(
     query = db.query(DatasetModel)
     
     if name_filter:
+        if len(name_filter) > 100:
+            raise ValueError("name_filter exceeds maximum length of 100 characters")
         query = query.filter(DatasetModel.name.ilike(f"%{name_filter}%"))
     
     if omics_type:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -30,7 +29,7 @@ def _load_dataset_info(db: Session, dataset_ids: List[str]) -> List[Dict[str, An
     """Materialize datasets and feature vectors inside the session."""
     if not dataset_ids:
         return []
-    objs = db.query(Dataset).filter(Dataset.id.in_(dataset_ids)).all()
+    objs = db.query(Dataset).filter(Dataset.id.in_(dataset_ids)).limit(200).all()
     materialized: List[Dict[str, Any]] = []
     for ds in objs:
         feat_map: Dict[str, float] = {}

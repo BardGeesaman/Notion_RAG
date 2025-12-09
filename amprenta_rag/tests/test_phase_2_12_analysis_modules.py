@@ -1,7 +1,6 @@
 """Tests for Phase 2.12: Analysis Module Notion Removal."""
 
 import inspect
-import pytest
 from unittest.mock import patch, MagicMock
 
 

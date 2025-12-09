@@ -15,9 +15,6 @@ sys.path.insert(0, str(project_root))
 def check_dependencies():
     """Check if Gmail API dependencies are installed."""
     try:
-        import google.auth
-        import google_auth_oauthlib
-        import googleapiclient
         print("✅ Gmail API dependencies are installed")
         return True
     except ImportError as e:

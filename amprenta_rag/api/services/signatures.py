@@ -12,8 +12,7 @@ from amprenta_rag.database.models import (
     SignatureComponent as SignatureComponentModel,
     Feature as FeatureModel,
 )
-from amprenta_rag.api.schemas import SignatureCreate, SignatureUpdate, SignatureComponentCreate
-from amprenta_rag.models.domain import FeatureType
+from amprenta_rag.api.schemas import SignatureCreate, SignatureUpdate
 import uuid
 
 

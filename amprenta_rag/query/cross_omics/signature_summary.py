@@ -7,7 +7,7 @@ from matched datasets and signature components.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
 from amprenta_rag.database.base import get_db

@@ -13,7 +13,6 @@ from uuid import UUID
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Dataset as DatasetModel, Feature
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.models.domain import FeatureType, OmicsType
 
 logger = get_logger(__name__)
 

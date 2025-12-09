@@ -10,7 +10,7 @@ from scripts.dashboard.db_session import db_session
 
 
 def _load_dataset_qc(db: Session):
-    datasets = db.query(Dataset).order_by(Dataset.updated_at.desc()).all()
+    datasets = db.query(Dataset).order_by(Dataset.updated_at.desc()).limit(200).all()
     rows = []
     for ds in datasets:
         qc = compute_quality_score(ds)

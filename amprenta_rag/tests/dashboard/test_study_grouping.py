@@ -10,14 +10,13 @@ Coverage:
 - Dataset update service applies all basic metadata fields
 """
 
-from typing import List, Dict
+from typing import List
 from uuid import uuid4
 
-import pytest
 
 from amprenta_rag.api.schemas import DatasetUpdate
 from amprenta_rag.api.services.datasets import update_dataset
-from amprenta_rag.database.models import Dataset, Experiment, Program
+from amprenta_rag.database.models import Dataset, Experiment
 from scripts.dashboard.pages.repositories import _ensure_experiment_for_study
 
 

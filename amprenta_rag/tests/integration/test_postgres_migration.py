@@ -9,7 +9,7 @@ These tests ensure that the new *postgres* summary functions:
 
 from __future__ import annotations
 
-from typing import Any, Dict, Generator, List, Optional, Type
+from typing import Any, Generator, Optional, Type
 from uuid import uuid4
 
 import pytest

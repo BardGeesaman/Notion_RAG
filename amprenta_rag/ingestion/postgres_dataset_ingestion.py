@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import textwrap
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -31,9 +30,6 @@ from amprenta_rag.ingestion.mwtab_extraction import (
     fetch_mwtab_from_api,
 )
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
-from amprenta_rag.ingestion.signature_integration import (
-    detect_and_ingest_signatures_from_content,
-)
 from amprenta_rag.ingestion.postgres_signature_matching import (
     find_matching_signatures_for_postgres_dataset,
 )

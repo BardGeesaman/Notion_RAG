@@ -11,9 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.cross_omics.helpers import (
-    extract_relation_ids,
     extract_select_values,
-    extract_text_property,
     fetch_notion_page,
 )
 

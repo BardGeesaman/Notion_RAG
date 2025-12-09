@@ -12,10 +12,9 @@ from __future__ import annotations
 from typing import Any, Dict, List
 from uuid import uuid4
 
-import pytest
 from unittest.mock import patch
 
-from amprenta_rag.database.models import Dataset, Experiment, Program
+from amprenta_rag.database.models import Dataset, Experiment
 from amprenta_rag.query.cross_omics.dataset_summary_postgres import (
     cross_omics_dataset_summary_postgres,
 )

@@ -10,7 +10,6 @@ with full metadata including lipid signatures and metabolite features.
 from __future__ import annotations
 
 import textwrap
-from pathlib import Path
 from typing import Any, Dict, List
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index

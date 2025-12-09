@@ -1,7 +1,6 @@
 """Tests for Phase 2.3-2.6: Embedding Module Notion Removal."""
 
 import inspect
-import pytest
 
 
 class TestEmbeddingModuleImports:

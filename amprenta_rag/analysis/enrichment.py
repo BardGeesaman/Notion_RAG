@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import List, Optional, Set
 
 from amprenta_rag.analysis.pathway_analysis import (
-    Pathway,
     PathwayEnrichmentResult,
     perform_pathway_enrichment,
 )

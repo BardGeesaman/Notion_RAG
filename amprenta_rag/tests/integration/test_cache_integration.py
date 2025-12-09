@@ -131,7 +131,7 @@ def test_batch_scoring_faster_with_warm_cache(monkeypatch):
         clear_feature_cache()
 
         # Warm cache: preload datasets into cache, then score with use_cache=True
-        cache = get_feature_cache()
+        get_feature_cache()
         with patch(
             "amprenta_rag.ingestion.dataset_feature_cache.DatasetFeatureCache.preload_datasets",
             return_value={did: True for did in dataset_ids},

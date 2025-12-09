@@ -111,7 +111,7 @@ def test_cache_performance_baseline_vs_cached():
 
     # Cache measurement: warm cache
     # First pass warms the cache via preload + scoring
-    cache = get_feature_cache()
+    get_feature_cache()
     warmup_time, warmup_api_calls = _run_extraction_with_settings(
         dataset_ids=dataset_ids,
         use_cache=True,

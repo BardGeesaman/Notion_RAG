@@ -7,16 +7,13 @@ Downloads only what's needed and processes incrementally to handle large files.
 
 import argparse
 import gzip
-import io
 import re
 import sys
 from pathlib import Path
 from typing import Set
 from uuid import UUID
 
-import pandas as pd
 import requests
-from tqdm import tqdm
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -126,7 +123,7 @@ def extract_genes_from_tsv_stream(
                     if lines_read >= max_rows:
                         break
                         
-            except Exception as e:
+            except Exception:
                 # If decompression fails, we might not have enough data yet
                 continue
         

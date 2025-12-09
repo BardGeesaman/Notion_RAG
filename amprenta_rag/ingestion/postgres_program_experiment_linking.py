@@ -16,7 +16,6 @@ from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import (
     Program,
     Experiment,
-    Dataset,
     program_dataset_assoc,
     experiment_dataset_assoc,
 )

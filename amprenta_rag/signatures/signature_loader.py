@@ -9,7 +9,7 @@ Loads signature definitions from TSV files or Notion with components including:
 """
 
 import csv
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 

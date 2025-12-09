@@ -13,7 +13,6 @@ from amprenta_rag.clients.openai_client import get_default_models, get_openai_cl
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.cross_omics.prompt_templates import (
     MAX_CONTEXT_CHUNKS,
-    build_enhanced_prompt,
     get_cross_omics_system_prompt,
     prepare_context_chunks,
 )

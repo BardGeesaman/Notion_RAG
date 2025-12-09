@@ -53,12 +53,6 @@ def check_prerequisites():
     # 4. Check Python imports
     print("\n[4] Checking Python imports...")
     try:
-        from amprenta_rag.ingestion.genomics.pipeline import (
-            get_ena_fastqs,
-            download_fastq,
-            quantify_with_salmon,
-            extract_gene_counts_from_salmon,
-        )
         imports_ok = True
         print("   ✅ All pipeline functions importable")
     except Exception as e:
@@ -70,7 +64,7 @@ def check_prerequisites():
     print("\n[5] Checking ENA repository...")
     try:
         from amprenta_rag.ingestion.repositories.ena import ENARepository
-        ena_repo = ENARepository()
+        ENARepository()
         ena_ok = True
         print("   ✅ ENA repository available")
     except Exception as e:

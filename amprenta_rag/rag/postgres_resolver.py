@@ -7,7 +7,7 @@ for RAG context retrieval.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session

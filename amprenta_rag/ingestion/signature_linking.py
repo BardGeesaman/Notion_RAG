@@ -199,7 +199,7 @@ def link_component_to_metabolite_feature(
         lipid_species_page_id: Notion page ID of lipid species (with dashes)
     """
     from amprenta_rag.ingestion.feature_extraction import (
-        _add_relation_to_metabolite_page, _find_or_create_metabolite_page)
+        _find_or_create_metabolite_page)
 
     try:
         # Fetch lipid species page to get the name

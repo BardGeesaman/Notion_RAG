@@ -7,7 +7,7 @@ from linked experiments and datasets.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import List
 
 # DEPRECATED: Notion imports removed - Postgres is now source of truth
 # from amprenta_rag.clients.notion_client import get_page_text

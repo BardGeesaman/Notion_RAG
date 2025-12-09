@@ -9,7 +9,7 @@ feature linking, and RAG embedding.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -18,6 +18,10 @@ import requests
 # from amprenta_rag.ingestion.dataset_notion_utils import fetch_dataset_page
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.ingestion.postgres_integration import (
+    create_or_update_dataset_in_postgres,
+    embed_dataset_with_postgres_metadata,
+)
 
 logger = get_logger(__name__)
 
@@ -148,10 +152,6 @@ def ingest_metabolomics_file(
     
     if cfg.pipeline.use_postgres_as_sot:
         try:
-            from amprenta_rag.ingestion.postgres_integration import (
-                create_or_update_dataset_in_postgres,
-            )
-            
             dataset_name = f"Internal Metabolomics — {Path(file_path).stem}"
             postgres_dataset = create_or_update_dataset_in_postgres(
                 name=dataset_name,
@@ -385,9 +385,6 @@ def ingest_metabolomics_file(
     # TIER 3: Use Postgres-aware embedding if Postgres dataset exists
     if cfg.pipeline.use_postgres_as_sot and postgres_dataset:
         try:
-            from amprenta_rag.ingestion.postgres_integration import (
-                embed_dataset_with_postgres_metadata,
-            )
             embed_dataset_with_postgres_metadata(
                 dataset_id=postgres_dataset.id,
                 dataset_name=dataset_name,

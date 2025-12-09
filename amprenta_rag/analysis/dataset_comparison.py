@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set
 
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.logging_utils import get_logger

@@ -112,7 +112,6 @@ def build_salmon_index(
         index_dir = Path(index_dir)
     
     # Check if index already exists (newer Salmon versions use info.json, older use hash.bin)
-    index_exists = False
     if index_dir.exists():
         if (index_dir / "info.json").exists() or (index_dir / "hash.bin").exists():
             logger.info("[INDEX-SETUP] Salmon index already exists: %s", index_dir)

@@ -1,6 +1,5 @@
 """Tests for Phase 1.1b: Package __init__.py Notion import removals."""
 
-import pytest
 import inspect
 from amprenta_rag import chemistry, migration
 
@@ -12,7 +11,6 @@ class TestChemistryPackageImports:
         """Test that chemistry package imports without errors."""
         # This import is implicit by importing from amprenta_rag above, 
         # but explicit import ensures we are testing what we think we are.
-        import amprenta_rag.chemistry
         assert True  # If we get here, import succeeded
     
     def test_removed_notion_functions_not_available(self):
@@ -41,7 +39,6 @@ class TestMigrationPackageImports:
     
     def test_package_imports_successfully(self):
         """Test that migration package imports without errors."""
-        import amprenta_rag.migration
         assert True  # If we get here, import succeeded
     
     def test_dual_write_manager_not_available(self):

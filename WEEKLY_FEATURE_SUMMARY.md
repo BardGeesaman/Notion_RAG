@@ -185,6 +185,14 @@
 - **Multiple Testing Correction**: FDR, Bonferroni corrections
 - **Correlation Analysis**: Find correlated features across datasets
 
+#### Experimental Design Tracking
+- **Study Structure Capture**: Automatically extract case/control, time course, intervention groups
+- **Design Types Supported**: Case vs control, time course, intervention groups, dose response, multi-factorial
+- **Auto-Extraction**: Parse design from repository metadata (GEO, Metabolomics Workbench)
+- **Design-Aware Statistics**: Statistical tests that respect experimental design
+- **Time Course Analysis**: Repeated measures, trend analysis over time
+- **Group Comparisons**: Multi-group ANOVA for intervention studies
+
 #### Data Export
 - **ISA-Tab Format**: Export to standardized metadata format
 - **MAGE-TAB Format**: Export microarray/transcriptomics data

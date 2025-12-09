@@ -17,12 +17,10 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, List
 from uuid import uuid4
 
-import pytest
 from unittest.mock import patch
 
 from amprenta_rag.database.models import Dataset, Experiment, Program
 from amprenta_rag.ingestion.dataset_feature_cache import clear_feature_cache, get_feature_cache
-from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.ingestion.batch_signature_scoring import score_datasets_against_signatures_batch
 from amprenta_rag.query.cross_omics.program_summary_postgres import (
     cross_omics_program_summary_postgres,

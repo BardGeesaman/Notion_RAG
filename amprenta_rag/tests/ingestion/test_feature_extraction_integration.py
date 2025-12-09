@@ -2,14 +2,11 @@
 Integration tests for feature extraction pipeline.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 
 from amprenta_rag.ingestion.features.extraction import (
     extract_features_from_mwtab,
     extract_features_from_text,
 )
-from amprenta_rag.ingestion.features.normalization import normalize_metabolite_name
 
 
 def test_extract_and_normalize_pipeline():

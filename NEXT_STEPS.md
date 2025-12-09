@@ -63,7 +63,45 @@
 
 ---
 
-### 4. Enhancements & Polish (Various) 🔥
+### 4. Experimental Design Metadata System (5-6 days) 🔥🔥🔥
+
+**Priority**: HIGH - Enables proper comparative analysis
+
+**What's Needed**:
+
+**Phase 1: Database Schema (1-2 days)**
+- Extend experiment/dataset models with design fields
+- Add `design_type` (case_control, time_course, intervention, dose_response, multi_factorial)
+- Add `design_metadata` (JSONB for sample groups, timepoints, interventions)
+- Add `sample_group`, `timepoint`, `intervention` to datasets table
+
+**Phase 2: Repository Metadata Extraction (2-3 days)**
+- Parse GEO sample groups from SOFT files
+- Parse Metabolomics Workbench study design
+- Implement pattern matching for common designs (case/control detection)
+- Add LLM-based extraction as fallback for complex designs
+- Auto-detect timepoint labels in sample names
+
+**Phase 3: Design-Aware Statistical Analysis (2 days)**
+- Implement design-aware t-tests and ANOVA
+- Add repeated measures analysis for time courses
+- Add multi-group comparisons for intervention studies
+- Add dose-response trend tests
+- Integrate with existing statistical analysis modules
+
+**Files to Create/Update**:
+- `amprenta_rag/ingestion/design_extraction.py` (new)
+- `amprenta_rag/analysis/design_aware_stats.py` (new)
+- `amprenta_rag/models/experiment.py` (extend)
+- `amprenta_rag/models/dataset.py` (extend)
+- `amprenta_rag/ingestion/repositories/geo.py` (update)
+- `amprenta_rag/ingestion/repositories/mw.py` (update)
+
+**Impact**: Enables proper case/control comparisons, time course analysis, intervention group tracking
+
+---
+
+### 5. Enhancements & Polish (Various) 🔥
 
 **Evidence Reports**:
 - [ ] PDF export functionality
@@ -90,7 +128,7 @@
 
 ## 📊 MEDIUM PRIORITY (Future Enhancements)
 
-### 5. Advanced Analytics
+### 6. Advanced Analytics
 
 **Signature Discovery Enhancements**:
 - [ ] Multi-dataset pattern detection
@@ -102,7 +140,7 @@
 - [ ] Time-series analysis
 - [ ] Cohort comparison
 
-### 6. User Experience
+### 7. User Experience
 
 **CLI Improvements**:
 - [ ] Interactive mode for complex operations
@@ -114,7 +152,7 @@
 - [ ] Tutorial notebooks
 - [ ] Video walkthroughs
 
-### 7. Integration Enhancements
+### 8. Integration Enhancements
 
 **Public Repositories**:
 - [ ] Add more repository types (ArrayExpress, etc.)
@@ -155,12 +193,17 @@
 2. Test with real data
 3. Add Notion integration
 
-### Week 2: Testing & Polish
+### Week 2: Experimental Design System
+1. Extend database schema (design_type, sample_groups, timepoints)
+2. Implement repository metadata extraction (GEO, MW)
+3. Add design-aware statistical tests
+
+### Week 3: Testing & Polish
 1. Comprehensive testing
 2. Fix any issues
 3. Add quick wins (PDF export, progress bars)
 
-### Week 3: Enhancements
+### Week 4: Enhancements
 1. Visualizations
 2. RAG integration for compounds
 3. Advanced analytics

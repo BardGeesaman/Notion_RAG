@@ -18,7 +18,6 @@ from amprenta_rag.analysis.program_signature_maps import (
     generate_program_signature_map,
     update_notion_with_program_map,
 )
-from typing import Any, Dict
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)

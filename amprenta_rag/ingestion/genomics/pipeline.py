@@ -11,7 +11,6 @@ Note: This requires Salmon or Kallisto to be installed in the user's environment
 
 from __future__ import annotations
 
-import os
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -185,7 +184,6 @@ def download_fastq(
             )
             
             import gzip
-            import io
             
             resp = requests.get(url, headers=headers, stream=True, timeout=300)
             resp.raise_for_status()

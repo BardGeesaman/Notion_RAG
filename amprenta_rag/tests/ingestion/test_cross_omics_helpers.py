@@ -2,17 +2,12 @@
 Tests for cross_omics helpers module.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 
 from amprenta_rag.query.cross_omics.helpers import (
     extract_relation_ids,
     extract_select_values,
     extract_text_property,
-    fetch_notion_page,
-    get_chunk_text,
     group_chunks_by_omics_type,
-    retrieve_chunks_for_objects,
 )
 
 

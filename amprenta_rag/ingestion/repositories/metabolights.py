@@ -12,6 +12,10 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from amprenta_rag.ingestion.repositories import (
+    REPOSITORY_USER_AGENT,
+    repo_rate_limit,
+)
 from amprenta_rag.ingestion.repositories.base import RepositoryInterface
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.repository import DataFile, StudyMetadata
@@ -68,14 +72,13 @@ class MetaboLightsRepository(RepositoryInterface):
         Returns:
             Response object if successful, None otherwise
         """
-        from amprenta_rag.ingestion.repositories import REPOSITORY_USER_AGENT
-        
         headers = {
             "Accept": "application/json",
             "User-Agent": REPOSITORY_USER_AGENT,
         }
         
         try:
+            repo_rate_limit()
             response = requests.get(url, params=params, headers=headers, timeout=timeout)
             
             # Retry on 500/503 after 5 seconds
@@ -85,6 +88,7 @@ class MetaboLightsRepository(RepositoryInterface):
                     response.status_code,
                 )
                 time.sleep(5)
+                repo_rate_limit()
                 response = requests.get(url, params=params, headers=headers, timeout=timeout)
             
             # Check status code before parsing
@@ -111,7 +115,7 @@ class MetaboLightsRepository(RepositoryInterface):
     def search_studies(
         self,
         keywords: List[str],
-        filters: Optional[Dict[str, any]] = None,
+        filters: Optional[Dict[str, Any]] = None,
         max_results: int = 100,
     ) -> List[str]:
         """
@@ -506,8 +510,10 @@ class MetaboLightsRepository(RepositoryInterface):
 def search_metabolights_studies(
     keyword: str = "",
     disease: str = "",
-    organism: str = "",
+    species: str = "",
     omics_type: str = "",
+    analytical_platform: str = "",
+    matrix: str = "",
     max_results: int = 25,
 ) -> List[Dict[str, Any]]:
     try:
@@ -515,8 +521,13 @@ def search_metabolights_studies(
         filters = {}
         if disease:
             filters["disease"] = disease
+        organism = species or ""
         if organism:
             filters["organism"] = organism
+        if analytical_platform:
+            filters["analytical_platform"] = analytical_platform
+        if matrix:
+            filters["matrix"] = matrix
 
         study_ids = repo.search_studies(
             keywords=[kw for kw in [keyword] if kw],
@@ -534,6 +545,8 @@ def search_metabolights_studies(
                     "disease": disease or "",
                     "organism": organism or "",
                     "omics_type": omics_type or "metabolomics",
+                    "analytical_platform": analytical_platform or "",
+                    "matrix": matrix or "",
                 }
             )
         return results

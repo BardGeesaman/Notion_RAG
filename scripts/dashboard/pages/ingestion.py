@@ -60,8 +60,13 @@ def render_ingestion_page() -> None:
 
         # Load program and experiment names (extract while session is active)
         with db_session() as db:
-            program_names = [p.name for p in db.query(Program).order_by(Program.name).all()]
-            experiment_names = [e.name for e in db.query(Experiment).order_by(Experiment.name).all()]
+            programs = db.query(Program).order_by(Program.name).limit(200).all()
+            experiments = db.query(Experiment).order_by(Experiment.name).limit(200).all()
+        with db_session() as db:
+            programs = db.query(Program).order_by(Program.name).limit(200).all()
+            experiments = db.query(Experiment).order_by(Experiment.name).limit(200).all()
+            program_names = [p.name for p in programs]
+            experiment_names = [e.name for e in experiments]
 
         with st.form("dataset_upload_form", clear_on_submit=False):
             dataset_name = st.text_input("Dataset name*", help="Required", key="dataset_name")
@@ -646,7 +651,6 @@ def render_ingestion_page() -> None:
                                 )
                             else:
                                 compounds_created = 0
-                                compounds_updated = 0
                                 errors = []
 
                                 progress_bar = st.progress(0)

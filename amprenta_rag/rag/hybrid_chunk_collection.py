@@ -7,14 +7,13 @@ for comprehensive RAG context.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, List, Optional, Any
+from typing import TYPE_CHECKING, List
 
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.rag.postgres_resolver import (
     resolve_postgres_id_from_metadata,
     get_entity_type_from_metadata,
     fetch_postgres_context,
-    get_notion_id_from_postgres,
 )
 
 # Avoid circular import: only import MatchSummary for type checking

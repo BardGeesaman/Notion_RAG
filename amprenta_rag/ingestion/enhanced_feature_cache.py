@@ -12,17 +12,14 @@ This module provides an enhanced caching system with:
 from __future__ import annotations
 
 import json
-import os
-import pickle
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.utils.performance import timer, get_performance_metrics
+from amprenta_rag.utils.performance import timer
 
 logger = get_logger(__name__)
 

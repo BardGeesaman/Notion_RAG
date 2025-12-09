@@ -14,15 +14,12 @@ import hashlib
 import textwrap
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.feature_extraction import extract_features_from_text
 from amprenta_rag.ingestion.pinecone_utils import _query_pinecone_by_filter, sanitize_metadata
-from amprenta_rag.ingestion.signature_integration import (
-    detect_and_ingest_signatures_from_content,
-)
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.logging_utils import get_logger
 

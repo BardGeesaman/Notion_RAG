@@ -13,7 +13,7 @@ They avoid real Postgres/Notion/Pinecone/OpenAI by:
 from __future__ import annotations
 
 import time
-from typing import Callable, Dict, List, Tuple
+from typing import List, Tuple
 
 import pytest
 from unittest.mock import patch
@@ -77,7 +77,7 @@ def _run_scoring_with_cache_settings(
         (elapsed_time, expensive_call_count)
     """
     clear_feature_cache()
-    cache = get_feature_cache()
+    get_feature_cache()
     call_count = {"value": 0}
 
     def fake_extract(dataset_page_id: str, *args, **kwargs):

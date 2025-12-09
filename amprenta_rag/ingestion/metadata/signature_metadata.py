@@ -7,7 +7,6 @@ from signature pages to source pages (literature, email, experiment, dataset).
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, List
 
 from amprenta_rag.logging_utils import get_logger

@@ -4,7 +4,6 @@ Pytest configuration and fixtures for all tests.
 Provides common fixtures and setup for database and API tests.
 """
 
-import os
 import pytest
 
 
@@ -48,7 +47,6 @@ def requires_postgres():
 def requires_fastapi():
     """Check if FastAPI is available, skip test if not."""
     try:
-        import fastapi
         return True
     except ImportError:
         pytest.skip("FastAPI not installed")
@@ -58,7 +56,6 @@ def requires_fastapi():
 def requires_psycopg2():
     """Check if psycopg2 is available, skip test if not."""
     try:
-        import psycopg2
         return True
     except ImportError:
         pytest.skip("psycopg2 not installed (required for Postgres)")

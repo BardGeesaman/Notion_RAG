@@ -7,7 +7,7 @@ and establishing relations between pathways, features, datasets, and signatures.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import requests
 

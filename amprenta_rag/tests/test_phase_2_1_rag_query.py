@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 from amprenta_rag.query.rag.query import signature_similarity_query
 from amprenta_rag.database.models import Dataset
 

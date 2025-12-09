@@ -20,12 +20,10 @@ T = TypeVar("T")
 
 class RetryableError(Exception):
     """Base exception for errors that should trigger retries."""
-    pass
 
 
 class CircuitBreakerOpen(Exception):
     """Raised when circuit breaker is open."""
-    pass
 
 
 class RetryConfig:

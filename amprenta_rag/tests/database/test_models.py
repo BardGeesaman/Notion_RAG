@@ -10,7 +10,6 @@ These tests verify:
 import uuid
 
 import pytest
-from sqlalchemy.exc import IntegrityError
 
 from amprenta_rag.database.base import get_session_local
 from amprenta_rag.database.models import (

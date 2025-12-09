@@ -7,6 +7,7 @@ helpful error messages for common configuration issues.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import List, Optional
 
 from amprenta_rag.config import get_config
@@ -18,6 +19,40 @@ logger = get_logger(__name__)
 class ConfigValidationError(Exception):
     """Raised when configuration validation fails."""
     pass
+
+
+# Legacy API expected by utils/__init__.py
+class ValidationError(ConfigValidationError):
+    """Alias for backward compatibility."""
+    pass
+
+
+@dataclass
+class ValidationResult:
+    success: bool
+    errors: List[str]
+
+
+class ConfigValidator:
+    """Lightweight validator wrapper for backward compatibility."""
+
+    def __init__(self):
+        self.errors: List[str] = []
+
+    def validate(self) -> ValidationResult:
+        issues = validate_all_config()
+        flat_errors: List[str] = []
+        for category, errs in issues.items():
+            for err in errs:
+                flat_errors.append(f"{category}: {err}")
+        self.errors = flat_errors
+        return ValidationResult(success=not flat_errors, errors=flat_errors)
+
+
+def validate_configuration() -> ValidationResult:
+    """Run all validators and return ValidationResult."""
+    validator = ConfigValidator()
+    return validator.validate()
 
 
 def validate_postgres_config() -> List[str]:

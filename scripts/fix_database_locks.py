@@ -134,7 +134,7 @@ def main():
     if args.check or not any([args.terminate_idle, args.terminate_pid]):
         print("Checking database connections...")
         idle_pids = check_locks()
-        has_blocks = check_blocking()
+        check_blocking()
         
         if idle_pids and not args.terminate_idle:
             print(f"\n💡 Tip: Run with --terminate-idle to close these connections")

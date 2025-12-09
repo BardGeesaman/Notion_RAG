@@ -11,6 +11,7 @@ from typing import List
 
 from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.utils.error_handling import RetryConfig, retry_with_backoff
 
 logger = get_logger(__name__)
 
@@ -18,6 +19,15 @@ __all__ = [
     "chunk_text",
     "embed_texts",
 ]
+
+
+@retry_with_backoff(RetryConfig(max_attempts=3, initial_delay=1.0, max_delay=8.0))
+def _embed_batch(client, model: str, batch: List[str]) -> List[List[float]]:
+    resp = client.embeddings.create(
+        model=model,
+        input=batch,
+    )
+    return [d.embedding for d in resp.data]  # type: ignore[attr-defined]
 
 
 def embed_texts(texts: List[str], batch_size: int = 64) -> List[List[float]]:
@@ -41,11 +51,7 @@ def embed_texts(texts: List[str], batch_size: int = 64) -> List[List[float]]:
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
         try:
-            resp = client.embeddings.create(
-                model=embed_model,
-                input=batch,
-            )
-            all_embeddings.extend(d.embedding for d in resp.data)  # type: ignore[attr-defined]
+            all_embeddings.extend(_embed_batch(client, embed_model, batch))
         except Exception as e:
             logger.error(
                 "[INGEST][EMBED] OpenAI embedding error for batch %d-%d: %r",

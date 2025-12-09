@@ -54,6 +54,7 @@ credentials/*.json
 test_genomics/
 test_*/
 geo_cache_test/
+data/uploads/
 
 # Genomics pipeline data
 salmon_index/

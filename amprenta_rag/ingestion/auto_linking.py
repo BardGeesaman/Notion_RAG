@@ -4,6 +4,7 @@ Automatic linking helpers for datasets → programs/experiments.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from typing import Iterable, List, Optional, Tuple
 
 from amprenta_rag.database.base import get_db
@@ -12,6 +13,15 @@ from amprenta_rag.database.models import Program as ProgramModel
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+
+@contextmanager
+def db_session():
+    db = next(get_db())
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def _normalize_list(values: Optional[Iterable[str]]) -> List[str]:
@@ -35,8 +45,7 @@ def infer_program_from_metadata(
         for part in filename.replace("_", " ").replace("-", " ").split():
             keywords_norm.add(part.lower())
 
-    db = next(get_db())
-    try:
+    with db_session() as db:
         candidates: List[Tuple[str, float]] = []
         programs = db.query(ProgramModel).all()
 
@@ -69,8 +78,6 @@ def infer_program_from_metadata(
     except Exception as exc:
         logger.warning("[INGEST][AUTO-LINK] Program inference failed: %r", exc)
         return None, 0.0
-    finally:
-        db.close()
 
 
 def infer_experiment_from_metadata(
@@ -88,8 +95,7 @@ def infer_experiment_from_metadata(
     matrix_norm = set(_normalize_list(matrix))
     models_norm = set(_normalize_list(model_systems))
 
-    db = next(get_db())
-    try:
+    with db_session() as db:
         candidates: List[Tuple[str, float]] = []
         experiments = db.query(ExperimentModel).all()
 
@@ -129,6 +135,4 @@ def infer_experiment_from_metadata(
     except Exception as exc:
         logger.warning("[INGEST][AUTO-LINK] Experiment inference failed: %r", exc)
         return None, 0.0
-    finally:
-        db.close()
 

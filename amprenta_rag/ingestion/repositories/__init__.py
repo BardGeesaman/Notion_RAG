@@ -11,8 +11,17 @@ Provides implementations for:
 
 from __future__ import annotations
 
+import os
+import time
+
 # Standard User-Agent header for all repository requests (Master Protocol compliance)
 REPOSITORY_USER_AGENT = "ResearchBot/1.0 (Bioinformatics Data Pipeline)"
+REPOSITORY_RATE_LIMIT_SECONDS = float(os.getenv("REPOSITORY_RATE_LIMIT_SECONDS", "0.34"))
+
+
+def repo_rate_limit() -> None:
+    """Global repository rate limiter (default ~3 req/sec)."""
+    time.sleep(REPOSITORY_RATE_LIMIT_SECONDS)
 
 from amprenta_rag.ingestion.repositories.base import RepositoryInterface
 from amprenta_rag.ingestion.repositories.discovery import (

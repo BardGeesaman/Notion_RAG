@@ -2,7 +2,6 @@
 
 print("Test 1: Imports...")
 try:
-    from amprenta_rag.ingestion.signature_matching.matching import find_matching_signatures_for_dataset
     from amprenta_rag.ingestion.screening_ingestion import promote_compounds_to_notion
     print("✓ Imports OK")
 except Exception as e:

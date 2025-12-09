@@ -8,7 +8,6 @@ logging.basicConfig(level=logging.DEBUG)
 print("Test 1: Imports...")
 try:
     from amprenta_rag.query.rag.chunk_collection import collect_chunks
-    from amprenta_rag.rag.hybrid_chunk_collection import collect_hybrid_chunks
     from amprenta_rag.query.cross_omics.helpers import fetch_notion_page
     from amprenta_rag.query.cross_omics.context_extraction import extract_aggregated_context
     print("✓ All imports OK")

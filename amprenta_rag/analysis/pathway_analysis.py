@@ -7,14 +7,11 @@ using KEGG and Reactome databases, and performs pathway enrichment analysis.
 
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set
 
-import requests
 
 from amprenta_rag.analysis.id_mapping import (
-    batch_map_features_to_pathway_ids,
     map_gene_to_kegg,
     map_gene_to_reactome,
     map_metabolite_to_kegg,
@@ -119,7 +116,7 @@ def map_features_to_kegg_pathways(
             )
             return pathways
         
-        db_code = db_map[feature_type]
+        db_map[feature_type]
         
         # For genes/proteins: use KEGG gene-to-pathway mapping
         # For metabolites: use KEGG compound-to-pathway mapping
@@ -429,7 +426,7 @@ def perform_pathway_enrichment(
             odds_ratio = 0.0
             if a + c > 0 and b + d > 0:
                 # Approximate using hypergeometric distribution
-                import math
+                pass
                 # Simplified: use ratio-based approximation
                 p_value = min(1.0, (a / (a + b)) / ((a + c) / (a + b + c + d)) if (a + b + c + d) > 0 else 1.0)
                 odds_ratio = (a * d) / (b * c) if (b * c) > 0 else 0.0

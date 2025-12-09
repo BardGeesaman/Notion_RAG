@@ -11,7 +11,6 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
 from amprenta_rag.api.main import app
 from amprenta_rag.database.base import get_session_local

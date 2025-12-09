@@ -6,7 +6,7 @@ Finds matching signatures for Postgres datasets without requiring Notion page ID
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
 from uuid import UUID
 
 from amprenta_rag.ingestion.multi_omics_scoring import (
@@ -21,11 +21,6 @@ from amprenta_rag.ingestion.postgres_signature_loader import (
 )
 from amprenta_rag.ingestion.signature_matching.models import SignatureMatchResult
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.signatures.signature_loader import Signature
-from amprenta_rag.signatures.signature_scoring import (
-    SignatureScoreResult,
-    score_signature,
-)
 
 logger = get_logger(__name__)
 

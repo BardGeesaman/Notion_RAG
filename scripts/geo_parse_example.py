@@ -192,7 +192,7 @@ def extract_genes_from_geo_parse(gse_id: str, cache_dir: str = "./geo_cache") ->
 def main():
     """Example usage."""
     # Configure Entrez
-    rate_delay = configure_entrez()
+    configure_entrez()
     
     # Create cache dir
     cache_dir = "./geo_cache"

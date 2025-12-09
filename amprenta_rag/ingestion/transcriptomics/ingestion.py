@@ -11,7 +11,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
 
-import pandas as pd
 import requests
 
 # DEPRECATED: Notion imports removed - Postgres is now source of truth

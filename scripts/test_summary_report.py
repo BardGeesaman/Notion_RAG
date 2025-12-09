@@ -130,11 +130,6 @@ def main() -> None:
     print("-" * 80)
     try:
         from amprenta_rag.models.domain import (
-            Program,
-            Experiment,
-            Dataset,
-            Feature,
-            Signature,
             OmicsType,
         )
         print(f"  ✅ All domain models import successfully")

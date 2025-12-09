@@ -8,7 +8,7 @@ No Notion dependencies - works entirely with Postgres data.
 from __future__ import annotations
 
 import textwrap
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from uuid import UUID
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
@@ -20,9 +20,6 @@ from amprenta_rag.ingestion.features.postgres_linking import (
     batch_link_features_to_dataset_in_postgres,
 )
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
-from amprenta_rag.ingestion.signature_integration import (
-    detect_and_ingest_signatures_from_content,
-)
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.domain import FeatureType

@@ -1,6 +1,7 @@
 # amprenta_rag/logging_utils.py
 
 import logging
+import os
 import sys
 
 
@@ -9,7 +10,8 @@ def get_logger(name: str = "amprenta_rag") -> logging.Logger:
     if logger.handlers:
         return logger
 
-    logger.setLevel(logging.INFO)
+    level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+    logger.setLevel(getattr(logging, level_name, logging.INFO))
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
         "[%(asctime)s] [%(levelname)s] %(name)s - %(message)s",

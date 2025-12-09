@@ -6,7 +6,6 @@ Provides reusable dependencies for API routes.
 
 from typing import Generator
 
-from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from amprenta_rag.database.base import get_db

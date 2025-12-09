@@ -32,7 +32,7 @@ def map_raw_lipid_to_canonical_species(raw_name: str) -> Optional[str]:
     if not raw_name:
         return None
 
-    normalized = normalize_species_name(raw_name)
+    normalize_species_name(raw_name)
 
     # Try to reconstruct canonical format from normalized name
     # This is a simplified mapping - can be enhanced with Lipid Species DB lookup

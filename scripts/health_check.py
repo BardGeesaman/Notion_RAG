@@ -6,7 +6,6 @@ Checks the health of all system components and external services.
 Useful for monitoring and diagnostics.
 """
 
-import json
 import sys
 from pathlib import Path
 

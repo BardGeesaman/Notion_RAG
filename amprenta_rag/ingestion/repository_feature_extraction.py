@@ -18,7 +18,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 from uuid import UUID
 
 import GEOparse

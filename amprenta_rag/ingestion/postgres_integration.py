@@ -7,26 +7,18 @@ Postgres as the system of record, replacing Notion as the primary database.
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from amprenta_rag.config import get_config
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.crud import (
-    create_dataset,
     get_or_create_dataset,
-    get_or_create_feature,
-    get_or_create_program,
-    get_or_create_experiment,
     link_dataset_to_features,
-    link_dataset_to_program,
-    link_dataset_to_experiment,
     bulk_get_or_create_features,
 )
-from amprenta_rag.database.models import Dataset, Feature, Program, Experiment
+from amprenta_rag.database.models import Dataset, Feature
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.domain import OmicsType
 
@@ -180,3 +172,45 @@ def link_features_to_dataset_postgres(
 def get_postgres_session() -> Session:
     """Get a Postgres database session."""
     return next(get_db())
+
+
+def embed_dataset_with_postgres_metadata(
+    dataset_id: UUID,
+    dataset_name: str,
+    species_or_features: List[str],
+    omics_type: OmicsType,
+    signature_matches: Optional[List[Any]] = None,
+    notion_page_id: Optional[str] = None,
+) -> None:
+    """
+    Embed a dataset into Pinecone using Postgres metadata.
+
+    This is the Postgres-aware counterpart to the Notion-only embedding functions
+    (e.g., `embed_lipidomics_dataset`, `embed_metabolomics_dataset`). It is
+    intentionally implemented as a thin shim so ingestion pipelines can depend
+    on a stable API while we finalize the Postgres-centric embedding design.
+
+    Current behavior:
+    - Logs that the function is not yet fully implemented.
+    - Raises NotImplementedError so ingestion callers can fall back to their
+      existing Notion-based embedding inside their try/except blocks.
+
+    Args:
+        dataset_id: Postgres dataset UUID.
+        dataset_name: Human-readable dataset name.
+        species_or_features: List of feature identifiers (e.g., metabolites, lipids).
+        omics_type: OmicsType enum describing the dataset.
+        signature_matches: Optional list of signature match results.
+        notion_page_id: Optional Notion page ID linked to this dataset.
+    """
+    logger.info(
+        "[POSTGRES][EMBED] embed_dataset_with_postgres_metadata() called for dataset %s (ID=%s, omics_type=%s); "
+        "Postgres-aware embedding is not yet implemented, callers should fall back to Notion-based embedding.",
+        dataset_name,
+        dataset_id,
+        getattr(omics_type, "value", str(omics_type)),
+    )
+    raise NotImplementedError(
+        "embed_dataset_with_postgres_metadata is not yet implemented; "
+        "ingestion pipelines should catch this and fall back to Notion-based embedding."
+    )

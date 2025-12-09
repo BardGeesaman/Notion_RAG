@@ -41,7 +41,6 @@ def test_subprocess_protocol():
     print("="*60)
     
     # Check that we're NOT importing salmon as a Python package
-    import importlib
     
     # Verify salmon is NOT in sys.modules as a Python package
     salmon_modules = [m for m in sys.modules.keys() if 'salmon' in m.lower()]
@@ -57,7 +56,6 @@ def test_subprocess_protocol():
         print("   -> Make sure we're not importing salmon as a Python package!")
     
     # Verify subprocess is being used
-    import subprocess
     print("✅ PASS: Using subprocess module for Salmon commands")
     
     return True

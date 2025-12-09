@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Tuple
 
 import requests
 
