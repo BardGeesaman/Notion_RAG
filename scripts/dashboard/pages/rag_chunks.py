@@ -78,7 +78,7 @@ def render_rag_chunks_page() -> None:
                     }
                 )
             df_chunks = pd.DataFrame(chunk_data)
-            st.dataframe(df_chunks, use_container_width=True, hide_index=True)
+            st.dataframe(df_chunks, width='stretch', hide_index=True)
 
             # Source type distribution
             if len(df_chunks) > 0:

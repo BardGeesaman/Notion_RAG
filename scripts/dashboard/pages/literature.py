@@ -94,7 +94,7 @@ def render_literature_page() -> None:
                 }
             )
         df_literature = pd.DataFrame(literature_data)
-        st.dataframe(df_literature, use_container_width=True, hide_index=True)
+        st.dataframe(df_literature, width='stretch', hide_index=True)
 
         # Export button
         csv_literature = df_literature.to_csv(index=False)

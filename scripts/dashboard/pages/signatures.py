@@ -62,7 +62,7 @@ def render_signatures_page() -> None:
                     }
                 )
             df_signatures = pd.DataFrame(signature_data)
-            st.dataframe(df_signatures, use_container_width=True, hide_index=True)
+            st.dataframe(df_signatures, width='stretch', hide_index=True)
 
             # Modalities distribution
             if len(df_signatures) > 0 and any(df_signatures["Modalities"]):

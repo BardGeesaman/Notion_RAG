@@ -152,7 +152,7 @@ def render() -> None:
                 "color": color_by,
             },
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         st.download_button(
             "Download PCA CSV",
             data=df.to_csv(index=False),

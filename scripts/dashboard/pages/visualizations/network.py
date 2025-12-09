@@ -86,5 +86,5 @@ def render() -> None:
         )
         fig.update_layout(showlegend=False)
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 

@@ -67,7 +67,7 @@ def render_chemistry_page() -> None:
                         }
                     )
                 df_compounds = pd.DataFrame(compound_data)
-                st.dataframe(df_compounds, use_container_width=True, hide_index=True)
+                st.dataframe(df_compounds, width='stretch', hide_index=True)
 
                 # Export button
                 csv_compounds = df_compounds.to_csv(index=False)
@@ -147,7 +147,7 @@ def render_chemistry_page() -> None:
                         }
                     )
                 df_campaigns = pd.DataFrame(campaign_data)
-                st.dataframe(df_campaigns, use_container_width=True, hide_index=True)
+                st.dataframe(df_campaigns, width='stretch', hide_index=True)
 
                 # Export button
                 csv_campaigns = df_campaigns.to_csv(index=False)
@@ -226,7 +226,7 @@ def render_chemistry_page() -> None:
                         }
                     )
                 df_results = pd.DataFrame(result_data)
-                st.dataframe(df_results, use_container_width=True, hide_index=True)
+                st.dataframe(df_results, width='stretch', hide_index=True)
 
                 # Export button
                 csv_results = df_results.to_csv(index=False)

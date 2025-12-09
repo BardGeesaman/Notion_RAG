@@ -100,7 +100,7 @@ def render_relationships_page() -> None:
                 # Display graph
                 st.subheader("📊 Relationship Graph")
                 fig = create_network_visualization(graph, node_info)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 # Display statistics
                 st.subheader("📈 Graph Statistics")

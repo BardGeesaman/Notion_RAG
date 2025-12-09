@@ -91,7 +91,7 @@ def render_emails_page() -> None:
                 }
             )
         df_emails = pd.DataFrame(email_data)
-        st.dataframe(df_emails, use_container_width=True, hide_index=True)
+        st.dataframe(df_emails, width='stretch', hide_index=True)
 
         # Export button
         csv_emails = df_emails.to_csv(index=False)

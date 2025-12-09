@@ -85,7 +85,7 @@ def render_datasets_page() -> None:
                     }
                 )
             df_summary = pd.DataFrame(summary_data)
-            st.dataframe(df_summary, use_container_width=True, hide_index=True)
+            st.dataframe(df_summary, width='stretch', hide_index=True)
 
             # Export buttons
             col1, col2 = st.columns(2)

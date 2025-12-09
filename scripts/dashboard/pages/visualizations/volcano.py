@@ -130,7 +130,7 @@ def render() -> None:
         fig.add_vline(x=-fc_thresh, line_dash="dash", line_color="#999999")
         fig.add_hline(y=-np.log10(p_thresh), line_dash="dash", line_color="#999999")
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         st.download_button(
             "Download CSV",
             data=df.to_csv(index=False),

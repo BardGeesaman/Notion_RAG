@@ -47,7 +47,7 @@ def render_experiments_page() -> None:
                     }
                 )
             df_experiments = pd.DataFrame(experiment_data)
-            st.dataframe(df_experiments, use_container_width=True, hide_index=True)
+            st.dataframe(df_experiments, width='stretch', hide_index=True)
 
             # Export button
             csv_experiments = df_experiments.to_csv(index=False)

@@ -91,7 +91,7 @@ def render_health_page() -> None:
         table = [r for r in table if r["Omics"] == filter_omics]
     df = pd.DataFrame(table)
     if len(df) > 0:
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.dataframe(df, width='stretch', hide_index=True)
     else:
         st.info("No datasets to display with this filter.")
 

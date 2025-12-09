@@ -150,7 +150,7 @@ def render_statistical_analysis_page() -> None:
                 df["pvalue_adj"] = adj
                 df["reject"] = reject
 
-            st.dataframe(df, use_container_width=True, hide_index=True)
+            st.dataframe(df, width='stretch', hide_index=True)
             st.download_button(
                 "Export CSV",
                 data=df.to_csv(index=False),

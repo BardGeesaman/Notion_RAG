@@ -81,7 +81,7 @@ def render_chat_page():
 
     col1, col2 = st.columns([3, 1])
     with col1:
-        if st.button("Send", type="primary", use_container_width=True):
+        if st.button("Send", type="primary", width='stretch'):
             text = user_input.strip()
             if not text:
                 st.warning("Please enter a question.")
@@ -93,7 +93,7 @@ def render_chat_page():
                     # Rerun to refresh the page and clear input
                     st.rerun()
     with col2:
-        if st.button("🗑️ Clear", type="secondary", use_container_width=True):
+        if st.button("🗑️ Clear", type="secondary", width='stretch'):
             st.session_state.chat_session = ChatSessionState(id=uuid4(), created_at=datetime.utcnow(), turns=[])
             st.rerun()
 

@@ -113,7 +113,7 @@ def render() -> None:
             aspect="auto",
             labels=dict(color="Value"),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         st.download_button(
             "Download CSV",
             data=clustered.to_csv(),

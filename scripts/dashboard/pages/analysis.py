@@ -104,7 +104,7 @@ def render_analysis_page() -> None:
                                             )
 
                                         df_results = pd.DataFrame(results_data)
-                                        st.dataframe(df_results, use_container_width=True, hide_index=True)
+                                        st.dataframe(df_results, width='stretch', hide_index=True)
 
                                         # Download button
                                         csv_results = df_results.to_csv(index=False)
@@ -197,7 +197,7 @@ def render_analysis_page() -> None:
                                             )
 
                                         df_results = pd.DataFrame(results_data)
-                                        st.dataframe(df_results, use_container_width=True, hide_index=True)
+                                        st.dataframe(df_results, width='stretch', hide_index=True)
 
                                         csv_results = df_results.to_csv(index=False)
                                         st.download_button(
@@ -292,7 +292,7 @@ def render_analysis_page() -> None:
                                     )
 
                                 df_results = pd.DataFrame(results_data)
-                                st.dataframe(df_results, use_container_width=True, hide_index=True)
+                                st.dataframe(df_results, width='stretch', hide_index=True)
 
                                 csv_results = df_results.to_csv(index=False)
                                 st.download_button(
@@ -457,7 +457,7 @@ def render_analysis_page() -> None:
                                             )
 
                                         df_matches = pd.DataFrame(match_data)
-                                        st.dataframe(df_matches, use_container_width=True, hide_index=True)
+                                        st.dataframe(df_matches, width='stretch', hide_index=True)
 
                                         # Download results
                                         csv = df_matches.to_csv(index=False)

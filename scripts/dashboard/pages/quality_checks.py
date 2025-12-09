@@ -56,7 +56,7 @@ def render_quality_checks_page() -> None:
 
     st.dataframe(
         df.sort_values("score", ascending=False),
-        use_container_width=True,
+        width='stretch',
         hide_index=True,
     )
 

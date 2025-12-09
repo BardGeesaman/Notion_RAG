@@ -100,7 +100,7 @@ def render_overview_page() -> None:
         with col1:
             st.bar_chart(df_omics.set_index("Omics Type"))
         with col2:
-            st.dataframe(df_omics, use_container_width=True, hide_index=True)
+            st.dataframe(df_omics, width='stretch', hide_index=True)
 
             # Export button
             csv = df_omics.to_csv(index=False)
@@ -147,6 +147,6 @@ def render_overview_page() -> None:
 
     if dataset_data:
         df_recent = pd.DataFrame(dataset_data)
-        st.dataframe(df_recent, use_container_width=True)
+        st.dataframe(df_recent, width='stretch')
     else:
         st.info("No datasets found.")

@@ -267,7 +267,7 @@ def render_repositories_page():
                             df,
                             num_rows="dynamic",
                             key="repo_results",
-                            use_container_width=False,
+                            width='content',
                             height=600,
                             hide_index=True,
                             column_config={

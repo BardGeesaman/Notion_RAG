@@ -62,7 +62,7 @@ def render_features_page() -> None:
                     }
                 )
             df_features = pd.DataFrame(feature_data)
-            st.dataframe(df_features, use_container_width=True)
+            st.dataframe(df_features, width='stretch')
 
             # Feature type distribution
             if len(df_features) > 0:

@@ -32,7 +32,7 @@ def render_feature_recurrence_page():
         if rows:
             df = pd.DataFrame(rows).sort_values("n_datasets", ascending=False)
             st.bar_chart(df.set_index("feature_name")["n_datasets"].head(50))
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width='stretch')
             st.caption("Bar shows top 50 features by dataset recurrence.")
         else:
             st.info("No features at min threshold.")
