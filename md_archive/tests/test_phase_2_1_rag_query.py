@@ -26,7 +26,7 @@ class TestSignatureSimilarityQuery:
         dataset_id = uuid4()
         
         # Mock dependent functions to avoid actual DB/network calls
-        with patch('amprenta_rag.query.rag.query.get_dataset_features_from_postgres', return_value=[]) as mock_get_features, \
+        with patch('amprenta_rag.query.rag.query.extract_dataset_features_by_type', return_value={"gene": set()}) as mock_get_features, \
              patch('amprenta_rag.query.rag.query.fetch_mwtab_from_api', return_value=None), \
              patch('amprenta_rag.query.rag.query.fetch_all_signatures_from_postgres', return_value=[]):
             
@@ -36,7 +36,7 @@ class TestSignatureSimilarityQuery:
             
             # Verify Postgres feature fetching was attempted with UUID
             mock_get_features.assert_called_once()
-            assert mock_get_features.call_args[1]['dataset_id'] == dataset_id
+            assert mock_get_features.call_args[1]['dataset_page_id'] == dataset_id
 
     def test_returns_correct_structure(self, mock_db):
         """Test return value structure uses Postgres UUIDs."""
@@ -58,7 +58,7 @@ class TestSignatureSimilarityQuery:
         mock_score.missing_species = {"comp2"}
         mock_score.conflicting_species = set()
         
-        with patch('amprenta_rag.query.rag.query.get_dataset_features_from_postgres', return_value=[]), \
+        with patch('amprenta_rag.query.rag.query.extract_dataset_features_by_type', return_value={"gene": {"comp1"}}), \
              patch('amprenta_rag.query.rag.query.fetch_mwtab_from_api', return_value={"MS_METABOLITE_DATA": {"Data": [{"Metabolite": "comp1"}]}}), \
              patch('amprenta_rag.query.rag.query.fetch_all_signatures_from_postgres', return_value=[mock_sig_model]), \
              patch('amprenta_rag.query.rag.query.load_signature_from_postgres', return_value=mock_sig_obj), \

@@ -22,26 +22,15 @@ class TestModuleImport:
 
 
 class TestFetchNotionPageStub:
-    """Test fetch_notion_page raises NotImplementedError."""
+    """Test fetch_notion_page returns None (deprecated)."""
     
-    def test_fetch_notion_page_raises_error(self):
-        """Test fetch_notion_page raises NotImplementedError."""
-        with pytest.raises(NotImplementedError) as exc_info:
-            fetch_notion_page("test-page-id")
-        
-        # Verify error message provides guidance
-        error_msg = str(exc_info.value).lower()
-        assert "deprecated" in error_msg or "notion support" in error_msg
-        assert "postgres" in error_msg
+    def test_fetch_notion_page_returns_none(self):
+        """Fetch should safely return None."""
+        assert fetch_notion_page("test-page-id") is None
     
-    def test_fetch_notion_page_error_message_contains_page_id(self):
-        """Test error message includes the page ID that was requested."""
-        test_id = "test-page-id-123"
-        with pytest.raises(NotImplementedError) as exc_info:
-            fetch_notion_page(test_id)
-        
-        error_msg = str(exc_info.value)
-        assert test_id in error_msg
+    def test_fetch_notion_page_returns_none_with_id(self):
+        """Fetch should safely return None regardless of ID."""
+        assert fetch_notion_page("test-page-id-123") is None
 
 
 class TestUtilityFunctions:

@@ -12,11 +12,6 @@ from amprenta_rag.analysis.pathway_analysis import (
     PathwayEnrichmentResult,
     perform_pathway_enrichment,
 )
-from amprenta_rag.analysis.pathway_notion_integration import (
-    create_or_update_pathway_page,
-    link_pathway_to_dataset,
-    update_dataset_with_pathway_summary,
-)
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)

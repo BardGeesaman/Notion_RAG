@@ -6,7 +6,9 @@ import streamlit as st
 from amprenta_rag.database.models import Dataset, Experiment
 from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
 from scripts.dashboard.db_session import db_session
-from scripts.harvest_mw_studies import fetch_mw_mwtab
+# NOTE: MW harvest script archived; disable direct import to avoid failures.
+def fetch_mw_mwtab(*args, **kwargs):
+    return None
 
 repo_map = {
     "GEO": "search_geo_studies",

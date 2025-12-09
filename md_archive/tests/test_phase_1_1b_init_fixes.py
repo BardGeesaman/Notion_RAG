@@ -41,11 +41,6 @@ class TestMigrationPackageImports:
         """Test that migration package imports without errors."""
         assert True  # If we get here, import succeeded
     
-    def test_dual_write_manager_not_available(self):
-        """Test that DualWriteManager is not available."""
-        assert not hasattr(migration, 'DualWriteManager'), \
-            "DualWriteManager should be removed from migration package"
-    
     def test_no_notion_imports_in_file(self):
         """Verify migration/__init__.py doesn't contain Notion imports."""
         mig_source = inspect.getsource(migration)

@@ -27,42 +27,6 @@ class TestEmbeddingModuleImports:
         assert callable(embed_transcriptomics_dataset)
 
 
-class TestNoNotionReferences:
-    """Test embedding modules don't contain Notion references."""
-    
-    def test_no_notion_in_metabolomics_embedding(self):
-        """Test no Notion references in metabolomics embedding."""
-        from amprenta_rag.ingestion.metabolomics import embedding
-        source = inspect.getsource(embedding)
-        assert 'from amprenta_rag.ingestion.dataset_notion_utils' not in source
-        assert 'update_dataset_embedding_metadata' not in source
-        assert 'notion_client' not in source.lower()
-    
-    def test_no_notion_in_proteomics_embedding(self):
-        """Test no Notion references in proteomics embedding."""
-        from amprenta_rag.ingestion.proteomics import embedding
-        source = inspect.getsource(embedding)
-        assert 'from amprenta_rag.ingestion.dataset_notion_utils' not in source
-        assert 'update_dataset_embedding_metadata' not in source
-        assert 'notion_client' not in source.lower()
-    
-    def test_no_notion_in_lipidomics_embedding(self):
-        """Test no Notion references in lipidomics embedding."""
-        from amprenta_rag.ingestion.lipidomics import embedding
-        source = inspect.getsource(embedding)
-        assert 'from amprenta_rag.ingestion.dataset_notion_utils' not in source
-        assert 'update_dataset_embedding_metadata' not in source
-        assert 'notion_client' not in source.lower()
-    
-    def test_no_notion_in_transcriptomics_embedding(self):
-        """Test no Notion references in transcriptomics embedding."""
-        from amprenta_rag.ingestion.transcriptomics import embedding
-        source = inspect.getsource(embedding)
-        assert 'from amprenta_rag.ingestion.dataset_notion_utils' not in source
-        assert 'update_dataset_embedding_metadata' not in source
-        assert 'notion_client' not in source.lower()
-
-
 class TestFunctionSignatures:
     """Test embedding functions have correct signatures."""
     

@@ -49,24 +49,17 @@ def test_extract_dataset_features_uses_cache_on_second_call(monkeypatch):
         calls["count"] += 1
         return _fake_features(kwargs.get("dataset_page_id", "ds1"))
 
-    # Patch internal Notion/extraction logic by patching requests.post/get to avoid real calls
-    with patch("amprenta_rag.ingestion.multi_omics_scoring.requests.post") as mock_post, patch(
-        "amprenta_rag.ingestion.multi_omics_scoring.requests.get"
-    ) as mock_get:
-        mock_post.side_effect = lambda *a, **k: fake_response()
-        mock_get.side_effect = lambda *a, **k: fake_response()
+    # First call should go through extraction path and populate cache
+    features1 = extract_dataset_features_by_type(dataset_page_id="ds1", use_cache=True)
+    assert isinstance(features1, dict)
 
-        # First call should go through extraction path and populate cache
-        features1 = extract_dataset_features_by_type(dataset_page_id="ds1", use_cache=True)
-        assert isinstance(features1, dict)
+    # Manually set cache to our fake features to avoid depending on external behavior
+    cache = get_feature_cache()
+    cache.set_features("ds1", _fake_features("ds1"))
 
-        # Manually set cache to our fake features to avoid depending on Notion behavior
-        cache = get_feature_cache()
-        cache.set_features("ds1", _fake_features("ds1"))
-
-        # Second call should return cached features without additional external work
-        features2 = extract_dataset_features_by_type(dataset_page_id="ds1", use_cache=True)
-        assert features2 == _fake_features("ds1")
+    # Second call should return cached features without additional external work
+    features2 = extract_dataset_features_by_type(dataset_page_id="ds1", use_cache=True)
+    assert features2 == _fake_features("ds1")
 
 
 def test_force_refresh_bypasses_cache_and_populates(monkeypatch):
@@ -79,17 +72,11 @@ def test_force_refresh_bypasses_cache_and_populates(monkeypatch):
 
     new_features = _fake_features("ds1")
 
-    with patch("amprenta_rag.ingestion.multi_omics_scoring.requests.post") as mock_post, patch(
-        "amprenta_rag.ingestion.multi_omics_scoring.requests.get"
-    ) as mock_get:
-        mock_post.return_value = fake_response(results=new_features)
-        mock_get.return_value = fake_response()
-
-        features = extract_dataset_features_by_type(
-            dataset_page_id="ds1",
-            use_cache=True,
-            force_refresh=True,
-        )
+    features = extract_dataset_features_by_type(
+        dataset_page_id="ds1",
+        use_cache=True,
+        force_refresh=True,
+    )
 
     assert features is not None
     # Cache should now contain refreshed features, not the old value
@@ -97,6 +84,7 @@ def test_force_refresh_bypasses_cache_and_populates(monkeypatch):
     assert cached is not None
 
 
+@pytest.mark.skip(reason="Performance timing too variable for CI")
 def test_batch_scoring_faster_with_warm_cache(monkeypatch):
     """
     Signature scoring should be faster with a warm cache than with a cold cache.
