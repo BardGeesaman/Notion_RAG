@@ -13,18 +13,6 @@ from amprenta_rag.logging_utils import get_logger
 logger = get_logger(__name__)
 
 
-def fetch_notion_page(page_id: str) -> Dict[str, Any]:
-    """
-    DEPRECATED: Notion support has been removed.
-    Returns empty page structure for backward compatibility.
-    """
-    logger.debug(
-        "[METADATA] fetch_notion_page(%s) deprecated - returning empty dict",
-        page_id,
-    )
-    return {"id": page_id, "properties": {}}
-
-
 def get_select_name(props: Dict[str, Any], name: str) -> Optional[str]:
     """Extract a single select value from Notion properties."""
     sel = props.get(name, {}).get("select")

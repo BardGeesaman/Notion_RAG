@@ -1,9 +1,8 @@
-"""Tests for Phase 2.7: Cross-Omics Helpers Notion Removal."""
+"""Tests for Phase 2.7: Cross-Omics Helpers (Postgres-only)."""
 
 import pytest
 
 from amprenta_rag.query.cross_omics.helpers import (
-    fetch_notion_page,
     extract_relation_ids,
     extract_select_values,
     extract_text_property,
@@ -19,18 +18,6 @@ class TestModuleImport:
         """Test helpers module imports without errors."""
         from amprenta_rag.query.cross_omics import helpers
         assert helpers is not None
-
-
-class TestFetchNotionPageStub:
-    """Test fetch_notion_page returns empty dict (deprecated stub)."""
-    
-    def test_fetch_notion_page_returns_empty_dict(self):
-        """Fetch should safely return empty dict for .get() compatibility."""
-        assert fetch_notion_page("test-page-id") == {}
-    
-    def test_fetch_notion_page_returns_empty_dict_with_id(self):
-        """Fetch should safely return empty dict regardless of ID."""
-        assert fetch_notion_page("test-page-id-123") == {}
 
 
 class TestUtilityFunctions:

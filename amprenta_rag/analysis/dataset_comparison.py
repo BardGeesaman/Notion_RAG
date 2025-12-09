@@ -11,10 +11,35 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 
+from uuid import UUID
+
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+
+def _get_dataset_name(dataset_id: str) -> str:
+    """Get dataset name from Postgres."""
+    db = next(get_db())
+    try:
+        dataset = None
+        try:
+            dataset_uuid = UUID(dataset_id)
+            dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_uuid).first()
+        except ValueError:
+            dataset = db.query(DatasetModel).filter(DatasetModel.notion_page_id == dataset_id).first()
+        
+        if dataset and dataset.name:
+            return dataset.name
+        return f"Dataset {dataset_id[:8]}"
+    except Exception as e:
+        logger.debug("[ANALYSIS][DATASET-COMP] Could not fetch dataset name: %r", e)
+        return f"Dataset {dataset_id[:8]}"
+    finally:
+        db.close()
 
 
 @dataclass
@@ -112,25 +137,9 @@ def compare_datasets(
         dataset2_id,
     )
     
-    # Get dataset names
-    dataset1_name = f"Dataset {dataset1_id[:8]}"
-    dataset2_name = f"Dataset {dataset2_id[:8]}"
-    
-    try:
-        from amprenta_rag.query.cross_omics.helpers import fetch_notion_page
-        page1 = fetch_notion_page(dataset1_id)
-        props1 = page1.get("properties", {}) or {}
-        name_prop1 = props1.get("Experiment Name", {}).get("title", []) or []
-        if name_prop1:
-            dataset1_name = name_prop1[0].get("plain_text", dataset1_name)
-        
-        page2 = fetch_notion_page(dataset2_id)
-        props2 = page2.get("properties", {}) or {}
-        name_prop2 = props2.get("Experiment Name", {}).get("title", []) or []
-        if name_prop2:
-            dataset2_name = name_prop2[0].get("plain_text", dataset2_name)
-    except Exception as e:
-        logger.debug("[ANALYSIS][DATASET-COMP] Could not fetch dataset names: %r", e)
+    # Get dataset names from Postgres
+    dataset1_name = _get_dataset_name(dataset1_id)
+    dataset2_name = _get_dataset_name(dataset2_id)
     
     # Extract features from both datasets
     features1 = extract_dataset_features_by_type(dataset1_id, use_cache=use_cache)

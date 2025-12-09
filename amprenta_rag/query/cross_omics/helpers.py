@@ -18,18 +18,6 @@ from amprenta_rag.query.pinecone_query import query_pinecone
 logger = get_logger(__name__)
 
 
-def get_page_text(page_id: str) -> str:
-    """Stub: Notion support removed. Returns empty string."""
-    logger.debug("[CROSS-OMICS][HELPERS] get_page_text() is a no-op (Notion removed)")
-    return ""
-
-
-def fetch_notion_page(page_id: str) -> Optional[Dict[str, Any]]:
-    """Stub: Notion support removed. Returns an empty dict for safety."""
-    logger.debug("[CROSS-OMICS][HELPERS] fetch_notion_page() is a no-op (Notion removed)")
-    return {}
-
-
 def extract_relation_ids(page: Dict[str, Any], property_name: str) -> List[str]:
     """Extract page IDs from a relation property."""
     props = page.get("properties", {}) or {}
@@ -76,20 +64,10 @@ def extract_text_property(page: Dict[str, Any], property_name: str) -> Optional[
 
 
 def get_chunk_text(chunk: Dict[str, Any]) -> Optional[str]:
-    """Get full chunk text from Notion, fallback to snippet."""
+    """Get chunk text from metadata snippet."""
     meta = chunk.get("metadata", {}) or getattr(chunk, "metadata", {})
     
-    # Try to get full chunk text from Notion
-    chunk_page_id = meta.get("notion_chunk_page_id")
-    if chunk_page_id:
-        try:
-            full_text = get_page_text(chunk_page_id)
-            if full_text:
-                return full_text
-        except Exception:
-            pass
-    
-    # Fallback to snippet
+    # Return snippet from metadata
     snippet = meta.get("snippet", "")
     if snippet:
         return snippet

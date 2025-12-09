@@ -2,17 +2,42 @@
 Omics coverage computation for program-signature mapping.
 
 Functions for analyzing omics data coverage across program datasets.
+Postgres is now the source of truth - Notion support has been removed.
 """
 
 from collections import defaultdict
 from typing import Dict, List, Set
+from uuid import UUID
 
 from amprenta_rag.analysis.program_maps.models import ProgramOmicsCoverage
 from amprenta_rag.analysis.program_maps.scoring import get_program_datasets
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import Program as ProgramModel
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+
+def _get_program_name(program_page_id: str) -> str:
+    """Get program name from Postgres."""
+    db = next(get_db())
+    try:
+        program = None
+        try:
+            program_uuid = UUID(program_page_id)
+            program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
+        except ValueError:
+            program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
+        
+        if program and program.name:
+            return program.name
+        return f"Program {program_page_id[:8]}"
+    except Exception as e:
+        logger.debug("[ANALYSIS][PROGRAM-MAPS] Could not fetch program name: %r", e)
+        return f"Program {program_page_id[:8]}"
+    finally:
+        db.close()
 
 
 def compute_program_omics_coverage(
@@ -28,7 +53,7 @@ def compute_program_omics_coverage(
     - Overall coverage summary
 
     Args:
-        program_page_id: Notion page ID of program (with dashes)
+        program_page_id: Program ID (UUID or legacy Notion page ID)
         use_cache: Whether to use feature cache
 
     Returns:
@@ -44,20 +69,7 @@ def compute_program_omics_coverage(
         program_page_id,
     )
 
-    # Get program name
-    program_name = f"Program {program_page_id[:8]}"
-    try:
-        from amprenta_rag.query.cross_omics.helpers import fetch_notion_page
-
-        page = fetch_notion_page(program_page_id)
-        props = page.get("properties", {}) or {}
-        name_prop = props.get("Program", {}).get("title", []) or []
-        if not name_prop:
-            name_prop = props.get("Name", {}).get("title", []) or []
-        if name_prop:
-            program_name = name_prop[0].get("plain_text", program_name)
-    except Exception as e:
-        logger.debug("[ANALYSIS][PROGRAM-MAPS] Could not fetch program name: %r", e)
+    program_name = _get_program_name(program_page_id)
 
     # Get all datasets in program
     dataset_ids = get_program_datasets(program_page_id)

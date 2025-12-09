@@ -3,6 +3,8 @@ Program-Level Multi-Omics Signature Maps.
 
 Computes Program × Signature scoring matrices, coverage analysis,
 and convergence indicators for dashboard intelligence.
+
+Postgres is now the source of truth - Notion support has been removed.
 """
 
 from __future__ import annotations
@@ -10,12 +12,13 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
-
-from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.database.base import get_db
-from amprenta_rag.database.models import Program as ProgramModel
 from uuid import UUID
+
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import Program as ProgramModel, Signature as SignatureModel
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
+from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.signatures.signature_loader import Signature, load_signatures_from_postgres
 
 logger = get_logger(__name__)
 
@@ -26,8 +29,8 @@ class ProgramSignatureScore:
     Represents a signature score for a program.
     
     Attributes:
-        program_id: Notion page ID of program
-        signature_id: Notion page ID of signature
+        program_id: Program ID (UUID string)
+        signature_id: Signature ID (UUID string)
         program_name: Name of program
         signature_name: Name of signature
         overall_score: Overall signature score (0-1)
@@ -51,7 +54,7 @@ class ProgramOmicsCoverage:
     Represents omics coverage for a program.
     
     Attributes:
-        program_id: Notion page ID of program
+        program_id: Program ID (UUID string)
         program_name: Name of program
         total_datasets: Total number of datasets in program
         datasets_by_omics: Number of datasets by omics type
@@ -72,7 +75,7 @@ class ProgramSignatureMap:
     Represents a complete program-signature mapping.
     
     Attributes:
-        program_id: Notion page ID of program
+        program_id: Program ID (UUID string)
         program_name: Name of program
         signature_scores: List of ProgramSignatureScore objects
         omics_coverage: ProgramOmicsCoverage object
@@ -121,6 +124,27 @@ def get_program_datasets(program_page_id: str) -> List[str]:
         db.close()
 
 
+def _get_program_name(program_page_id: str) -> str:
+    """Get program name from Postgres."""
+    db = next(get_db())
+    try:
+        program = None
+        try:
+            program_uuid = UUID(program_page_id)
+            program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
+        except ValueError:
+            program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
+        
+        if program and program.name:
+            return program.name
+        return f"Program {program_page_id[:8]}"
+    except Exception as e:
+        logger.debug("[ANALYSIS][PROGRAM-MAPS] Could not fetch program name: %r", e)
+        return f"Program {program_page_id[:8]}"
+    finally:
+        db.close()
+
+
 def compute_program_signature_scores(
     program_page_id: str,
     signature_ids: Optional[List[str]] = None,
@@ -130,7 +154,7 @@ def compute_program_signature_scores(
     Compute signature scores for all datasets in a program.
     
     Args:
-        program_page_id: Notion page ID of program (with dashes)
+        program_page_id: Program ID (UUID or legacy Notion page ID)
         signature_ids: Optional list of signature IDs to score (if None, scores all)
         use_cache: Whether to use feature cache
         
@@ -142,19 +166,7 @@ def compute_program_signature_scores(
         program_page_id,
     )
     
-    # Get program name
-    program_name = f"Program {program_page_id[:8]}"
-    try:
-        from amprenta_rag.query.cross_omics.helpers import fetch_notion_page
-        page = fetch_notion_page(program_page_id)
-        props = page.get("properties", {}) or {}
-        name_prop = props.get("Program", {}).get("title", []) or []
-        if not name_prop:
-            name_prop = props.get("Name", {}).get("title", []) or []
-        if name_prop:
-            program_name = name_prop[0].get("plain_text", program_name)
-    except Exception as e:
-        logger.debug("[ANALYSIS][PROGRAM-MAPS] Could not fetch program name: %r", e)
+    program_name = _get_program_name(program_page_id)
     
     # Get all datasets in program
     dataset_ids = get_program_datasets(program_page_id)
@@ -172,31 +184,17 @@ def compute_program_signature_scores(
         program_page_id,
     )
     
-    # Load signatures
-    from amprenta_rag.ingestion.signature_matching.signature_loader import (
-        fetch_all_signatures_from_notion,
-        load_signature_from_notion_page,
-    )
-    
-    all_signature_pages = fetch_all_signatures_from_notion()
-    all_signatures = []
+    # Load signatures from Postgres
+    all_signatures = load_signatures_from_postgres()
     sig_name_to_id: Dict[str, str] = {}
     
-    for sig_page in all_signature_pages:
-        sig_id = sig_page.get("id", "")
-        props = sig_page.get("properties", {}) or {}
-        name_prop = props.get("Name", {}).get("title", []) or []
-        sig_name = name_prop[0].get("plain_text", "") if name_prop else ""
-        
-        # Filter by signature_ids if provided
-        if signature_ids and sig_id not in signature_ids:
-            continue
-        
-        sig = load_signature_from_notion_page(sig_page)
-        if sig:
-            all_signatures.append(sig)
-            if sig_name:
-                sig_name_to_id[sig_name] = sig_id
+    # Filter by signature_ids if provided
+    if signature_ids:
+        all_signatures = [s for s in all_signatures if str(s.id) in signature_ids]
+    
+    for sig in all_signatures:
+        if sig.name:
+            sig_name_to_id[sig.name] = str(sig.id) if hasattr(sig, 'id') else sig.name
     
     if not all_signatures:
         logger.warning(
@@ -265,11 +263,11 @@ def compute_program_signature_scores(
             # Coverage fraction
             coverage_fraction = len(matching_datasets) / len(dataset_ids) if dataset_ids else 0.0
             
-            # Get signature page ID from mapping
-            sig_page_id = sig_name_to_id.get(signature.name, signature.name)
-            signature_scores[sig_page_id] = ProgramSignatureScore(
+            # Get signature ID
+            sig_id = sig_name_to_id.get(signature.name, signature.name)
+            signature_scores[sig_id] = ProgramSignatureScore(
                 program_id=program_page_id,
-                signature_id=sig_page_id,
+                signature_id=sig_id,
                 program_name=program_name,
                 signature_name=signature.name,
                 overall_score=overall_score,
@@ -298,7 +296,7 @@ def compute_program_omics_coverage(
     Compute omics coverage for a program.
     
     Args:
-        program_page_id: Notion page ID of program (with dashes)
+        program_page_id: Program ID (UUID or legacy Notion page ID)
         use_cache: Whether to use feature cache
         
     Returns:
@@ -309,19 +307,7 @@ def compute_program_omics_coverage(
         program_page_id,
     )
     
-    # Get program name
-    program_name = f"Program {program_page_id[:8]}"
-    try:
-        from amprenta_rag.query.cross_omics.helpers import fetch_notion_page
-        page = fetch_notion_page(program_page_id)
-        props = page.get("properties", {}) or {}
-        name_prop = props.get("Program", {}).get("title", []) or []
-        if not name_prop:
-            name_prop = props.get("Name", {}).get("title", []) or []
-        if name_prop:
-            program_name = name_prop[0].get("plain_text", program_name)
-    except Exception as e:
-        logger.debug("[ANALYSIS][PROGRAM-MAPS] Could not fetch program name: %r", e)
+    program_name = _get_program_name(program_page_id)
     
     # Get all datasets
     dataset_ids = get_program_datasets(program_page_id)
@@ -424,7 +410,7 @@ def generate_program_signature_map(
     Generate a complete program-signature mapping.
     
     Args:
-        program_page_id: Notion page ID of program (with dashes)
+        program_page_id: Program ID (UUID or legacy Notion page ID)
         top_n: Number of top signatures to include
         use_cache: Whether to use feature cache
         
@@ -524,11 +510,3 @@ def generate_program_map_report(
         report += "No matching signatures found.\n\n"
     
     return report
-
-
-def update_notion_with_program_map(program_map: ProgramSignatureMap) -> None:
-    """DEPRECATED: No-op placeholder (Notion updates removed)."""
-    logger.debug(
-        "[ANALYSIS][PROGRAM-MAPS] Skipping Notion update for %s (deprecated)",
-        program_map.program_id,
-    )

@@ -211,17 +211,13 @@ def build_feature_rag_metadata(
 def build_dataset_rag_text(
     dataset_id: UUID,
     db: Optional[Session] = None,
-    include_notion_narrative: bool = True,
 ) -> str:
     """
     Build RAG text representation for a dataset.
     
-    Combines structured data from Postgres with narrative from Notion.
-    
     Args:
         dataset_id: Postgres UUID of the dataset
         db: Database session
-        include_notion_narrative: If True, fetch narrative text from Notion
         
     Returns:
         Text representation for embedding
@@ -262,26 +258,12 @@ def build_dataset_rag_text(
     if dataset.signature_match_score is not None:
         parts.append(f"Signature Match Score: {dataset.signature_match_score:.3f}")
     
-    # Narrative from Notion (if available and requested)
-    if include_notion_narrative and dataset.notion_page_id:
-        try:
-            from amprenta_rag.ingestion.metadata.helpers import fetch_notion_page
-            notion_page = fetch_notion_page(dataset.notion_page_id)
-            if notion_page:
-                # Extract narrative text from Notion page
-                # This would include results, conclusions, etc.
-                # For now, we'll just note that Notion content is available
-                parts.append("\n[Additional narrative content available in Notion]")
-        except Exception as e:
-            logger.debug("[RAG][POSTGRES] Could not fetch Notion narrative: %r", e)
-    
     return "\n".join(parts)
 
 
 def build_program_rag_text(
     program_id: UUID,
     db: Optional[Session] = None,
-    include_notion_narrative: bool = True,
 ) -> str:
     """Build RAG text representation for a program."""
     if db is None:
@@ -302,15 +284,6 @@ def build_program_rag_text(
     dataset_count = len(program.datasets) if program.datasets else 0
     if dataset_count > 0:
         parts.append(f"Related Datasets: {dataset_count}")
-    
-    if include_notion_narrative and program.notion_page_id:
-        try:
-            from amprenta_rag.ingestion.metadata.helpers import fetch_notion_page
-            notion_page = fetch_notion_page(program.notion_page_id)
-            if notion_page:
-                parts.append("\n[Additional narrative content available in Notion]")
-        except Exception as e:
-            logger.debug("[RAG][POSTGRES] Could not fetch Notion narrative: %r", e)
     
     return "\n".join(parts)
 

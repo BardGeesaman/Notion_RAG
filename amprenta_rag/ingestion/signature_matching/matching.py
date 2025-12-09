@@ -13,12 +13,8 @@ from amprenta_rag.ingestion.multi_omics_scoring import (
     score_multi_omics_signature_against_dataset,
 )
 from amprenta_rag.ingestion.signature_matching.models import SignatureMatchResult
-from amprenta_rag.ingestion.signature_matching.signature_loader import (
-    fetch_all_signatures_from_notion,
-    load_signature_from_notion_page,
-)
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.signatures.signature_loader import Signature
+from amprenta_rag.signatures.signature_loader import Signature, load_signatures_from_postgres
 from amprenta_rag.signatures.signature_scoring import (
     SignatureScoreResult,
     score_signature,
@@ -101,21 +97,17 @@ def find_matching_signatures_for_dataset(
             )
             dataset_features_by_type = None
 
-    # Fetch all signatures from Notion
-    signature_pages = fetch_all_signatures_from_notion()
+    # Load all signatures from Postgres
+    all_signatures = load_signatures_from_postgres()
 
-    if not signature_pages:
+    if not all_signatures:
         logger.debug(
-            "[INGEST][SIGNATURE-MATCH] No signatures found in Notion",
+            "[INGEST][SIGNATURE-MATCH] No signatures found in Postgres",
         )
         return matches
 
-    for sig_page in signature_pages:
+    for signature in all_signatures:
         try:
-            # Load signature from Notion page
-            signature = load_signature_from_notion_page(sig_page)
-            if not signature:
-                continue
 
             # Determine if this is a multi-omics signature
             is_multi_omics = (

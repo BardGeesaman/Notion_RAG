@@ -1,8 +1,8 @@
 """
 Context extraction for cross-omics reasoning.
 
-NOTE: Notion-based helpers are DEPRECATED. Use Postgres-backed helpers in
-`program_summary_postgres.py` and related *_postgres modules.
+Postgres is now the source of truth - Notion support has been removed.
+Use Postgres-backed helpers in `program_summary_postgres.py` and related *_postgres modules.
 """
 
 from __future__ import annotations
@@ -10,20 +10,17 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.query.cross_omics.helpers import (
-    extract_select_values,
-    fetch_notion_page,
-)
+from amprenta_rag.query.cross_omics.helpers import extract_select_values
 
 logger = get_logger(__name__)
 
 
 def extract_disease_context(page: Dict[str, Any]) -> List[str]:
     """
-    Extract disease context from a Notion page.
+    Extract disease context from a page dictionary.
     
     Args:
-        page: Notion page dictionary
+        page: Page dictionary with properties
         
     Returns:
         List of disease names
@@ -37,10 +34,10 @@ def extract_disease_context(page: Dict[str, Any]) -> List[str]:
 
 def extract_matrix_context(page: Dict[str, Any]) -> List[str]:
     """
-    Extract matrix context from a Notion page.
+    Extract matrix context from a page dictionary.
     
     Args:
-        page: Notion page dictionary
+        page: Page dictionary with properties
         
     Returns:
         List of matrix types (CSF, plasma, serum, tissue, etc.)
@@ -50,10 +47,10 @@ def extract_matrix_context(page: Dict[str, Any]) -> List[str]:
 
 def extract_model_system_context(page: Dict[str, Any]) -> List[str]:
     """
-    Extract model system context from a Notion page.
+    Extract model system context from a page dictionary.
     
     Args:
-        page: Notion page dictionary
+        page: Page dictionary with properties
         
     Returns:
         List of model systems (in vitro, in vivo, patient, cell line, etc.)
@@ -66,56 +63,25 @@ def extract_aggregated_context(
     page_type: str = "dataset",
 ) -> Dict[str, Any]:
     """
-    DEPRECATED: Extract and aggregate context from multiple Notion pages.
+    DEPRECATED: This function previously used Notion. Now returns empty context.
     
-    Aggregates disease, matrix, and model system information across
-    multiple pages to provide comprehensive context.
+    Use Postgres-based context extraction instead.
     
     Args:
-        page_ids: List of Notion page IDs
-        page_type: Type of pages ("dataset", "experiment", "program")
+        page_ids: List of page IDs (unused)
+        page_type: Type of pages (unused)
         
     Returns:
-        Dictionary with aggregated context:
-        - diseases: Set of all unique diseases
-        - matrix: Set of all unique matrix types
-        - model_systems: Set of all unique model systems
-        - page_count: Number of pages processed
+        Empty context dictionary
     """
-    all_diseases: set[str] = set()
-    all_matrix: set[str] = set()
-    all_model_systems: set[str] = set()
-    processed_count = 0
-    
-    for page_id in page_ids:
-        try:
-            page = fetch_notion_page(page_id)
-            if not page:
-                continue
-                
-            diseases = extract_disease_context(page)
-            matrix = extract_matrix_context(page)
-            model_systems = extract_model_system_context(page)
-            
-            all_diseases.update(diseases)
-            all_matrix.update(matrix)
-            all_model_systems.update(model_systems)
-            processed_count += 1
-            
-        except Exception as e:
-            logger.debug(
-                "[RAG][CROSS-OMICS] Error extracting context from %s %s: %r",
-                page_type,
-                page_id,
-                e,
-            )
-            continue
-    
+    logger.debug(
+        "[RAG][CROSS-OMICS] extract_aggregated_context() is deprecated - Notion removed"
+    )
     return {
-        "diseases": sorted(list(all_diseases)),
-        "matrix": sorted(list(all_matrix)),
-        "model_systems": sorted(list(all_model_systems)),
-        "page_count": processed_count,
+        "diseases": [],
+        "matrix": [],
+        "model_systems": [],
+        "page_count": 0,
     }
 
 
@@ -171,7 +137,6 @@ def identify_comparative_context(
         return None
     
     # Check for control/comparison indicators
-    # This is a heuristic - could be enhanced with more sophisticated detection
     comparative_hints: Dict[str, Any] = {
         "has_disease_context": True,
         "diseases": diseases,
@@ -184,4 +149,3 @@ def identify_comparative_context(
         comparative_hints["has_control_group"] = True
     
     return comparative_hints
-

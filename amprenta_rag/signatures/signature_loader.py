@@ -237,22 +237,43 @@ def load_signature_from_tsv(tsv_path: Path) -> Signature:
     )
 
 
-def load_signature_from_notion(signature_page_id: str) -> Signature:
+def load_signatures_from_postgres() -> List[Signature]:
     """
-    Load a signature from a Notion page.
-
-    This is a placeholder for future Notion integration.
-    For now, signatures should be loaded from TSV files.
-
-    Args:
-        signature_page_id: Notion page ID for the signature
-
+    Load all signatures from Postgres database.
+    
     Returns:
-        Signature object
-
-    Raises:
-        NotImplementedError: Not yet implemented
+        List of Signature objects
     """
-    raise NotImplementedError(
-        "Notion signature loading not yet implemented. " "Please use TSV files for now."
-    )
+    from amprenta_rag.database.base import get_db
+    from amprenta_rag.database.models import Signature as SignatureModel
+    
+    db = next(get_db())
+    try:
+        db_signatures = db.query(SignatureModel).all()
+        signatures = []
+        
+        for db_sig in db_signatures:
+            # Convert components if stored
+            components = []
+            if hasattr(db_sig, 'components') and db_sig.components:
+                for comp_data in db_sig.components:
+                    if isinstance(comp_data, dict):
+                        components.append(SignatureComponent(
+                            feature_name=comp_data.get('feature_name', ''),
+                            feature_type=comp_data.get('feature_type'),
+                            direction=comp_data.get('direction'),
+                            weight=comp_data.get('weight'),
+                        ))
+            
+            sig = Signature(
+                name=db_sig.name or str(db_sig.id),
+                components=components,
+                description=db_sig.description if hasattr(db_sig, 'description') else None,
+            )
+            # Store the database ID for reference
+            sig.id = db_sig.id
+            signatures.append(sig)
+        
+        return signatures
+    finally:
+        db.close()

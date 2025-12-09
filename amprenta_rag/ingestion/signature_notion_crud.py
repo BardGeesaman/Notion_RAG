@@ -1,30 +1,78 @@
 """
 Notion CRUD operations for lipid signatures, components, and species.
 
-This module handles all Notion database operations for:
-- Lipid Signatures database
-- Lipid Signature Components database
-- Lipid Species database
-
-All functions are idempotent - they find existing pages or create new ones.
-
-**Note**: This module has been refactored. All functions are now in the
-`amprenta_rag.ingestion.signatures` package. This file maintains backward
-compatibility by re-exporting all public functions.
+DEPRECATED: Notion support has been removed. Postgres is now the source of truth.
+These functions are stubs that return None/False for backward compatibility.
 """
 
 from __future__ import annotations
 
-# Re-export all public functions from the new modular structure
-from amprenta_rag.ingestion.signatures import (
-    find_or_create_component_page,
-    find_or_create_lipid_species_page,
-    find_or_create_signature_page,
-    generate_signature_short_id,
-    update_lipid_species_synonyms,
-    update_signature_modalities,
-    update_signature_page_if_needed,
-)
+from typing import List, Optional
+
+from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.ingestion.signatures.short_id import generate_signature_short_id
+from amprenta_rag.signatures.signature_loader import Signature, SignatureComponent
+
+logger = get_logger(__name__)
+
+
+def find_or_create_component_page(
+    component: SignatureComponent,
+    signature_page_id: str,
+    disease_context: Optional[List[str]] = None,
+    matrix: Optional[List[str]] = None,
+) -> Optional[str]:
+    """DEPRECATED: Notion support removed. Returns None."""
+    logger.debug("[SIGNATURE-CRUD] find_or_create_component_page() is a no-op (Notion removed)")
+    return None
+
+
+def find_or_create_lipid_species_page(
+    lipid_name: str,
+) -> Optional[str]:
+    """DEPRECATED: Notion support removed. Returns None."""
+    logger.debug("[SIGNATURE-CRUD] find_or_create_lipid_species_page() is a no-op (Notion removed)")
+    return None
+
+
+def find_or_create_signature_page(
+    signature: Signature,
+    signature_type: str = "Literature-derived",
+    data_ownership: str = "Public",
+    version: Optional[str] = None,
+    description: Optional[str] = None,
+) -> Optional[str]:
+    """DEPRECATED: Notion support removed. Returns None."""
+    logger.debug("[SIGNATURE-CRUD] find_or_create_signature_page() is a no-op (Notion removed)")
+    return None
+
+
+def update_lipid_species_synonyms(
+    species_page_id: str,
+    synonyms: List[str],
+) -> bool:
+    """DEPRECATED: Notion support removed. Returns False."""
+    logger.debug("[SIGNATURE-CRUD] update_lipid_species_synonyms() is a no-op (Notion removed)")
+    return False
+
+
+def update_signature_modalities(
+    signature_page_id: str,
+    modalities: List[str],
+) -> bool:
+    """DEPRECATED: Notion support removed. Returns False."""
+    logger.debug("[SIGNATURE-CRUD] update_signature_modalities() is a no-op (Notion removed)")
+    return False
+
+
+def update_signature_page_if_needed(
+    signature_page_id: str,
+    updates: dict,
+) -> bool:
+    """DEPRECATED: Notion support removed. Returns False."""
+    logger.debug("[SIGNATURE-CRUD] update_signature_page_if_needed() is a no-op (Notion removed)")
+    return False
+
 
 __all__ = [
     "generate_signature_short_id",
