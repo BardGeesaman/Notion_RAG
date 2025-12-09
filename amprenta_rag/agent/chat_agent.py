@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import Tuple
 
@@ -12,8 +13,6 @@ from amprenta_rag.query.rag_engine import query_rag
 from .chat_router import route_intent
 from .chat_types import ChatMessage, ChatSessionState, ChatTurn
 
-# Import your similarity module as available
-
 
 def run_chat_turn(session: ChatSessionState, user_text: str) -> Tuple[ChatSessionState, str]:
     intent = route_intent(user_text)
@@ -24,8 +23,6 @@ def run_chat_turn(session: ChatSessionState, user_text: str) -> Tuple[ChatSessio
             answer = rag_result.answer or "I couldn't find enough evidence to answer that."
         elif intent == "dataset_summary":
             # Extract dataset_id explicitly (v1: expects UUID after 'dataset:')
-            import re
-
             m = re.search(r"dataset:\s*([0-9a-f-]+)", user_text, re.I)
             if m:
                 summary = cross_omics_dataset_summary_postgres(m.group(1))

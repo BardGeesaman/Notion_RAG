@@ -22,15 +22,15 @@ class TestModuleImport:
 
 
 class TestFetchNotionPageStub:
-    """Test fetch_notion_page returns None (deprecated)."""
+    """Test fetch_notion_page returns empty dict (deprecated stub)."""
     
-    def test_fetch_notion_page_returns_none(self):
-        """Fetch should safely return None."""
-        assert fetch_notion_page("test-page-id") is None
+    def test_fetch_notion_page_returns_empty_dict(self):
+        """Fetch should safely return empty dict for .get() compatibility."""
+        assert fetch_notion_page("test-page-id") == {}
     
-    def test_fetch_notion_page_returns_none_with_id(self):
-        """Fetch should safely return None regardless of ID."""
-        assert fetch_notion_page("test-page-id-123") is None
+    def test_fetch_notion_page_returns_empty_dict_with_id(self):
+        """Fetch should safely return empty dict regardless of ID."""
+        assert fetch_notion_page("test-page-id-123") == {}
 
 
 class TestUtilityFunctions:

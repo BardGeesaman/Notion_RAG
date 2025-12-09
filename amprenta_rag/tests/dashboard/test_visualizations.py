@@ -130,24 +130,39 @@ def test_heatmap_empty_when_no_datasets():
     assert mat.empty
 
 
-@pytest.mark.skip(reason="Test fixture needs update for ORM model")
 def test_pca_matrix_with_program_datasets():
     """
     PCA feature matrix should be constructed correctly from program-linked datasets.
     We only test the data matrix construction; PCA fitting is covered indirectly.
+    
+    Note: _build_matrix expects dicts from _load_dataset_info, not ORM objects.
     """
-    prog = Program(id=uuid4(), name="ALS Program", disease=["ALS"])
-    f1 = make_feature("G1", "gene", fc=1.0)
-    f2 = make_feature("G2", "gene", fc=-1.5)
+    # Create dataset dicts as _load_dataset_info would produce
+    ds1_id = str(uuid4())
+    ds2_id = str(uuid4())
+    
+    datasets = [
+        {
+            "id": ds1_id,
+            "name": "DS1",
+            "omics_type": "transcriptomics",
+            "disease": ["ALS"],
+            "programs": ["ALS Program"],
+            "features": {"G1": 1.0, "G2": -1.5},
+        },
+        {
+            "id": ds2_id,
+            "name": "DS2",
+            "omics_type": "transcriptomics",
+            "disease": ["ALS"],
+            "programs": ["ALS Program"],
+            "features": {"G1": 0.5},  # G2 missing -> will be 0.0
+        },
+    ]
 
-    d1 = make_dataset("DS1", "transcriptomics", ["ALS"], [f1, f2])
-    d2 = make_dataset("DS2", "transcriptomics", ["ALS"], [f1])
-    d1.programs.append(prog)
-    d2.programs.append(prog)
-
-    mat = build_pca_matrix([d1, d2])
+    mat = build_pca_matrix(datasets)
     # Rows = datasets, columns = union of feature names
-    assert list(mat.index) == [str(d1.id), str(d2.id)]
+    assert list(mat.index) == [ds1_id, ds2_id]
     assert set(mat.columns) == {"G1", "G2"}
     # Values should be numeric
     assert mat.dtypes.unique().tolist() == [mat.dtypes[0]]

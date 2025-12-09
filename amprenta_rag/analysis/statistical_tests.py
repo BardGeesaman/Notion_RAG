@@ -63,7 +63,8 @@ def adjust_pvalues(pvalues: Sequence[float], method: str = "fdr_bh") -> Tuple[np
     reject = np.zeros_like(arr, dtype=bool)
     if valid.sum() == 0:
         return adj, reject
-    adj_valid, reject_valid, _, _ = multipletests(arr[valid], method=method)
+    # multipletests returns (reject, pvals_corrected, alphacSidak, alphacBonf)
+    reject_valid, adj_valid, _, _ = multipletests(arr[valid], method=method)
     adj[valid] = adj_valid
     reject[valid] = reject_valid
     return adj, reject
