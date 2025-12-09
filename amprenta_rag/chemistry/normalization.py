@@ -101,6 +101,10 @@ def compute_molecular_descriptors(smiles: str) -> dict[str, Optional[float | int
         "rotatable_bonds": None,
     }
     
+    # Early return for empty SMILES
+    if not smiles or not smiles.strip():
+        return descriptors
+    
     if not RDKIT_AVAILABLE:
         return descriptors
     
