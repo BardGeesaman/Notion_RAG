@@ -193,5 +193,31 @@ def render_datasets_page() -> None:
                                 f"Sample features: {', '.join(feature_names[:5])}"
                                 + (f" ... and {len(dataset.features) - 5} more" if len(dataset.features) > 5 else "")
                             )
+
+                    with st.expander("View Raw Metadata", expanded=False):
+                        st.json(
+                            {
+                                "id": str(dataset.id),
+                                "name": dataset.name,
+                                "description": dataset.description,
+                                "omics_type": dataset.omics_type,
+                                "disease": dataset.disease,
+                                "sample_type": dataset.sample_type,
+                                "organism": dataset.organism,
+                                "file_paths": dataset.file_paths,
+                                "external_ids": dataset.external_ids,
+                                "methods": dataset.methods,
+                                "summary": dataset.summary,
+                                "results": dataset.results,
+                                "conclusions": dataset.conclusions,
+                                "data_origin": dataset.data_origin,
+                                "dataset_source_type": dataset.dataset_source_type,
+                                "created_at": str(dataset.created_at),
+                                "updated_at": str(dataset.updated_at),
+                            }
+                        )
+                    if dataset.experiments:
+                        exp_names = ", ".join([e.name for e in dataset.experiments])
+                        st.write(f"**Part of experiment(s):** {exp_names}")
         else:
             st.info("No datasets found matching your filters.")

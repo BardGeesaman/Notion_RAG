@@ -530,7 +530,6 @@ class PRIDERepository(RepositoryInterface):
                 study_id,
             )
             return data_files
-            
         except Exception as e:
             logger.warning(
                 "[REPO][PRIDE] Error fetching data files for project %s: %r",
@@ -538,4 +537,45 @@ class PRIDERepository(RepositoryInterface):
                 e,
             )
             return []
+
+
+# Dashboard compatibility wrapper
+def search_pride_studies(
+    keyword: str = "",
+    disease: str = "",
+    species: str = "",
+    omics_type: str = "",
+    instrument: str = "",
+    modality: str = "",
+    max_results: int = 25,
+) -> List[Dict[str, Any]]:
+    try:
+        repo = PRIDERepository()
+        filters = {}
+        if disease:
+            filters["disease"] = disease
+        if species:
+            filters["organism"] = species
+        projects = repo.search_studies(
+            keywords=[kw for kw in [keyword] if kw],
+            filters=filters,
+            max_results=max_results,
+        )
+        results = []
+        for pid in projects[:max_results]:
+            results.append(
+                {
+                    "id": pid,
+                    "accession": pid,
+                    "title": f"PRIDE Project {pid}",
+                    "description": "",
+                    "disease": disease or "",
+                    "organism": species or "",
+                    "omics_type": "proteomics",
+                }
+            )
+        return results
+    except Exception as e:
+        logger.error("[REPO][PRIDE] Search error: %r", e)
+        return []
 

@@ -169,7 +169,6 @@ def render_management_page() -> None:
                                     feature = db.query(Feature).filter(Feature.id == selected_feature[0]).first()
                                     if feature:
                                         feature_name = feature.name
-                                        feature_type = feature.feature_type
 
                                         linked_count = 0
                                         with db_session() as link_db:
@@ -288,22 +287,90 @@ def render_management_page() -> None:
                         new_description = st.text_area(
                             "Description", value=dataset.description or "", key="edit_ds_desc"
                         )
+                        new_disease = st.text_input(
+                            "Disease (comma-separated)", value=", ".join(dataset.disease or []), key="edit_ds_disease"
+                        )
+                        new_sample_type = st.text_input(
+                            "Sample Type (comma-separated)", value=", ".join(dataset.sample_type or []), key="edit_ds_sample"
+                        )
+                        new_organism = st.text_input(
+                            "Organism (comma-separated)", value=", ".join(dataset.organism or []), key="edit_ds_org"
+                        )
+                        new_omics = st.selectbox(
+                            "Omics Type",
+                            ["lipidomics", "metabolomics", "proteomics", "transcriptomics", "other"],
+                            index=["lipidomics", "metabolomics", "proteomics", "transcriptomics", "other"].index(
+                                (dataset.omics_type or "other")
+                            )
+                            if (dataset.omics_type or "other") in ["lipidomics", "metabolomics", "proteomics", "transcriptomics", "other"]
+                            else 4,
+                            key="edit_ds_omics",
+                        )
+                        new_methods = st.text_area("Methods", value=dataset.methods or "", key="edit_ds_methods")
+                        new_summary = st.text_area("Summary", value=dataset.summary or "", key="edit_ds_summary")
+                        new_results = st.text_area("Results", value=dataset.results or "", key="edit_ds_results")
+                        new_conclusions = st.text_area(
+                            "Conclusions", value=dataset.conclusions or "", key="edit_ds_conclusions"
+                        )
+                        new_data_origin = st.text_input(
+                            "Data Origin", value=dataset.data_origin or "", key="edit_ds_origin"
+                        )
+                        new_source_type = st.text_input(
+                            "Dataset Source Type", value=dataset.dataset_source_type or "", key="edit_ds_source_type"
+                        )
+
+                        def _to_list(val: str):
+                            return [x.strip() for x in val.split(",") if x.strip()] if val else []
 
                         if st.button("💾 Save Changes", type="primary", key="edit_ds_save"):
-                            if new_name == dataset.name and new_description == (dataset.description or ""):
+                            update_data = DatasetUpdate(
+                                name=new_name if new_name != dataset.name else None,
+                                description=(
+                                    new_description if new_description != (dataset.description or "") else None
+                                ),
+                                disease=_to_list(new_disease) if _to_list(new_disease) != (dataset.disease or []) else None,
+                                sample_type=_to_list(new_sample_type)
+                                if _to_list(new_sample_type) != (dataset.sample_type or [])
+                                else None,
+                                organism=_to_list(new_organism)
+                                if _to_list(new_organism) != (dataset.organism or [])
+                                else None,
+                                omics_type=new_omics if new_omics != (dataset.omics_type or "") else None,
+                                methods=new_methods if new_methods != (dataset.methods or "") else None,
+                                summary=new_summary if new_summary != (dataset.summary or "") else None,
+                                results=new_results if new_results != (dataset.results or "") else None,
+                                conclusions=new_conclusions
+                                if new_conclusions != (dataset.conclusions or "")
+                                else None,
+                                data_origin=new_data_origin
+                                if new_data_origin != (dataset.data_origin or "")
+                                else None,
+                                dataset_source_type=new_source_type
+                                if new_source_type != (dataset.dataset_source_type or "")
+                                else None,
+                            )
+
+                            if not any(
+                                [
+                                    update_data.name,
+                                    update_data.description,
+                                    update_data.disease,
+                                    update_data.sample_type,
+                                    update_data.organism,
+                                    update_data.omics_type,
+                                    update_data.methods,
+                                    update_data.summary,
+                                    update_data.results,
+                                    update_data.conclusions,
+                                    update_data.data_origin,
+                                    update_data.dataset_source_type,
+                                ]
+                            ):
                                 st.info("No changes detected.")
                             else:
                                 try:
                                     with st.spinner("Saving changes..."):
                                         with db_session() as update_db:
-                                            update_data = DatasetUpdate(
-                                                name=new_name if new_name != dataset.name else None,
-                                                description=(
-                                                    new_description
-                                                    if new_description != (dataset.description or "")
-                                                    else None
-                                                ),
-                                            )
                                             updated = update_dataset(
                                                 db=update_db,
                                                 dataset_id=dataset_id,
@@ -318,6 +385,30 @@ def render_management_page() -> None:
                                 except Exception as e:
                                     st.error(f"❌ Error updating dataset: {str(e)}")
                                     st.exception(e)
+
+                        st.markdown("### Raw Metadata")
+                        with st.expander("View raw metadata", expanded=False):
+                            st.json(
+                                {
+                                    "id": str(dataset.id),
+                                    "name": dataset.name,
+                                    "description": dataset.description,
+                                    "omics_type": dataset.omics_type,
+                                    "disease": dataset.disease,
+                                    "sample_type": dataset.sample_type,
+                                    "organism": dataset.organism,
+                                    "file_paths": dataset.file_paths,
+                                    "external_ids": dataset.external_ids,
+                                    "methods": dataset.methods,
+                                    "summary": dataset.summary,
+                                    "results": dataset.results,
+                                    "conclusions": dataset.conclusions,
+                                    "data_origin": dataset.data_origin,
+                                    "dataset_source_type": dataset.dataset_source_type,
+                                    "created_at": str(dataset.created_at),
+                                    "updated_at": str(dataset.updated_at),
+                                }
+                            )
                 else:
                     st.warning("No datasets available.")
 

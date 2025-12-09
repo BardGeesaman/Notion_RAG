@@ -494,7 +494,6 @@ class MetaboLightsRepository(RepositoryInterface):
                 study_id,
             )
             return data_files
-            
         except Exception as e:
             logger.warning(
                 "[REPO][METABOLIGHTS] Error fetching data files for study %s: %r",
@@ -502,4 +501,43 @@ class MetaboLightsRepository(RepositoryInterface):
                 e,
             )
             return []
+
+
+def search_metabolights_studies(
+    keyword: str = "",
+    disease: str = "",
+    organism: str = "",
+    omics_type: str = "",
+    max_results: int = 25,
+) -> List[Dict[str, Any]]:
+    try:
+        repo = MetaboLightsRepository()
+        filters = {}
+        if disease:
+            filters["disease"] = disease
+        if organism:
+            filters["organism"] = organism
+
+        study_ids = repo.search_studies(
+            keywords=[kw for kw in [keyword] if kw],
+            filters=filters,
+            max_results=max_results,
+        )
+        results = []
+        for sid in study_ids[:max_results]:
+            results.append(
+                {
+                    "id": sid,
+                    "accession": sid,
+                    "title": f"MetaboLights Study {sid}",
+                    "description": "",
+                    "disease": disease or "",
+                    "organism": organism or "",
+                    "omics_type": omics_type or "metabolomics",
+                }
+            )
+        return results
+    except Exception as e:
+        logger.error("[REPO][MetaboLights] Search error: %r", e)
+        return []
 

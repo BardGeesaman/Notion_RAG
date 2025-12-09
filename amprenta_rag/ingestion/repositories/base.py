@@ -7,7 +7,7 @@ Defines the common interface that all repository implementations must follow.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from amprenta_rag.models.repository import DataFile, StudyMetadata
 
@@ -45,7 +45,7 @@ class RepositoryInterface(ABC):
     def search_studies(
         self,
         keywords: List[str],
-        filters: Optional[Dict[str, any]] = None,
+        filters: Optional[Dict[str, Any]] = None,
         max_results: int = 100,
     ) -> List[str]:
         """

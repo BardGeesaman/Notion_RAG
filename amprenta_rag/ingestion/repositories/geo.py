@@ -429,3 +429,51 @@ class GEORepository(RepositoryInterface):
             study_id,
         )
         return data_files
+
+
+# Dashboard compatibility wrapper
+def search_geo_studies(
+    keyword: str = "",
+    disease: str = "",
+    species: str = "",
+    omics_type: str = "",
+    platform: str = "",
+    max_results: int = 25,
+) -> List[Dict[str, Any]]:
+    """
+    Lightweight GEO search returning a list of studies for dashboard selection.
+    """
+    repo = GEORepository()
+    query_parts = []
+    if keyword:
+        query_parts.append(keyword)
+    if disease:
+        query_parts.append(disease)
+    if species:
+        query_parts.append(species)
+    if platform:
+        query_parts.append(platform)
+    query = " AND ".join(query_parts) if query_parts else keyword or "GSE"
+
+    try:
+        gse_ids = repo._search_geo(query=query, max_results=max_results)
+    except Exception as e:
+        logger.error("[REPO][GEO] search_geo_studies failed: %r", e)
+        return []
+
+    results = []
+    for gid in gse_ids:
+        results.append(
+            {
+                "id": gid,
+                "accession": gid,
+                "title": f"GEO Series {gid}",
+                "description": "",
+                "disease": disease or "",
+                "organism": species or "",
+                "omics_type": omics_type or "transcriptomics",
+            }
+        )
+        if len(results) >= max_results:
+            break
+    return results

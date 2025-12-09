@@ -104,6 +104,7 @@ page = st.sidebar.radio(
         "Analysis Tools",
         "Visualizations",
         "Quality Checks",
+        "Statistical Analysis",
         "Discovery",
         "Coverage Map",
         "Feature Recurrence",
@@ -171,6 +172,10 @@ try:
         from scripts.dashboard.pages.quality_checks import render_quality_checks_page
 
         render_quality_checks_page()
+    elif page == "Statistical Analysis":
+        from scripts.dashboard.pages.statistical_analysis import render_statistical_analysis_page
+
+        render_statistical_analysis_page()
     elif page == "Discovery":
         from scripts.dashboard.pages.discovery import render_discovery_page
 

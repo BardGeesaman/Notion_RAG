@@ -1,10 +1,14 @@
+import os
+from pathlib import Path
+import requests
 import pandas as pd
 import streamlit as st
 import threading
 
-from amprenta_rag.database.models import Dataset
+from amprenta_rag.database.models import Dataset, Experiment
 from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
 from scripts.dashboard.db_session import db_session
+from scripts.harvest_mw_studies import fetch_mw_study_summary, fetch_mw_mwtab
 
 repo_map = {
     "GEO": "search_geo_studies",
@@ -25,6 +29,76 @@ How to use this page:
 def repo_status(ds):
     # Returns 'Imported' if already in db, 'Not imported' otherwise.
     return "Imported" if ds.get("imported") else "Not imported"
+
+
+def _ensure_experiment_for_study(db, repo: str, accession: str, title: str) -> Experiment:
+    """
+    Get or create an Experiment grouping datasets for the same study.
+    Stores repository study ID in external_ids.
+    """
+    key_map = {
+        "GEO": "geo_accession",
+        "PRIDE": "pride_accession",
+        "MW": "mw_study_id",
+        "MetaboLights": "metabolights_study_id",
+    }
+    key = key_map.get(repo, "study_id")
+
+    existing = (
+        db.query(Experiment)
+        .filter(Experiment.external_ids.isnot(None))
+        .filter(Experiment.external_ids[key].astext == accession)
+        .first()
+    )
+    if existing:
+        return existing
+
+    exp = Experiment(
+        name=title or accession,
+        description=f"{repo} study {accession}",
+        external_ids={key: accession},
+    )
+    db.add(exp)
+    db.commit()
+    db.refresh(exp)
+    return exp
+
+
+def _download_data_files(repo_obj, accession: str, repo: str) -> list:
+    """
+    Download data files for a study into data/repositories/{repo}/{accession}/
+    Returns list of file paths downloaded.
+    """
+    try:
+        files = repo_obj.fetch_study_data_files(accession)
+    except Exception as e:
+        st.warning(f"⚠️ Failed to fetch file list for {accession}: {e}")
+        return []
+
+    if not files:
+        return []
+
+    base_dir = Path("data") / "repositories" / repo.lower() / accession
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    downloaded = []
+    for f in files:
+        try:
+            if not f.download_url:
+                continue
+            filename = f.filename or f.file_id or f"{accession}.dat"
+            dest = base_dir / filename
+            resp = requests.get(f.download_url, stream=True, timeout=120)
+            resp.raise_for_status()
+            with open(dest, "wb") as out:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    if chunk:
+                        out.write(chunk)
+            downloaded.append(str(dest))
+        except Exception as e:
+            st.warning(f"⚠️ Failed to download {getattr(f,'file_id',filename)}: {e}")
+            continue
+    return downloaded
 
 
 def render_repositories_page():
@@ -240,6 +314,15 @@ def render_repositories_page():
                                             ext_ids["doi"] = metadata.doi
                                         if metadata.pubmed_id:
                                             ext_ids["pubmed_id"] = str(metadata.pubmed_id)
+                                        downloaded_paths = []
+                                        mwtab_cached = False
+                                        if repo == "MW":
+                                            try:
+                                                mwtab_text = fetch_mw_mwtab(accession)
+                                                mwtab_cached = bool(mwtab_text)
+                                            except Exception as dl_err:
+                                                st.warning(f"⚠️ mwTab download failed for {accession}: {dl_err}")
+                                            ext_ids["mwtab_cached"] = mwtab_cached
                                         
                                         # Convert omics_type string to OmicsType enum
                                         omics_type_enum = OmicsType.METABOLOMICS  # Default for MW/MetaboLights
@@ -265,10 +348,34 @@ def render_repositories_page():
                                                 external_ids=ext_ids,
                                                 auto_ingest=True,
                                             )
+                                            # Ensure experiment grouping by study
+                                            experiment = _ensure_experiment_for_study(
+                                                db=db, repo=repo, accession=accession, title=metadata.title or accession
+                                            )
+                                            if experiment not in dataset.experiments:
+                                                dataset.experiments.append(experiment)
+                                            # Download data files and mark ingestion status
+                                            try:
+                                                paths = _download_data_files(repo_obj, accession, repo)
+                                                downloaded_paths.extend(paths)
+                                                if paths:
+                                                    dataset.file_paths = paths
+                                                    dataset.ingestion_status = "complete"
+                                                else:
+                                                    dataset.ingestion_status = "complete"
+                                                    if dataset.description:
+                                                        dataset.description += " [Metadata Only]"
+                                                    else:
+                                                        dataset.description = "[Metadata Only Import]"
+                                            except Exception as dl_err:
+                                                st.warning(f"⚠️ Download failed for {accession}: {dl_err}")
+                                                dataset.ingestion_status = "failed"
+                                            db.commit()
                                             dataset_uuid = dataset.id
-                                        
+
                                         st.success(f"✅ Imported: {accession} - {title[:50]}...")
-                                        
+                                        st.info(f"Grouped under experiment: {experiment.name}")
+
                                         # Trigger Pinecone ingestion in background
                                         try:
                                             st.info(f"🔄 Starting Pinecone ingestion for {accession}...")
@@ -276,9 +383,9 @@ def render_repositories_page():
                                             st.success(f"✅ Ingested to Pinecone: {accession}")
                                         except Exception as ingest_err:
                                             st.warning(f"⚠️ Pinecone ingestion pending for {accession}: {str(ingest_err)[:50]}")
-                                        
+
                                         imported_count += 1
-                                        
+
                                     except Exception as e:
                                         st.error(f"❌ Failed to import {accession}: {str(e)}")
                                         failed_count += 1

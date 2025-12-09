@@ -142,6 +142,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 | [🔗 Auto-Linking Guide](docs/AUTO_LINKING.md) | Automatic program/experiment linking |
 | [📊 Visualization Guide](docs/VISUALIZATIONS.md) | Interactive plots and dashboards |
 | [✅ Quality Checks Guide](docs/QUALITY_CHECKS.md) | Dataset quality scoring system |
+| [📈 Statistical Analysis Guide](docs/STATISTICAL_ANALYSIS.md) | Built-in statistical tests |
 | [🗄️ Notion Database Setup](docs/NOTION_DATABASE_SETUP.md) | Database configuration guide |
 | [🛡️ Production Hardening](docs/PRODUCTION_HARDENING.md) | Production deployment guide |
 | [📧 Gmail Setup](docs/setup/GMAIL_SETUP.md) | Gmail API integration guide |
@@ -259,7 +260,24 @@ python scripts/check_dataset_quality.py
 # - 0-49: Low quality (🔴)
 ```
 
-📖 **See [Usage Examples](docs/USAGE_EXAMPLES.md), [Visualization Guide](docs/VISUALIZATIONS.md), and [Quality Checks Guide](docs/QUALITY_CHECKS.md) for more**
+### Statistical Analysis
+
+```bash
+# Access via dashboard
+# Dashboard → Statistical Analysis page
+
+# Available tests:
+# - T-test (compare two groups)
+# - ANOVA (compare multiple groups)
+# - Mann-Whitney (non-parametric)
+# - Pearson Correlation
+
+# Multiple testing correction:
+# - FDR (Benjamini-Hochberg) - recommended
+# - Bonferroni, Holm, Sidak
+```
+
+📖 **See [Usage Examples](docs/USAGE_EXAMPLES.md), [Visualization Guide](docs/VISUALIZATIONS.md), [Quality Checks Guide](docs/QUALITY_CHECKS.md), and [Statistical Analysis Guide](docs/STATISTICAL_ANALYSIS.md) for more**
 
 ## Project Structure
 
