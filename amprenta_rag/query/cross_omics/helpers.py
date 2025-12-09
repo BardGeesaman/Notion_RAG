@@ -25,9 +25,9 @@ def get_page_text(page_id: str) -> str:
 
 
 def fetch_notion_page(page_id: str) -> Optional[Dict[str, Any]]:
-    """Stub: Notion support removed. Returns None."""
+    """Stub: Notion support removed. Returns an empty dict for safety."""
     logger.debug("[CROSS-OMICS][HELPERS] fetch_notion_page() is a no-op (Notion removed)")
-    return None
+    return {}
 
 
 def extract_relation_ids(page: Dict[str, Any], property_name: str) -> List[str]:

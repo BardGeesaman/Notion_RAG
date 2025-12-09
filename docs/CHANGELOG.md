@@ -57,6 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `POSTGRES_POOL_SIZE`: Database connection pool size
   - `FEATURE_CACHE_ENABLE_PERSISTENCE`: Optional cache persistence
   - `REPOSITORY_RATE_LIMIT_DELAY`: API rate limiting
+
+- **Dashboard**: Replaced `use_container_width` with `width='stretch'` for consistent dataframe rendering
   
 - **Error Messages**: More informative with context and guidance
 - **Logging**: Consistent format with module prefixes across codebase
