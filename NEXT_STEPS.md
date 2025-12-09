@@ -159,6 +159,11 @@
 - [ ] Automated discovery workflows
 - [ ] Scheduled harvesting
 
+**Security & Collaboration**:
+- [ ] Multi-User Support (RBAC)
+- [ ] Team-based data access
+- [ ] Audit logging
+
 **Notion Enhancements**:
 - [ ] Dashboard views
 - [ ] Automated report generation

@@ -749,6 +749,43 @@ python scripts/ingest_screening.py --promote-compounds --program-id <id> --stage
 
 ---
 
+### 3.2 Multi-User Support & Role-Based Access Control (RBAC) 👥 **SECURITY & COLLABORATION**
+
+**Priority**: 🔥🔥 **MEDIUM-HIGH**
+
+**Strategic Value**:
+- Secure data access for different teams
+- Granular permission controls (Read/Write/Admin)
+- Audit logs for data modification
+- Personalized dashboards and settings
+- Compliance with data governance policies
+
+**Implementation**:
+
+```python
+# New module: amprenta_rag/auth/
+- User management (SQLAlchemy models: User, Role, Permission)
+- Role definitions (Admin, Scientist, Viewer, Data Engineer)
+- Permission dependencies (FastAPI Security)
+- Row-level security (Postgres RLS policy generation)
+- Audit logging middleware
+```
+
+**Features**:
+- **Authentication**: OAuth2 / OIDC Integration (SSO with Google/Okta)
+- **Authorization**: Role-Based Access Control (RBAC) at API level
+- **Data Scope**: Team/Group management (e.g., "Neuro Team" vs "Onco Team")
+- **Dataset Permissions**: Public/Private/Team-only datasets
+- **API Security**: API Key management per user with scopes
+
+**Notion Agent**: None needed (managed in Postgres)
+
+**Dependencies**: FastAPI Service Layer (Tier 3.1)
+
+**Estimated Effort**: Medium (5-7 days)
+
+---
+
 ## 💡 TIER 4: QUALITY & OPERATIONS (Ongoing)
 
 ### 3.1 Quality Control Extraction 📋 **DATA QUALITY**
@@ -1148,9 +1185,10 @@ python scripts/ingest_screening.py --promote-compounds --program-id <id> --stage
 1. ⏳ Domain Model Extraction (Week 21)
 2. ⏳ Postgres Schema Design (Week 22)
 3. ⏳ FastAPI Service Layer (Week 23-24)
-4. ⏳ Migration Utilities (Week 25)
-5. ⏳ RAG Integration with Postgres (Week 26)
-6. ⏳ Transition to Postgres SoT (Week 27)
+4. ⏳ Multi-User Support & RBAC (Week 25)
+5. ⏳ Migration Utilities (Week 26)
+6. ⏳ RAG Integration with Postgres (Week 27)
+7. ⏳ Transition to Postgres SoT (Week 28)
 
 ---
 
@@ -1163,6 +1201,7 @@ python scripts/ingest_screening.py --promote-compounds --program-id <id> --stage
 | Chemistry & HTS Integration | ⭐⭐⭐⭐⭐ | High | SQLite, RDKit, Notion | 🔥🔥🔥 |
 | Public Repository Ingestion | ⭐⭐⭐⭐ | Medium | GEO, PRIDE APIs | 🔥🔥 |
 | Architecture Evolution | ⭐⭐⭐⭐⭐ | Very High | Postgres, FastAPI | 🔥🔥 |
+| Multi-User & RBAC | ⭐⭐⭐⭐⭐ | Medium | FastAPI | 🔥🔥 |
 | Signature Discovery | ⭐⭐⭐⭐⭐ | High | Stats libs | 🔥🔥 |
 | Pathway Analysis | ⭐⭐⭐⭐⭐ | High | APIs + Notion | 🔥🔥 |
 | Evidence Reports | ⭐⭐⭐⭐ | Medium | Cross-omics | 🔥🔥 |
