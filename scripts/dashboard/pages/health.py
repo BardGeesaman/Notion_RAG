@@ -84,24 +84,16 @@ def render_health_page() -> None:
     st.subheader("Stuck/Filtered Datasets")
     filter_status = st.selectbox("Status", ["All"] + list(status_counts.keys()))
     filter_omics = st.selectbox("Omics", ["All"] + sorted(set(r["Omics"] for r in rows)))
-    filter_qc = st.selectbox("QC", ["All"] + sorted(set(r["QC"] for r in rows if r["QC"])))
     table = rows
     if filter_status != "All":
         table = [r for r in table if r["Status"] == filter_status]
     if filter_omics != "All":
         table = [r for r in table if r["Omics"] == filter_omics]
-    if filter_qc != "All":
-        table = [r for r in table if r["QC"] == filter_qc]
     df = pd.DataFrame(table)
     if len(df) > 0:
         st.dataframe(df, use_container_width=True, hide_index=True)
     else:
         st.info("No datasets to display with this filter.")
-
-    # QC distribution
-    st.subheader("QC Status Distribution")
-    qc_dist = pd.Series([r["QC"] for r in rows if r["QC"]]).value_counts()
-    st.bar_chart(qc_dist)
 
     # Table of worst signatures by validation
     st.subheader("Signatures With Lowest Evidence")
