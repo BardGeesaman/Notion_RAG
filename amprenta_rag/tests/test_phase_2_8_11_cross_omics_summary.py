@@ -35,7 +35,7 @@ class TestNoNotionReferences:
     
     def test_no_notion_in_program_summary(self):
         """Test no Notion references in program_summary."""
-        from amprenta_rag.query.cross_omics import program_summary
+        from amprenta_rag.query.cross_omics import program_summary_postgres as program_summary
         source = inspect.getsource(program_summary)
         assert 'fetch_notion_page' not in source
         assert 'notion_headers' not in source
@@ -43,7 +43,7 @@ class TestNoNotionReferences:
     
     def test_no_notion_in_signature_summary(self):
         """Test no Notion references in signature_summary."""
-        from amprenta_rag.query.cross_omics import signature_summary
+        from amprenta_rag.query.cross_omics import signature_summary_postgres as signature_summary
         source = inspect.getsource(signature_summary)
         assert 'fetch_notion_page' not in source
         assert 'notion_headers' not in source
@@ -51,7 +51,7 @@ class TestNoNotionReferences:
     
     def test_no_notion_in_dataset_summary(self):
         """Test no Notion references in dataset_summary."""
-        from amprenta_rag.query.cross_omics import dataset_summary
+        from amprenta_rag.query.cross_omics import dataset_summary_postgres as dataset_summary
         source = inspect.getsource(dataset_summary)
         assert 'fetch_notion_page' not in source
         assert 'notion_headers' not in source
@@ -59,7 +59,7 @@ class TestNoNotionReferences:
     
     def test_no_notion_in_feature_summary(self):
         """Test no Notion references in feature_summary."""
-        from amprenta_rag.query.cross_omics import feature_summary
+        from amprenta_rag.query.cross_omics import feature_summary_postgres as feature_summary
         source = inspect.getsource(feature_summary)
         assert 'fetch_notion_page' not in source
         assert 'notion_headers' not in source

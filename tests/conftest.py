@@ -79,13 +79,6 @@ SM(d18:1/16:0),2.5,ng/mL
 
 
 @pytest.fixture
-def mock_notion_client():
-    """Mock Notion API client."""
-    with patch("amprenta_rag.clients.notion_client") as mock:
-        yield mock
-
-
-@pytest.fixture
 def mock_pinecone_client():
     """Mock Pinecone client."""
     with patch("amprenta_rag.clients.pinecone_client") as mock:
@@ -116,19 +109,11 @@ def mock_config_postgres_only():
 
 @pytest.fixture
 def mock_config_notion_sync():
-    """Mock config with Notion sync enabled."""
-    with patch("amprenta_rag.config.get_config") as mock_get_config:
-        mock_config = Mock()
-        mock_config.pipeline.use_postgres_as_sot = True
-        mock_config.pipeline.enable_notion_sync = True
-        mock_config.pipeline.enable_dual_write = False
-        mock_config.pipeline.enable_feature_linking = True
-        mock_config.pipeline.feature_linking_max_workers = 4
-        mock_get_config.return_value = mock_config
-        yield mock_config
+    """Deprecated: legacy sync is disabled in tests; kept only for compatibility."""
+    yield None
 
 
-# Markers for test organization
+# Markers for test organization (Notion-related marker removed)
 def pytest_configure(config):
     """Configure custom pytest markers."""
     config.addinivalue_line(
@@ -142,9 +127,6 @@ def pytest_configure(config):
     )
     config.addinivalue_line(
         "markers", "requires_postgres: Tests requiring Postgres database"
-    )
-    config.addinivalue_line(
-        "markers", "requires_notion: Tests requiring Notion API"
     )
     config.addinivalue_line(
         "markers", "requires_pinecone: Tests requiring Pinecone API"

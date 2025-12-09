@@ -198,7 +198,8 @@ class NotionConfig:
     # Notion API key - may be empty if Notion sync is disabled
     api_key: str = NOTION_API_KEY
     version: str = NOTION_VERSION
-    base_url: str = "https://api.notion.com/v1"
+    # Kept for historical compatibility; Notion is deprecated and not used.
+    base_url: str = ""
     lit_db_id: str = NOTION_LIT_DB_ID
     email_db_id: str = NOTION_EMAIL_DB_ID
     rag_db_id: str = NOTION_RAG_DB_ID

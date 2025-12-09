@@ -1,3 +1,5 @@
+> Historical note: This context directory may reference legacy Notion-era workflows. The active system is Postgres-only; Notion integrations are fully removed.
+
 # Context Documentation
 
 This folder contains all strategic context, roadmaps, and documentation needed to understand and work with the Amprenta Multi-Omics Platform.
