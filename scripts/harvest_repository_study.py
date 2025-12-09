@@ -3,31 +3,20 @@
 Unified harvest script for repository studies.
 
 Harvests studies from any repository (GEO, PRIDE, MetaboLights, MW)
-and creates Postgres datasets (default). Optionally creates/updates Notion 
-Dataset pages and triggers ingestion.
+and creates Postgres datasets.
 
-Postgres-first: By default, datasets are created in Postgres only. 
-Use --create-notion to also create/update Notion pages (optional).
+Notion support has been removed - Postgres is now the source of truth.
 """
 
 import argparse
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# NOTE: Notion support removed - notion_headers stubbed for backward compatibility
-try:
-    from amprenta_rag.clients.notion_client import notion_headers
-except ImportError:
-    def notion_headers():
-        """Stub for removed Notion support."""
-        return {"Authorization": "Bearer NOTION_REMOVED", "Notion-Version": "2022-06-28"}
-
-from amprenta_rag.config import NOTION_EXP_DATA_DB_ID, get_config
-from amprenta_rag.ingestion.dataset_ingestion import ingest_dataset
+from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
 from amprenta_rag.ingestion.postgres_integration import create_or_update_dataset_in_postgres
 from amprenta_rag.ingestion.repositories.discovery import fetch_study_metadata, get_repository
@@ -35,6 +24,14 @@ from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.domain import OmicsType
 
 logger = get_logger(__name__)
+
+# Stub for removed Notion support
+NOTION_EXP_DATA_DB_ID = None
+
+
+def notion_headers() -> Dict[str, str]:
+    """Stub: Notion support removed. Returns empty headers."""
+    return {}
 
 
 def find_existing_dataset_page(study_id: str, repository: str) -> str | None:

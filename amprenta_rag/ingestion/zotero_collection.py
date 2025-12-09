@@ -1,4 +1,10 @@
 # amprenta_rag/ingestion/zotero_collection.py
+"""
+Zotero collection ingestion utilities.
+
+Handles ingestion of Zotero collections into Pinecone.
+Notion support has been removed - Postgres is now the source of truth.
+"""
 
 from __future__ import annotations
 
@@ -6,19 +12,12 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 
 import requests
 
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.zotero_ingest import ingest_zotero_item
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
-
-def notion_headers() -> Dict[str, str]:
-    """DEPRECATED: Notion support removed. Returns empty headers dict."""
-    logger.debug("[ZOTERO-COLLECTION] notion_headers() deprecated - Notion support removed")
-    return {}
 
 # Default set of "literature-like" item types
 DEFAULT_ALLOWED_TYPES: Set[str] = {
@@ -70,100 +69,26 @@ def fetch_collection_items(collection_key: str) -> List[Dict[str, Any]]:
     return items
 
 
-# ---------- Notion helpers ---------- #
-
-
-def _require_notion_db_id(name: str, value: Optional[str]) -> str:
-    if not value:
-        raise RuntimeError(
-            f"Notion {name} DB ID is not configured. "
-            f"Set AMPRENTA_NOTION_{name}_DB_ID."
-        )
-    return value
+# ---------- Notion helpers (stubs - Notion support removed) ---------- #
 
 
 def get_literature_page_id_for_item(item_key: str) -> Optional[str]:
     """
-    Find the Literature page whose 'Zotero Item Key' == item_key.
+    Stub: Notion support removed. Returns None.
+    
+    Previously found Literature page by Zotero Item Key in Notion.
     """
-    cfg = get_config().notion
-    lit_db_id = _require_notion_db_id("LIT", cfg.lit_db_id)
-
-    url = f"{cfg.base_url}/databases/{lit_db_id}/query"
-    payload = {
-        "page_size": 1,
-        "filter": {
-            "property": "Zotero Item Key",
-            "rich_text": {"equals": item_key},
-        },
-    }
-
-    resp = requests.post(
-        url, headers=notion_headers(), json=payload, timeout=30
-    )
-    if resp.status_code >= 300:
-        logger.warning(
-            "Notion Literature query error for item %s: %s %s",
-            item_key,
-            resp.status_code,
-            resp.text,
-        )
-        resp.raise_for_status()
-
-    results = resp.json().get("results", [])
-    if not results:
-        return None
-
-    return results[0]["id"]
+    logger.debug("[ZOTERO-COLLECTION] get_literature_page_id_for_item() is a no-op (Notion removed)")
+    return None
 
 
 def delete_rag_pages_for_item(item_key: str) -> None:
     """
-    Archive (soft-delete) all RAG chunk pages whose "Parent Item" points
-    to the Literature page for this Zotero item.
+    Stub: Notion support removed. No-op.
+    
+    Previously archived RAG chunk pages in Notion.
     """
-    cfg = get_config().notion
-    rag_db_id = _require_notion_db_id("RAG", cfg.rag_db_id)
-
-    lit_page_id = get_literature_page_id_for_item(item_key)
-    if lit_page_id is None:
-        logger.info("   ℹ️ No Literature page; skipping RAG page deletion.")
-        return
-
-    url = f"{cfg.base_url}/databases/{rag_db_id}/query"
-    payload = {
-        "page_size": 100,
-        "filter": {
-            "property": "Parent Item",
-            "relation": {"contains": lit_page_id},
-        },
-    }
-
-    resp = requests.post(
-        url, headers=notion_headers(), json=payload, timeout=30
-    )
-    if resp.status_code >= 300:
-        logger.warning(
-            "Notion RAG query error for item %s: %s %s",
-            item_key,
-            resp.status_code,
-            resp.text,
-        )
-        resp.raise_for_status()
-
-    results = resp.json().get("results", [])
-    if not results:
-        logger.info("   ℹ️ No RAG pages found.")
-        return
-
-    for page in results:
-        page_id = page["id"]
-        logger.info("   🗑️ Archiving RAG page %s", page_id.replace("-", ""))
-        requests.patch(
-            f"{cfg.base_url}/pages/{page_id}",
-            headers=notion_headers(),
-            json={"archived": True},
-        )
+    logger.debug("[ZOTERO-COLLECTION] delete_rag_pages_for_item() is a no-op (Notion removed)")
 
 
 # ---------- Pinecone helpers ---------- #

@@ -21,7 +21,7 @@ try:
 
     try:
         load_dotenv()
-    except (PermissionError, OSError):
+    except Exception:
         # Skip silently if .env is not readable in sandbox/test environments
         pass
 except ImportError:

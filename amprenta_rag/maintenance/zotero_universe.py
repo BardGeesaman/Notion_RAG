@@ -1,14 +1,16 @@
 # amprenta_rag/maintenance/zotero_universe.py
+"""
+Zotero universe maintenance utilities.
+
+Notion support has been removed - Postgres is now the source of truth.
+"""
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, List, Optional, Set
 
 import requests
 
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion import (incremental_ingest_collection,
@@ -16,11 +18,6 @@ from amprenta_rag.ingestion import (incremental_ingest_collection,
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
-
-def notion_headers() -> Dict[str, str]:
-    """DEPRECATED: Notion support removed. Returns empty headers dict."""
-    logger.debug("[MAINTENANCE][ZOTERO-UNIVERSE] notion_headers() deprecated - Notion support removed")
-    return {}
 
 
 # --------- Zotero helpers --------- #
@@ -69,43 +66,13 @@ def collection_item_keys(collection_key: str) -> Set[str]:
     return keys
 
 
-# --------- Notion helpers --------- #
-
-
-def _notion_base_url() -> str:
-    return get_config().notion.base_url
+# --------- Notion helpers (stubs - Notion support removed) --------- #
 
 
 def iter_literature_pages() -> List[Dict[str, Any]]:
-    """
-    Yield all pages from the Literature DB (handles pagination).
-    """
-    cfg = get_config().notion
-    lit_db_id = cfg.lit_db_id
-    if not lit_db_id:
-        raise RuntimeError("NOTION_LIT_DB_ID not configured in config.py")
-
-    url = f"{_notion_base_url()}/databases/{lit_db_id}/query"
-    payload = {"page_size": 100}
-    pages: List[Dict[str, Any]] = []
-    next_cursor: Optional[str] = None
-
-    while True:
-        body = payload.copy()
-        if next_cursor:
-            body["start_cursor"] = next_cursor
-
-        resp = requests.post(url, headers=notion_headers(), data=json.dumps(body))
-        resp.raise_for_status()
-        data = resp.json()
-
-        pages.extend(data.get("results", []))
-
-        if not data.get("has_more"):
-            break
-        next_cursor = data.get("next_cursor")
-
-    return pages
+    """Stub: Notion support removed. Returns empty list."""
+    logger.debug("[MAINTENANCE][ZOTERO-UNIVERSE] iter_literature_pages() is a no-op (Notion removed)")
+    return []
 
 
 def delete_pinecone_vectors_for_item(item_key: str) -> None:
@@ -121,54 +88,15 @@ def delete_pinecone_vectors_for_item(item_key: str) -> None:
 
 
 def delete_rag_pages_for_lit_page(lit_page_id: str) -> None:
-    """
-    Archive all RAG chunk pages whose Parent Item relation contains lit_page_id.
-    """
-    cfg = get_config().notion
-    rag_db_id = cfg.rag_db_id
-    if not rag_db_id:
-        raise RuntimeError("NOTION_RAG_DB_ID not configured in config.py")
-
-    query_url = f"{_notion_base_url()}/databases/{rag_db_id}/query"
-    payload = {
-        "page_size": 100,
-        "filter": {
-            "property": "Parent Item",
-            "relation": {"contains": lit_page_id},
-        },
-    }
-
-    resp = requests.post(query_url, headers=notion_headers(), data=json.dumps(payload))
-    resp.raise_for_status()
-    data = resp.json()
-
-    results = data.get("results", [])
-    if not results:
-        return
-
-    for page in results:
-        page_id = page["id"]
-        upd_url = f"{_notion_base_url()}/pages/{page_id}"
-        upd = {"archived": True}
-        resp2 = requests.patch(upd_url, headers=notion_headers(), data=json.dumps(upd))
-        if resp2.status_code >= 300:
-            print("⚠️ Error archiving RAG page:", resp2.text)
+    """Stub: Notion support removed. No-op."""
+    logger.debug("[MAINTENANCE][ZOTERO-UNIVERSE] delete_rag_pages_for_lit_page() is a no-op (Notion removed)")
 
 
 def archive_literature_page(
     lit_page_id: str, title_text: str = "", item_key: str = ""
 ) -> None:
-    """
-    Archive a single Literature page.
-    """
-    upd_url = f"{_notion_base_url()}/pages/{lit_page_id}"
-    upd = {"archived": True}
-    resp = requests.patch(upd_url, headers=notion_headers(), data=json.dumps(upd))
-    if resp.status_code >= 300:
-        print(
-            f"⚠️ Error archiving Literature page {title_text or item_key or lit_page_id}:",
-            resp.text,
-        )
+    """Stub: Notion support removed. No-op."""
+    logger.debug("[MAINTENANCE][ZOTERO-UNIVERSE] archive_literature_page() is a no-op (Notion removed)")
 
 
 # --------- cleanup_deleted_items.py --------- #

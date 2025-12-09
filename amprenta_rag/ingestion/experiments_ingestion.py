@@ -2,7 +2,7 @@
 """
 Experiment ingestion module.
 
-Handles ingestion of experiment data from Notion into Pinecone.
+Handles ingestion of experiment data into Pinecone.
 Extracts experiment content, chunks it, embeds it, and upserts to Pinecone
 with full metadata including lipid signatures and metabolite features.
 """
@@ -18,16 +18,6 @@ from amprenta_rag.ingestion.feature_extraction import (
     extract_features_from_text, link_features_to_notion_items)
 from amprenta_rag.ingestion.metadata_semantic import \
     get_experiment_semantic_metadata
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.ingestion.notion_pages import extract_page_content
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
-
-def extract_page_content(page_id: str) -> str:
-    """DEPRECATED: Notion support removed. Returns empty string."""
-    logger.debug("[INGESTION][EXPERIMENTS] extract_page_content() deprecated - Notion support removed")
-    return ""
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
 from amprenta_rag.ingestion.signature_integration import \
     detect_and_ingest_signatures_from_content
@@ -35,6 +25,12 @@ from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+
+def extract_page_content(page_id: str) -> str:
+    """Stub: Notion support removed. Returns empty string."""
+    logger.debug("[INGESTION][EXPERIMENTS] extract_page_content() is a no-op (Notion removed)")
+    return ""
 
 
 def _fetch_notion_page(page_id: str) -> Dict[str, Any]:
@@ -133,101 +129,13 @@ def _update_experiment_embedding_metadata(
     embedding_count: int,
 ) -> None:
     """
-    Update the Experiment page with embedding metadata after successful Pinecone upsert.
-
-    Args:
-        page_id: Notion page ID (with or without dashes)
-        embedding_ids: List of all vector/embedding IDs
-        embedding_count: Number of chunks/vectors created
+    Stub: Notion support removed. No-op.
+    
+    Previously updated the Experiment page with embedding metadata in Notion.
     """
-    from datetime import datetime, timezone
-    import requests
-    # DEPRECATED: Notion imports removed
-    # from amprenta_rag.clients.notion_client import notion_headers
-    from amprenta_rag.config import get_config
-    from amprenta_rag.logging_utils import get_logger
-    
-    logger = get_logger(__name__)
-    
-    def notion_headers() -> Dict[str, str]:
-        """DEPRECATED: Notion support removed. Returns empty headers dict."""
-        logger.debug("[INGESTION][EXPERIMENTS] notion_headers() deprecated - Notion support removed")
-        return {}
-
-    cfg = get_config()
-
-    # Format embedding IDs (same logic as dataset)
-    max_chars = 1900
-    if len(embedding_ids) == 0:
-        embedding_ids_text = "No embeddings created"
-    elif len(embedding_ids) <= 10:
-        embedding_ids_text = (
-            f"Total: {embedding_count} embeddings\n\n" + "\n".join(embedding_ids)
-        )
-    else:
-        sample_ids = embedding_ids[:5]
-        sample_text = "\n".join(sample_ids)
-        remaining = len(embedding_ids) - 5
-        summary = (
-            f"Total: {embedding_count} embeddings\n\nFirst 5 IDs:\n{sample_text}\n\n"
-            f"... and {remaining} more (all IDs stored in Pinecone)"
-        )
-
-        if len(summary) > max_chars:
-            embedding_ids_text = (
-                f"Total: {embedding_count} embeddings created. "
-                f"All IDs stored in Pinecone (namespace: {cfg.pinecone.namespace})."
-            )
-        else:
-            embedding_ids_text = summary
-
-    last_embedded_iso = datetime.now(timezone.utc).isoformat()
-
-    props: Dict[str, Any] = {
-        "Embedding IDs": {
-            "rich_text": [
-                {
-                    "type": "text",
-                    "text": {"content": embedding_ids_text},
-                }
-            ]
-        },
-        "Last Embedded": {
-            "date": {"start": last_embedded_iso},
-        },
-    }
-
-    payload = {"properties": props}
-    url = f"{cfg.notion.base_url}/pages/{page_id}"
-
-    try:
-        resp = requests.patch(
-            url,
-            headers=notion_headers(),
-            json=payload,
-            timeout=30,
-        )
-        resp.raise_for_status()
-        logger.info(
-            "[INGEST][EXPERIMENT] Updated Notion page %s with %d embedding IDs.",
-            page_id,
-            embedding_count,
-        )
-    except Exception as e:
-        if hasattr(e, "response") and e.response is not None:
-            logger.warning(
-                "[INGEST][EXPERIMENT] Error updating embedding metadata for page %s: %s - Response: %s",
-                page_id,
-                str(e),
-                e.response.text,
-            )
-        else:
-            logger.warning(
-                "[INGEST][EXPERIMENT] Error updating embedding metadata for page %s: %r",
-                page_id,
-                e,
-            )
-        # Don't raise - embedding succeeded, metadata update is non-critical
+    logger.debug(
+        "[INGEST][EXPERIMENT] _update_experiment_embedding_metadata() is a no-op (Notion removed)"
+    )
 
 
 def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment", force: bool = False) -> None:

@@ -5,10 +5,10 @@ Get up and running with the Amprenta RAG System in minutes.
 ## Prerequisites
 
 - Python 3.10 or higher
+- PostgreSQL 13 or higher
 - API keys for:
   - OpenAI (for embeddings and LLM)
   - Pinecone (vector database)
-  - Notion (knowledge graph)
   - Zotero (optional, for literature ingestion)
 
 ## Installation
@@ -36,28 +36,28 @@ Create a `.env` file in the project root:
 # Required API Keys
 OPENAI_API_KEY=your_openai_key_here
 PINECONE_API_KEY=your_pinecone_key_here
-NOTION_API_KEY=your_notion_key_here
+
+# Postgres Database
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=your_username
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=amprenta
 
 # Optional
 ZOTERO_API_KEY=your_zotero_key_here
 ZOTERO_LIBRARY_ID=your_library_id
 ZOTERO_LIBRARY_TYPE=user  # or "group"
-
-# Notion Database IDs (see docs/NOTION_DATABASE_SETUP.md)
-NOTION_EXP_DATA_DB_ID=your_database_id
-NOTION_LIPID_SIGNATURES_DB_ID=your_database_id
-# ... (see docs/CONFIGURATION.md for all database IDs)
 ```
 
-### 3. Setup Notion Databases
-
-Before using the system, you need to set up Notion databases. See:
-- [Notion Database Setup Guide](NOTION_DATABASE_SETUP.md)
-
-Or run the verification script:
+### 3. Setup Postgres Database
 
 ```bash
-python scripts/verify_notion_setup.py
+# Create the database
+createdb amprenta
+
+# Run migrations
+alembic upgrade head
 ```
 
 ### 4. Verify Configuration
@@ -68,7 +68,7 @@ python scripts/validate_configuration.py
 
 This will check:
 - All API keys are present
-- Notion databases are accessible
+- Postgres database is accessible
 - Pinecone connection works
 - Configuration is valid
 
@@ -94,7 +94,7 @@ python scripts/ingest_lipidomics.py --file test_lipidomics.csv --create-page
 python scripts/discover_omics_studies.py --repository MW --keyword "ceramide" --max-results 5
 
 # Harvest a specific study
-python scripts/harvest_repository_study.py --repository MW --study-id ST004396 --create-notion --ingest
+python scripts/harvest_repository_study.py --repository MW --study-id ST004396 --ingest
 ```
 
 ### Option 3: Ingest a Signature
@@ -185,11 +185,10 @@ python scripts/health_check.py
 ```
 
 This checks:
-- ✅ Notion API connectivity
+- ✅ Postgres database connectivity
 - ✅ Pinecone connectivity
 - ✅ OpenAI API access
 - ✅ Configuration validity
-- ✅ Database accessibility
 
 ## Next Steps
 

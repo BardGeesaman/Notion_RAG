@@ -2,34 +2,18 @@
 Main lipidomics ingestion orchestration.
 
 This module provides the main ingestion function that orchestrates the complete
-lipidomics dataset ingestion pipeline: file parsing, Notion page creation,
+lipidomics dataset ingestion pipeline: file parsing, Postgres storage,
 feature linking, signature scoring, and RAG embedding.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.clients.notion_client import notion_headers
-# from amprenta_rag.ingestion.dataset_notion_utils import fetch_dataset_page
 from amprenta_rag.config import get_config
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
-
-def notion_headers() -> Dict[str, str]:
-    """DEPRECATED: Notion support removed. Returns empty headers dict."""
-    logger.debug("[LIPIDOMICS][INGESTION] notion_headers() deprecated - Notion support removed")
-    return {}
-
-def fetch_dataset_page(page_id: str) -> Dict[str, Any]:
-    """DEPRECATED: Notion support removed. Returns empty dict."""
-    logger.debug("[LIPIDOMICS][INGESTION] fetch_dataset_page() deprecated - Notion support removed")
-    return {"id": page_id, "properties": {}}
 from amprenta_rag.ingestion.lipidomics.embedding import embed_lipidomics_dataset
 from amprenta_rag.ingestion.lipidomics.file_parsing import extract_species_from_file
 from amprenta_rag.ingestion.omics_ingestion_utils import (
@@ -171,15 +155,8 @@ def ingest_lipidomics_file(
                     )
                     combined_summary = existing_summary + new_note
 
-                    # Update page
-                    url = f"{get_config().notion.base_url}/pages/{page_id}"
-                    resp = requests.patch(
-                        url,
-                        headers=notion_headers(),
-                        json={"properties": {"Summary": {"rich_text": [{"text": {"content": combined_summary}}]}}},
-                        timeout=30,
-                    )
-                    resp.raise_for_status()
+                    # Notion update skipped - Notion support removed
+                    logger.debug("[INGEST][LIPIDOMICS] Notion summary update skipped (Notion removed)")
                 except Exception as e:
                     logger.warning(
                         "[INGEST][LIPIDOMICS] Could not update Notion summary for page %s: %r",

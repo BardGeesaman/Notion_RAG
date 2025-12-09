@@ -84,7 +84,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 ┌─────────────────────────────────────────────────────────────┐
 │                    Data Sources                              │
 ├─────────────────────────────────────────────────────────────┤
-│  Zotero │ Notion │ Public Repos (MW, GEO, PRIDE, etc.)     │
+│  Zotero │ Public Repos (MW, GEO, PRIDE, MetaboLights)       │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
@@ -99,7 +99,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Knowledge Graph (Notion)                        │
+│              Knowledge Graph (Postgres)                      │
 ├─────────────────────────────────────────────────────────────┤
 │  Programs │ Experiments │ Datasets │ Signatures │ Features  │
 └──────────────────────┬──────────────────────────────────────┘
@@ -120,9 +120,9 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 ```
 
 **Key Components**:
-- **Data Sources**: Zotero (literature), Notion (internal), Public repositories
+- **Data Sources**: Zotero (literature), Public repositories (MW, GEO, PRIDE, MetaboLights)
 - **Vector Store**: Pinecone with OpenAI embeddings
-- **Knowledge Graph**: Notion databases for structured metadata
+- **Knowledge Graph**: Postgres database for structured metadata
 - **Query Engine**: RAG with cross-omics reasoning
 
 📖 **See [Architecture Overview](docs/ARCHITECTURE.md) for detailed system design**
@@ -143,7 +143,7 @@ python scripts/ingest_lipidomics.py --file data.csv --create-page
 | [📊 Visualization Guide](docs/VISUALIZATIONS.md) | Interactive plots and dashboards |
 | [✅ Quality Checks Guide](docs/QUALITY_CHECKS.md) | Dataset quality scoring system |
 | [📈 Statistical Analysis Guide](docs/STATISTICAL_ANALYSIS.md) | Built-in statistical tests |
-| [🗄️ Notion Database Setup](docs/NOTION_DATABASE_SETUP.md) | Database configuration guide |
+| [🗄️ Database Setup](docs/DATABASE_SETUP.md) | Postgres database configuration guide |
 | [🛡️ Production Hardening](docs/PRODUCTION_HARDENING.md) | Production deployment guide |
 | [📧 Gmail Setup](docs/setup/GMAIL_SETUP.md) | Gmail API integration guide |
 | [🔐 OAuth Setup](docs/setup/OAUTH_SETUP.md) | OAuth2 authentication guide |
@@ -283,7 +283,7 @@ python scripts/check_dataset_quality.py
 
 ```
 amprenta_rag/
-├── clients/              # API client wrappers (OpenAI, Pinecone, Notion)
+├── clients/              # API client wrappers (OpenAI, Pinecone)
 ├── config.py             # Configuration management
 ├── ingestion/            # Data ingestion pipelines
 │   ├── lipidomics/      # Lipidomics ingestion
@@ -325,8 +325,8 @@ scripts/                  # Command-line scripts
 - API keys for:
   - OpenAI (embeddings and LLM)
   - Pinecone (vector database)
-  - Notion (knowledge graph)
   - Zotero (optional, for literature)
+- Postgres database (local or remote)
 
 ### Installation
 
@@ -352,7 +352,7 @@ pip install -r requirements.txt
 
 2. **Fill in API keys** (see `.env.example` for all required keys)
 
-3. **Set up Notion databases** (see [Notion Database Setup](docs/NOTION_DATABASE_SETUP.md))
+3. **Set up Postgres database** (see [Database Setup](docs/DATABASE_SETUP.md))
 
 4. **Verify configuration**:
    ```bash
@@ -367,7 +367,7 @@ pip install -r requirements.txt
 
 - **Automatic Type Detection**: Detects omics type from file names and headers
 - **Feature Normalization**: Converts various formats to canonical forms
-- **Feature Linking**: Automatic creation/linking to feature pages in Notion
+- **Feature Linking**: Automatic creation/linking to feature records in Postgres
 - **Signature Scoring**: Scores datasets against multi-omics signatures
 
 ### Signature Discovery
@@ -437,7 +437,7 @@ Common issues and quick fixes:
 |-------|----------|
 | ModuleNotFoundError | `pip install -r requirements.txt` |
 | API Key Missing | Check `.env` file exists and contains keys |
-| Database Access Error | Run `python scripts/verify_notion_setup.py` |
+| Database Access Error | Check Postgres connection in `.env` |
 | No Query Results | Verify data is ingested: check Pinecone index |
 | Performance Issues | Enable feature caching and parallel processing |
 

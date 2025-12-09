@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-
 """
-Harvest Metabolomics Workbench studies and create/update Dataset pages in Notion.
+Harvest Metabolomics Workbench studies and create/update Dataset pages in Postgres.
 
 This script fetches study metadata and mwTab data from the Metabolomics Workbench
-REST API and creates corresponding pages in the Experimental Data Assets database.
+REST API and creates corresponding datasets in Postgres.
+
+Notion support has been removed - Postgres is now the source of truth.
 """
 
 import argparse
@@ -13,18 +14,15 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-# NOTE: Notion support removed - notion_headers stubbed for backward compatibility
-try:
-    from amprenta_rag.clients.notion_client import notion_headers
-except ImportError:
-    def notion_headers():
-        """Stub for removed Notion support."""
-        return {"Authorization": "Bearer NOTION_REMOVED", "Notion-Version": "2022-06-28"}
-
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+
+def notion_headers() -> Dict[str, str]:
+    """Stub: Notion support removed. Returns empty headers."""
+    return {}
 
 MW_BASE_URL = "https://www.metabolomicsworkbench.org/rest"
 MW_STUDY_SUMMARY_URL = f"{MW_BASE_URL}/study/study_id/ST/summary"

@@ -1,4 +1,10 @@
 # amprenta_rag/metadata/classify_literature.py
+"""
+Literature classification module.
+
+Uses OpenAI to classify literature documents into semantic and lipid metadata.
+Notion support has been removed - Postgres is now the source of truth.
+"""
 
 from __future__ import annotations
 
@@ -6,10 +12,6 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 
-import requests
-
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.clients.openai_client import (get_default_models,
                                                 get_openai_client)
 from amprenta_rag.config import get_config
@@ -17,53 +19,18 @@ from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
-def notion_headers() -> Dict[str, str]:
-    """DEPRECATED: Notion support removed. Returns empty headers dict."""
-    logger.debug("[METADATA][CLASSIFY-LITERATURE] notion_headers() deprecated - Notion support removed")
-    return {}
 
-
-# ----------------- Notion helpers ----------------- #
-
-
-def _notion_base_url() -> str:
-    return get_config().notion.base_url
+# ----------------- Notion helpers (stubs - Notion support removed) ----------------- #
 
 
 def _query_literature_pages(limit: Optional[int] = None) -> List[Dict[str, Any]]:
     """
-    Fetch all pages from the Literature DB (or up to `limit` pages if provided).
+    Stub: Notion support removed. Returns empty list.
+    
+    Previously fetched pages from the Literature DB in Notion.
     """
-    cfg = get_config().notion
-    lit_db_id = cfg.lit_db_id
-    if not lit_db_id:
-        raise RuntimeError("NOTION_LIT_DB_ID not configured in config.py")
-
-    url = f"{_notion_base_url()}/databases/{lit_db_id}/query"
-    payload: Dict[str, Any] = {"page_size": 100}
-    pages: List[Dict[str, Any]] = []
-    next_cursor: Optional[str] = None
-
-    while True:
-        body = payload.copy()
-        if next_cursor:
-            body["start_cursor"] = next_cursor
-
-        resp = requests.post(url, headers=notion_headers(), data=json.dumps(body))
-        resp.raise_for_status()
-        data = resp.json()
-
-        batch = data.get("results", [])
-        pages.extend(batch)
-
-        if limit is not None and len(pages) >= limit:
-            return pages[:limit]
-
-        if not data.get("has_more"):
-            break
-        next_cursor = data.get("next_cursor")
-
-    return pages
+    logger.debug("[METADATA][CLASSIFY-LITERATURE] _query_literature_pages() is a no-op (Notion removed)")
+    return []
 
 
 def _get_title(props: Dict[str, Any]) -> str:
@@ -103,14 +70,11 @@ def _needs_classification(props: Dict[str, Any]) -> bool:
 
 def _update_literature_properties(page_id: str, updates: Dict[str, Any]) -> None:
     """
-    Patch Notion page with new select/multi-select/number values.
-    `updates` should map property name -> Notion property object.
+    Stub: Notion support removed. No-op.
+    
+    Previously patched Notion page with new property values.
     """
-    url = f"{_notion_base_url()}/pages/{page_id}"
-    payload = {"properties": updates}
-    resp = requests.patch(url, headers=notion_headers(), data=json.dumps(payload))
-    if resp.status_code >= 300:
-        print(f"⚠️ Failed to update Literature page {page_id}: {resp.text}")
+    logger.debug("[METADATA][CLASSIFY-LITERATURE] _update_literature_properties() is a no-op (Notion removed)")
 
 
 # ----------------- OpenAI classifier ----------------- #

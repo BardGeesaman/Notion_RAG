@@ -12,40 +12,24 @@ All configuration is managed via environment variables in a `.env` file in the p
 
 ### Required Configuration
 
-#### Notion API
+#### Postgres Database
 
 ```bash
-NOTION_API_KEY=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Postgres connection settings
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=your_username
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=amprenta
+
+# Full connection URL (alternative to individual settings)
+# DATABASE_URL=postgresql://user:password@localhost:5432/amprenta
 ```
 
-Get your Notion integration token from:
-1. Go to https://www.notion.so/my-integrations
-2. Create a new integration
-3. Copy the "Internal Integration Token"
-
-#### Notion Database IDs
-
-```bash
-# Core databases
-NOTION_DATASET_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_SIGNATURE_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_SIGNATURE_COMPONENT_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_LIPID_SPECIES_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-
-# Feature databases
-NOTION_GENE_FEATURES_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_PROTEIN_FEATURES_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_METABOLITE_FEATURES_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-
-# Optional databases
-NOTION_PROGRAMS_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_EXPERIMENTS_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-```
-
-**How to find Database IDs**:
-1. Open the database in Notion
-2. Copy the URL: `https://www.notion.so/workspace/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx?v=...`
-3. Extract the 32-character hex ID (with dashes)
+**Setup**:
+1. Install PostgreSQL (version 13+)
+2. Create a database: `createdb amprenta`
+3. Run migrations: `alembic upgrade head`
 
 #### Pinecone
 
@@ -157,17 +141,12 @@ OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 ## Example .env File
 
 ```bash
-# Notion
-NOTION_API_KEY=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-NOTION_DATASET_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_SIGNATURE_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_SIGNATURE_COMPONENT_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_LIPID_SPECIES_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_GENE_FEATURES_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_PROTEIN_FEATURES_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_METABOLITE_FEATURES_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_PROGRAMS_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-NOTION_EXPERIMENTS_DB_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+# Postgres Database (required)
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=your_username
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=amprenta
 
 # Pinecone
 PINECONE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -198,95 +177,25 @@ LOG_LEVEL=INFO
 
 ---
 
-## Notion Database Setup
+## Database Schema
 
-### Required Databases
+The Amprenta RAG platform uses PostgreSQL as its primary data store. The schema is managed via Alembic migrations.
 
-#### 1. Experimental Data Assets
+### Core Tables
 
-**Properties**:
-- `Title` (title): Dataset name
-- `Omics Type` (select): Lipidomics, Metabolomics, Proteomics, Transcriptomics
-- `Summary` (rich_text): Dataset description
-- `Signature Match Score` (number): Highest signature match score
-- `Related Signature(s)` (relation): Links to Lipid Signatures
-- `Related Programs` (relation): Links to Programs (optional)
-- `Related Experiments` (relation): Links to Experiments (optional)
-- `Embedding IDs` (rich_text): Pinecone embedding IDs
-- `Last Embedded` (date): Last embedding timestamp
+- **datasets**: Experimental data assets (omics datasets)
+- **features**: Molecular features (genes, proteins, metabolites, lipids)
+- **signatures**: Lipid signatures for pattern matching
+- **programs**: Research programs grouping related experiments
+- **experiments**: Individual experiments within programs
+- **literature**: Literature references from Zotero
 
-#### 2. Lipid Signatures
-
-**Properties**:
-- `Name` (title): Signature name
-- `Short ID` (rich_text): Unique short identifier
-- `Type` (select): Literature-derived, Consortium, Open Dataset
-- `Modalities` (multi_select): Gene, Protein, Metabolite, Lipid
-- `Description` (rich_text): Signature description
-- `Related Components` (relation): Links to Lipid Signature Components
-- `Related Datasets` (relation): Links to Experimental Data Assets
-
-#### 3. Lipid Signature Components
-
-**Properties**:
-- `Component Name` (title): Feature name
-- `Feature Type` (select): gene, protein, metabolite, lipid
-- `Direction` (select): ↑ (up), ↓ (down)
-- `Weight` (number): Component weight
+Run migrations to create the schema:
+```bash
+alembic upgrade head
+```
 - `Related Signature` (relation): Links to Lipid Signatures
 - `Related Feature` (relation): Links to Gene/Protein/Metabolite/Lipid Species DB
-
-#### 4. Lipid Species
-
-**Properties**:
-- `Species Name` (title): Canonical lipid species name
-- `Synonyms` (rich_text): Alternative names
-- `Class` (select): Cer, SM, HexCer, etc.
-- `Related Datasets` (relation): Links to Experimental Data Assets
-
-#### 5. Gene Features
-
-**Properties**:
-- `Gene Name` (title): Gene symbol or Ensembl ID
-- `Related Datasets` (relation): Links to Experimental Data Assets
-
-#### 6. Protein Features
-
-**Properties**:
-- `Protein Name` (title): UniProt ID or canonical name
-- `Related Datasets` (relation): Links to Experimental Data Assets
-
-#### 7. Metabolite Features
-
-**Properties**:
-- `Metabolite Name` (title): Normalized metabolite name
-- `Related Datasets` (relation): Links to Experimental Data Assets
-
----
-
-### Optional Databases
-
-#### Programs
-
-**Properties**:
-- `Program` (title): Program name
-- `Description` (rich_text): Program description
-- `Experiments` (relation): Links to Experiments
-- `Related Datasets` (relation): Links to Experimental Data Assets
-
-#### Experiments
-
-**Properties**:
-- `Title` (title): Experiment name
-- `Type` (select): Experiment type
-- `Disease` (multi_select): Disease context
-- `Matrix` (multi_select): Sample matrix (CSF, Plasma, Serum, etc.)
-- `Model Systems` (multi_select): Model systems
-- `Related Programs` (relation): Links to Programs
-- `Related Datasets` (relation): Links to Experimental Data Assets
-- `Readout Signatures` (relation): Links to Lipid Signatures
-
----
 
 ## Pinecone Index Setup
 
@@ -321,9 +230,9 @@ from amprenta_rag.config import get_config
 
 cfg = get_config()
 
-# Verify Notion
-print(f"Notion API Key: {cfg.notion.api_key[:10]}...")
-print(f"Dataset DB ID: {cfg.notion.dataset_db_id}")
+# Verify Postgres
+print(f"Postgres Host: {cfg.postgres.host}")
+print(f"Postgres Database: {cfg.postgres.database}")
 
 # Verify Pinecone
 print(f"Pinecone Index: {cfg.pinecone.index_name}")
@@ -332,16 +241,15 @@ print(f"Pinecone Index: {cfg.pinecone.index_name}")
 print(f"OpenAI Chat Model: {cfg.openai.chat_model}")
 ```
 
-### Test Notion Connection
+### Test Postgres Connection
 
 ```python
-from amprenta_rag.clients.notion_client import notion_headers
-import requests
+from amprenta_rag.database.base import get_db
 
-headers = notion_headers()
-url = f"https://api.notion.com/v1/databases/{cfg.notion.dataset_db_id}"
-resp = requests.get(url, headers=headers)
-print(f"Notion Status: {resp.status_code}")
+db = next(get_db())
+result = db.execute("SELECT 1")
+print(f"Postgres Status: Connected")
+db.close()
 ```
 
 ### Test Pinecone Connection
@@ -360,10 +268,10 @@ print(f"Pinecone Stats: {stats}")
 
 ### Common Issues
 
-1. **"Database ID not found"**
-   - Verify the database ID is correct (32 hex characters with dashes)
-   - Ensure the Notion integration has access to the database
-   - Check database permissions in Notion
+1. **"Database connection failed"**
+   - Verify Postgres is running: `pg_isready`
+   - Check database exists: `psql -l | grep amprenta`
+   - Verify credentials in `.env`
 
 2. **"Pinecone index not found"**
    - Verify the index name matches exactly
@@ -391,14 +299,15 @@ print(f"Pinecone Stats: {stats}")
    - Use environment variables in production
    - Rotate API keys regularly
 
-2. **Limit Notion permissions**
-   - Grant integration access only to required databases
-   - Use read-only access where possible
+2. **Secure Postgres access**
+   - Use strong passwords
+   - Limit network access to trusted hosts
+   - Use read-only users where possible
 
 3. **Monitor API usage**
    - Set up usage alerts for OpenAI
    - Monitor Pinecone index size
-   - Track Notion API rate limits
+   - Track database query performance
 
 ---
 

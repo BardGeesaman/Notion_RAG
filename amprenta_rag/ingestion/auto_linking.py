@@ -45,36 +45,37 @@ def infer_program_from_metadata(
         for part in filename.replace("_", " ").replace("-", " ").split():
             keywords_norm.add(part.lower())
 
-    with db_session() as db:
-        candidates: List[Tuple[str, float]] = []
-        programs = db.query(ProgramModel).all()
+    try:
+        with db_session() as db:
+            candidates: List[Tuple[str, float]] = []
+            programs = db.query(ProgramModel).all()
 
-        for program in programs:
-            score = 0.0
-            prog_disease = set(_normalize_list(program.disease))
-            if diseases_norm and prog_disease:
-                overlap = diseases_norm & prog_disease
-                if overlap:
-                    score += 0.6 + 0.1 * len(overlap)
+            for program in programs:
+                score = 0.0
+                prog_disease = set(_normalize_list(program.disease))
+                if diseases_norm and prog_disease:
+                    overlap = diseases_norm & prog_disease
+                    if overlap:
+                        score += 0.6 + 0.1 * len(overlap)
 
-            name_tokens = set(_normalize_list(program.name.split())) if program.name else set()
-            if keywords_norm and name_tokens and keywords_norm & name_tokens:
-                score += 0.3
+                name_tokens = set(_normalize_list(program.name.split())) if program.name else set()
+                if keywords_norm and name_tokens and keywords_norm & name_tokens:
+                    score += 0.3
 
-            if score > 0:
-                candidates.append((str(program.id), score))
+                if score > 0:
+                    candidates.append((str(program.id), score))
 
-        if not candidates:
-            return None, 0.0
+            if not candidates:
+                return None, 0.0
 
-        # Pick top; ensure no ambiguity
-        candidates.sort(key=lambda x: x[1], reverse=True)
-        top_id, top_score = candidates[0]
-        if top_score < min_confidence:
-            return None, top_score
-        if len(candidates) > 1 and candidates[1][1] == top_score:
-            return None, top_score  # ambiguous
-        return top_id, top_score
+            # Pick top; ensure no ambiguity
+            candidates.sort(key=lambda x: x[1], reverse=True)
+            top_id, top_score = candidates[0]
+            if top_score < min_confidence:
+                return None, top_score
+            if len(candidates) > 1 and candidates[1][1] == top_score:
+                return None, top_score  # ambiguous
+            return top_id, top_score
     except Exception as exc:
         logger.warning("[INGEST][AUTO-LINK] Program inference failed: %r", exc)
         return None, 0.0
@@ -95,43 +96,44 @@ def infer_experiment_from_metadata(
     matrix_norm = set(_normalize_list(matrix))
     models_norm = set(_normalize_list(model_systems))
 
-    with db_session() as db:
-        candidates: List[Tuple[str, float]] = []
-        experiments = db.query(ExperimentModel).all()
+    try:
+        with db_session() as db:
+            candidates: List[Tuple[str, float]] = []
+            experiments = db.query(ExperimentModel).all()
 
-        for exp in experiments:
-            score = 0.0
+            for exp in experiments:
+                score = 0.0
 
-            exp_disease = set(_normalize_list(exp.disease))
-            exp_matrix = set(_normalize_list(getattr(exp, "matrix", None)))
-            exp_models = set(_normalize_list(getattr(exp, "model_systems", None)))
+                exp_disease = set(_normalize_list(exp.disease))
+                exp_matrix = set(_normalize_list(getattr(exp, "matrix", None)))
+                exp_models = set(_normalize_list(getattr(exp, "model_systems", None)))
 
-            if diseases_norm and exp_disease:
-                overlap = diseases_norm & exp_disease
-                if overlap:
-                    score += 0.5 + 0.1 * len(overlap)
+                if diseases_norm and exp_disease:
+                    overlap = diseases_norm & exp_disease
+                    if overlap:
+                        score += 0.5 + 0.1 * len(overlap)
 
-            if matrix_norm and exp_matrix:
-                if matrix_norm & exp_matrix:
-                    score += 0.25
+                if matrix_norm and exp_matrix:
+                    if matrix_norm & exp_matrix:
+                        score += 0.25
 
-            if models_norm and exp_models:
-                if models_norm & exp_models:
-                    score += 0.25
+                if models_norm and exp_models:
+                    if models_norm & exp_models:
+                        score += 0.25
 
-            if score > 0:
-                candidates.append((str(exp.id), score))
+                if score > 0:
+                    candidates.append((str(exp.id), score))
 
-        if not candidates:
-            return None, 0.0
+            if not candidates:
+                return None, 0.0
 
-        candidates.sort(key=lambda x: x[1], reverse=True)
-        top_id, top_score = candidates[0]
-        if top_score < min_confidence:
-            return None, top_score
-        if len(candidates) > 1 and candidates[1][1] == top_score:
-            return None, top_score  # ambiguous
-        return top_id, top_score
+            candidates.sort(key=lambda x: x[1], reverse=True)
+            top_id, top_score = candidates[0]
+            if top_score < min_confidence:
+                return None, top_score
+            if len(candidates) > 1 and candidates[1][1] == top_score:
+                return None, top_score  # ambiguous
+            return top_id, top_score
     except Exception as exc:
         logger.warning("[INGEST][AUTO-LINK] Experiment inference failed: %r", exc)
         return None, 0.0

@@ -1,49 +1,24 @@
 # amprenta_rag/maintenance/verify.py
+"""
+Verification utilities for maintenance operations.
+
+Notion support has been removed - Postgres is now the source of truth.
+"""
 
 from __future__ import annotations
 
-import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-import requests
-
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.clients.notion_client import notion_headers
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
-def notion_headers() -> Dict[str, str]:
-    """DEPRECATED: Notion support removed. Returns empty headers dict."""
-    logger.debug("[MAINTENANCE][VERIFY] notion_headers() deprecated - Notion support removed")
-    return {}
-
-
-def _notion_base_url() -> str:
-    return get_config().notion.base_url
-
 
 def _query_db(db_id: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
-    url = f"{_notion_base_url()}/databases/{db_id}/query"
-    pages: List[Dict[str, Any]] = []
-    next_cursor: Optional[str] = None
-
-    while True:
-        body = payload.copy()
-        if next_cursor:
-            body["start_cursor"] = next_cursor
-
-        resp = requests.post(url, headers=notion_headers(), data=json.dumps(body))
-        resp.raise_for_status()
-        data = resp.json()
-        pages.extend(data.get("results", []))
-
-        if not data.get("has_more"):
-            break
-        next_cursor = data.get("next_cursor")
-
-    return pages
+    """Stub: Notion support removed. Returns empty list."""
+    logger.debug("[MAINTENANCE][VERIFY] _query_db() is a no-op (Notion removed)")
+    return []
 
 
 def _count_rag_chunks_for_lit_page(lit_page_id: str) -> int:

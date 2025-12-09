@@ -17,10 +17,10 @@ from amprenta_rag.database.models import Dataset, Program, Signature
 from amprenta_rag.domain.analytics import EvidenceReport, EvidenceSection
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.cross_omics import (
-    cross_omics_dataset_summary,
-    cross_omics_feature_summary,
-    cross_omics_program_summary,
-    cross_omics_signature_summary,
+    cross_omics_dataset_summary_postgres,
+    cross_omics_feature_summary_postgres,
+    cross_omics_program_summary_postgres,
+    cross_omics_signature_summary_postgres,
 )
 from amprenta_rag.signatures.signature_validation import validate_signature_against_all_datasets
 
@@ -203,7 +203,7 @@ def generate_experiment_evidence_report(
     )
 
     # Use dataset summary function (experiments are similar to datasets)
-    summary = cross_omics_dataset_summary(
+    summary = cross_omics_dataset_summary_postgres(
         dataset_page_id=experiment_page_id,
         top_k_chunks=top_k_chunks,
     )
@@ -264,7 +264,7 @@ def generate_dataset_evidence_report(
     )
 
     # Use existing cross-omics summary function
-    summary = cross_omics_dataset_summary(
+    summary = cross_omics_dataset_summary_postgres(
         dataset_page_id=dataset_page_id,
         top_k_chunks=top_k_chunks,
     )
@@ -449,78 +449,11 @@ def write_evidence_report_to_notion(
     property_name: str = "Evidence Report",
 ) -> bool:
     """
-    Write an evidence report to a Notion page.
-
-    Args:
-        report: EvidenceReport object
-        target_page_id: Notion page ID to write to (if None, uses report.entity_id)
-        property_name: Name of the property to write to
-
-    Returns:
-        True if successful, False otherwise
+    Stub: Notion support removed. Returns False.
+    
+    Previously wrote an evidence report to a Notion page.
     """
-    if target_page_id is None:
-        target_page_id = report.entity_id
-
-    logger.info(
-        "[REPORTING][EVIDENCE] Writing evidence report to Notion page %s (property: %s)",
-        target_page_id,
-        property_name,
+    logger.debug(
+        "[REPORTING][EVIDENCE] write_evidence_report_to_notion() is a no-op (Notion removed)"
     )
-
-    try:
-        import requests
-
-        # DEPRECATED: Notion imports removed
-        # from amprenta_rag.clients.notion_client import notion_headers
-        from amprenta_rag.config import get_config
-        
-        def notion_headers() -> Dict[str, str]:
-            """DEPRECATED: Notion support removed. Returns empty headers dict."""
-            logger.debug("[REPORTING][EVIDENCE] notion_headers() deprecated - Notion support removed")
-            return {}
-
-        cfg = get_config()
-
-        # Format report
-        formatted_report = format_evidence_report(report, include_metadata=True)
-
-        # Truncate if too long (Notion rich text limit is ~2000 characters per block)
-        if len(formatted_report) > 2000:
-            formatted_report = formatted_report[:1997] + "..."
-
-        # Update Notion page
-        url = f"{cfg.notion.base_url}/pages/{target_page_id}"
-        payload = {
-            "properties": {
-                property_name: {
-                    "rich_text": [
-                        {
-                            "type": "text",
-                            "text": {"content": formatted_report},
-                        }
-                    ],
-                },
-            },
-        }
-
-        resp = requests.patch(
-            url,
-            headers=notion_headers(),
-            json=payload,
-            timeout=30,
-        )
-        resp.raise_for_status()
-
-        logger.info(
-            "[REPORTING][EVIDENCE] Successfully wrote evidence report to %s",
-            target_page_id,
-        )
-        return True
-
-    except Exception as e:
-        logger.warning(
-            "[REPORTING][EVIDENCE] Error writing evidence report to Notion: %r",
-            e,
-        )
-        return False
+    return False

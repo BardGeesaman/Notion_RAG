@@ -2,34 +2,18 @@
 Main proteomics ingestion orchestration.
 
 This module provides the main ingestion function that orchestrates the complete
-proteomics dataset ingestion pipeline: file parsing, Notion page creation,
+proteomics dataset ingestion pipeline: file parsing, Postgres storage,
 feature linking, and RAG embedding.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.clients.notion_client import notion_headers
-# from amprenta_rag.ingestion.dataset_notion_utils import fetch_dataset_page
 from amprenta_rag.config import get_config
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
-
-def notion_headers() -> Dict[str, str]:
-    """DEPRECATED: Notion support removed. Returns empty headers dict."""
-    logger.debug("[PROTEOMICS][INGESTION] notion_headers() deprecated - Notion support removed")
-    return {}
-
-def fetch_dataset_page(page_id: str) -> Dict[str, Any]:
-    """DEPRECATED: Notion support removed. Returns empty dict."""
-    logger.debug("[PROTEOMICS][INGESTION] fetch_dataset_page() deprecated - Notion support removed")
-    return {"id": page_id, "properties": {}}
 from amprenta_rag.ingestion.omics_ingestion_utils import (
     attach_file_to_page,
     create_omics_dataset_page,
@@ -165,15 +149,8 @@ def ingest_proteomics_file(
                     )
                     combined_summary = existing_summary + new_note
 
-                    # Update page
-                    url = f"{get_config().notion.base_url}/pages/{page_id}"
-                    resp = requests.patch(
-                        url,
-                        headers=notion_headers(),
-                        json={"properties": {"Summary": {"rich_text": [{"text": {"content": combined_summary}}]}}},
-                        timeout=30,
-                    )
-                    resp.raise_for_status()
+                    # Notion update skipped - Notion support removed
+                    logger.debug("[INGEST][PROTEOMICS] Notion summary update skipped (Notion removed)")
                 except Exception as e:
                     logger.warning(
                         "[INGEST][PROTEOMICS] Could not update Notion summary for page %s: %r",
