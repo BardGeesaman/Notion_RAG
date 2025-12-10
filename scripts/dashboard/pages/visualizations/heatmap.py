@@ -10,26 +10,11 @@ from sqlalchemy.orm import Session
 
 from amprenta_rag.database.models import Dataset, Feature
 from scripts.dashboard.db_session import db_session
-
-
-def _list_datasets(db: Session) -> List[Dict[str, str]]:
-    datasets = db.query(Dataset).order_by(Dataset.updated_at.desc()).limit(200).all()
-    return [
-        {"id": str(d.id), "name": d.name, "omics_type": d.omics_type or "unknown"}
-        for d in datasets
-    ]
-
-
-def _feature_value(feature: Feature) -> float:
-    ext = feature.external_ids or {}
-    if isinstance(ext, dict):
-        for key in ("log2FC", "log2fc", "value", "fold_change"):
-            if key in ext and ext[key] is not None:
-                try:
-                    return float(ext[key])
-                except Exception:
-                    continue
-    return 1.0  # presence indicator fallback
+from scripts.dashboard.utils.viz_helpers import (
+    create_heatmap,
+    get_feature_value,
+    list_datasets_for_dropdown,
+)
 
 
 def _build_matrix(db: Session, dataset_ids: List[str]) -> pd.DataFrame:
@@ -46,7 +31,7 @@ def _build_matrix(db: Session, dataset_ids: List[str]) -> pd.DataFrame:
     for ds in datasets:
         col = {}
         for feat in ds.features:
-            val = _feature_value(feat)
+            val = get_feature_value(feat)
             col[feat.name] = val
             feature_names.add(feat.name)
         data[str(ds.id)] = col
@@ -79,7 +64,7 @@ def render() -> None:
     st.caption("Feature × Dataset intensity matrix.")
 
     with db_session() as db:
-        datasets = _list_datasets(db)
+        datasets = list_datasets_for_dropdown(db)
 
     if not datasets:
         st.info("No datasets available.")
@@ -107,11 +92,11 @@ def render() -> None:
             return
 
         clustered = _cluster_matrix(mat.fillna(0.0))
-        fig = px.imshow(
+        fig = create_heatmap(
             clustered,
-            color_continuous_scale="Viridis",
-            aspect="auto",
-            labels=dict(color="Value"),
+            title="Heatmap",
+            colorscale="Viridis",
+            cluster=False,  # already clustered above
         )
         st.plotly_chart(fig, width='stretch')
         st.download_button(

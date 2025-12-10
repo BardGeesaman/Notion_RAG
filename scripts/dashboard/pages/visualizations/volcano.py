@@ -10,51 +10,11 @@ from sqlalchemy.orm import Session
 
 from amprenta_rag.database.models import Dataset, Feature
 from scripts.dashboard.db_session import db_session
-
-
-def _list_datasets(db: Session) -> List[Dict[str, str]]:
-    datasets = (
-        db.query(Dataset)
-        .order_by(Dataset.updated_at.desc())
-        .limit(200)  # avoid huge dropdowns
-        .all()
-    )
-    return [
-        {"id": str(d.id), "name": d.name, "omics_type": d.omics_type or "unknown"}
-        for d in datasets
-    ]
-
-
-def _extract_fc_pval(feature: Feature) -> Optional[Dict[str, float]]:
-    data = feature.external_ids or {}
-    if not isinstance(data, dict):
-        return None
-
-    candidates = [data]
-    for key in ("stats", "de_stats", "diffexp", "differential_expression"):
-        nested = data.get(key)
-        if isinstance(nested, dict):
-            candidates.append(nested)
-
-    def _first(keys):
-        for obj in candidates:
-            for k in keys:
-                if k in obj and obj[k] is not None:
-                    return obj[k]
-        return None
-
-    fc = _first(["log2FC", "log2fc", "log2_fold_change", "fold_change", "fc"])
-    p = _first(["pvalue", "p_value", "adj_pvalue", "adj_p", "pval", "p_val"])
-
-    try:
-        fc = float(fc) if fc is not None else None
-        p = float(p) if p is not None else None
-    except Exception:
-        return None
-
-    if fc is None or p is None:
-        return None
-    return {"log2FC": fc, "pvalue": p}
+from scripts.dashboard.utils.viz_helpers import (
+    create_volcano_plot,
+    extract_feature_stats,
+    list_datasets_for_dropdown,
+)
 
 
 def _get_volcano_data(db: Session, dataset_id: str, feature_type: str) -> pd.DataFrame:
@@ -66,10 +26,10 @@ def _get_volcano_data(db: Session, dataset_id: str, feature_type: str) -> pd.Dat
     for feat in dataset.features:
         if feature_type != "all" and (feat.feature_type or "").lower() != feature_type:
             continue
-        stats = _extract_fc_pval(feat)
-        if not stats:
+        stats = extract_feature_stats(feat)
+        if not stats or stats.get("log2fc") is None or stats.get("pval") is None:
             continue
-        rows.append({"feature": feat.name, **stats})
+        rows.append({"feature": feat.name, "log2FC": stats["log2fc"], "pvalue": stats["pval"]})
 
     if not rows:
         return pd.DataFrame()
@@ -84,7 +44,7 @@ def render() -> None:
     st.caption("Differential expression: log2 fold-change vs -log10(p-value)")
 
     with db_session() as db:
-        datasets = _list_datasets(db)
+        datasets = list_datasets_for_dropdown(db)
 
     if not datasets:
         st.info("No datasets available in Postgres.")
@@ -117,18 +77,13 @@ def render() -> None:
 
         df["significant"] = (df["pvalue"] <= p_thresh) & (np.abs(df["log2FC"]) >= fc_thresh)
 
-        fig = px.scatter(
+        fig = create_volcano_plot(
             df,
-            x="log2FC",
-            y="-log10p",
-            color="significant",
-            hover_name="feature",
-            color_discrete_map={True: "#FF6B6B", False: "#4E79A7"},
-            labels={"log2FC": "log2 Fold Change", "-log10p": "-log10(p-value)"},
+            fc_col="log2FC",
+            pval_col="-log10p",
+            fc_thresh=fc_thresh,
+            p_thresh=p_thresh,
         )
-        fig.add_vline(x=fc_thresh, line_dash="dash", line_color="#999999")
-        fig.add_vline(x=-fc_thresh, line_dash="dash", line_color="#999999")
-        fig.add_hline(y=-np.log10(p_thresh), line_dash="dash", line_color="#999999")
 
         st.plotly_chart(fig, width='stretch')
         st.download_button(
