@@ -127,6 +127,11 @@ class Experiment(Base):
     biomarker_role = Column(ARRAY(String), nullable=True)  # Biomarker roles
     treatment_arms = Column(ARRAY(String), nullable=True)  # Treatment arms
 
+    # Experimental design metadata
+    design_type = Column(String(50), nullable=True)  # case_control, time_course, intervention, dose_response, multi_factorial, observational
+    design_metadata = Column(JSON, nullable=True)  # Structured design details (factors, levels, etc.)
+    sample_groups = Column(JSON, nullable=True)  # {"control": ["S1", "S2"], "case": ["S3", "S4"], "timepoints": {"T0": [...], "T1": [...]}}
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -187,6 +192,13 @@ class Dataset(Base):
     conclusions = Column(Text, nullable=True)  # Conclusions
     dataset_source_type = Column(String(100), nullable=True)  # e.g., "Processed table"
     data_origin = Column(String(100), nullable=True)  # e.g., "External – Open Dataset"
+
+    # Sample-level design metadata
+    sample_group = Column(String(100), nullable=True)  # control, case, treated, untreated, placebo
+    timepoint = Column(String(50), nullable=True)  # T0, T1, 24h, Week4, baseline
+    intervention = Column(String(200), nullable=True)  # Drug name, treatment condition
+    dose = Column(String(50), nullable=True)  # 10mg, 100nM, high, low
+    replicate_id = Column(String(50), nullable=True)  # For biological/technical replicates
 
     # Signature matching
     signature_match_score = Column(Float, nullable=True)
