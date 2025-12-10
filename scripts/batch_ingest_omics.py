@@ -86,6 +86,7 @@ def _ingest_one(
 
 
 def main() -> None:
+    total = success = failed = skipped = 0
     parser = argparse.ArgumentParser(
         description="Batch ingest omics files with automatic type detection.",
     )
@@ -167,8 +168,7 @@ def main() -> None:
             for future in tqdm(as_completed(futures), total=len(futures), desc="Batch"):
                 results.append(future.result())
 
-        print("
-Summary:")
+        print("\nSummary:")
         headers = ["Filename", "Type", "Status", "Page ID", "Error"]
         rows = [headers]
         for res in results:
@@ -191,20 +191,23 @@ Summary:")
         for row in rows[1:]:
             print(fmt_row(row))
 
+        total = len(results)
+        success = sum(1 for r in results if r.get("status") == "SUCCESS")
+        failed = sum(1 for r in results if r.get("status") == "FAILED")
+        skipped = sum(1 for r in results if r.get("status") == "SKIPPED")
+
+        print("\n=== Batch Ingest Summary ===")
+        print(f"Total:   {total}")
+        print(f"Success: {success}")
+        print(f"Failed:  {failed}")
+        print(f"Skipped: {skipped}")
         failures = [r for r in results if r.get("status") != "SUCCESS"]
+
         logger.info(
             "[BATCH-INGEST] Completed batch: %d success, %d failed",
             len(results) - len(failures),
             len(failures),
         )
-
-    except FileNotFoundError as exc:
-        render_cli_error("file_not_found", path=str(exc))
-        sys.exit(1)
-    except Exception as exc:
-        logger.error(format_error("db_connection", details=str(exc)))
-        render_cli_error("db_connection", details=str(exc))
-        sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -494,6 +497,7 @@ def ingest_single_file(
 
 
 def main() -> None:
+    total = success = failed = skipped = 0
     parser = argparse.ArgumentParser(
         description="Batch ingest multi-omics datasets with automatic type detection."
     )

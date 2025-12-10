@@ -108,6 +108,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Get dataset IDs
+    discovered = ingested_count = failed_count = 0
     if args.dataset_ids:
         dataset_ids = args.dataset_ids
     elif args.all_datasets:
@@ -148,6 +149,9 @@ def main() -> None:
             min_co_occurrence=args.min_co_occurrence,
             min_confidence=args.min_confidence,
         )
+        discovered = len(candidates)
+        ingested_count = 0
+        failed_count = 0
 
         if not candidates:
             print("\n⚠️  No signature candidates found with the given parameters.")
@@ -232,6 +236,7 @@ def main() -> None:
                     ingested_count += 1
                     print(f"  ✅ Ingested: {candidate.name}")
                 except Exception as e:
+                    failed_count += 1
                     logger.warning(
                         "[SIG-DISC] Error ingesting candidate %s: %r",
                         candidate.name,
@@ -244,6 +249,10 @@ def main() -> None:
 
             print(f"\n✅ Ingested {ingested_count}/{len(candidates)} candidates")
 
+        print("\n=== Signature Discovery Summary ===")
+        print(f"Discovered: {discovered}")
+        print(f"Ingested:  {ingested_count}")
+        print(f"Failed:    {failed_count}")
         print(f"\n{'=' * 80}\n")
 
     except Exception as e:

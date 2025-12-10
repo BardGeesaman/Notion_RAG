@@ -290,6 +290,7 @@ Examples:
     args = parser.parse_args()
     
     # List repositories if requested
+    total = success = failed = skipped = 0
     if args.list_repositories:
         repos = list_available_repositories()
         print("\nAvailable repositories:")
@@ -401,6 +402,8 @@ Examples:
         from scripts.batch_import_repository_studies import load_studies_from_json
         from scripts.harvest_repository_study import harvest_study
         
+        total = len(studies)
+        skipped_count = 0
         studies = load_studies_from_json(tmp_path)
         
         # Process each study
@@ -449,6 +452,11 @@ Examples:
                     logger.error("[IMPORT][ALL] Stopping due to error (--stop-on-error)")
                     break
         
+        print("\n=== Import Summary ===")
+        print(f"Total:   {total}")
+        print(f"Success: {success_count}")
+        print(f"Failed:  {error_count}")
+        print(f"Skipped: {skipped_count}")
         logger.info(
             "[IMPORT][ALL] Import complete: %d succeeded, %d failed",
             success_count,
