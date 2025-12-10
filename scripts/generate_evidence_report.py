@@ -55,7 +55,7 @@ def main() -> None:
         "--feature",
         help="Feature name",
     )
-    entity_group.add_argument(
+    parser.add_argument(
         "--feature-type",
         choices=["gene", "protein", "metabolite", "lipid"],
         help="Feature type (required with --feature)",
