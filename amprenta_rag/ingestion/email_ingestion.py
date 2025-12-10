@@ -211,8 +211,7 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
     for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
         chunk_id = f"{page_id}_chunk_{order:03d}"
 
-        # Create Notion chunk page using shared helper from notion_pages
-        # The helper automatically handles Email/Note relation property selection
+        # DEPRECATED: Notion chunk page creation (Postgres-only architecture now; helper is a no-op)
         try:
             chunk_page_id = create_rag_chunk_page(
                 chunk_id, chunk, parent_type, page_id, order, when_iso=now

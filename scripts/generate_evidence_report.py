@@ -20,7 +20,7 @@ from amprenta_rag.reporting.evidence_report import (
     generate_feature_evidence_report,
     generate_program_evidence_report,
     generate_signature_evidence_report,
-    write_evidence_report_to_notion,
+    write_evidence_report_to_notion,  # DEPRECATED: Notion integration removed - these options are no-ops
 )
 from amprenta_rag.logging_utils import get_logger
 
@@ -87,7 +87,7 @@ def main() -> None:
     parser.add_argument(
         "--write-to-notion",
         action="store_true",
-        help="Write report to Notion page (property: 'Evidence Report')",
+        help="Write report to Notion page (property: 'Evidence Report')",  # DEPRECATED: Notion integration removed - these options are no-ops
     )
     parser.add_argument(
         "--notion-property",

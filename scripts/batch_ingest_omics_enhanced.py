@@ -266,7 +266,7 @@ def collect_files(
 def ingest_single_file(
     file_path: Path,
     omics_type: Optional[str] = None,
-    create_page: bool = True,
+    create_page: bool = True,  # DEPRECATED: Notion integration removed - these options are no-ops
     program_ids: Optional[List[str]] = None,
     experiment_ids: Optional[List[str]] = None,
 ) -> FileIngestionResult:

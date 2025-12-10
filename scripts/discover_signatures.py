@@ -101,7 +101,7 @@ def main() -> None:
     parser.add_argument(
         "--ingest",
         action="store_true",
-        help="Ingest discovered signatures into Notion after discovery",
+        help="Ingest discovered signatures into Notion after discovery",  # DEPRECATED: Notion integration removed - these options are no-ops
     )
 
     args = parser.parse_args()

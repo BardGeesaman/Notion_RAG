@@ -107,7 +107,7 @@ def parse_study_list(study_list: List[str]) -> List[Dict[str, str]]:
 def batch_import_studies(
     studies: List[Dict[str, str]],
     default_repository: Optional[str] = None,
-    create_notion: bool = False,
+    create_notion: bool = False,  # DEPRECATED: Notion integration removed - these options are no-ops
     create_postgres: bool = True,
     ingest: bool = False,
     stop_on_error: bool = False,

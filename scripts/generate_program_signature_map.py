@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from amprenta_rag.analysis.program_signature_maps import (
     generate_program_map_report,
     generate_program_signature_map,
-    update_notion_with_program_map,
+    update_notion_with_program_map,  # DEPRECATED: Notion integration removed - these options are no-ops
 )
 from amprenta_rag.logging_utils import get_logger
 
@@ -47,7 +47,7 @@ def main() -> None:
     parser.add_argument(
         "--update-notion",
         action="store_true",
-        help="Update Notion program page with map summary",
+        help="Update Notion program page with map summary",  # DEPRECATED: Notion integration removed - these options are no-ops
     )
     parser.add_argument(
         "--include-all",

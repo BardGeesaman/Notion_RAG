@@ -8,7 +8,7 @@ from amprenta_rag.metadata import classify_and_update_all_literature
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Classify semantic + lipid metadata for Literature DB pages and update Notion."
+        description="Classify semantic + lipid metadata for Literature DB pages (DEPRECATED: Notion integration removed - these options are no-ops)."
     )
     parser.add_argument(
         "--limit",

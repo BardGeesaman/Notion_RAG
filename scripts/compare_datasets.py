@@ -31,11 +31,11 @@ def main() -> None:
     
     parser.add_argument(
         "--dataset1-id",
-        help="Notion page ID of first dataset (with dashes)",
+        help="Notion page ID of first dataset (with dashes)",  # DEPRECATED: Notion integration removed - these options are no-ops
     )
     parser.add_argument(
         "--dataset2-id",
-        help="Notion page ID of second dataset (with dashes)",
+        help="Notion page ID of second dataset (with dashes)",  # DEPRECATED: Notion integration removed - these options are no-ops
     )
     parser.add_argument(
         "--dataset-ids",

@@ -3,7 +3,7 @@
 Discover lipidomics studies in Metabolomics Workbench.
 
 This script scans all MW studies and identifies those that contain lipidomics data,
-then can optionally harvest them into Notion.
+then can optionally harvest them into Notion. # DEPRECATED: Notion integration removed - these options are no-ops
 """
 
 import sys

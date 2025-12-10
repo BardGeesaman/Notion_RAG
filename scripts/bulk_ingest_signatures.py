@@ -3,7 +3,7 @@
 Bulk ingest lipid signatures from a directory of TSV/CSV files.
 
 This script scans a configured directory for signature files and ingests
-them all into Notion databases:
+them all into Notion databases (DEPRECATED: Notion integration removed - these options are no-ops):
 - Lipid Signatures database
 - Lipid Signature Components database
 - Lipid Species database
