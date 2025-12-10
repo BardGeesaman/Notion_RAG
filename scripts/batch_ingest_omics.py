@@ -23,6 +23,7 @@ from amprenta_rag.ingestion.omics_type_detection import detect_omics_type
 from amprenta_rag.ingestion.proteomics_ingestion import ingest_proteomics_file
 from amprenta_rag.ingestion.transcriptomics_ingestion import ingest_transcriptomics_file
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.utils.errors import format_error, render_cli_error
 
 logger = get_logger(__name__)
 
@@ -132,69 +133,78 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    directory = Path(args.directory)
-    if not directory.is_dir():
-        parser.error(f"Directory not found: {directory}")
+    try:
+        directory = Path(args.directory)
+        if not directory.is_dir():
+            raise FileNotFoundError(directory)
 
-    files = sorted(directory.glob(args.pattern))
-    if not files:
-        print("No files matched the pattern.")
-        return
+        files = sorted(directory.glob(args.pattern))
+        if not files:
+            print("No files matched the pattern.")
+            return
 
-    logger.info(
-        "[BATCH-INGEST] Starting batch: %d files, pattern=%s, parallel=%d",
-        len(files),
-        args.pattern,
-        args.parallel,
-    )
+        logger.info(
+            "[BATCH-INGEST] Starting batch: %d files, pattern=%s, parallel=%d",
+            len(files),
+            args.pattern,
+            args.parallel,
+        )
 
-    results: List[Dict[str, str]] = []
-    with ThreadPoolExecutor(max_workers=args.parallel) as executor:
-        futures = {}
-        for file_path in files:
-            detected = args.override_type or detect_omics_type(str(file_path))
-            futures[executor.submit(
-                _ingest_one,
-                file_path,
-                detected,
-                args.create_pages,
-                args.program_ids or None,
-                args.experiment_ids or None,
-            )] = file_path
+        results: List[Dict[str, str]] = []
+        with ThreadPoolExecutor(max_workers=args.parallel) as executor:
+            futures = {}
+            for file_path in files:
+                detected = args.override_type or detect_omics_type(str(file_path))
+                futures[executor.submit(
+                    _ingest_one,
+                    file_path,
+                    detected,
+                    args.create_pages,
+                    args.program_ids or None,
+                    args.experiment_ids or None,
+                )] = file_path
 
-        for future in tqdm(as_completed(futures), total=len(futures), desc="Batch"):
-            results.append(future.result())
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Batch"):
+                results.append(future.result())
 
-    # Summary table
-    print("\nSummary:")
-    headers = ["Filename", "Type", "Status", "Page ID", "Error"]
-    rows = [headers]
-    for res in results:
-        rows.append([
-            res.get("filename", ""),
-            res.get("type", ""),
-            res.get("status", ""),
-            res.get("page_id", ""),
-            res.get("error", ""),
-        ])
+        print("
+Summary:")
+        headers = ["Filename", "Type", "Status", "Page ID", "Error"]
+        rows = [headers]
+        for res in results:
+            rows.append([
+                res.get("filename", ""),
+                res.get("type", ""),
+                res.get("status", ""),
+                res.get("page_id", ""),
+                res.get("error", ""),
+            ])
 
-    col_widths = [max(len(str(row[i])) for row in rows) for i in range(len(headers))]
+        col_widths = [max(len(str(row[i])) for row in rows) for i in range(len(headers))]
 
-    def fmt_row(row: List[str]) -> str:
-        return " | ".join(str(cell).ljust(col_widths[i]) for i, cell in enumerate(row))
+        def fmt_row(row: List[str]) -> str:
+            return " | ".join(str(cell).ljust(col_widths[i]) for i, cell in enumerate(row))
 
-    sep = "-+-".join("-" * w for w in col_widths)
-    print(fmt_row(headers))
-    print(sep)
-    for row in rows[1:]:
-        print(fmt_row(row))
+        sep = "-+-".join("-" * w for w in col_widths)
+        print(fmt_row(headers))
+        print(sep)
+        for row in rows[1:]:
+            print(fmt_row(row))
 
-    failures = [r for r in results if r.get("status") != "SUCCESS"]
-    logger.info(
-        "[BATCH-INGEST] Completed batch: %d success, %d failed",
-        len(results) - len(failures),
-        len(failures),
-    )
+        failures = [r for r in results if r.get("status") != "SUCCESS"]
+        logger.info(
+            "[BATCH-INGEST] Completed batch: %d success, %d failed",
+            len(results) - len(failures),
+            len(failures),
+        )
+
+    except FileNotFoundError as exc:
+        render_cli_error("file_not_found", path=str(exc))
+        sys.exit(1)
+    except Exception as exc:
+        logger.error(format_error("db_connection", details=str(exc)))
+        render_cli_error("db_connection", details=str(exc))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
