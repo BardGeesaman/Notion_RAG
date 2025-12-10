@@ -9,6 +9,7 @@ candidate signatures based on feature co-occurrence and direction consistency.
 import argparse
 import sys
 from pathlib import Path
+from tqdm import tqdm
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
