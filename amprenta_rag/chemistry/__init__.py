@@ -8,14 +8,17 @@ HTS campaigns, and biochemical assay results.
 from __future__ import annotations
 
 from amprenta_rag.chemistry.database import (
-    find_compound_by_inchi_key,
     get_chemistry_db_path,
     get_hits_for_campaign,
     initialize_chemistry_database,
+    find_compound_by_inchi_key,
     insert_biochemical_results,
     insert_compound,
     insert_hts_campaign,
     insert_hts_results,
+    insert_compound_signature_link,
+    get_compounds_for_signature,
+    get_signatures_for_compound,
 )
 from amprenta_rag.chemistry.normalization import (
     compute_molecular_descriptors,
@@ -27,6 +30,7 @@ from amprenta_rag.chemistry.schema import (
     Compound,
     HTSCampaign,
     HTSResult,
+    CompoundSignatureLink,
 )
 
 __all__ = [
@@ -34,6 +38,7 @@ __all__ = [
     "HTSCampaign",
     "HTSResult",
     "BiochemicalResult",
+    "CompoundSignatureLink",
     "initialize_chemistry_database",
     "get_chemistry_db_path",
     "insert_compound",
@@ -42,6 +47,9 @@ __all__ = [
     "insert_hts_results",
     "insert_biochemical_results",
     "get_hits_for_campaign",
+    "insert_compound_signature_link",
+    "get_compounds_for_signature",
+    "get_signatures_for_compound",
     "normalize_smiles",
     "compute_molecular_descriptors",
     "generate_compound_id",

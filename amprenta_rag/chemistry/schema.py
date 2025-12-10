@@ -120,6 +120,20 @@ CREATE TABLE IF NOT EXISTS compound_program (
 );
 """
 
+COMPOUND_SIGNATURE_TABLE = """
+CREATE TABLE IF NOT EXISTS compound_signature (
+    compound_id TEXT NOT NULL,
+    signature_id TEXT NOT NULL,
+    effect_type TEXT,
+    correlation REAL,
+    p_value REAL,
+    evidence_source TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (compound_id, signature_id),
+    FOREIGN KEY (compound_id) REFERENCES compounds(compound_id)
+);
+"""
+
 # Indexes for performance
 INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_compounds_inchi_key ON compounds(inchi_key);",
@@ -130,6 +144,7 @@ INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_biochemical_compound ON biochemical_results(compound_id);",
     "CREATE INDEX IF NOT EXISTS idx_biochemical_target ON biochemical_results(target);",
     "CREATE INDEX IF NOT EXISTS idx_compound_program_program ON compound_program(program_id);",
+    "CREATE INDEX IF NOT EXISTS idx_compound_signature_signature ON compound_signature(signature_id);",
 ]
 
 
@@ -190,4 +205,23 @@ class BiochemicalResult:
     activity_type: Optional[str] = None
     units: Optional[str] = None
     run_date: Optional[str] = None
+
+
+@dataclass
+class CompoundSignatureLink:
+    """
+    Represents a link between a compound and a Postgres signature.
+
+    This table is used to record compound–signature relationships discovered
+    via screening, HTS, or analysis workflows.
+    """
+
+    compound_id: str
+    signature_id: str
+    effect_type: Optional[str] = None  # 'reverses', 'mimics', 'partial', 'unknown'
+    correlation: Optional[float] = None  # -1.0 to 1.0
+    p_value: Optional[float] = None
+    evidence_source: Optional[str] = None
+    created_at: Optional[str] = None
+
 

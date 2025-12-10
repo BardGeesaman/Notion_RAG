@@ -14,12 +14,14 @@ from amprenta_rag.chemistry.schema import (
     BIOCHEMICAL_RESULTS_TABLE,
     COMPOUND_PROGRAM_TABLE,
     COMPOUNDS_TABLE,
+    COMPOUND_SIGNATURE_TABLE,
     HTS_CAMPAIGNS_TABLE,
     HTS_RESULTS_TABLE,
     INDEXES,
     LIBRARIES_TABLE,
     LIBRARY_COMPOUNDS_TABLE,
     BiochemicalResult,
+    CompoundSignatureLink,
     Compound,
     HTSCampaign,
     HTSResult,
@@ -71,6 +73,7 @@ def initialize_chemistry_database(db_path: Optional[Path] = None) -> None:
         cursor.execute(HTS_RESULTS_TABLE)
         cursor.execute(BIOCHEMICAL_RESULTS_TABLE)
         cursor.execute(COMPOUND_PROGRAM_TABLE)
+        cursor.execute(COMPOUND_SIGNATURE_TABLE)
         
         # Create indexes
         for index_sql in INDEXES:
@@ -408,4 +411,170 @@ def get_hits_for_campaign(
         return results
     finally:
         conn.close()
+
+
+def insert_compound_signature_link(
+    link: CompoundSignatureLink,
+    db_path: Optional[Path] = None,
+) -> None:
+    """
+    Insert or update a compound–signature link.
+
+    Args:
+        link: CompoundSignatureLink object
+        db_path: Optional path to database file
+    """
+    if db_path is None:
+        db_path = get_chemistry_db_path()
+
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO compound_signature (
+                compound_id,
+                signature_id,
+                effect_type,
+                correlation,
+                p_value,
+                evidence_source
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                link.compound_id,
+                link.signature_id,
+                link.effect_type,
+                link.correlation,
+                link.p_value,
+                link.evidence_source,
+            ),
+        )
+        conn.commit()
+        logger.debug(
+            "[CHEMISTRY][DB] Inserted/updated compound_signature link %s → %s",
+            link.compound_id,
+            link.signature_id,
+        )
+    except Exception as e:
+        conn.rollback()
+        logger.error(
+            "[CHEMISTRY][DB] Error inserting compound_signature link %s → %s: %r",
+            link.compound_id,
+            link.signature_id,
+            e,
+        )
+        raise
+    finally:
+        conn.close()
+
+
+def get_compounds_for_signature(
+    signature_id: str,
+    db_path: Optional[Path] = None,
+) -> List[CompoundSignatureLink]:
+    """
+    Get all compound–signature links for a given signature_id.
+
+    Args:
+        signature_id: Postgres signature UUID as string
+        db_path: Optional path to database file
+
+    Returns:
+        List of CompoundSignatureLink objects
+    """
+    if db_path is None:
+        db_path = get_chemistry_db_path()
+
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT compound_id,
+                   signature_id,
+                   effect_type,
+                   correlation,
+                   p_value,
+                   evidence_source,
+                   created_at
+            FROM compound_signature
+            WHERE signature_id = ?
+            ORDER BY correlation DESC
+            """,
+            (signature_id,),
+        )
+        rows = cursor.fetchall()
+
+        return [
+            CompoundSignatureLink(
+                compound_id=row[0],
+                signature_id=row[1],
+                effect_type=row[2],
+                correlation=row[3],
+                p_value=row[4],
+                evidence_source=row[5],
+                created_at=row[6],
+            )
+            for row in rows
+        ]
+    finally:
+        conn.close()
+
+
+def get_signatures_for_compound(
+    compound_id: str,
+    db_path: Optional[Path] = None,
+) -> List[CompoundSignatureLink]:
+    """
+    Get all compound–signature links for a given compound_id.
+
+    Args:
+        compound_id: Compound identifier used in the chemistry DB
+        db_path: Optional path to database file
+
+    Returns:
+        List of CompoundSignatureLink objects
+    """
+    if db_path is None:
+        db_path = get_chemistry_db_path()
+
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT compound_id,
+                   signature_id,
+                   effect_type,
+                   correlation,
+                   p_value,
+                   evidence_source,
+                   created_at
+            FROM compound_signature
+            WHERE compound_id = ?
+            ORDER BY correlation DESC
+            """,
+            (compound_id,),
+        )
+        rows = cursor.fetchall()
+
+        return [
+            CompoundSignatureLink(
+                compound_id=row[0],
+                signature_id=row[1],
+                effect_type=row[2],
+                correlation=row[3],
+                p_value=row[4],
+                evidence_source=row[5],
+                created_at=row[6],
+            )
+            for row in rows
+        ]
+    finally:
+        conn.close()
+
 

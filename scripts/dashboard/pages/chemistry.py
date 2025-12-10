@@ -14,6 +14,13 @@ HTSCampaign = db_models.HTSCampaign
 BiochemicalResult = db_models.BiochemicalResult
 
 from scripts.dashboard.db_session import db_session
+from amprenta_rag.chemistry.compound_linking import (
+    find_compounds_reversing_signature,
+    find_signatures_affected_by_compound,
+    link_compound_to_signature,
+)
+from amprenta_rag.chemistry.database import get_chemistry_db_path
+import sqlite3
 
 
 def render_chemistry_page() -> None:
@@ -29,7 +36,9 @@ def render_chemistry_page() -> None:
     st.header("⚗️ Chemistry")
 
     # Tabs for different chemistry entities
-    tab1, tab2, tab3 = st.tabs(["Compounds", "HTS Campaigns", "Biochemical Results"])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["Compounds", "HTS Campaigns", "Biochemical Results", "Signature Links"]
+    )
 
     with tab1:
         st.subheader("Compounds")
@@ -266,3 +275,107 @@ def render_chemistry_page() -> None:
                                 st.write(f"**Run Date:** {result.run_date.strftime('%Y-%m-%d')}")
             else:
                 st.info("No biochemical results found.")
+
+    with tab4:
+        st.subheader("Signature Links")
+
+        # Helper: fetch compounds from SQLite (chemistry DB)
+        def _load_compound_ids() -> list[str]:
+            try:
+                conn = sqlite3.connect(str(get_chemistry_db_path()))
+                rows = conn.execute("SELECT compound_id FROM compounds ORDER BY created_at DESC LIMIT 500").fetchall()
+                return [r[0] for r in rows]
+            except Exception:
+                return []
+            finally:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+        compound_options = _load_compound_ids()
+
+        st.markdown("### Link Compound to Signature")
+        col_l, col_r = st.columns(2)
+        with col_l:
+            compound_sel = st.selectbox("Compound", compound_options, key="siglink_compound_sel")
+            signature_id = st.text_input("Signature ID (UUID)", key="siglink_signature_id")
+            effect_type = st.selectbox(
+                "Effect Type",
+                ["reverses", "mimics", "partial", "unknown"],
+                key="siglink_effect_type",
+            )
+        with col_r:
+            correlation = st.number_input("Correlation", value=0.0, step=0.01, format="%.3f", key="siglink_corr")
+            p_value = st.number_input("p-value", value=1.0, step=0.001, format="%.4f", key="siglink_pval")
+            evidence_source = st.text_input("Evidence Source", key="siglink_evidence")
+
+        if st.button("Create Link", key="siglink_create_btn"):
+            if compound_sel and signature_id:
+                try:
+                    link_compound_to_signature(
+                        compound_id=compound_sel,
+                        signature_id=signature_id,
+                        effect_type=effect_type,
+                        correlation=correlation,
+                        p_value=p_value,
+                        evidence_source=evidence_source or None,
+                    )
+                    st.success(f"Linked compound {compound_sel} to signature {signature_id} ({effect_type}).")
+                except Exception as e:
+                    st.error(f"Error creating link: {e}")
+            else:
+                st.warning("Compound and Signature ID are required.")
+
+        st.markdown("---")
+        st.markdown("### Find Compounds Reversing Signature")
+        search_sig_id = st.text_input("Signature ID", key="siglink_search_signature")
+        min_corr = st.slider(
+            "Minimum correlation (negative)",
+            min_value=-1.0,
+            max_value=0.0,
+            value=-0.5,
+            step=0.05,
+            key="siglink_min_corr",
+        )
+        if st.button("Search Reversing Compounds", key="siglink_search_btn"):
+            if search_sig_id:
+                try:
+                    rows = find_compounds_reversing_signature(search_sig_id, min_correlation=min_corr)
+                    if rows:
+                        df = pd.DataFrame(rows, columns=["compound_id", "correlation", "p_value"])
+                        df["effect_type"] = "reverses"
+                        st.dataframe(df, hide_index=True, width='stretch')
+                    else:
+                        st.info("No reversing compounds found for this signature.")
+                except Exception as e:
+                    st.error(f"Error searching links: {e}")
+            else:
+                st.warning("Enter a signature ID to search.")
+
+        st.markdown("---")
+        st.markdown("### View Signature Links for Compound")
+        compound_view_sel = st.selectbox(
+            "Compound", compound_options, key="siglink_view_compound"
+        )
+        if st.button("Show Links", key="siglink_view_btn"):
+            try:
+                links = find_signatures_affected_by_compound(compound_view_sel)
+                if links:
+                    df_links = pd.DataFrame(
+                        [
+                            {
+                                "signature_id": link.signature_id,
+                                "effect_type": link.effect_type,
+                                "correlation": link.correlation,
+                                "p_value": link.p_value,
+                                "evidence_source": link.evidence_source,
+                            }
+                            for link in links
+                        ]
+                    )
+                    st.dataframe(df_links, hide_index=True, width='stretch')
+                else:
+                    st.info("No signature links for this compound.")
+            except Exception as e:
+                st.error(f"Error fetching links: {e}")

@@ -38,6 +38,27 @@
 
 ---
 
+### 2. Chemistry & HTS Integration ✅ COMPLETE
+
+**Status**: Fully implemented and tested (December 2025)
+
+**Implemented Features**:
+- ✅ SQLite chemistry database (compounds, HTS campaigns, biochemical results)
+- ✅ SMILES normalization with RDKit fallback
+- ✅ Screening ingestion pipeline
+- ✅ Compound-signature linking (reverse matching)
+- ✅ RAG integration for chemistry queries
+- ✅ Dashboard chemistry page with Signature Links tab
+- ✅ Unit tests for compound linking
+
+**Key Files**:
+- `amprenta_rag/chemistry/compound_linking.py`
+- `amprenta_rag/query/chemistry_query.py`
+- `amprenta_rag/tests/chemistry/test_compound_linking.py`
+- `scripts/dashboard/pages/chemistry.py`
+
+---
+
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
 
 ### 1. Experimental Design Metadata System (5-6 days) 🔥🔥🔥
@@ -78,20 +99,7 @@
 
 ---
 
-### 2. Chemistry & HTS Integration (3-4 days) 🧪
-
-**Goal**: Ingest High-Throughput Screening data (up to 1M molecules)
-
-**What's Needed**:
-- Implement SQLite layer for chemistry data
-- Build screening ingestion pipeline
-- Link compounds to biological signatures they reverse
-
-**Impact**: Expands platform from "biology-only" to "drug discovery"
-
----
-
-### 3. Enhancements & Polish (Various) 🔥
+### 2. Enhancements & Polish (Various) 🔥
 
 **Evidence Reports**:
 - [ ] PDF export functionality
@@ -109,7 +117,7 @@
 - [ ] Parallel processing for large datasets
 
 **RAG Integration**:
-- [ ] Embed promoted compounds into Pinecone
+- [ ] Embed promoted compounds into Pinecone (Enhancement)
 - [ ] Add compound summaries to RAG index
 - [ ] Enable compound queries in RAG
 
@@ -117,7 +125,7 @@
 
 ## 📊 MEDIUM PRIORITY (Future Enhancements)
 
-### 4. Advanced Analytics
+### 3. Advanced Analytics
 
 **Signature Discovery Enhancements**:
 - [ ] Multi-dataset pattern detection
@@ -129,7 +137,7 @@
 - [ ] Time-series analysis
 - [ ] Cohort comparison
 
-### 5. User Experience
+### 4. User Experience
 
 **CLI Improvements**:
 - [ ] Interactive mode for complex operations
@@ -141,7 +149,7 @@
 - [ ] Tutorial notebooks
 - [ ] Video walkthroughs
 
-### 6. Integration Enhancements
+### 5. Integration Enhancements
 
 **Public Repositories**:
 - [ ] Add more repository types (ArrayExpress, etc.)
@@ -248,7 +256,7 @@
 
 ---
 
-**Current System Status**: ✅ Production Ready (Pathway Analysis Complete)  
+**Current System Status**: ✅ Production Ready (Chemistry & HTS Complete)  
 **Architecture**: Postgres-only (Notion removed December 2025)  
 **Next Milestone**: Experimental Design Metadata System  
 **Estimated Time**: 5-6 days for experimental design
