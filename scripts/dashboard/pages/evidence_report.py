@@ -7,6 +7,7 @@ from amprenta_rag.reporting.evidence_report import (
     generate_program_report,
     generate_signature_report,
 )
+from amprenta_rag.reporting.pdf_export import export_evidence_report_to_pdf
 
 
 def render_evidence_report_page():
@@ -39,6 +40,27 @@ def render_evidence_report_page():
             if section.references:
                 md += f"**References:** {section.references}\n\n"
         st.markdown(md)
-        if st.button("Download as Markdown", key="dl_md"):
-            fname = f"evidence_report_{entity_type.lower()}_{rep.entity_id}.md"
-            st.download_button("Download", md, file_name=fname)
+
+        # Download buttons
+        col1, col2 = st.columns(2)
+        fname_base = f"evidence_report_{entity_type.lower()}_{rep.entity_id}"
+
+        with col1:
+            st.download_button(
+                "📄 Download Markdown",
+                md,
+                file_name=f"{fname_base}.md",
+                mime="text/markdown",
+            )
+
+        with col2:
+            try:
+                pdf_bytes = export_evidence_report_to_pdf(rep)
+                st.download_button(
+                    "📕 Download PDF",
+                    pdf_bytes,
+                    file_name=f"{fname_base}.pdf",
+                    mime="application/pdf",
+                )
+            except Exception as e:
+                st.warning(f"PDF export unavailable: {e}")

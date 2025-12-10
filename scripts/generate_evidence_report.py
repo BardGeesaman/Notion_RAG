@@ -22,6 +22,7 @@ from amprenta_rag.reporting.evidence_report import (
     generate_signature_evidence_report,
     write_evidence_report_to_notion,  # DEPRECATED: Notion integration removed - these options are no-ops
 )
+from amprenta_rag.reporting.pdf_export import markdown_to_pdf
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -83,6 +84,11 @@ def main() -> None:
         "--output",
         type=Path,
         help="Output file path for evidence report (markdown format)",
+    )
+    parser.add_argument(
+        "--pdf",
+        action="store_true",
+        help="Export report as PDF (in addition to or instead of markdown)",
     )
     parser.add_argument(
         "--write-to-notion",
@@ -162,6 +168,20 @@ def main() -> None:
             args.output.write_text(formatted_report, encoding="utf-8")
             print(f"\n✅ Evidence report saved to {args.output}")
         
+        # Export to PDF if requested
+        if args.pdf:
+            if args.output:
+                pdf_path = args.output.with_suffix(".pdf")
+            else:
+                pdf_path = Path(f"evidence_report_{report.entity_id}.pdf")
+
+            print(f"\n📕 Generating PDF...")
+            try:
+                markdown_to_pdf(formatted_report, output_path=pdf_path)
+                print(f"✅ PDF saved to {pdf_path}")
+            except Exception as e:
+                print(f"⚠️  PDF generation failed: {e}")
+
         # Write to Notion if requested
         if args.write_to_notion:
             print(f"\n📥 Writing report to Notion...")
