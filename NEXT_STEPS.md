@@ -1,69 +1,46 @@
 # Next Steps - Implementation Roadmap
 
-**Last Updated**: 2025-12-04  
-**Status**: Core features complete, ready for enhancements
+**Last Updated**: 2025-12-10  
+**Status**: Pathway analysis complete, Postgres-only architecture
+
+---
+
+## ✅ COMPLETED FEATURES
+
+### 1. Pathway Analysis ID Mapping ✅ COMPLETE
+
+**Status**: Fully implemented and tested (December 2025)
+
+**Implemented Features**:
+- ✅ UniProt mapping for proteins (`map_protein_to_uniprot`)
+- ✅ Gene symbol → KEGG ID mapping (`map_gene_to_kegg`)
+- ✅ Metabolite name → KEGG compound ID mapping (`map_metabolite_to_kegg`)
+- ✅ Protein → KEGG mapping via UniProt (`map_protein_to_kegg`)
+- ✅ Gene/Protein → Reactome mapping (`map_gene_to_reactome`, `map_protein_to_reactome`)
+- ✅ Batch mapping utility (`batch_map_features_to_pathway_ids`)
+- ✅ Caching and rate limiting for API calls
+- ✅ Full KEGG/Reactome API integration
+- ✅ Fisher's exact test with Benjamini-Hochberg FDR correction
+- ✅ Dashboard UI integration (Analysis Tools page)
+- ✅ Unit tests (47 tests covering ID mapping and enrichment)
+
+**Key Files**:
+- `amprenta_rag/analysis/id_mapping.py` - ID mapping services (449 lines)
+- `amprenta_rag/analysis/pathway/mapping.py` - Pathway mapping (360 lines)
+- `amprenta_rag/analysis/pathway/enrichment.py` - Enrichment analysis (352 lines)
+- `scripts/dashboard/pages/analysis.py` - Dashboard UI (480 lines)
+- `amprenta_rag/tests/analysis/test_id_mapping.py` - ID mapping tests (25 tests)
+- `amprenta_rag/tests/analysis/test_pathway_enrichment.py` - Enrichment tests (22 tests)
+
+**Usage**:
+- Dashboard: Analysis Tools → Pathway Enrichment
+- CLI: `python scripts/test_pathway_enrichment.py`
 
 ---
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
 
-### 1. Complete Pathway Analysis ID Mapping (2-3 days) 🔥🔥🔥
-
-**Status**: Framework complete, needs ID mapping services
-
-**What's Needed**:
-- Implement UniProt mapping for proteins
-- Implement gene symbol → KEGG ID mapping
-- Implement metabolite name → KEGG compound ID mapping
-- Complete KEGG/Reactome API integration
-
-**Files to Update**:
-- `amprenta_rag/analysis/pathway_analysis.py` (ID mapping functions)
-- Consider adding `amprenta_rag/analysis/id_mapping.py` for centralized mapping
-
-**Resources**:
-- UniProt REST API: https://www.uniprot.org/help/api
-- KEGG REST API: https://www.kegg.jp/kegg/rest/keggapi.html
-- Reactome API: https://reactome.org/ContentService/
-- MyGene.info for gene mapping: https://docs.mygene.info/
-
-**Impact**: Enables full pathway enrichment analysis for all omics types
-
----
-
-### 2. Test All New Features with Real Data (1-2 days) 🧪
-
-**What to Test**:
-- [ ] Program signature maps with real programs
-- [ ] Dataset comparison with multiple datasets
-- [ ] Evidence reports for all entity types
-- [ ] Chemistry compound promotion workflow
-- [ ] Pathway enrichment (once ID mapping is complete)
-
-**Test Scripts**:
-- Create integration tests for each major feature
-- Test with real Notion data
-- Verify performance improvements
-
----
-
-### 3. Pathway Analysis - Notion Integration (1-2 days) 🔥🔥
-
-**Status**: Pathways database created, needs integration
-
-**What's Needed**:
-- Add pathway relations to feature pages
-- Add pathway properties to datasets/signatures
-- Create pathway summary pages
-- Link enriched pathways back to Notion
-
-**Files to Create/Update**:
-- `amprenta_rag/analysis/pathway_notion_integration.py`
-- Update `amprenta_rag/analysis/enrichment.py`
-
----
-
-### 4. Experimental Design Metadata System (5-6 days) 🔥🔥🔥
+### 1. Experimental Design Metadata System (5-6 days) 🔥🔥🔥
 
 **Priority**: HIGH - Enables proper comparative analysis
 
@@ -101,7 +78,20 @@
 
 ---
 
-### 5. Enhancements & Polish (Various) 🔥
+### 2. Chemistry & HTS Integration (3-4 days) 🧪
+
+**Goal**: Ingest High-Throughput Screening data (up to 1M molecules)
+
+**What's Needed**:
+- Implement SQLite layer for chemistry data
+- Build screening ingestion pipeline
+- Link compounds to biological signatures they reverse
+
+**Impact**: Expands platform from "biology-only" to "drug discovery"
+
+---
+
+### 3. Enhancements & Polish (Various) 🔥
 
 **Evidence Reports**:
 - [ ] PDF export functionality
@@ -116,7 +106,6 @@
 
 **Performance**:
 - [ ] Further optimize batch operations
-- [ ] Add caching for pathway queries
 - [ ] Parallel processing for large datasets
 
 **RAG Integration**:
@@ -128,7 +117,7 @@
 
 ## 📊 MEDIUM PRIORITY (Future Enhancements)
 
-### 6. Advanced Analytics
+### 4. Advanced Analytics
 
 **Signature Discovery Enhancements**:
 - [ ] Multi-dataset pattern detection
@@ -140,7 +129,7 @@
 - [ ] Time-series analysis
 - [ ] Cohort comparison
 
-### 7. User Experience
+### 5. User Experience
 
 **CLI Improvements**:
 - [ ] Interactive mode for complex operations
@@ -152,7 +141,7 @@
 - [ ] Tutorial notebooks
 - [ ] Video walkthroughs
 
-### 8. Integration Enhancements
+### 6. Integration Enhancements
 
 **Public Repositories**:
 - [ ] Add more repository types (ArrayExpress, etc.)
@@ -160,14 +149,9 @@
 - [ ] Scheduled harvesting
 
 **Security & Collaboration**:
-- [ ] Multi-User Support (RBAC)
+- [ ] Multi-User Support (RBAC) - Added to roadmap Tier 3.2
 - [ ] Team-based data access
 - [ ] Audit logging
-
-**Notion Enhancements**:
-- [ ] Dashboard views
-- [ ] Automated report generation
-- [ ] Notification system
 
 ---
 
@@ -193,15 +177,15 @@
 
 ## 📋 RECOMMENDED WORKFLOW
 
-### Week 1: Complete Pathway Analysis
-1. Implement ID mapping services
-2. Test with real data
-3. Add Notion integration
-
-### Week 2: Experimental Design System
+### Week 1: Experimental Design System
 1. Extend database schema (design_type, sample_groups, timepoints)
 2. Implement repository metadata extraction (GEO, MW)
 3. Add design-aware statistical tests
+
+### Week 2: Chemistry Integration
+1. SQLite layer for HTS data
+2. Screening ingestion pipeline
+3. Compound-signature linking
 
 ### Week 3: Testing & Polish
 1. Comprehensive testing
@@ -218,27 +202,24 @@
 ## 🎯 IMMEDIATE ACTION ITEMS
 
 **Today/Tomorrow**:
-1. ✅ Complete pathway ID mapping (highest priority)
-2. ✅ Test pathway enrichment with real data
-3. ✅ Add pathway Notion integration
+1. Start Experimental Design Metadata schema design
+2. Review GEO/MW metadata extraction patterns
 
 **This Week**:
-1. Comprehensive feature testing
-2. Fix any bugs found
-3. Add PDF export to reports
+1. Complete Experimental Design Phase 1 (schema)
+2. Begin Phase 2 (metadata extraction)
 
 **Next Week**:
-1. Visualizations
-2. RAG compound integration
-3. Performance optimizations
+1. Complete Experimental Design system
+2. Begin Chemistry/HTS integration
 
 ---
 
 ## 💡 SUGGESTIONS
 
 **For Maximum Impact**:
-- Focus on pathway analysis completion first (unlocks full multi-omics analysis)
-- Then testing (ensures reliability)
+- Focus on Experimental Design (enables proper statistical comparisons)
+- Then Chemistry integration (expands to drug discovery)
 - Then enhancements (improves usability)
 
 **For Quick Wins**:
@@ -251,13 +232,13 @@
 ## 📞 QUESTIONS TO CONSIDER
 
 1. **Priority**: What's most important right now?
-   - Completing pathway analysis?
-   - Testing existing features?
-   - Adding new capabilities?
+   - Experimental Design metadata?
+   - Chemistry/HTS integration?
+   - Quick wins and polish?
 
 2. **Resources**: Do you have access to:
-   - UniProt/KEGG API keys (if needed)?
-   - Test datasets for validation?
+   - Example GEO/MW datasets with complex designs?
+   - HTS screening data for testing?
    - User feedback for prioritization?
 
 3. **Timeline**: What's the target for:
@@ -267,7 +248,8 @@
 
 ---
 
-**Current System Status**: ✅ Production Ready (core features)  
-**Next Milestone**: Pathway Analysis Complete  
-**Estimated Time**: 2-3 days for pathway completion
+**Current System Status**: ✅ Production Ready (Pathway Analysis Complete)  
+**Architecture**: Postgres-only (Notion removed December 2025)  
+**Next Milestone**: Experimental Design Metadata System  
+**Estimated Time**: 5-6 days for experimental design
 
