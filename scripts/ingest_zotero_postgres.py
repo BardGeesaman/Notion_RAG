@@ -285,7 +285,7 @@ def main() -> None:
         total_skipped = 0
         total_errors = 0
 
-        for idx, item in enumerate(literature_items, 1):
+        for idx, item in enumerate(tqdm(literature_items, desc="Ingesting Zotero items"), 1):
             item_key = item.get("data", {}).get("key")
             if not item_key:
                 continue

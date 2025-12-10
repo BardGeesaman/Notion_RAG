@@ -407,7 +407,7 @@ Examples:
         success_count = 0
         error_count = 0
         
-        for study in studies:
+        for study in tqdm(studies, desc="Importing studies"):
             try:
                 result = harvest_study(
                     study_id=study["study_id"],

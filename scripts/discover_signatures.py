@@ -159,7 +159,7 @@ def main() -> None:
         print(f"DISCOVERED {len(candidates)} SIGNATURE CANDIDATE(S)")
         print(f"{'=' * 80}\n")
 
-        for i, candidate in enumerate(candidates, 1):
+        for i, candidate in enumerate(tqdm(candidates, desc="Discovering signatures"), 1):
             print(f"{i}. {candidate.name}")
             print(f"   Features: {len(candidate.features)}")
             print(f"   Types: {', '.join(sorted(candidate.feature_types))}")
@@ -192,7 +192,7 @@ def main() -> None:
             )
 
             ingested_count = 0
-            for candidate in candidates:
+            for candidate in tqdm(candidates, desc="Ingesting discovered signatures"):
                 # Create a temporary TSV file for this candidate
                 import tempfile
 
