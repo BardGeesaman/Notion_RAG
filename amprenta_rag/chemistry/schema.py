@@ -112,9 +112,11 @@ COMPOUND_PROGRAM_TABLE = """
 CREATE TABLE IF NOT EXISTS compound_program (
     compound_id TEXT NOT NULL,
     program_id TEXT NOT NULL,
+    role TEXT,
     status TEXT,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (compound_id, program_id),
     FOREIGN KEY (compound_id) REFERENCES compounds(compound_id)
 );
@@ -129,6 +131,7 @@ CREATE TABLE IF NOT EXISTS compound_signature (
     p_value REAL,
     evidence_source TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (compound_id, signature_id),
     FOREIGN KEY (compound_id) REFERENCES compounds(compound_id)
 );
@@ -223,5 +226,6 @@ class CompoundSignatureLink:
     p_value: Optional[float] = None
     evidence_source: Optional[str] = None
     created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
 
