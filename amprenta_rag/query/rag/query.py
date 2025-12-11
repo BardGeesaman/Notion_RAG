@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
+from amprenta_rag.query.semantic_cache import get_semantic_cache
 
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.bm25_search import bm25_search, reciprocal_rank_fusion
@@ -39,6 +40,7 @@ def query_rag(
     hybrid_alpha: float = 0.5,
     use_rerank: bool = False,
     rerank_model: Optional[str] = None,
+    use_cache: bool = True,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -68,6 +70,11 @@ def query_rag(
     Returns:
         RAGQueryResult with matches, filtered matches, context chunks, and answer
     """
+    if use_cache and generate_answer:
+        cache = get_semantic_cache()
+        cached = cache.get(user_query)
+        if cached is not None:
+            return cached
     logger.info("[RAG] Querying Pinecone (top_k=%d) for: %s", top_k, user_query)
     meta_filter = build_meta_filter(
         disease=disease,
@@ -270,7 +277,7 @@ def query_rag(
 
     answer_with_provenance = answer + "\n\n" + "\n".join(provenance_lines)
 
-    return RAGQueryResult(
+    result = RAGQueryResult(
         query=user_query,
         matches=matches,
         filtered_matches=filtered,
@@ -278,6 +285,12 @@ def query_rag(
         answer=answer_with_provenance,
         citations=citations,
     )
+
+    if use_cache and generate_answer:
+        cache = get_semantic_cache()
+        cache.set(user_query, result)
+
+    return result
 
 
 def signature_similarity_query(

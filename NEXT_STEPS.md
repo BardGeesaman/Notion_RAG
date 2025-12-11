@@ -287,6 +287,9 @@
 **Infrastructure**:
 - [ ] Job Queue System (Celery/Redis)
 - [ ] S3/Tiered Storage Integration
+- [ ] **System Administration**:
+  - [ ] Cache Management UI (Clear Redis/Semantic caches)
+  - [ ] System Health Dashboard (CPU/Memory/Queue depth)
 
 **Collaboration**:
 - [ ] "Project" Workspace Abstraction
