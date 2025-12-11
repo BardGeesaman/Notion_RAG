@@ -484,6 +484,68 @@ class ActivityResult(Base):
     created_by = relationship("User")
 
 
+class ADMEResult(Base):
+    """ADME assay result for a compound."""
+
+    __tablename__ = "adme_results"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=False)
+    assay_type = Column(String(50), nullable=False)  # permeability, stability, cyp_inhibition
+    value = Column(Float, nullable=False)
+    unit = Column(String(20), nullable=True)
+    conditions = Column(JSON, nullable=True)  # e.g., {"species": "human", "matrix": "microsomes"}
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
+    compound = relationship("Compound", backref="adme_results")
+    created_by = relationship("User")
+
+
+class PKStudy(Base):
+    """Pharmacokinetic study result."""
+
+    __tablename__ = "pk_studies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=False)
+    species = Column(String(50), nullable=False)  # mouse, rat, dog, human
+    route = Column(String(50), nullable=True)  # IV, PO, IP
+    dose = Column(Float, nullable=True)
+    dose_unit = Column(String(20), nullable=True)
+    auc = Column(Float, nullable=True)  # Area under curve
+    c_max = Column(Float, nullable=True)  # Max concentration
+    t_max = Column(Float, nullable=True)  # Time to max
+    half_life = Column(Float, nullable=True)  # t1/2
+    bioavailability = Column(Float, nullable=True)  # F%
+    clearance = Column(Float, nullable=True)  # CL
+    vd = Column(Float, nullable=True)  # Volume of distribution
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
+    compound = relationship("Compound", backref="pk_studies")
+    created_by = relationship("User")
+
+
+class ToxicologyResult(Base):
+    """Toxicology assay result."""
+
+    __tablename__ = "toxicology_results"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=False)
+    assay_type = Column(String(50), nullable=False)  # herg, ames, cytotoxicity
+    value = Column(Float, nullable=True)
+    unit = Column(String(20), nullable=True)
+    result = Column(String(50), nullable=True)  # positive, negative, inconclusive
+    conditions = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
+    compound = relationship("Compound", backref="toxicology_results")
+    created_by = relationship("User")
+
+
 class HTSCampaign(Base):
     """High-throughput screening campaign."""
 
