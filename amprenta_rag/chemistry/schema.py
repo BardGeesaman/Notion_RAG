@@ -171,8 +171,8 @@ INDEXES = [
 class Compound:
     """Represents a chemical compound."""
     compound_id: str
-    corporate_id: Optional[str] = None
     smiles: str
+    corporate_id: Optional[str] = None
     inchi_key: Optional[str] = None
     canonical_smiles: Optional[str] = None
     molecular_formula: Optional[str] = None

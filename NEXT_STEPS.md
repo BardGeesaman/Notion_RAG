@@ -150,6 +150,10 @@
 
 **Security & Collaboration**:
 - [ ] Team-based data access
+- [ ] **User Feedback System**:
+  - [ ] Error Reporting (Automatic capture + user description)
+  - [ ] Feature Request Tracker (Vote/Prioritize)
+  - [ ] Admin Dashboard for triage
 
 ### 2. ELN & Workflow Features
 
