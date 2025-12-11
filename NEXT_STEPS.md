@@ -122,11 +122,16 @@
 - ✅ Auto-logging on login/logout
 - ✅ created_by_id FK on Program, Experiment, Dataset, Signature
 
-### 10. Protocol Management ✅ COMPLETE
-- ✅ Protocol model with versioning, steps, materials, parameters
-- ✅ ExperimentProtocol linking table
-- ✅ Dashboard page: browse, create, link protocols
-- ✅ Version history via parent_id
+### 11. Automated Discovery Workflow ✅ COMPLETE
+- ✅ DiscoveryJob/DiscoveredStudy models
+- ✅ Repository scanning service (GEO, MetaboLights)
+- ✅ Dashboard: Run scans, review/import studies, job history
+
+### 12. Sample Inventory System ✅ COMPLETE
+- ✅ StorageLocation (hierarchical: freezer→shelf→box)
+- ✅ Sample (barcode, lineage, experiment link, status)
+- ✅ SampleTransfer (movement tracking)
+- ✅ Dashboard: 4 tabs (Locations, Samples, Register, Transfer)
 
 ---
 
@@ -136,7 +141,7 @@
 
 **Public Repositories**:
 - [ ] Add more repository types (others)
-- [ ] Automated discovery workflows
+- [x] Automated discovery workflows
 - [ ] Scheduled harvesting
 - [ ] **Publication & Supplementary Data Extraction**:
   - [ ] Extract experiment details from PDF publications
@@ -149,14 +154,20 @@
 ### 2. ELN & Workflow Features
 
 **Sample Inventory**:
-- [ ] Physical location tracking (freezers/boxes)
-- [ ] Sample lineage and parent/child tracking
-- [ ] Barcode generation support
+- [x] Physical location tracking (freezers/boxes)
+- [x] Sample lineage and parent/child tracking
+- [x] Barcode generation support
 
 **Compliance & Integrity**:
 - [ ] 21 CFR Part 11 readiness (audit trails)
 - [ ] Electronic signatures (future)
 - [ ] Data immutability logs
+
+**Scientific Q&A & Insight Tracker**:
+- [ ] Question Registry (CRUD for scientific questions)
+- [ ] Persistent RAG Answers (Save outputs + evidence)
+- [ ] Versioning (Re-run questions as data updates)
+- [ ] Export capabilities (PDF/CSV of Q&A reports)
 
 ### 3. Chemistry Informatics Enhancements
 
@@ -216,8 +227,9 @@
 2. Security & Multi-User Support (Team Access)
 
 ### Phase 2: ELN & Workflow Features
-1. Sample Inventory System
-2. Audit Trails & Compliance
+1. Scientific Q&A & Insight Tracker
+2. Sample Inventory System
+3. Audit Trails & Compliance
 
 ### Phase 3: Chemistry Informatics
 1. Chemical Registration System
@@ -272,7 +284,7 @@
 
 ---
 
-**Current System Status**: ✅ Production Ready (ELN Features Complete)  
+**Current System Status**: ✅ Production Ready (Full ELN System Complete)  
 **Architecture**: Postgres-only (Notion removed December 2025)  
-**Next Milestone**: Sample Inventory & Chemistry Informatics  
+**Next Milestone**: Chemistry Informatics & RAG Enhancements  
 **Estimated Time**: 3-4 weeks
