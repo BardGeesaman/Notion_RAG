@@ -249,6 +249,14 @@
   - [ ] Project Budget Allocation (CapEx/OpEx tracking)
   - [ ] Experiment Cost Calculator (Reagents + Labor + Outsourcing)
   - [ ] Purchase Request Approval Workflow
+- [ ] **Experiment Scheduling**:
+  - [ ] Shared Calendar / Equipment Booking
+  - [ ] Gantt Chart view for Protocol timelines
+  - [ ] Personal Task Scheduler (integrates with Cockpit)
+- [ ] **Chemistry Procurement**:
+  - [ ] Vendor Catalog Search (MolPort, Mcule, Enamine)
+  - [ ] Availability & Pricing Check
+  - [ ] Shopping Cart & PO Generation
 
 **Scientific Q&A & Insight Tracker**:
 - [x] Question Registry (CRUD for scientific questions)

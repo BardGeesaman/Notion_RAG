@@ -41,6 +41,10 @@ from amprenta_rag.chemistry.rgroup import (
     decompose_rgroups,
     get_rgroup_statistics,
 )
+from amprenta_rag.chemistry.pharmacophore import (
+    get_pharmacophore_features,
+    pharmacophore_search,
+)
 
 
 def render_chemistry_page() -> None:
@@ -194,6 +198,63 @@ def render_chemistry_page() -> None:
                     st.dataframe(results, hide_index=True, use_container_width=True)
             except Exception as e:
                 st.error(f"Search failed: {e}")
+
+        st.divider()
+        st.markdown("### Pharmacophore Search")
+        st.markdown("Search compounds by pharmacophore features (HBD, HBA, aromatic rings).")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("**Hydrogen Bond Donors (HBD)**")
+            min_hbd = st.number_input("Min HBD", min_value=0, value=0, key="min_hbd")
+            max_hbd = st.number_input("Max HBD", min_value=0, value=10, key="max_hbd")
+        
+        with col2:
+            st.markdown("**Hydrogen Bond Acceptors (HBA)**")
+            min_hba = st.number_input("Min HBA", min_value=0, value=0, key="min_hba")
+            max_hba = st.number_input("Max HBA", min_value=0, value=10, key="max_hba")
+        
+        with col3:
+            st.markdown("**Aromatic Rings**")
+            min_aromatic = st.number_input("Min Aromatic", min_value=0, value=0, key="min_aromatic")
+            max_aromatic = st.number_input("Max Aromatic", min_value=0, value=5, key="max_aromatic")
+        
+        if st.button("Search by Pharmacophore", type="primary", key="pharmacophore_search"):
+            try:
+                with db_session() as db:
+                    results = pharmacophore_search(
+                        min_hbd=min_hbd if min_hbd > 0 else None,
+                        max_hbd=max_hbd if max_hbd < 10 else None,
+                        min_hba=min_hba if min_hba > 0 else None,
+                        max_hba=max_hba if max_hba < 10 else None,
+                        min_aromatic=min_aromatic if min_aromatic > 0 else None,
+                        max_aromatic=max_aromatic if max_aromatic < 5 else None,
+                        db=db,
+                        limit=100,
+                    )
+                    
+                    if not results:
+                        st.info("No compounds found matching the criteria.")
+                    else:
+                        # Convert to DataFrame
+                        results_data = []
+                        for compound in results:
+                            features = get_pharmacophore_features(compound.smiles) if compound.smiles else {}
+                            results_data.append({
+                                "Compound ID": compound.compound_id,
+                                "SMILES": compound.smiles[:50] if compound.smiles else "",
+                                "HBD": features.get("hbd", compound.hbd_count or 0),
+                                "HBA": features.get("hba", compound.hba_count or 0),
+                                "Aromatic Rings": features.get("aromatic_rings", 0),
+                                "LogP": compound.logp,
+                                "MW": compound.molecular_weight,
+                            })
+                        
+                        st.dataframe(pd.DataFrame(results_data), hide_index=True, use_container_width=True)
+                        st.info(f"Found {len(results)} compounds")
+            except Exception as e:
+                st.error(f"Pharmacophore search failed: {e}")
+                st.exception(e)
 
     with tab_sar:
         st.subheader("SAR Analysis")
