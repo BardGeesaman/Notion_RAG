@@ -141,12 +141,18 @@
 ### 14. Lead Optimization Data Models ✅ COMPLETE
 - ✅ BiochemicalAssay and ActivityResult models
 - ✅ Activity cliff detection algorithm
+- ✅ Activity Cliffs Network visualization (circular graph)
 - ✅ ADMEResult model (permeability, stability, CYP inhibition)
 - ✅ PKStudy model (AUC, Cmax, half-life, bioavailability)
 - ✅ ToxicologyResult model (hERG, Ames, cytotoxicity)
 - ✅ Lead Optimization dashboard tab with ADME/PK/Tox entry forms
 - ✅ Compound profile view with liability alerts
 - ✅ Playwright error detection utility added
+
+### 15. Scientific Q&A Tracker ✅ COMPLETE
+- ✅ SavedQuestion/SavedAnswer models with versioning
+- ✅ Dashboard page with Ask, Browse, Re-run, Export tabs
+- ✅ Persistent RAG answer storage
 
 ---
 
@@ -192,10 +198,10 @@
 - [ ] Data immutability logs
 
 **Scientific Q&A & Insight Tracker**:
-- [ ] Question Registry (CRUD for scientific questions)
-- [ ] Persistent RAG Answers (Save outputs + evidence)
-- [ ] Versioning (Re-run questions as data updates)
-- [ ] Export capabilities (PDF/CSV of Q&A reports)
+- [x] Question Registry (CRUD for scientific questions)
+- [x] Persistent RAG Answers (Save outputs + evidence)
+- [x] Versioning (Re-run questions as data updates)
+- [x] Export capabilities (PDF/CSV of Q&A reports)
 
 ### 3. Chemistry Informatics Enhancements
 
@@ -211,7 +217,7 @@
 
 **SAR Analysis**:
 - [x] Calculated properties (LogP, MW, TPSA)
-- [ ] Activity cliffs visualization
+- [x] Activity cliffs visualization
 - [ ] R-group decomposition
 
 **Lead Optimization Data Models**:
