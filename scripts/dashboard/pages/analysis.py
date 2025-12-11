@@ -15,6 +15,11 @@ from amprenta_rag.analysis.power_analysis import (
     calculate_power,
     get_effect_size_preset,
 )
+from amprenta_rag.analysis.pattern_detection import (
+    find_recurring_features,
+    calculate_overlap,
+    get_cross_dataset_summary,
+)
 from amprenta_rag.database.models import Dataset, Program, Signature
 from scripts.dashboard.db_session import db_session
 
@@ -32,7 +37,7 @@ def render_analysis_page() -> None:
     st.markdown("Perform pathway enrichment, program signature mapping, and signature scoring.")
 
     # Tab selection
-    tab1, tab2, tab3, tab4 = st.tabs(["Pathway Enrichment", "Program Signature Maps", "Signature Scoring", "Power Analysis"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Pathway Enrichment", "Program Signature Maps", "Signature Scoring", "Power Analysis", "Cross-Dataset Patterns"])
 
     # Tab 1: Pathway Enrichment
     with tab1:
@@ -590,3 +595,96 @@ def render_analysis_page() -> None:
             except Exception as e:
                 st.error(f"❌ Error calculating sample size: {str(e)}")
                 st.exception(e)
+
+    # Tab 5: Cross-Dataset Patterns
+    with tab5:
+        st.subheader("Cross-Dataset Pattern Detection")
+        st.markdown("Find recurring features and patterns across multiple datasets.")
+        
+        with db_session() as db:
+            datasets = db.query(Dataset).order_by(Dataset.name).all()
+            
+            if not datasets:
+                st.info("No datasets available. Ingest datasets first.")
+            else:
+                dataset_options = {f"{d.name} ({d.id})": str(d.id) for d in datasets}
+                selected_datasets = st.multiselect(
+                    "Select datasets for pattern analysis",
+                    list(dataset_options.keys()),
+                    help="Select 2 or more datasets to find recurring features",
+                )
+                
+                if len(selected_datasets) >= 2:
+                    dataset_ids = [dataset_options[d] for d in selected_datasets]
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        min_occurrence = st.number_input(
+                            "Minimum Occurrence",
+                            min_value=2,
+                            max_value=len(selected_datasets),
+                            value=2,
+                            help="Minimum number of datasets a feature must appear in",
+                        )
+                    
+                    with col2:
+                        if st.button("Find Patterns", type="primary"):
+                            with st.spinner("Analyzing patterns across datasets..."):
+                                try:
+                                    # Find recurring features
+                                    recurring = find_recurring_features(
+                                        dataset_ids=dataset_ids,
+                                        db=db,
+                                        min_occurrence=min_occurrence,
+                                    )
+                                    
+                                    if recurring:
+                                        st.markdown("### Recurring Features")
+                                        recurring_df = pd.DataFrame([
+                                            {
+                                                "Feature": r["feature_name"],
+                                                "Occurrence Count": r["occurrence_count"],
+                                                "Datasets": ", ".join([d[:8] + "..." for d in r["datasets"]]),
+                                            }
+                                            for r in recurring
+                                        ])
+                                        st.dataframe(recurring_df, hide_index=True, use_container_width=True)
+                                        
+                                        # Summary statistics
+                                        st.markdown("### Summary Statistics")
+                                        summary = get_cross_dataset_summary(dataset_ids, db)
+                                        
+                                        col_a, col_b = st.columns(2)
+                                        with col_a:
+                                            st.markdown("**Total Features per Dataset:**")
+                                            for did, count in summary["total_features_per_dataset"].items():
+                                                dataset_name = next(
+                                                    (d.name for d in datasets if str(d.id) == did),
+                                                    did[:8] + "..."
+                                                )
+                                                st.metric(dataset_name, count)
+                                        
+                                        with col_b:
+                                            st.markdown("**Unique Features per Dataset:**")
+                                            for did, count in summary["unique_features_per_dataset"].items():
+                                                dataset_name = next(
+                                                    (d.name for d in datasets if str(d.id) == did),
+                                                    did[:8] + "..."
+                                                )
+                                                st.metric(f"{dataset_name} (unique)", count)
+                                        
+                                        if summary["overlap_counts"]:
+                                            st.markdown("**Pairwise Overlaps:**")
+                                            overlap_df = pd.DataFrame([
+                                                {"Dataset Pair": pair, "Overlap Count": count}
+                                                for pair, count in summary["overlap_counts"].items()
+                                            ])
+                                            st.dataframe(overlap_df, hide_index=True, use_container_width=True)
+                                    else:
+                                        st.info(f"No features found recurring in {min_occurrence} or more datasets.")
+                                
+                                except Exception as e:
+                                    st.error(f"❌ Error analyzing patterns: {str(e)}")
+                                    st.exception(e)
+                else:
+                    st.info("Select at least 2 datasets to perform pattern analysis.")
