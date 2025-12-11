@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID, TSVECTOR
 from sqlalchemy.orm import relationship
 
 from amprenta_rag.database.base import Base
@@ -398,6 +398,7 @@ class RAGChunk(Base):
 
     # Metadata (stored as JSON for flexibility)
     chunk_metadata = Column(JSON, nullable=True)  # Renamed from 'metadata' (reserved in SQLAlchemy)
+    search_vector = Column(TSVECTOR, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

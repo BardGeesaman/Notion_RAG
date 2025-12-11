@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.query.bm25_search import bm25_search, reciprocal_rank_fusion
 from amprenta_rag.query.pinecone_query import build_meta_filter, query_pinecone
 from amprenta_rag.query.rag.chunk_collection import collect_chunks
 from amprenta_rag.rag.hybrid_chunk_collection import collect_hybrid_chunks
@@ -32,6 +33,8 @@ def query_rag(
     lipid: Optional[str] = None,
     signature: Optional[str] = None,
     use_postgres: bool = True,
+    use_hybrid: bool = False,
+    hybrid_alpha: float = 0.5,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -39,9 +42,11 @@ def query_rag(
     This function orchestrates the full RAG pipeline:
     1. Builds metadata filter from query constraints
     2. Queries Pinecone for matches (with source type filtering)
-    3. Summarizes and filters matches
-    4. Retrieves chunk text from Notion
-    5. Synthesizes answer using OpenAI (if enabled)
+    3. Optionally runs BM25 / Postgres full‑text search and fuses results
+       with Reciprocal Rank Fusion when ``use_hybrid=True``
+    4. Summarizes and filters matches
+    5. Retrieves chunk text from Postgres (and legacy Notion snippets as fallback)
+    6. Synthesizes answer using OpenAI (if enabled)
 
     Args:
         user_query: User's query text
@@ -65,12 +70,81 @@ def query_rag(
         signature=signature,
     )
 
+    # 1) Primary vector search (Pinecone)
     raw_matches = query_pinecone(
         user_query,
         top_k=top_k,
         meta_filter=meta_filter,
         source_types=source_types,
     )
+
+    # 2) Optional hybrid search with Postgres BM25
+    if use_hybrid:
+        logger.info("[RAG][HYBRID] Running hybrid search (vector + BM25, alpha=%.2f)", hybrid_alpha)
+        try:
+            bm25_results = bm25_search(
+                user_query,
+                limit=top_k,
+                # bm25_search currently supports a single source_type filter
+                source_type=source_types[0] if source_types and len(source_types) == 1 else None,
+            )
+        except Exception as e:
+            logger.warning("[RAG][HYBRID] BM25 search failed, falling back to vector-only: %r", e)
+            bm25_results = []
+
+        # Normalize Pinecone matches into simple dicts for fusion
+        vector_results: List[Dict[str, Any]] = []
+        for m in raw_matches:
+            # Pinecone client may return objects or dicts
+            meta = getattr(m, "metadata", None) or getattr(m, "get", lambda *_: {})(  # type: ignore[attr-defined]
+                "metadata", {}
+            )
+            # Fallback if getattr(get) above returned a callable default
+            if callable(meta):
+                meta = {}
+
+            match_id = getattr(m, "id", None) or getattr(m, "get", lambda *_: None)("id")  # type: ignore[attr-defined]
+            score = getattr(m, "score", None) or getattr(m, "get", lambda *_: 0.0)("score")  # type: ignore[attr-defined]
+
+            vector_results.append(
+                {
+                    "id": match_id,
+                    "score": score,
+                    "metadata": meta or {},
+                    "chunk_id": (meta or {}).get("chunk_id") or match_id,
+                }
+            )
+
+        if bm25_results:
+            fused = reciprocal_rank_fusion(
+                bm25_results=bm25_results,
+                vector_results=vector_results,
+                alpha=hybrid_alpha,
+            )
+
+            # Keep only top_k fused results and adapt them back into a
+            # Pinecone‑like structure for downstream processing.
+            hybrid_matches: List[Dict[str, Any]] = []
+            for r in fused[:top_k]:
+                meta = r.get("metadata") or {}
+                content = r.get("content")
+                # Ensure we have a snippet for chunk collection / display
+                if content and not meta.get("snippet"):
+                    meta["snippet"] = content
+
+                hybrid_matches.append(
+                    {
+                        "id": r.get("chunk_id") or r.get("id"),
+                        "score": r.get("rrf_score") or r.get("bm25_score") or r.get("score", 0.0),
+                        "metadata": meta,
+                    }
+                )
+
+            if hybrid_matches:
+                logger.info(
+                    "[RAG][HYBRID] Using %d fused matches (vector + BM25)", len(hybrid_matches)
+                )
+                raw_matches = hybrid_matches
     if not raw_matches:
         return RAGQueryResult(
             query=user_query,
