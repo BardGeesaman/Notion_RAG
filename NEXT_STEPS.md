@@ -112,8 +112,21 @@
 - ✅ User model with bcrypt password hashing
 - ✅ Login page with session management
 - ✅ Role-based access (admin, researcher, viewer)
+- ✅ Admin-only user registration page
 - ✅ Logout functionality in sidebar
-- ✅ Initial admin user created
+- ✅ DISABLE_AUTH env flag for testing
+
+### 9. Audit & Data Ownership ✅ COMPLETE
+- ✅ AuditLog model tracking user actions
+- ✅ Audit log viewer dashboard (admin-only, filters, CSV export)
+- ✅ Auto-logging on login/logout
+- ✅ created_by_id FK on Program, Experiment, Dataset, Signature
+
+### 10. Protocol Management ✅ COMPLETE
+- ✅ Protocol model with versioning, steps, materials, parameters
+- ✅ ExperimentProtocol linking table
+- ✅ Dashboard page: browse, create, link protocols
+- ✅ Version history via parent_id
 
 ---
 
@@ -132,16 +145,16 @@
   - [ ] Link publications to repository datasets
 
 **Security & Collaboration**:
-- [ ] Multi-User Support (RBAC) - Added to roadmap Tier 3.2
+- [x] Multi-User Support (RBAC) - Added to roadmap Tier 3.2
 - [ ] Team-based data access
-- [ ] Audit logging
+- [x] Audit logging
 
 ### 2. ELN & Workflow Features
 
 **Protocol Management**:
-- [ ] Structured protocol templates
-- [ ] Version control for protocols
-- [ ] Link protocols to experiments
+- [x] Structured protocol templates
+- [x] Version control for protocols
+- [x] Link protocols to experiments
 
 **Sample Inventory**:
 - [ ] Physical location tracking (freezers/boxes)
@@ -268,8 +281,8 @@
 
 ---
 
-**Current System Status**: ✅ Production Ready (Security Features Complete)  
+**Current System Status**: ✅ Production Ready (ELN Features Complete)  
 **Architecture**: Postgres-only (Notion removed December 2025)  
-**Next Milestone**: Integration Enhancements  
+**Next Milestone**: Sample Inventory & Chemistry Informatics  
 **Estimated Time**: 3-4 weeks
 
