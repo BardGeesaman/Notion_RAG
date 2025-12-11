@@ -17,6 +17,7 @@ from amprenta_rag.rag.hybrid_chunk_collection import collect_hybrid_chunks
 from amprenta_rag.query.rag.match_processing import filter_matches, summarize_match
 from amprenta_rag.query.rag.models import RAGQueryResult
 from amprenta_rag.query.rag.synthesis import synthesize_answer
+from amprenta_rag.query.reranker import get_reranker
 
 logger = get_logger(__name__)
 
@@ -35,6 +36,8 @@ def query_rag(
     use_postgres: bool = True,
     use_hybrid: bool = False,
     hybrid_alpha: float = 0.5,
+    use_rerank: bool = False,
+    rerank_model: Optional[str] = None,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -58,6 +61,8 @@ def query_rag(
         target: Optional molecular target filter
         lipid: Optional lipid filter (canonical ID or raw label)
         signature: Optional lipid signature filter
+        use_rerank: Whether to rerank results with a cross-encoder
+        rerank_model: Optional cross-encoder model name to use for reranking
 
     Returns:
         RAGQueryResult with matches, filtered matches, context chunks, and answer
@@ -145,6 +150,64 @@ def query_rag(
                     "[RAG][HYBRID] Using %d fused matches (vector + BM25)", len(hybrid_matches)
                 )
                 raw_matches = hybrid_matches
+
+    # Optional cross-encoder reranking
+    if use_rerank and raw_matches:
+        logger.info("[RAG][RERANK] Reranking with cross-encoder")
+        reranker = get_reranker()
+        if rerank_model and hasattr(reranker, "model_name") and reranker.model_name != rerank_model:
+            if getattr(reranker, "_model", None) is None:
+                reranker.model_name = rerank_model  # type: ignore[attr-defined]
+            else:
+                logger.warning(
+                    "[RAG][RERANK] Reranker already loaded with model %s; ignoring requested %s",
+                    reranker.model_name,
+                    rerank_model,
+                )
+
+        documents: List[Dict[str, Any]] = []
+        for m in raw_matches:
+            if isinstance(m, dict):
+                meta = m.get("metadata") or {}
+                chunk_id = m.get("chunk_id") or m.get("id")
+                score = m.get("score", 0.0)
+            else:
+                meta = getattr(m, "metadata", {}) or {}
+                chunk_id = getattr(m, "id", None)
+                score = getattr(m, "score", 0.0)
+
+            doc_text = (
+                meta.get("chunk_text")
+                or meta.get("snippet")
+                or meta.get("text")
+                or meta.get("content")
+                or ""
+            )
+
+            documents.append(
+                {
+                    "id": chunk_id,
+                    "chunk_text": doc_text,
+                    "score": score,
+                    "metadata": meta,
+                }
+            )
+
+        try:
+            reranked = reranker.rerank(user_query, documents, top_k=top_k)
+            raw_matches = []
+            for r in reranked:
+                meta = r.get("metadata") or {}
+                raw_matches.append(
+                    {
+                        "id": r.get("id"),
+                        "score": r.get("rerank_score"),
+                        "metadata": meta,
+                    }
+                )
+        except Exception as e:
+            logger.warning("[RAG][RERANK] Rerank failed, using original scores: %s", e)
+
     if not raw_matches:
         return RAGQueryResult(
             query=user_query,

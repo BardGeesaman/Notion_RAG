@@ -40,15 +40,22 @@ def summarize_match(raw_match: Any) -> MatchSummary:
     Returns:
         MatchSummary object with extracted fields
     """
-    meta: Dict[str, Any] = raw_match.metadata or raw_match.get("metadata", {})  # type: ignore
+    if isinstance(raw_match, dict):
+        meta: Dict[str, Any] = raw_match.get("metadata", {})  # type: ignore[assignment]
+        _id = raw_match.get("id")
+        _score = raw_match.get("score", 0.0)
+    else:
+        meta = getattr(raw_match, "metadata", {}) or {}
+        _id = getattr(raw_match, "id", None)
+        _score = getattr(raw_match, "score", 0.0)
     source = _get_source(meta)
     title = meta.get("title") or "(untitled)"
     snippet = _format_snippet(meta)
     tags = _get_tags(meta)
 
     return MatchSummary(
-        id=getattr(raw_match, "id", None) or raw_match.get("id"),
-        score=getattr(raw_match, "score", None) or raw_match.get("score", 0.0),
+        id=_id,
+        score=_score,
         source=source,
         title=title,
         snippet=snippet,
