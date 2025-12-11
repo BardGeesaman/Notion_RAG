@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, TSVECTOR
 from sqlalchemy.orm import relationship
 
@@ -848,6 +848,25 @@ class DiscoveredStudy(Base):
 
     job = relationship("DiscoveryJob", backref="discovered_studies")
     imported_experiment = relationship("Experiment")
+
+
+class HarvestSchedule(Base):
+    """Scheduled automated harvesting from repositories."""
+
+    __tablename__ = "harvest_schedules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    repository = Column(String(50), nullable=False)  # geo, metabolights
+    query = Column(String(500), nullable=False)
+    interval_hours = Column(Integer, default=24)
+    is_active = Column(Boolean, default=True)
+    last_run = Column(DateTime(timezone=True), nullable=True)
+    next_run = Column(DateTime(timezone=True), nullable=True)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    created_by = relationship("User", foreign_keys=[created_by_id])
 
 
 class StorageLocation(Base):
