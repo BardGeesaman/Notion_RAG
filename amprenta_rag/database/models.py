@@ -799,6 +799,24 @@ class Project(Base):
     experiments = relationship("Experiment", backref="project")
 
 
+class Feedback(Base):
+    """User feedback and feature requests."""
+
+    __tablename__ = "feedback"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    feedback_type = Column(String(20), nullable=False)  # bug, feature
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    status = Column(String(20), default="new")  # new, reviewing, planned, done, wontfix
+    priority = Column(String(20), default="medium")  # low, medium, high, critical
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User", backref="feedback")
+
+
 class AuditLog(Base):
     """Audit trail for user actions."""
 
