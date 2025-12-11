@@ -126,7 +126,8 @@
 - ✅ tsvector search column on RAGChunk with GIN index
 - ✅ BM25 full-text search via PostgreSQL  
 - ✅ Reciprocal Rank Fusion (RRF) for result merging
-- ✅ use_hybrid and hybrid_alpha params in query_rag()
+- ✅ Cross-encoder reranking (ms-marco-MiniLM model)
+- ✅ use_hybrid, hybrid_alpha, and use_rerank params in query_rag()
 
 ### 12. Automated Discovery Workflow ✅ COMPLETE
 - ✅ DiscoveryJob/DiscoveredStudy models
@@ -203,6 +204,12 @@
 - [ ] Electronic signatures (future)
 - [ ] Data immutability logs
 
+**General Experimental Data Support**:
+- [ ] Generic Assay Result Model (for non-standard assays)
+- [ ] Imaging Data Support (Microscopy/HCS metadata)
+- [ ] Flow Cytometry / FACS Data Ingestion
+- [ ] Biophysical Assay Support (SPR, MST, DSC)
+
 **Scientific Q&A & Insight Tracker**:
 - [x] Question Registry (CRUD for scientific questions)
 - [x] Persistent RAG Answers (Save outputs + evidence)
@@ -241,7 +248,7 @@
 
 **Retrieval Optimization**:
 - [x] Hybrid Search (Sparse/BM25 + Dense Vectors)
-- [ ] Reranking (Cross-encoder re-ranking)
+- [x] Reranking (Cross-encoder re-ranking)
 - [ ] Query Expansion/Transformation (HyDE)
 
 **Quality & Attribution**:
@@ -280,7 +287,8 @@
 ### Phase 2: ELN & Workflow Features
 1. Scientific Q&A & Insight Tracker
 2. Sample Inventory System
-3. Audit Trails & Compliance
+3. General Experimental Data Support
+4. Audit Trails & Compliance
 
 ### Phase 3: Chemistry Informatics
 1. Lead Optimization Data Models (ADME/PK)
