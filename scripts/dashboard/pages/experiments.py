@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pandas as pd
 import streamlit as st
 
 from amprenta_rag.database.models import Experiment
+from amprenta_rag.ingestion.design_integration import (
+    batch_apply_design_extraction,
+    create_experiment_from_study,
+)
+from amprenta_rag.ingestion.repositories import fetch_study_metadata
 from scripts.dashboard.db_session import db_session
 
 
@@ -42,7 +47,6 @@ def _render_browse_tab() -> None:
             df_experiments = pd.DataFrame(experiment_data)
             st.dataframe(df_experiments, width='stretch', hide_index=True)
 
-            # Export button
             csv_experiments = df_experiments.to_csv(index=False)
             st.download_button(
                 label="📥 Download Experiments (CSV)",
@@ -88,8 +92,6 @@ def _render_edit_tab() -> None:
 
         st.markdown("### Batch Operations")
         if st.button("Auto-detect Design Types", type="secondary"):
-            from amprenta_rag.ingestion.design_integration import batch_apply_design_extraction
-
             with st.spinner("Detecting design types..."):
                 res = batch_apply_design_extraction()
             if "error" in res:
@@ -99,6 +101,28 @@ def _render_edit_tab() -> None:
                     f"Auto-detection complete: {res.get('updated', 0)} updated out of {res.get('processed', 0)} processed."
                 )
         st.markdown("---")
+
+        st.markdown("### Import from Repository")
+        repo_options = ["GEO", "ArrayExpress", "MW", "MW_METABOLOMICS", "MW_LIPIDOMICS", "PRIDE", "MetaboLights", "ENA"]
+        repo = st.selectbox("Repository", repo_options, index=0)
+        study_id = st.text_input("Study ID (e.g., GSE12345)")
+        if st.button("Create Experiment from Study"):
+            with st.spinner("Fetching study and creating experiment..."):
+                try:
+                    md = fetch_study_metadata(study_id, repository=repo)
+                except Exception as exc:
+                    md = None
+                    st.error(f"Failed to fetch study metadata: {exc}")
+                if md:
+                    exp_id = create_experiment_from_study(md)
+                    if exp_id:
+                        st.success(f"Experiment created: {exp_id}")
+                    else:
+                        st.error("Failed to create experiment from study.")
+                elif md is not None:
+                    st.error("No metadata returned for that study.")
+        st.markdown("---")
+
         if not experiments:
             st.info("No experiments available to edit.")
             return
@@ -117,24 +141,25 @@ def _render_edit_tab() -> None:
                 "multi_factorial",
                 "observational",
             ],
-            index=0 if not experiment.design_type else  \
-                [
-                    "case_control",
-                    "time_course",
-                    "intervention",
-                    "dose_response",
-                    "multi_factorial",
-                    "observational",
-                ].index(experiment.design_type)
-                if experiment.design_type in [
-                    "case_control",
-                    "time_course",
-                    "intervention",
-                    "dose_response",
-                    "multi_factorial",
-                    "observational",
-                ]
-                else 0,
+            index=0
+            if not experiment.design_type
+            else [
+                "case_control",
+                "time_course",
+                "intervention",
+                "dose_response",
+                "multi_factorial",
+                "observational",
+            ].index(experiment.design_type)
+            if experiment.design_type in [
+                "case_control",
+                "time_course",
+                "intervention",
+                "dose_response",
+                "multi_factorial",
+                "observational",
+            ]
+            else 0,
         )
 
         sample_groups_text = st.text_area(
@@ -169,9 +194,7 @@ def _render_edit_tab() -> None:
 
 
 def render_experiments_page() -> None:
-    """
-    Render the Experiments page with search, summary, and design editing.
-    """
+    """Render the Experiments page with search, summary, and design editing."""
     st.header("🔬 Experiments")
 
     tabs = st.tabs(["Browse Experiments", "Edit Design"])
