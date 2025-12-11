@@ -36,9 +36,9 @@ def bm25_search(
         ts_query = func.plainto_tsquery('english', query)
         base = db.query(
             RAGChunk.id,
-            RAGChunk.content,
+            RAGChunk.chunk_text,
             RAGChunk.source_type,
-            RAGChunk.metadata,
+            RAGChunk.chunk_metadata,
             func.ts_rank(RAGChunk.search_vector, ts_query).label('rank')
         ).filter(
             RAGChunk.search_vector.op('@@')(ts_query)
@@ -49,9 +49,9 @@ def bm25_search(
         return [
             {
                 "chunk_id": str(r.id),
-                "content": r.content,
+                "content": r.chunk_text,
                 "source_type": r.source_type,
-                "metadata": r.metadata or {},
+                "metadata": r.chunk_metadata or {},
                 "bm25_score": float(r.rank) if r.rank else 0.0,
             }
             for r in results
