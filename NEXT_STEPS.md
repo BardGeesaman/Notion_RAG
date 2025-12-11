@@ -127,8 +127,8 @@
 - ✅ BM25 full-text search via PostgreSQL  
 - ✅ Reciprocal Rank Fusion (RRF) for result merging
 - ✅ Cross-encoder reranking (ms-marco-MiniLM model)
-- ✅ use_hybrid, hybrid_alpha, and use_rerank params in query_rag()
-- ✅ Citation system with source metadata and inline [1] markers
+- ✅ Semantic Cache (embedding similarity, 1hr TTL, 0.92 threshold)
+- ✅ use_hybrid, hybrid_alpha, use_rerank, and use_cache params
 
 ### 12. Automated Discovery Workflow ✅ COMPLETE
 - ✅ DiscoveryJob/DiscoveredStudy models
@@ -267,7 +267,7 @@
 - [ ] Hallucination detection
 
 **Advanced Capabilities**:
-- [ ] Semantic Caching
+- [x] Semantic Caching
 - [ ] Agentic RAG (multi-step reasoning)
 - [ ] **Hierarchical RAG Reasoning**:
   - [ ] Data Trust Scoring (Validated Internal > External > General)
