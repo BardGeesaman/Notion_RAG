@@ -23,6 +23,7 @@ from amprenta_rag.query.reranker import get_reranker
 from amprenta_rag.query.hyde import generate_hypothetical_answer
 from amprenta_rag.query.hallucination import check_groundedness
 from amprenta_rag.query.evaluation import evaluate_rag_response, EvalResult
+from amprenta_rag.query.agent import agentic_rag
 
 logger = get_logger(__name__)
 
@@ -47,6 +48,7 @@ def query_rag(
     use_hyde: bool = False,
     check_hallucination: bool = False,
     evaluate: bool = False,
+    use_agent: bool = False,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -83,6 +85,19 @@ def query_rag(
         if cached is not None:
             logger.info("[RAG] Returning cached result")
             return cached
+    
+    # Agentic multi-step flow
+    if use_agent:
+        logger.info("[RAG] Using agentic multi-step flow")
+        agent_result = agentic_rag(user_query, max_steps=3)
+        return RAGQueryResult(
+            query=user_query,
+            answer=agent_result.answer,
+            matches=[],
+            filtered_matches=[],
+            context_chunks=[],
+            citations=[],
+        )
     
     # Generate hypothetical answer for HyDE if enabled
     if use_hyde:
