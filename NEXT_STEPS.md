@@ -101,6 +101,13 @@
 **Implemented Features**:
 - ✅ New repository integration for transcriptomics data
 
+### 7. ELN Experiment Type Integration ✅ COMPLETE
+- ✅ Edit Design tab for manual design_type configuration
+- ✅ Auto-detect Design Types batch operation  
+- ✅ Import from Repository (GEO, MW, PRIDE)
+- ✅ Auto-creates experiments with design_type detection
+- ✅ Verified working with real GEO study (GSE153873 -> case_control)
+
 ---
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
