@@ -135,7 +135,6 @@
 ### 1. Integration Enhancements
 
 **Public Repositories**:
-- [x] ArrayExpress integration
 - [ ] Add more repository types (others)
 - [ ] Automated discovery workflows
 - [ ] Scheduled harvesting
@@ -145,16 +144,9 @@
   - [ ] Link publications to repository datasets
 
 **Security & Collaboration**:
-- [x] Multi-User Support (RBAC) - Added to roadmap Tier 3.2
 - [ ] Team-based data access
-- [x] Audit logging
 
 ### 2. ELN & Workflow Features
-
-**Protocol Management**:
-- [x] Structured protocol templates
-- [x] Version control for protocols
-- [x] Link protocols to experiments
 
 **Sample Inventory**:
 - [ ] Physical location tracking (freezers/boxes)
@@ -221,12 +213,11 @@
 
 ### Phase 1: Integration Enhancements (Next)
 1. Public Repository Expansion
-2. Security & Multi-User Support
+2. Security & Multi-User Support (Team Access)
 
 ### Phase 2: ELN & Workflow Features
-1. Protocol Management & Templates
-2. Sample Inventory System
-3. Audit Trails & Compliance
+1. Sample Inventory System
+2. Audit Trails & Compliance
 
 ### Phase 3: Chemistry Informatics
 1. Chemical Registration System
@@ -285,4 +276,3 @@
 **Architecture**: Postgres-only (Notion removed December 2025)  
 **Next Milestone**: Sample Inventory & Chemistry Informatics  
 **Estimated Time**: 3-4 weeks
-
