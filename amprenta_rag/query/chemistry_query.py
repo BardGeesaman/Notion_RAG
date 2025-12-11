@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import sqlite3
 
 from amprenta_rag.chemistry.database import get_chemistry_db_path
 from amprenta_rag.chemistry.schema import Compound, HTSCampaign
+from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.query.pinecone_query import embed_query
 
 logger = get_logger(__name__)
 
@@ -164,3 +166,63 @@ def query_compounds_by_context(query_text: str, top_k: int = 10, db_path: Option
     finally:
         conn.close()
 
+
+def upsert_compound_to_pinecone(compound_id: str, db_path: Optional[str] = None, namespace: str = "compounds") -> bool:
+    summary = generate_compound_summary(compound_id, db_path=db_path)
+    embed = embed_query(summary)
+    if not embed:
+        return False
+
+    index = get_pinecone_index()
+    meta = {"source_type": "compound", "compound_id": compound_id}
+    try:
+        index.upsert(vectors=[(f"compound_{compound_id}", embed.vector, meta)], namespace=namespace)
+        logger.info("[CHEMISTRY][RAG] Upserted compound %s to Pinecone", compound_id)
+        return True
+    except Exception as exc:
+        logger.warning("[CHEMISTRY][RAG] Pinecone upsert failed for %s: %r", compound_id, exc)
+        return False
+
+
+def query_compounds_vector(query_text: str, top_k: int = 10, namespace: str = "compounds") -> List[Tuple[str, float]]:
+    embed = embed_query(query_text)
+    if not embed:
+        return []
+
+    index = get_pinecone_index()
+    try:
+        res = index.query(vector=embed.vector, top_k=top_k, namespace=namespace, include_metadata=True)
+        hits = []
+        for match in res.matches:
+            cid = match.id.replace("compound_", "")
+            hits.append((cid, match.score))
+        return hits
+    except Exception as exc:
+        logger.warning("[CHEMISTRY][RAG] Pinecone query failed: %r", exc)
+        return []
+
+
+def batch_upsert_compounds(db_path: Optional[str] = None, namespace: str = "compounds") -> int:
+    conn = _get_conn(db_path)
+    try:
+        rows = conn.execute("SELECT compound_id FROM compounds").fetchall()
+        total = 0
+        for (cid,) in rows:
+            if upsert_compound_to_pinecone(cid, db_path=db_path, namespace=namespace):
+                total += 1
+        logger.info("[CHEMISTRY][RAG] Batch upserted %d compounds to Pinecone", total)
+        return total
+    finally:
+        conn.close()
+
+
+__all__ = [
+    "generate_compound_summary",
+    "generate_campaign_summary",
+    "embed_compound_for_rag",
+    "embed_campaign_for_rag",
+    "query_compounds_by_context",
+    "upsert_compound_to_pinecone",
+    "query_compounds_vector",
+    "batch_upsert_compounds",
+]
