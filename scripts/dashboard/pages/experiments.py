@@ -85,6 +85,20 @@ def _render_edit_tab() -> None:
     st.subheader("Edit Experimental Design")
     with db_session() as db:
         experiments: List[Experiment] = db.query(Experiment).order_by(Experiment.created_at.desc()).all()
+
+        st.markdown("### Batch Operations")
+        if st.button("Auto-detect Design Types", type="secondary"):
+            from amprenta_rag.ingestion.design_integration import batch_apply_design_extraction
+
+            with st.spinner("Detecting design types..."):
+                res = batch_apply_design_extraction()
+            if "error" in res:
+                st.error(f"Auto-detection failed: {res['error']}")
+            else:
+                st.success(
+                    f"Auto-detection complete: {res.get('updated', 0)} updated out of {res.get('processed', 0)} processed."
+                )
+        st.markdown("---")
         if not experiments:
             st.info("No experiments available to edit.")
             return
@@ -133,19 +147,6 @@ def _render_edit_tab() -> None:
             "Timepoints (comma-separated, optional)",
             value=", ".join(experiment.design_metadata.get("timepoints", [])) if experiment.design_metadata else "",
         )
-
-
-        if st.button("Auto-detect Design Types", type="secondary"):
-            from amprenta_rag.ingestion.design_integration import batch_apply_design_extraction
-
-            with st.spinner("Running auto-detection..."):
-                res = batch_apply_design_extraction()
-            if "error" in res:
-                st.error(f"Auto-detection failed: {res['error']}")
-            else:
-                st.success(
-                    f"Auto-detection complete: {res.get('updated', 0)} updated out of {res.get('processed', 0)} processed."
-                )
 
         if st.button("Save design", type="primary"):
             try:
