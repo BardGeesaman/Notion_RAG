@@ -7,6 +7,7 @@ Provides implementations for:
 - MetaboLights - Metabolomics (fallback)
 - MW (Metabolomics Workbench) - Metabolomics (primary)
 - ENA (European Nucleotide Archive) - Genomics (raw FASTQ files)
+- ArrayExpress (via EBI BioStudies API) - Transcriptomics
 """
 
 from __future__ import annotations
@@ -29,6 +30,7 @@ from amprenta_rag.ingestion.repositories.discovery import (
     fetch_study_metadata,
     get_repository,
 )
+from amprenta_rag.ingestion.repositories.arrayexpress import ArrayExpressRepository
 from amprenta_rag.ingestion.repositories.ena import ENARepository
 from amprenta_rag.ingestion.repositories.geo import GEORepository
 from amprenta_rag.ingestion.repositories.metabolights import MetaboLightsRepository
@@ -42,6 +44,7 @@ __all__ = [
     "MetaboLightsRepository",
     "MWRepository",
     "ENARepository",
+    "ArrayExpressRepository",
     "get_repository",
     "discover_studies",
     "fetch_study_metadata",
