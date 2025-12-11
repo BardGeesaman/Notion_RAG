@@ -83,6 +83,7 @@
 - ✅ **PDF Export**: Report generation (`pdf_export.py`), Dashboard/CLI integration
 - ✅ **Visualization**: Viz helpers (`viz_helpers.py`), Pathway Network Visualization (force-directed)
 - ✅ **Additional Visualizations**: Program-Signature heatmap, Dataset Similarity dendrogram, Pathway Enrichment bars, Cross-Omics Convergence
+- ✅ **Performance Utilities**: Parallel processing helpers (`parallel_map`, `chunked_parallel`)
 
 ### 5. Advanced Analytics ✅ COMPLETE
 
@@ -97,15 +98,7 @@
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
 
-### 1. Enhancements & Polish (Remaining) 🔥
-
-**Performance**:
-- [ ] Further optimize batch operations
-- [ ] Parallel processing for large datasets
-
----
-
-## 📊 MEDIUM PRIORITY (Future Enhancements)
+### 1. Integration Enhancements (Next)
 
 ### 3. Advanced Analytics
 
