@@ -141,6 +141,7 @@ page = st.sidebar.radio(
         "Evaluation Wizard",
         "Chat",
         "Lab Notebook",
+        "Sample Inventory",
         "Search",
         "Data Ingestion",
         "Repositories",
@@ -194,6 +195,10 @@ try:
         from scripts.dashboard.pages.lab_notebook import render_lab_notebook_page
 
         render_lab_notebook_page()
+    elif page == "Sample Inventory":
+        from scripts.dashboard.pages.sample_inventory import render_sample_inventory_page
+
+        render_sample_inventory_page()
     elif page == "Search":
         from scripts.dashboard.pages.search import render_search_page
 
