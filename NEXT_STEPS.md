@@ -127,11 +127,14 @@
 - ✅ Repository scanning service (GEO, MetaboLights)
 - ✅ Dashboard: Run scans, review/import studies, job history
 
-### 12. Sample Inventory System ✅ COMPLETE
-- ✅ StorageLocation (hierarchical: freezer→shelf→box)
-- ✅ Sample (barcode, lineage, experiment link, status)
-- ✅ SampleTransfer (movement tracking)
-- ✅ Dashboard: 4 tabs (Locations, Samples, Register, Transfer)
+### 13. Chemical Registration System ✅ COMPLETE
+- ✅ Corporate ID generation (AMP-XXXXX)
+- ✅ Duplicate checking via SMILES/InChIKey
+- ✅ PostgreSQL-backed compound storage (migrated from SQLite)
+- ✅ Dashboard registration UI
+- ✅ Playwright E2E test
+- ✅ SAR analysis, structure search, compound linking all use PostgreSQL
+- ✅ SQLite chemistry/database.py deprecated
 
 ---
 
@@ -185,9 +188,9 @@
 ### 3. Chemistry Informatics Enhancements
 
 **Chemical Registration**:
-- [ ] Corporate ID generation (e.g. AMP-001)
-- [ ] Salt and batch handling
-- [ ] Duplicate checking logic
+- [x] Corporate ID generation (e.g. AMP-001)
+- [x] Salt and batch handling
+- [x] Duplicate checking logic
 
 **Cheminformatics Search**:
 - [ ] Substructure search (SMARTS)
