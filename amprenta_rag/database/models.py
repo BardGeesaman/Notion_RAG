@@ -147,6 +147,9 @@ class Experiment(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_by = relationship("User", foreign_keys=[created_by_id])
 
+    # Project
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=True)
+
     # Relationships
     programs = relationship("Program", secondary=program_experiment_assoc, back_populates="experiments")
     datasets = relationship("Dataset", secondary=experiment_dataset_assoc, back_populates="experiments")
@@ -749,6 +752,51 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
+
+
+class Team(Base):
+    """Team/organization for collaboration."""
+
+    __tablename__ = "teams"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False, unique=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    members = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="team", cascade="all, delete-orphan")
+
+
+class TeamMember(Base):
+    """Team membership with role."""
+
+    __tablename__ = "team_members"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    role = Column(String(20), default="member")  # owner, admin, member, viewer
+    joined_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    team = relationship("Team", back_populates="members")
+    user = relationship("User", backref="team_memberships")
+
+
+class Project(Base):
+    """Project within a team."""
+
+    __tablename__ = "projects"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=False)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    is_public = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    team = relationship("Team", back_populates="projects")
+    experiments = relationship("Experiment", backref="project")
 
 
 class AuditLog(Base):
