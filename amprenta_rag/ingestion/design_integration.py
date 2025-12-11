@@ -6,7 +6,6 @@ from uuid import UUID
 
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Experiment
-from amprenta_rag.models.repository import StudyMetadata
 from amprenta_rag.ingestion.design_extraction import (
     detect_design_type,
     extract_geo_design,
@@ -14,6 +13,7 @@ from amprenta_rag.ingestion.design_extraction import (
     extract_sample_groups,
 )
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.models.repository import StudyMetadata
 
 logger = get_logger(__name__)
 
@@ -29,16 +29,7 @@ def apply_design_extraction(
     """
     Apply design extraction to an experiment and update its design fields.
 
-    Args:
-        experiment_id: UUID of the experiment to update
-        repository: Source repository (GEO, MW, etc.)
-        sample_names: List of sample names
-        sample_attributes: Sample attribute mappings
-        study_description: Study description text
-        factors: MW-style factor definitions
-
-    Returns:
-        True if design was extracted and saved, False otherwise
+    Returns True on success, False otherwise.
     """
     db = next(get_db())
     try:
@@ -94,16 +85,12 @@ def apply_design_extraction(
         db.close()
 
 
-__all__ = ["apply_design_extraction", "batch_apply_design_extraction", "create_experiment_from_study"]
-
-
 def batch_apply_design_extraction(repository_filter: Optional[str] = None) -> Dict[str, int]:
     """Apply design extraction to all experiments missing design_type."""
     db = next(get_db())
     try:
         query = db.query(Experiment).filter(Experiment.design_type.is_(None))
         if repository_filter:
-            # Filter by repository in design_metadata if available
             query = query.filter(Experiment.design_metadata["source_repository"].astext == repository_filter)
 
         experiments = query.all()
@@ -133,30 +120,30 @@ def batch_apply_design_extraction(repository_filter: Optional[str] = None) -> Di
 
 
 def create_experiment_from_study(
-    study_metadata: "StudyMetadata",
+    study_metadata: StudyMetadata,
     auto_detect_design: bool = True,
-):
+) -> Optional[UUID]:
     """Create an Experiment from repository study metadata."""
     db = next(get_db())
     try:
-        existing = db.query(Experiment).filter(
-            Experiment.external_ids.contains({"study_id": study_metadata.study_id})
-        ).first()
+        existing = db.query(Experiment).filter(Experiment.name == study_metadata.title).first()
         if existing:
             logger.info("[DESIGN] Experiment already exists for study %s", study_metadata.study_id)
             return existing.id
 
+        description = getattr(study_metadata, "summary", None) or ""
+        if study_metadata.study_id:
+            if description:
+                description = f"{description}\nSource study: {study_metadata.study_id}"
+            else:
+                description = f"Source study: {study_metadata.study_id}"
+
         experiment = Experiment(
             name=study_metadata.title,
-            description=getattr(study_metadata, "summary", None),
+            description=description,
             type=getattr(study_metadata, "omics_type", None),
             disease=getattr(study_metadata, "disease", None) or [],
             matrix=getattr(study_metadata, "sample_type", None) or [],
-            external_ids={
-                "study_id": study_metadata.study_id,
-                "repository": study_metadata.repository,
-                "doi": getattr(study_metadata, "doi", None),
-            },
         )
 
         db.add(experiment)
@@ -191,3 +178,10 @@ def create_experiment_from_study(
         return None
     finally:
         db.close()
+
+
+__all__ = [
+    "apply_design_extraction",
+    "batch_apply_design_extraction",
+    "create_experiment_from_study",
+]

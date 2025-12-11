@@ -118,7 +118,57 @@
 - [ ] Team-based data access
 - [ ] Audit logging
 
-### 2. Future Innovations
+### 2. ELN & Workflow Features
+
+**Protocol Management**:
+- [ ] Structured protocol templates
+- [ ] Version control for protocols
+- [ ] Link protocols to experiments
+
+**Sample Inventory**:
+- [ ] Physical location tracking (freezers/boxes)
+- [ ] Sample lineage and parent/child tracking
+- [ ] Barcode generation support
+
+**Compliance & Integrity**:
+- [ ] 21 CFR Part 11 readiness (audit trails)
+- [ ] Electronic signatures (future)
+- [ ] Data immutability logs
+
+### 3. Chemistry Informatics Enhancements
+
+**Chemical Registration**:
+- [ ] Corporate ID generation (e.g. AMP-001)
+- [ ] Salt and batch handling
+- [ ] Duplicate checking logic
+
+**Cheminformatics Search**:
+- [ ] Substructure search (SMARTS)
+- [ ] Similarity search (Tanimoto)
+- [ ] Pharmacophore search
+
+**SAR Analysis**:
+- [ ] Calculated properties (LogP, MW, TPSA)
+- [ ] Activity cliffs visualization
+- [ ] R-group decomposition
+
+### 4. RAG Maturity & Enhancements
+
+**Retrieval Optimization**:
+- [ ] Hybrid Search (Sparse/BM25 + Dense Vectors)
+- [ ] Reranking (Cross-encoder re-ranking)
+- [ ] Query Expansion/Transformation (HyDE)
+
+**Quality & Attribution**:
+- [ ] Citation/Source Attribution
+- [ ] Evaluation Framework (RAGAS/TruLens)
+- [ ] Hallucination detection
+
+**Advanced Capabilities**:
+- [ ] Semantic Caching
+- [ ] Agentic RAG (multi-step reasoning)
+
+### 5. Future Innovations
 
 **Experimental Design Assistant**:
 - [ ] Power Analysis for sample size estimation
@@ -142,7 +192,22 @@
 1. Public Repository Expansion
 2. Security & Multi-User Support
 
-### Phase 2: Future Innovations
+### Phase 2: ELN & Workflow Features
+1. Protocol Management & Templates
+2. Sample Inventory System
+3. Audit Trails & Compliance
+
+### Phase 3: Chemistry Informatics
+1. Chemical Registration System
+2. Advanced Structure Search
+3. SAR Analysis Tools
+
+### Phase 4: RAG Maturity
+1. Hybrid Search & Reranking
+2. Citation & Attribution System
+3. Evaluation Pipeline
+
+### Phase 5: Future Innovations
 1. Multi-dataset Pattern Detection
 2. Experimental Design Assistant & Power Analysis
 
