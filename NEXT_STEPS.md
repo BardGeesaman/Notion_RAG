@@ -166,6 +166,11 @@
 - ✅ Dashboard page with Ask, Browse, Re-run, Export tabs
 - ✅ Persistent RAG answer storage
 
+### 16. Collaboration & Teams ✅ COMPLETE
+- ✅ Team, TeamMember, Project models
+- ✅ Role-based permissions (owner/admin/member/viewer)
+- ✅ Teams & Projects dashboard page
+
 ---
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
@@ -182,7 +187,7 @@
   - [ ] Link publications to repository datasets
 
 **Security & Collaboration**:
-- [ ] Team-based data access
+- [x] Team-based data access
 - [ ] **Feature Visibility Controls**:
   - [ ] Admin UI to toggle features per user/role
   - [ ] Role-based UI customization (e.g., Hide "Chemistry" for Biologists)
