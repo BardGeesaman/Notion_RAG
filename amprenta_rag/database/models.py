@@ -676,6 +676,47 @@ class ExperimentProtocol(Base):
     protocol = relationship("Protocol", backref="experiment_links")
 
 
+class DiscoveryJob(Base):
+    """Track automated repository discovery jobs."""
+
+    __tablename__ = "discovery_jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    repository = Column(String(50), nullable=False)  # GEO, MW, PRIDE, ArrayExpress
+    query = Column(String(500), nullable=False)  # Search query used
+    status = Column(String(50), default="pending")  # pending, running, completed, failed
+    studies_found = Column(Integer, default=0)
+    studies_imported = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class DiscoveredStudy(Base):
+    """Studies found during discovery jobs."""
+
+    __tablename__ = "discovered_studies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("discovery_jobs.id"), nullable=False)
+    study_id = Column(String(100), nullable=False)  # GSE123456, MTBLS123, etc.
+    repository = Column(String(50), nullable=False)
+    title = Column(String(500), nullable=True)
+    description = Column(Text, nullable=True)
+    organism = Column(String(200), nullable=True)
+    omics_type = Column(String(100), nullable=True)
+    status = Column(String(50), default="new")  # new, reviewed, imported, skipped
+    imported_experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True)
+    discovered_at = Column(DateTime, default=datetime.utcnow)
+
+    job = relationship("DiscoveryJob", backref="discovered_studies")
+    imported_experiment = relationship("Experiment")
+
+
 # Add relationship to LabNotebookEntry after LabNotebookEntryAssociation is defined
 LabNotebookEntry.linked_entities = relationship(
     "LabNotebookEntryAssociation",

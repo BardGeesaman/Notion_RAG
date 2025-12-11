@@ -144,6 +144,7 @@ page = st.sidebar.radio(
         "Search",
         "Data Ingestion",
         "Repositories",
+        "Discovery Workflow",
         "Analysis Tools",
         "Visualizations",
         "Quality Checks",
@@ -205,6 +206,10 @@ try:
         from scripts.dashboard.pages.repositories import render_repositories_page
 
         render_repositories_page()
+    elif page == "Discovery Workflow":
+        from scripts.dashboard.pages.discovery_workflow import render_discovery_workflow_page
+
+        render_discovery_workflow_page()
     elif page == "Analysis Tools":
         from scripts.dashboard.pages.analysis import render_analysis_page
 
