@@ -122,7 +122,13 @@
 - ✅ Auto-logging on login/logout
 - ✅ created_by_id FK on Program, Experiment, Dataset, Signature
 
-### 11. Automated Discovery Workflow ✅ COMPLETE
+### 11. RAG Hybrid Search ✅ COMPLETE
+- ✅ tsvector search column on RAGChunk with GIN index
+- ✅ BM25 full-text search via PostgreSQL  
+- ✅ Reciprocal Rank Fusion (RRF) for result merging
+- ✅ use_hybrid and hybrid_alpha params in query_rag()
+
+### 12. Automated Discovery Workflow ✅ COMPLETE
 - ✅ DiscoveryJob/DiscoveredStudy models
 - ✅ Repository scanning service (GEO, MetaboLights)
 - ✅ Dashboard: Run scans, review/import studies, job history
@@ -234,7 +240,7 @@
 ### 4. RAG Maturity & Enhancements
 
 **Retrieval Optimization**:
-- [ ] Hybrid Search (Sparse/BM25 + Dense Vectors)
+- [x] Hybrid Search (Sparse/BM25 + Dense Vectors)
 - [ ] Reranking (Cross-encoder re-ranking)
 - [ ] Query Expansion/Transformation (HyDE)
 
