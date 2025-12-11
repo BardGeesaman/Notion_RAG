@@ -25,6 +25,7 @@ from amprenta_rag.chemistry.registration import (
     generate_corporate_id,
     register_compound,
 )
+from amprenta_rag.chemistry.structure_search import substructure_search, similarity_search
 import sqlite3
 
 
@@ -41,8 +42,8 @@ def render_chemistry_page() -> None:
     st.header("⚗️ Chemistry")
 
     # Tabs for different chemistry entities
-    tab1, tab_reg, tab2, tab3, tab4 = st.tabs(
-        ["Compounds", "Register Compound", "HTS Campaigns", "Biochemical Results", "Signature Links"]
+    tab1, tab_reg, tab_struct, tab2, tab3, tab4 = st.tabs(
+        ["Compounds", "Register Compound", "Structure Search", "HTS Campaigns", "Biochemical Results", "Signature Links"]
     )
 
     with tab1:
@@ -144,6 +145,29 @@ def render_chemistry_page() -> None:
                     st.success(f"Registered compound ID: {corp_id}")
                 except Exception as e:
                     st.error(f"Registration failed: {e}")
+
+    with tab_struct:
+        st.subheader("Structure Search")
+        mode = st.radio("Search Mode", ["Substructure", "Similarity"], horizontal=True)
+        if mode == "Substructure":
+            query = st.text_input("SMARTS Pattern")
+        else:
+            query = st.text_input("Query SMILES")
+        threshold = st.slider("Similarity Threshold", min_value=0.5, max_value=1.0, value=0.7, step=0.01)
+
+        if st.button("Search", type="primary"):
+            try:
+                if mode == "Substructure":
+                    results = substructure_search(query)
+                else:
+                    results = similarity_search(query, threshold=threshold)
+
+                if not results:
+                    st.info("No matches found.")
+                else:
+                    st.dataframe(results, hide_index=True, use_container_width=True)
+            except Exception as e:
+                st.error(f"Search failed: {e}")
 
     with tab2:
         st.subheader("HTS Campaigns")
