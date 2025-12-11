@@ -74,6 +74,9 @@ def initialize_chemistry_database(db_path: Optional[Path] = None) -> None:
         cursor.execute(BIOCHEMICAL_RESULTS_TABLE)
         cursor.execute(COMPOUND_PROGRAM_TABLE)
         cursor.execute(COMPOUND_SIGNATURE_TABLE)
+
+        # Migrate schema BEFORE creating indexes (adds missing columns)
+        migrate_chemistry_schema(conn)
         
         # Create indexes
         for index_sql in INDEXES:
@@ -138,7 +141,6 @@ def get_chemistry_db(db_path: Optional[Path] = None) -> sqlite3.Connection:
 
     initialize_chemistry_database(db_path)
     conn = sqlite3.connect(str(db_path))
-    migrate_chemistry_schema(conn)
     return conn
 
 
