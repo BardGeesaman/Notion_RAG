@@ -94,6 +94,13 @@
 - ✅ Time-series Analysis (`timeseries.py`)
 - ✅ Cohort Comparison (`cohort_comparison.py`)
 
+### 6. ArrayExpress Repository ✅ COMPLETE
+
+**Status**: Fully implemented (December 2025)
+
+**Implemented Features**:
+- ✅ New repository integration for transcriptomics data
+
 ---
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
@@ -101,7 +108,8 @@
 ### 1. Integration Enhancements
 
 **Public Repositories**:
-- [ ] Add more repository types (ArrayExpress, etc.)
+- [x] ArrayExpress integration
+- [ ] Add more repository types (others)
 - [ ] Automated discovery workflows
 - [ ] Scheduled harvesting
 
