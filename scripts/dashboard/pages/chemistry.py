@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 # Import models - use direct module import to avoid caching issues
@@ -243,6 +244,73 @@ def render_chemistry_page() -> None:
                     st.info("No activity cliffs detected at the selected threshold.")
             else:
                 st.info("No HTS activity data available for cliff detection.")
+
+            st.markdown("### Activity Cliffs Network")
+            cliffs = detect_activity_cliffs()
+            if cliffs:
+                # Build node list
+                nodes = {}
+                for c in cliffs:
+                    nodes[c["compound_1"]] = nodes.get(c["compound_1"], {"id": c["compound_1"]})
+                    nodes[c["compound_2"]] = nodes.get(c["compound_2"], {"id": c["compound_2"]})
+
+                # Simple layout: assign nodes on a circle
+                import math
+
+                ids = list(nodes.keys())
+                n = len(ids)
+                for idx, cid in enumerate(ids):
+                    angle = 2 * math.pi * idx / max(n, 1)
+                    nodes[cid]["x"] = math.cos(angle)
+                    nodes[cid]["y"] = math.sin(angle)
+
+                # Build edges
+                edge_x = []
+                edge_y = []
+                edge_text = []
+                for c in cliffs:
+                    a, b = c["compound_1"], c["compound_2"]
+                    x0, y0 = nodes[a]["x"], nodes[a]["y"]
+                    x1, y1 = nodes[b]["x"], nodes[b]["y"]
+                    edge_x += [x0, x1, None]
+                    edge_y += [y0, y1, None]
+                    edge_text.append(
+                        f"{a} ↔ {b}<br>similarity={c['similarity']:.2f}<br>fold_change={c['fold_change']:.1f}"
+                    )
+
+                edge_trace = go.Scatter(
+                    x=edge_x,
+                    y=edge_y,
+                    line=dict(width=1, color="lightgray"),
+                    hoverinfo="text",
+                    text=edge_text,
+                    mode="lines",
+                )
+
+                node_x = [nodes[cid]["x"] for cid in ids]
+                node_y = [nodes[cid]["y"] for cid in ids]
+                node_text = ids
+
+                node_trace = go.Scatter(
+                    x=node_x,
+                    y=node_y,
+                    mode="markers+text",
+                    text=node_text,
+                    textposition="bottom center",
+                    marker=dict(size=12, color="tomato"),
+                    hoverinfo="text",
+                )
+
+                fig = go.Figure(data=[edge_trace, node_trace])
+                fig.update_layout(
+                    showlegend=False,
+                    xaxis=dict(showgrid=False, zeroline=False, visible=False),
+                    yaxis=dict(showgrid=False, zeroline=False, visible=False),
+                    margin=dict(l=10, r=10, t=10, b=10),
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No activity cliffs detected.")
 
     with tab2:
         st.subheader("HTS Campaigns")
