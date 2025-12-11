@@ -1,13 +1,12 @@
 """Structure-Activity Relationship (SAR) analysis utilities."""
 from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
 
-from amprenta_rag.chemistry.database import get_chemistry_db_path
+from amprenta_rag.chemistry.database import get_chemistry_db, get_chemistry_db_path
 from amprenta_rag.chemistry.structure_search import RDKIT_AVAILABLE
 from amprenta_rag.logging_utils import get_logger
 
@@ -21,7 +20,7 @@ def _get_db_path(db_path: Optional[Path] = None) -> Path:
 def get_compound_properties(db_path: Optional[Path] = None) -> pd.DataFrame:
     """Load compound properties for SAR analysis."""
     path = _get_db_path(db_path)
-    conn = sqlite3.connect(str(path))
+    conn = get_chemistry_db(path)
     try:
         df = pd.read_sql(
             """
@@ -38,7 +37,7 @@ def get_compound_properties(db_path: Optional[Path] = None) -> pd.DataFrame:
 def get_activity_data(campaign_id: Optional[str] = None, db_path: Optional[Path] = None) -> pd.DataFrame:
     """Join compounds with HTS results to get activity data."""
     path = _get_db_path(db_path)
-    conn = sqlite3.connect(str(path))
+    conn = get_chemistry_db(path)
     try:
         base_sql = """
             SELECT c.compound_id, c.corporate_id, h.raw_value as activity_value, h.hit_flag

@@ -194,6 +194,11 @@
 - [ ] Activity cliffs visualization
 - [ ] R-group decomposition
 
+**Lead Optimization Data Models**:
+- [ ] ADME/DMPK Assays (Stability, Permeability, CYP inhibition)
+- [ ] In Vivo PK Studies (AUC, Cmax, Tmax, Bioavailability)
+- [ ] Safety & Toxicology (hERG, Ames, Cytotoxicity)
+
 ### 4. RAG Maturity & Enhancements
 
 **Retrieval Optimization**:
@@ -240,9 +245,10 @@
 3. Audit Trails & Compliance
 
 ### Phase 3: Chemistry Informatics
-1. Chemical Registration System
-2. Advanced Structure Search
-3. SAR Analysis Tools
+1. Lead Optimization Data Models (ADME/PK)
+2. Chemical Registration System
+3. Advanced Structure Search
+4. SAR Analysis Tools
 
 ### Phase 4: RAG Maturity
 1. Hybrid Search & Reranking
