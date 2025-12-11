@@ -20,6 +20,7 @@ from typing import Optional
 COMPOUNDS_TABLE = """
 CREATE TABLE IF NOT EXISTS compounds (
     compound_id TEXT PRIMARY KEY,
+    corporate_id TEXT UNIQUE,
     smiles TEXT NOT NULL,
     inchi_key TEXT UNIQUE,
     canonical_smiles TEXT,
@@ -29,6 +30,12 @@ CREATE TABLE IF NOT EXISTS compounds (
     hbd_count INTEGER,
     hba_count INTEGER,
     rotatable_bonds INTEGER,
+    salt_form TEXT,
+    batch_number TEXT,
+    parent_compound_id TEXT REFERENCES compounds(compound_id),
+    registration_date TIMESTAMP,
+    registered_by TEXT,
+    duplicate_of_id TEXT REFERENCES compounds(compound_id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -137,10 +144,19 @@ CREATE TABLE IF NOT EXISTS compound_signature (
 );
 """
 
+COMPOUND_SEQUENCE_TABLE = """
+CREATE TABLE IF NOT EXISTS compound_sequence (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prefix TEXT DEFAULT 'AMP',
+    next_number INTEGER DEFAULT 1
+);
+"""
+
 # Indexes for performance
 INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_compounds_inchi_key ON compounds(inchi_key);",
     "CREATE INDEX IF NOT EXISTS idx_compounds_smiles ON compounds(smiles);",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_compounds_corporate_id ON compounds(corporate_id);",
     "CREATE INDEX IF NOT EXISTS idx_hts_results_campaign ON hts_results(campaign_id);",
     "CREATE INDEX IF NOT EXISTS idx_hts_results_compound ON hts_results(compound_id);",
     "CREATE INDEX IF NOT EXISTS idx_hts_results_hit ON hts_results(hit_flag);",
@@ -155,6 +171,7 @@ INDEXES = [
 class Compound:
     """Represents a chemical compound."""
     compound_id: str
+    corporate_id: Optional[str] = None
     smiles: str
     inchi_key: Optional[str] = None
     canonical_smiles: Optional[str] = None
@@ -164,6 +181,12 @@ class Compound:
     hbd_count: Optional[int] = None
     hba_count: Optional[int] = None
     rotatable_bonds: Optional[int] = None
+    salt_form: Optional[str] = None
+    batch_number: Optional[str] = None
+    parent_compound_id: Optional[str] = None
+    registration_date: Optional[str] = None
+    registered_by: Optional[str] = None
+    duplicate_of_id: Optional[str] = None
 
 
 @dataclass

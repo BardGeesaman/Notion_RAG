@@ -20,6 +20,11 @@ from amprenta_rag.chemistry.compound_linking import (
     link_compound_to_signature,
 )
 from amprenta_rag.chemistry.database import get_chemistry_db_path
+from amprenta_rag.chemistry.registration import (
+    check_duplicate,
+    generate_corporate_id,
+    register_compound,
+)
 import sqlite3
 
 
@@ -36,8 +41,8 @@ def render_chemistry_page() -> None:
     st.header("⚗️ Chemistry")
 
     # Tabs for different chemistry entities
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["Compounds", "HTS Campaigns", "Biochemical Results", "Signature Links"]
+    tab1, tab_reg, tab2, tab3, tab4 = st.tabs(
+        ["Compounds", "Register Compound", "HTS Campaigns", "Biochemical Results", "Signature Links"]
     )
 
     with tab1:
@@ -116,6 +121,29 @@ def render_chemistry_page() -> None:
                                 st.write(f"**HBA Count:** {compound.hba_count}")
             else:
                 st.info("No compounds found.")
+
+    with tab_reg:
+        st.subheader("Register Compound")
+        name = st.text_input("Compound Name")
+        smiles = st.text_input("SMILES")
+        salt_form = st.selectbox(
+            "Salt Form",
+            ["None", "HCl", "sodium", "potassium", "free base", "other"],
+            index=0,
+        )
+        if st.button("Register", type="primary"):
+            if not name or not smiles:
+                st.error("Name and SMILES are required.")
+            else:
+                try:
+                    corp_id = register_compound(
+                        name=name,
+                        smiles=smiles,
+                        salt_form=None if salt_form == "None" else salt_form,
+                    )
+                    st.success(f"Registered compound ID: {corp_id}")
+                except Exception as e:
+                    st.error(f"Registration failed: {e}")
 
     with tab2:
         st.subheader("HTS Campaigns")
