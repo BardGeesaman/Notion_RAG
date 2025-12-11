@@ -92,6 +92,16 @@ if not is_authenticated():
     render_login_page()
     st.stop()
 
+# Admin registration page
+if st.session_state.get("show_register"):
+    from scripts.dashboard.pages.auth.register import render_register_page
+
+    render_register_page()
+    if st.button("← Back to Dashboard"):
+        st.session_state.pop("show_register", None)
+        st.rerun()
+    st.stop()
+
 # Title
 st.title("🧬 Amprenta Multi-Omics Platform")
 st.markdown("**Data Dashboard** - Browse and explore your multi-omics data")
@@ -105,6 +115,12 @@ if user:
             clear_session()
             st.rerun()
         st.divider()
+        if user.get("role") == "admin":
+            if st.button("➕ Register User", key="register_btn"):
+                from scripts.dashboard.pages.auth.register import render_register_page
+
+                st.session_state["show_register"] = True
+                st.rerun()
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio(
