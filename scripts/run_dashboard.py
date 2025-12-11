@@ -154,6 +154,7 @@ page = st.sidebar.radio(
         "Evidence Report",
         "Data Management",
         "System Health",
+        "Audit Logs",
         "Relationships",
         "Datasets",
         "Programs",
@@ -243,6 +244,10 @@ try:
         from scripts.dashboard.pages.health import render_health_page
 
         render_health_page()
+    elif page == "Audit Logs":
+        from scripts.dashboard.pages.audit_logs import render_audit_logs_page
+
+        render_audit_logs_page()
     elif page == "Relationships":
         from scripts.dashboard.pages.relationships import render_relationships_page
 
