@@ -1,4 +1,3 @@
-from __future__ import annotations
 """
 DEPRECATED: SQLite database operations for chemistry.
 
@@ -7,6 +6,9 @@ See amprenta_rag/database/models.py for the Compound model.
 
 Kept for backward compatibility and potential data migration scripts.
 """
+
+from __future__ import annotations
+
 import warnings
 
 warnings.warn(
@@ -14,8 +16,6 @@ warnings.warn(
     DeprecationWarning,
     stacklevel=2,
 )
-
-from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
