@@ -101,6 +101,10 @@ class Program(Base):
     # External identifiers (stored as JSON for flexibility)
     external_ids = Column(JSON, nullable=True)
 
+    # Audit
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
     # Relationships
     experiments = relationship("Experiment", secondary=program_experiment_assoc, back_populates="programs")
     datasets = relationship("Dataset", secondary=program_dataset_assoc, back_populates="programs")
@@ -138,6 +142,10 @@ class Experiment(Base):
 
     # Migration support: Notion page ID
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)
+
+    # Audit
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_by = relationship("User", foreign_keys=[created_by_id])
 
     # Relationships
     programs = relationship("Program", secondary=program_experiment_assoc, back_populates="experiments")
@@ -223,6 +231,10 @@ class Dataset(Base):
     quality_status = Column(String(32), nullable=True)
     quality_issues = Column(JSON, nullable=True)
 
+    # Audit
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
     # Relationships
     programs = relationship("Program", secondary=program_dataset_assoc, back_populates="datasets")
     experiments = relationship("Experiment", secondary=experiment_dataset_assoc, back_populates="datasets")
@@ -273,6 +285,10 @@ class Signature(Base):
 
     # Migration support: Notion page ID
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)
+
+    # Audit
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_by = relationship("User", foreign_keys=[created_by_id])
 
     # Relationships
     components = relationship("SignatureComponent", back_populates="signature", cascade="all, delete-orphan")

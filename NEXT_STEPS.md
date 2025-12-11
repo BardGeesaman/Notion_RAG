@@ -126,6 +126,10 @@
 - [ ] Add more repository types (others)
 - [ ] Automated discovery workflows
 - [ ] Scheduled harvesting
+- [ ] **Publication & Supplementary Data Extraction**:
+  - [ ] Extract experiment details from PDF publications
+  - [ ] Parse supplementary tables (Excel/CSV) for data
+  - [ ] Link publications to repository datasets
 
 **Security & Collaboration**:
 - [ ] Multi-User Support (RBAC) - Added to roadmap Tier 3.2
