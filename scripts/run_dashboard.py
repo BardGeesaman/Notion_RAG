@@ -72,6 +72,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 import streamlit as st
+from amprenta_rag.auth.session import get_current_user, clear_session, is_authenticated
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
 # from scripts.dashboard.pages import ...
@@ -84,11 +85,27 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Authentication check
+if not is_authenticated():
+    from scripts.dashboard.pages.auth.login import render_login_page
+
+    render_login_page()
+    st.stop()
+
 # Title
 st.title("🧬 Amprenta Multi-Omics Platform")
 st.markdown("**Data Dashboard** - Browse and explore your multi-omics data")
 
 # Sidebar navigation
+user = get_current_user()
+if user:
+    with st.sidebar:
+        st.markdown(f"**👤 {user['username']}** ({user['role']})")
+        if st.button("Logout", key="logout_btn"):
+            clear_session()
+            st.rerun()
+        st.divider()
+
 st.sidebar.title("Navigation")
 page = st.sidebar.radio(
     "Select Page",
