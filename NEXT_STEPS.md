@@ -324,6 +324,10 @@
 **Collaboration**:
 - [ ] "Project" Workspace Abstraction
 - [ ] Contextual Commenting (on graphs/features)
+- [ ] **Automated Reporting & Slides**:
+  - [ ] Auto-generate PowerPoint (.pptx) from Experiment/Dataset
+  - [ ] "Smart Slides": Auto-layout plots, methods, and conclusions
+  - [ ] Meeting Deck Builder: Aggregating results across projects
 
 ### 7. Future Innovations
 

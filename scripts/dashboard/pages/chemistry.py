@@ -36,6 +36,11 @@ from amprenta_rag.chemistry.sar_analysis import (
     calculate_lipinski,
     detect_activity_cliffs,
 )
+from amprenta_rag.chemistry.rgroup import (
+    find_common_core,
+    decompose_rgroups,
+    get_rgroup_statistics,
+)
 
 
 def render_chemistry_page() -> None:
@@ -311,6 +316,73 @@ def render_chemistry_page() -> None:
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("No activity cliffs detected.")
+
+            # R-Group Decomposition section
+            st.markdown("### R-Group Decomposition")
+            st.markdown("Find common core and decompose compounds into R-groups for SAR analysis.")
+            
+            # Get compounds for selection
+            with db_session() as db:
+                compounds = db.query(PgCompound).limit(100).all()
+                if compounds:
+                    compound_options = {f"{c.compound_id} - {c.smiles[:30]}": c.smiles for c in compounds}
+                    selected_compounds = st.multiselect(
+                        "Select compounds for R-group analysis",
+                        list(compound_options.keys()),
+                        help="Select 2 or more compounds to find common core",
+                    )
+                    
+                    if len(selected_compounds) >= 2:
+                        selected_smiles = [compound_options[c] for c in selected_compounds]
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("Find Common Core", type="primary"):
+                                with st.spinner("Finding maximum common substructure..."):
+                                    core_smarts = find_common_core(selected_smiles)
+                                    if core_smarts:
+                                        st.session_state["rgroup_core"] = core_smarts
+                                        st.success(f"Common core found: {core_smarts}")
+                                    else:
+                                        st.error("Could not find common core. Try different compounds.")
+                        
+                        if st.session_state.get("rgroup_core"):
+                            core_smarts = st.session_state["rgroup_core"]
+                            st.markdown(f"**Core SMARTS:** `{core_smarts}`")
+                            
+                            with col2:
+                                if st.button("Decompose R-Groups", type="primary"):
+                                    with st.spinner("Decomposing compounds..."):
+                                        decomposition = decompose_rgroups(selected_smiles, core_smarts)
+                                        if decomposition:
+                                            st.session_state["rgroup_decomp"] = decomposition
+                                            st.success(f"Decomposed {len(decomposition)} compounds")
+                                        else:
+                                            st.error("R-group decomposition failed")
+                            
+                            if st.session_state.get("rgroup_decomp"):
+                                decomp = st.session_state["rgroup_decomp"]
+                                
+                                # Display results table
+                                st.markdown("**Decomposition Results:**")
+                                decomp_df = pd.DataFrame(decomp)
+                                st.dataframe(decomp_df, hide_index=True, use_container_width=True)
+                                
+                                # Show statistics
+                                stats = get_rgroup_statistics(decomp)
+                                if stats:
+                                    st.markdown("**R-Group Statistics:**")
+                                    for position, counts in stats.items():
+                                        st.markdown(f"**{position}:**")
+                                        stats_df = pd.DataFrame([
+                                            {"R-Group": smiles, "Frequency": count}
+                                            for smiles, count in sorted(counts.items(), key=lambda x: x[1], reverse=True)
+                                        ])
+                                        st.dataframe(stats_df, hide_index=True, use_container_width=True)
+                    else:
+                        st.info("Select at least 2 compounds to perform R-group analysis.")
+                else:
+                    st.info("No compounds available for R-group analysis.")
 
     with tab2:
         st.subheader("HTS Campaigns")
