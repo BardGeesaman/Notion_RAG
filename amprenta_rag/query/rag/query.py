@@ -21,6 +21,7 @@ from amprenta_rag.query.rag.models import RAGQueryResult, Citation
 from amprenta_rag.query.rag.synthesis import synthesize_answer, synthesize_answer_with_citations
 from amprenta_rag.query.reranker import get_reranker
 from amprenta_rag.query.hyde import generate_hypothetical_answer
+from amprenta_rag.query.hallucination import check_groundedness
 
 logger = get_logger(__name__)
 
@@ -43,6 +44,7 @@ def query_rag(
     rerank_model: Optional[str] = None,
     use_cache: bool = True,
     use_hyde: bool = False,
+    check_hallucination: bool = False,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -276,6 +278,16 @@ def query_rag(
     metadata_list = [m.metadata for m in filtered]
     answer, citations = synthesize_answer_with_citations(user_query, chunks, metadata_list)
 
+    # Check for hallucinations if enabled
+    if check_hallucination and answer:
+        logger.info("[RAG] Checking for hallucinations")
+        groundedness = check_groundedness(answer, chunks)
+        groundedness_score = groundedness.score
+        unsupported_claims = groundedness.unsupported_claims
+    else:
+        groundedness_score = None
+        unsupported_claims = []
+
     # Add provenance summary
     source_counts: Dict[str, int] = {}
     for m in filtered:
@@ -296,6 +308,8 @@ def query_rag(
         context_chunks=chunks,
         answer=answer_with_provenance,
         citations=citations,
+        groundedness_score=groundedness_score,
+        unsupported_claims=unsupported_claims,
     )
 
     # Store in cache

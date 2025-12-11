@@ -7,7 +7,7 @@ This module defines dataclasses for structured RAG query results.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -46,4 +46,6 @@ class RAGQueryResult:
     context_chunks: List[str]
     answer: str
     citations: List[Citation] = field(default_factory=list)
+    groundedness_score: Optional[float] = None
+    unsupported_claims: List[str] = field(default_factory=list)
 
