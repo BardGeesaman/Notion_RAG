@@ -134,8 +134,10 @@
 
 ### 12. Automated Discovery Workflow ✅ COMPLETE
 - ✅ DiscoveryJob/DiscoveredStudy models
+- ✅ HarvestSchedule model for automated scans (APScheduler)
 - ✅ Repository scanning service (GEO, MetaboLights)
-- ✅ Dashboard: Run scans, review/import studies, job history
+- ✅ Dashboard: Run scans, review/import studies, job history, schedules
+- ✅ Background polling with manual review workflow
 
 ### 13. Chemical Registration System ✅ COMPLETE
 - ✅ Corporate ID generation (AMP-XXXXX)
@@ -173,7 +175,7 @@
 **Public Repositories**:
 - [ ] Add more repository types (others)
 - [x] Automated discovery workflows
-- [ ] Scheduled harvesting
+- [x] Scheduled harvesting
 - [ ] **Publication & Supplementary Data Extraction**:
   - [ ] Extract experiment details from PDF publications
   - [ ] Parse supplementary tables (Excel/CSV) for data
