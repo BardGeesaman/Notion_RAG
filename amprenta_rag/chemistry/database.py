@@ -90,6 +90,58 @@ def initialize_chemistry_database(db_path: Optional[Path] = None) -> None:
         conn.close()
 
 
+def migrate_chemistry_schema(conn: sqlite3.Connection) -> None:
+    """Add new columns/tables to existing chemistry schema if missing."""
+    cursor = conn.cursor()
+
+    new_columns = [
+        ("corporate_id", "TEXT"),
+        ("salt_form", "TEXT"),
+        ("batch_number", "TEXT"),
+        ("parent_compound_id", "TEXT"),
+        ("registration_date", "TEXT"),
+        ("registered_by", "TEXT"),
+        ("duplicate_of_id", "TEXT"),
+    ]
+
+    for col_name, col_type in new_columns:
+        try:
+            cursor.execute(f"ALTER TABLE compounds ADD COLUMN {col_name} {col_type}")
+        except Exception:
+            # Column likely already exists
+            pass
+
+    # compound_sequence table for corporate IDs
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS compound_sequence (
+            id INTEGER PRIMARY KEY,
+            prefix TEXT DEFAULT 'AMP',
+            next_number INTEGER DEFAULT 1
+        )
+        """
+    )
+    cursor.execute(
+        "INSERT OR IGNORE INTO compound_sequence (id, prefix, next_number) VALUES (1, 'AMP', 1)"
+    )
+
+    conn.commit()
+
+
+def get_chemistry_db(db_path: Optional[Path] = None) -> sqlite3.Connection:
+    """
+    Get a connection to the chemistry DB, ensuring schema is initialized and migrated.
+    Caller is responsible for closing the connection.
+    """
+    if db_path is None:
+        db_path = get_chemistry_db_path()
+
+    initialize_chemistry_database(db_path)
+    conn = sqlite3.connect(str(db_path))
+    migrate_chemistry_schema(conn)
+    return conn
+
+
 def insert_compound(compound: Compound, db_path: Optional[Path] = None) -> None:
     """
     Insert or update a compound in the database.
