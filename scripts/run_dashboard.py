@@ -73,9 +73,57 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 import streamlit as st
+from uuid import UUID
 from amprenta_rag.auth.session import get_current_user, clear_session, is_authenticated
 from amprenta_rag.auth.audit import log_logout
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import UserFavorite
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
+
+# Page groups
+DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow"]
+ANALYSIS_PAGES = ["Analysis Tools", "Chemistry", "Visualizations"]
+ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
+ADMIN_PAGES = ["Audit Logs", "Teams & Projects", "Feedback"]
+ALL_PAGES = [
+    "Overview",
+    "Getting Started",
+    "Evaluation Wizard",
+    "Chat",
+    "Lab Notebook",
+    "Sample Inventory",
+    "Search",
+    "Data Ingestion",
+    "Repositories",
+    "Discovery Workflow",
+    "Analysis Tools",
+    "Visualizations",
+    "Quality Checks",
+    "Statistical Analysis",
+    "Discovery",
+    "Coverage Map",
+    "Feature Recurrence",
+    "Evidence Report",
+    "Data Management",
+    "System Health",
+    "Audit Logs",
+    "Relationships",
+    "Datasets",
+    "Programs",
+    "Experiments",
+    "Features",
+    "Signatures",
+    "Protocols",
+    "Q&A Tracker",
+    "Teams & Projects",
+    "Feedback",
+    "Literature",
+    "Emails",
+    "RAG Chunks",
+    "Chemistry",
+    "RAG Query",
+    "Cross-Omics",
+]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
 # from scripts.dashboard.pages import ...
@@ -132,49 +180,157 @@ if user:
                 st.session_state["show_register"] = True
                 st.rerun()
 
+# Initialize recent pages
+if "recent_pages" not in st.session_state:
+    st.session_state["recent_pages"] = []
+
+# Helper functions for favorites
+def get_user_favorites(user_id: str) -> list[str]:
+    """Get user's favorite pages."""
+    if not user_id or user_id == "test":
+        return []
+    try:
+        db_gen = get_db()
+        db = next(db_gen)
+        try:
+            favorites = db.query(UserFavorite).filter(
+                UserFavorite.user_id == UUID(user_id)
+            ).order_by(UserFavorite.created_at.desc()).all()
+            return [f.page_name for f in favorites]
+        finally:
+            db_gen.close()
+    except Exception:
+        return []
+
+def toggle_favorite(user_id: str, page_name: str) -> None:
+    """Add or remove favorite."""
+    if not user_id or user_id == "test":
+        return
+    try:
+        db_gen = get_db()
+        db = next(db_gen)
+        try:
+            existing = db.query(UserFavorite).filter(
+                UserFavorite.user_id == UUID(user_id),
+                UserFavorite.page_name == page_name
+            ).first()
+            if existing:
+                db.delete(existing)
+            else:
+                favorite = UserFavorite(
+                    user_id=UUID(user_id),
+                    page_name=page_name
+                )
+                db.add(favorite)
+            db.commit()
+        finally:
+            db_gen.close()
+    except Exception:
+        pass
+
+def update_recent_pages(page_name: str) -> None:
+    """Update recent pages list."""
+    if page_name not in st.session_state["recent_pages"]:
+        st.session_state["recent_pages"].insert(0, page_name)
+        st.session_state["recent_pages"] = st.session_state["recent_pages"][:5]
+    else:
+        # Move to front
+        st.session_state["recent_pages"].remove(page_name)
+        st.session_state["recent_pages"].insert(0, page_name)
+
+# Sidebar navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.radio(
-    "Select Page",
-    [
-        "Overview",
-        "Getting Started",
-        "Evaluation Wizard",
-        "Chat",
-        "Lab Notebook",
-        "Sample Inventory",
-        "Search",
-        "Data Ingestion",
-        "Repositories",
-        "Discovery Workflow",
-        "Analysis Tools",
-        "Visualizations",
-        "Quality Checks",
-        "Statistical Analysis",
-        "Discovery",
-        "Coverage Map",
-        "Feature Recurrence",
-        "Evidence Report",
-        "Data Management",
-        "System Health",
-        "Audit Logs",
-        "Relationships",
-        "Datasets",
-        "Programs",
-        "Experiments",
-        "Features",
-        "Signatures",
-        "Protocols",
-        "Q&A Tracker",
-        "Teams & Projects",
-        "Feedback",
-        "Literature",
-        "Emails",
-        "RAG Chunks",
-        "Chemistry",
-        "RAG Query",
-        "Cross-Omics",
-    ],
-)
+page = None
+
+# Favorites section
+if user and user.get("id") != "test":
+    favorites = get_user_favorites(user.get("id"))
+    if favorites:
+        with st.sidebar.expander("⭐ Favorites", expanded=True):
+            for fav_page in favorites:
+                if st.button(f"📌 {fav_page}", key=f"fav_{fav_page}", use_container_width=True):
+                    page = fav_page
+                    st.session_state["selected_page"] = page
+                    update_recent_pages(page)
+                    st.rerun()
+        st.sidebar.divider()
+
+# Recent pages
+if st.session_state.get("recent_pages"):
+    with st.sidebar.expander("🕐 Recent", expanded=False):
+        for recent_page in st.session_state["recent_pages"][:5]:
+            if st.button(f"🕐 {recent_page}", key=f"recent_{recent_page}", use_container_width=True):
+                page = recent_page
+                st.session_state["selected_page"] = page
+                update_recent_pages(page)
+                st.rerun()
+    st.sidebar.divider()
+
+# Initialize selected page from session state
+if "selected_page" not in st.session_state:
+    st.session_state["selected_page"] = "Overview"
+
+# Page groups
+if page is None:
+    page = st.session_state.get("selected_page", "Overview")
+    
+    with st.sidebar.expander("🔍 Discovery", expanded=True):
+        for p in DISCOVERY_PAGES:
+            if st.button(p, key=f"btn_{p}", use_container_width=True):
+                page = p
+                st.session_state["selected_page"] = p
+                update_recent_pages(p)
+                st.rerun()
+    
+    with st.sidebar.expander("📊 Analysis", expanded=False):
+        for p in ANALYSIS_PAGES:
+            if st.button(p, key=f"btn_{p}", use_container_width=True):
+                page = p
+                st.session_state["selected_page"] = p
+                update_recent_pages(p)
+                st.rerun()
+    
+    with st.sidebar.expander("📋 ELN", expanded=False):
+        for p in ELN_PAGES:
+            if st.button(p, key=f"btn_{p}", use_container_width=True):
+                page = p
+                st.session_state["selected_page"] = p
+                update_recent_pages(p)
+                st.rerun()
+    
+    if user and user.get("role") == "admin":
+        with st.sidebar.expander("⚙️ Admin", expanded=False):
+            for p in ADMIN_PAGES:
+                if st.button(p, key=f"btn_{p}", use_container_width=True):
+                    page = p
+                    st.session_state["selected_page"] = p
+                    update_recent_pages(p)
+                    st.rerun()
+    
+    # Other pages
+    other_pages = [p for p in ALL_PAGES if p not in DISCOVERY_PAGES + ANALYSIS_PAGES + ELN_PAGES + ADMIN_PAGES]
+    with st.sidebar.expander("📚 Other Pages", expanded=False):
+        for p in other_pages:
+            if st.button(p, key=f"btn_{p}", use_container_width=True):
+                page = p
+                st.session_state["selected_page"] = p
+                update_recent_pages(p)
+                st.rerun()
+
+# Get final page selection from session state
+page = st.session_state.get("selected_page", "Overview")
+
+# Star button for favorites
+if user and user.get("id") != "test":
+    favorites = get_user_favorites(user.get("id"))
+    is_favorite = page in favorites
+    star_label = "⭐" if is_favorite else "☆"
+    if st.sidebar.button(f"{star_label} Favorite", key="toggle_favorite", use_container_width=True):
+        toggle_favorite(user.get("id"), page)
+        st.rerun()
+
+# Update recent pages
+update_recent_pages(page)
 
 # Route to appropriate page (LAZY IMPORTS to prevent cascading failures)
 try:

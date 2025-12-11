@@ -228,6 +228,10 @@
 - [ ] 21 CFR Part 11 readiness (audit trails)
 - [ ] Electronic signatures (future)
 - [ ] Data immutability logs
+- [ ] **IP & Patent Tracking**:
+  - [ ] Invention Disclosure Registry (Idea submission, inventors)
+  - [ ] Patent Portfolio Manager (Filings, dates, status)
+  - [ ] Experiment-to-IP Linking (Trace data to claims)
 
 **General Experimental Data Support**:
 - [ ] Generic Assay Result Model (for non-standard assays)
