@@ -298,7 +298,7 @@
 
 **Advanced Capabilities**:
 - [x] Semantic Caching
-- [ ] Agentic RAG (multi-step reasoning)
+- [x] Agentic RAG (multi-step reasoning)
 - [ ] **Hierarchical RAG Reasoning**:
   - [ ] Data Trust Scoring (Validated Internal > External > General)
   - [ ] Hybrid Prompting (Allow general knowledge as fallback)
