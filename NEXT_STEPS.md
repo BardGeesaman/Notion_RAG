@@ -128,6 +128,7 @@
 - ✅ Reciprocal Rank Fusion (RRF) for result merging
 - ✅ Cross-encoder reranking (ms-marco-MiniLM model)
 - ✅ use_hybrid, hybrid_alpha, and use_rerank params in query_rag()
+- ✅ Citation system with source metadata and inline [1] markers
 
 ### 12. Automated Discovery Workflow ✅ COMPLETE
 - ✅ DiscoveryJob/DiscoveredStudy models
@@ -261,7 +262,7 @@
 - [ ] Query Expansion/Transformation (HyDE)
 
 **Quality & Attribution**:
-- [ ] Citation/Source Attribution
+- [x] Citation/Source Attribution
 - [ ] Evaluation Framework (RAGAS/TruLens)
 - [ ] Hallucination detection
 
