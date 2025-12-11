@@ -4,11 +4,10 @@ from __future__ import annotations
 from typing import Literal
 
 try:
-    from scipy.stats import power as scipy_power
-    from scipy.stats.power import TTestIndPower, FTestAnovaPower, TTestPower
-    SCIPY_AVAILABLE = True
+    from statsmodels.stats.power import TTestIndPower, FTestAnovaPower, TTestPower
+    STATSMODELS_AVAILABLE = True
 except ImportError:
-    SCIPY_AVAILABLE = False
+    STATSMODELS_AVAILABLE = False
     TTestIndPower = None  # type: ignore
     FTestAnovaPower = None  # type: ignore
     TTestPower = None  # type: ignore
@@ -56,9 +55,9 @@ def calculate_sample_size(
     Returns:
         Required sample size (per group for t-test, total for others)
     """
-    if not SCIPY_AVAILABLE:
-        logger.error("[POWER] scipy.stats not available")
-        raise ImportError("scipy.stats is required for power analysis")
+    if not STATSMODELS_AVAILABLE:
+        logger.error("[POWER] statsmodels not available")
+        raise ImportError("statsmodels is required for power analysis")
     
     try:
         if test_type == "t-test":
@@ -102,7 +101,6 @@ def calculate_sample_size(
             # Using a simplified approximation based on effect size
             # For chi-square, effect_size is typically Cohen's w
             # This is a simplified calculation
-            from scipy.stats import chi2
             # Approximate calculation for chi-square
             # This is a placeholder - full implementation would require more parameters
             logger.warning("[POWER] Chi-square power analysis is simplified")
@@ -141,9 +139,9 @@ def calculate_power(
     Returns:
         Statistical power (0.0 to 1.0)
     """
-    if not SCIPY_AVAILABLE:
-        logger.error("[POWER] scipy.stats not available")
-        raise ImportError("scipy.stats is required for power analysis")
+    if not STATSMODELS_AVAILABLE:
+        logger.error("[POWER] statsmodels not available")
+        raise ImportError("statsmodels is required for power analysis")
     
     try:
         if test_type == "t-test":

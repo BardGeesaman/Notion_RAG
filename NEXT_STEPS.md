@@ -334,6 +334,14 @@
 
 **Advanced Analytics**:
 - [ ] Multi-dataset pattern detection
+- [ ] **Bayesian Inference & Optimization**:
+  - [ ] Probabilistic Dose-Response (PyMC/Stan)
+  - [ ] Bayesian Experimental Design (Next-best experiment suggestion)
+  - [ ] Uncertainty Quantification for Predictions
+- [ ] **Machine Learning & AI**:
+  - [ ] Predictive ADMET (Graph Neural Networks / Chemprop)
+  - [ ] Generative Chemistry (De Novo Design / VAEs)
+  - [ ] Image Analysis Pipeline (CellPose for HCS)
 
 ---
 
