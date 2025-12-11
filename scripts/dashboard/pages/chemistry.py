@@ -8,6 +8,8 @@ import streamlit as st
 
 # Import models - use direct module import to avoid caching issues
 import amprenta_rag.database.models as db_models
+from amprenta_rag.database.models import Compound as PgCompound
+from amprenta_rag.database.base import get_db
 
 # Access models directly from module
 Compound = db_models.Compound
@@ -63,18 +65,19 @@ def render_chemistry_page() -> None:
 
     with tab1:
         st.subheader("Compounds")
-        with db_session() as db:
-            search_term = st.text_input("Search compounds by ID or SMILES", "", key="compound_search")
+        search_term = st.text_input("Search compounds by ID or SMILES", "", key="compound_search")
 
-            query = db.query(Compound)
+        db_gen = get_db()
+        db = next(db_gen)
+        try:
+            query = db.query(PgCompound)
             if search_term:
                 query = query.filter(
-                    (Compound.compound_id.ilike(f"%{search_term}%"))
-                    | (Compound.smiles.ilike(f"%{search_term}%"))
-                    | (Compound.inchi_key.ilike(f"%{search_term}%"))
+                    (PgCompound.compound_id.ilike(f"%{search_term}%"))
+                    | (PgCompound.smiles.ilike(f"%{search_term}%"))
                 )
 
-            compounds = query.order_by(Compound.created_at.desc()).limit(100).all()
+            compounds = query.limit(100).all()
 
             st.metric("Compounds Found", len(compounds))
             if len(compounds) == 100:
@@ -137,6 +140,8 @@ def render_chemistry_page() -> None:
                                 st.write(f"**HBA Count:** {compound.hba_count}")
             else:
                 st.info("No compounds found.")
+        finally:
+            db_gen.close()
 
     with tab_reg:
         st.subheader("Register Compound")
