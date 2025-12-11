@@ -133,8 +133,17 @@
 - ✅ PostgreSQL-backed compound storage (migrated from SQLite)
 - ✅ Dashboard registration UI
 - ✅ Playwright E2E test
+- ✅ Structure Search (substructure + similarity) with RDKit
+- ✅ SAR Analysis with Lipinski Ro5 compliance
 - ✅ SAR analysis, structure search, compound linking all use PostgreSQL
 - ✅ SQLite chemistry/database.py deprecated
+
+### 14. Lead Optimization Data Models ✅ COMPLETE
+- ✅ BiochemicalAssay and ActivityResult models
+- ✅ Activity cliff detection algorithm
+- ✅ ADMEResult model (permeability, stability, CYP inhibition)
+- ✅ PKStudy model (AUC, Cmax, half-life, bioavailability)
+- ✅ ToxicologyResult model (hERG, Ames, cytotoxicity)
 
 ---
 
@@ -193,19 +202,19 @@
 - [x] Duplicate checking logic
 
 **Cheminformatics Search**:
-- [ ] Substructure search (SMARTS)
-- [ ] Similarity search (Tanimoto)
+- [x] Substructure search (SMARTS)
+- [x] Similarity search (Tanimoto)
 - [ ] Pharmacophore search
 
 **SAR Analysis**:
-- [ ] Calculated properties (LogP, MW, TPSA)
+- [x] Calculated properties (LogP, MW, TPSA)
 - [ ] Activity cliffs visualization
 - [ ] R-group decomposition
 
 **Lead Optimization Data Models**:
-- [ ] ADME/DMPK Assays (Stability, Permeability, CYP inhibition)
-- [ ] In Vivo PK Studies (AUC, Cmax, Tmax, Bioavailability)
-- [ ] Safety & Toxicology (hERG, Ames, Cytotoxicity)
+- [x] ADME/DMPK Assays (Stability, Permeability, CYP inhibition)
+- [x] In Vivo PK Studies (AUC, Cmax, Tmax, Bioavailability)
+- [x] Safety & Toxicology (hERG, Ames, Cytotoxicity)
 
 **Structural Biology & Virtual Screening**:
 - [ ] Protein Structure Visualization (Mol* / PyMOL integration)
