@@ -144,6 +144,9 @@
 - ✅ ADMEResult model (permeability, stability, CYP inhibition)
 - ✅ PKStudy model (AUC, Cmax, half-life, bioavailability)
 - ✅ ToxicologyResult model (hERG, Ames, cytotoxicity)
+- ✅ Lead Optimization dashboard tab with ADME/PK/Tox entry forms
+- ✅ Compound profile view with liability alerts
+- ✅ Playwright error detection utility added
 
 ---
 
