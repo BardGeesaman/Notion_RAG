@@ -1,100 +1,93 @@
-"""Substructure and similarity search utilities using RDKit."""
-from __future__ import annotations
+"""Structure search utilities using PostgreSQL."""
+from typing import Optional, List, Dict, Any
 
-import sqlite3
-from pathlib import Path
-from typing import List, Optional
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import Compound
 
-from amprenta_rag.chemistry.database import get_chemistry_db_path
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
-
-# Try RDKit
+# Check RDKit availability
 try:
     from rdkit import Chem
-    from rdkit.Chem import AllChem, DataStructs
-
+    from rdkit.Chem import AllChem
+    from rdkit import DataStructs
     RDKIT_AVAILABLE = True
 except ImportError:
     RDKIT_AVAILABLE = False
-    logger.warning("[CHEMISTRY][SEARCH] RDKit not available; structure search disabled.")
 
 
-def _get_db_path(db_path: Optional[Path] = None) -> Path:
-    return db_path or get_chemistry_db_path()
-
-
-def _load_compounds(db_path: Optional[Path] = None) -> List[tuple]:
-    path = _get_db_path(db_path)
-    conn = sqlite3.connect(str(path))
+def substructure_search(smarts: str, limit: int = 100) -> List[Dict[str, Any]]:
+    """Search compounds by SMARTS substructure pattern using PostgreSQL."""
+    if not RDKIT_AVAILABLE:
+        return []
+    
     try:
-        rows = conn.execute(
-            "SELECT compound_id, smiles, corporate_id FROM compounds"
-        ).fetchall()
-        return rows
+        pattern = Chem.MolFromSmarts(smarts)
+        if pattern is None:
+            return []
+    except Exception:
+        return []
+    
+    db_gen = get_db()
+    db = next(db_gen)
+    try:
+        compounds = db.query(Compound).limit(1000).all()
+        matches = []
+        
+        for c in compounds:
+            if not c.smiles:
+                continue
+            mol = Chem.MolFromSmiles(c.smiles)
+            if mol and mol.HasSubstructMatch(pattern):
+                matches.append({
+                    "compound_id": c.compound_id,
+                    "smiles": c.smiles,
+                    "molecular_weight": c.molecular_weight,
+                })
+                if len(matches) >= limit:
+                    break
+        
+        return matches
     finally:
-        conn.close()
+        db_gen.close()
 
 
-def substructure_search(query_smarts: str, db_path: Optional[Path] = None) -> List[dict]:
-    """Substructure search; returns list of matching compounds."""
+def similarity_search(smiles: str, threshold: float = 0.7, limit: int = 100) -> List[Dict[str, Any]]:
+    """Search compounds by Tanimoto similarity using PostgreSQL."""
     if not RDKIT_AVAILABLE:
         return []
-    if not query_smarts:
+    
+    try:
+        query_mol = Chem.MolFromSmiles(smiles)
+        if query_mol is None:
+            return []
+        query_fp = AllChem.GetMorganFingerprintAsBitVect(query_mol, 2, nBits=2048)
+    except Exception:
         return []
-
-    pattern = Chem.MolFromSmarts(query_smarts)
-    if pattern is None:
-        logger.warning("[CHEMISTRY][SEARCH] Invalid SMARTS: %s", query_smarts)
-        return []
-
-    matches = []
-    for compound_id, smiles, corporate_id in _load_compounds(db_path):
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            continue
-        if mol.HasSubstructMatch(pattern):
-            matches.append(
-                {
-                    "compound_id": compound_id,
-                    "smiles": smiles,
-                    "corporate_id": corporate_id,
-                }
-            )
-    return matches
-
-
-def similarity_search(query_smiles: str, threshold: float = 0.7, db_path: Optional[Path] = None) -> List[dict]:
-    """Similarity search using Tanimoto and RDKit fingerprints."""
-    if not RDKIT_AVAILABLE:
-        return []
-    if not query_smiles:
-        return []
-
-    query_mol = Chem.MolFromSmiles(query_smiles)
-    if query_mol is None:
-        logger.warning("[CHEMISTRY][SEARCH] Invalid SMILES: %s", query_smiles)
-        return []
-    query_fp = AllChem.GetMorganFingerprintAsBitVect(query_mol, radius=2, nBits=2048)
-
-    results: List[dict] = []
-    for compound_id, smiles, corporate_id in _load_compounds(db_path):
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            continue
-        fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
-        sim = DataStructs.TanimotoSimilarity(query_fp, fp)
-        if sim >= threshold:
-            results.append(
-                {
-                    "compound_id": compound_id,
-                    "smiles": smiles,
-                    "corporate_id": corporate_id,
-                    "similarity": sim,
-                }
-            )
-
-    # Sort by similarity descending
-    results.sort(key=lambda x: x.get("similarity", 0), reverse=True)
-    return results
+    
+    db_gen = get_db()
+    db = next(db_gen)
+    try:
+        compounds = db.query(Compound).limit(1000).all()
+        results = []
+        
+        for c in compounds:
+            if not c.smiles:
+                continue
+            mol = Chem.MolFromSmiles(c.smiles)
+            if mol is None:
+                continue
+            
+            fp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048)
+            similarity = DataStructs.TanimotoSimilarity(query_fp, fp)
+            
+            if similarity >= threshold:
+                results.append({
+                    "compound_id": c.compound_id,
+                    "smiles": c.smiles,
+                    "similarity": similarity,
+                    "molecular_weight": c.molecular_weight,
+                })
+        
+        results.sort(key=lambda x: x["similarity"], reverse=True)
+        return results[:limit]
+    finally:
+        db_gen.close()

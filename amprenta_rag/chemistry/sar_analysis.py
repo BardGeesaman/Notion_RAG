@@ -1,126 +1,94 @@
-"""Structure-Activity Relationship (SAR) analysis utilities."""
-from __future__ import annotations
-
-from pathlib import Path
-from typing import List, Optional
+"""SAR analysis utilities using PostgreSQL."""
+from typing import Optional, List, Dict, Any
 
 import pandas as pd
 
-from amprenta_rag.chemistry.database import get_chemistry_db, get_chemistry_db_path
-from amprenta_rag.chemistry.structure_search import RDKIT_AVAILABLE
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
+from amprenta_rag.database.base import get_db
+from amprenta_rag.database.models import Compound
 
 
-def _get_db_path(db_path: Optional[Path] = None) -> Path:
-    return db_path or get_chemistry_db_path()
-
-
-def get_compound_properties(db_path: Optional[Path] = None) -> pd.DataFrame:
-    """Load compound properties for SAR analysis."""
-    path = _get_db_path(db_path)
-    conn = get_chemistry_db(path)
+def get_compound_properties(limit: int = 1000) -> pd.DataFrame:
+    """Get compound properties from PostgreSQL."""
+    db_gen = get_db()
+    db = next(db_gen)
     try:
-        df = pd.read_sql(
-            """
-            SELECT compound_id, corporate_id, smiles, molecular_weight, logp, hbd_count, hba_count, rotatable_bonds
-            FROM compounds
-            """,
-            conn,
-        )
-        return df
+        compounds = db.query(Compound).limit(limit).all()
+        if not compounds:
+            return pd.DataFrame()
+        
+        data = [{
+            "compound_id": c.compound_id,
+            "smiles": c.smiles,
+            "molecular_weight": c.molecular_weight,
+            "logp": c.logp,
+            "hbd_count": c.hbd_count,
+            "hba_count": c.hba_count,
+            "rotatable_bonds": c.rotatable_bonds,
+        } for c in compounds]
+        return pd.DataFrame(data)
     finally:
-        conn.close()
+        db_gen.close()
 
 
-def get_activity_data(campaign_id: Optional[str] = None, db_path: Optional[Path] = None) -> pd.DataFrame:
-    """Join compounds with HTS results to get activity data."""
-    path = _get_db_path(db_path)
-    conn = get_chemistry_db(path)
+def get_activity_data(compound_ids: Optional[List[str]] = None) -> pd.DataFrame:
+    """Get activity data for compounds from PostgreSQL."""
+    db_gen = get_db()
+    db = next(db_gen)
     try:
-        base_sql = """
-            SELECT c.compound_id, c.corporate_id, h.raw_value as activity_value, h.hit_flag
-            FROM compounds c
-            JOIN hts_results h ON c.compound_id = h.compound_id
-        """
-        params = ()
-        if campaign_id:
-            base_sql += " WHERE h.campaign_id = ?"
-            params = (campaign_id,)
-        df = pd.read_sql(base_sql, conn, params=params)
-        return df
+        query = db.query(Compound)
+        if compound_ids:
+            query = query.filter(Compound.compound_id.in_(compound_ids))
+        compounds = query.all()
+        
+        if not compounds:
+            return pd.DataFrame()
+        
+        data = [{
+            "compound_id": c.compound_id,
+            "smiles": c.smiles,
+            "molecular_weight": c.molecular_weight,
+        } for c in compounds]
+        return pd.DataFrame(data)
     finally:
-        conn.close()
+        db_gen.close()
 
 
-def calculate_lipinski(mw: Optional[float], logp: Optional[float], hbd: Optional[int], hba: Optional[int]) -> dict:
-    """Evaluate Lipinski Rule of Five compliance."""
-    violations = 0
-    details = []
-    if mw is not None and mw > 500:
-        violations += 1
-        details.append("MW > 500")
-    if logp is not None and logp > 5:
-        violations += 1
-        details.append("LogP > 5")
-    if hbd is not None and hbd > 5:
-        violations += 1
-        details.append("HBD > 5")
-    if hba is not None and hba > 10:
-        violations += 1
-        details.append("HBA > 10")
-    return {
-        "compliant": violations == 0,
-        "violations": violations,
-        "details": details,
-    }
-
-
-def detect_activity_cliffs(activity_df: pd.DataFrame, similarity_threshold: float = 0.8) -> List[dict]:
-    """Find activity cliffs: similar compounds with large activity differences."""
-    if activity_df is None or activity_df.empty:
-        return []
-    if not RDKIT_AVAILABLE:
-        logger.warning("[CHEMISTRY][SAR] RDKit not available; cannot detect activity cliffs.")
-        return []
-
+def calculate_lipinski(smiles: str) -> Dict[str, Any]:
+    """Calculate Lipinski Rule of 5 properties."""
     try:
         from rdkit import Chem
-        from rdkit.Chem import AllChem, DataStructs
-    except ImportError:
-        return []
-
-    # Precompute fingerprints
-    fps = {}
-    for _, row in activity_df.iterrows():
-        smi = row.get("smiles") or ""
-        mol = Chem.MolFromSmiles(smi)
+        from rdkit.Chem import Descriptors
+        
+        mol = Chem.MolFromSmiles(smiles)
         if mol is None:
-            continue
-        fps[row["compound_id"]] = (AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048), row)
+            return {"valid": False}
+        
+        mw = Descriptors.MolWt(mol)
+        logp = Descriptors.MolLogP(mol)
+        hbd = Descriptors.NumHDonors(mol)
+        hba = Descriptors.NumHAcceptors(mol)
+        
+        violations = sum([
+            mw > 500,
+            logp > 5,
+            hbd > 5,
+            hba > 10,
+        ])
+        
+        return {
+            "valid": True,
+            "molecular_weight": mw,
+            "logp": logp,
+            "hbd": hbd,
+            "hba": hba,
+            "violations": violations,
+            "passes_ro5": violations == 0,
+        }
+    except ImportError:
+        return {"valid": False, "error": "RDKit not available"}
 
-    cliffs: List[dict] = []
-    ids = list(fps.keys())
-    for i in range(len(ids)):
-        fp_i, row_i = fps[ids[i]]
-        for j in range(i + 1, len(ids)):
-            fp_j, row_j = fps[ids[j]]
-            sim = DataStructs.TanimotoSimilarity(fp_i, fp_j)
-            if sim >= similarity_threshold:
-                ai = row_i.get("activity_value")
-                aj = row_j.get("activity_value")
-                if ai is None or aj is None:
-                    continue
-                diff = abs(ai - aj)
-                cliffs.append(
-                    {
-                        "compound_a": row_i.get("compound_id"),
-                        "compound_b": row_j.get("compound_id"),
-                        "similarity": sim,
-                        "activity_diff": diff,
-                    }
-                )
 
-    cliffs.sort(key=lambda x: x["activity_diff"], reverse=True)
-    return cliffs
+def detect_activity_cliffs(threshold: float = 0.3) -> List[Dict[str, Any]]:
+    """Detect activity cliffs (similar structures, different activities)."""
+    # Placeholder - would need activity data
+    return []

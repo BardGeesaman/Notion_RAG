@@ -18,11 +18,9 @@ BiochemicalResult = db_models.BiochemicalResult
 
 from scripts.dashboard.db_session import db_session
 from amprenta_rag.chemistry.compound_linking import (
-    find_compounds_reversing_signature,
-    find_signatures_affected_by_compound,
     link_compound_to_signature,
+    get_compounds_for_signature,
 )
-from amprenta_rag.chemistry.database import get_chemistry_db_path
 from amprenta_rag.chemistry.registration import (
     check_duplicate,
     register_compound,
@@ -34,7 +32,6 @@ from amprenta_rag.chemistry.sar_analysis import (
     calculate_lipinski,
     detect_activity_cliffs,
 )
-import sqlite3
 
 
 def render_chemistry_page() -> None:
@@ -413,17 +410,15 @@ def render_chemistry_page() -> None:
 
         # Helper: fetch compounds from SQLite (chemistry DB)
         def _load_compound_ids() -> list[str]:
+            db_gen = get_db()
+            db = next(db_gen)
             try:
-                conn = sqlite3.connect(str(get_chemistry_db_path()))
-                rows = conn.execute("SELECT compound_id FROM compounds ORDER BY created_at DESC LIMIT 500").fetchall()
-                return [r[0] for r in rows]
+                compounds = db.query(PgCompound).order_by(PgCompound.created_at.desc()).limit(500).all()
+                return [c.compound_id for c in compounds]
             except Exception:
                 return []
             finally:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
+                db_gen.close()
 
         compound_options = _load_compound_ids()
 
