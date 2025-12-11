@@ -177,6 +177,11 @@
 - ✅ Feedback submission widget
 - ✅ Admin triage dashboard with vote tracking
 
+### 18. In-App User Guidance ✅ COMPLETE
+- ✅ Contextual Help/Tooltips (hover for definitions)
+- ✅ Embedded Documentation Widget (searchable guide)
+- ✅ Interactive Feature Tours (via driver.js integration)
+
 ---
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
@@ -202,10 +207,10 @@
   - [x] Error Reporting (Automatic capture + user description)
   - [x] Feature Request Tracker (Vote/Prioritize)
   - [x] Admin Dashboard for triage
-- [ ] **In-App User Guidance**:
-  - [ ] Interactive Feature Tours (e.g., "How to create a protocol")
-  - [ ] Contextual Help/Tooltips (hover for definitions)
-  - [ ] Embedded Documentation Widget (searchable guide)
+- [x] **In-App User Guidance**:
+  - [x] Interactive Feature Tours (e.g., "How to create a protocol")
+  - [x] Contextual Help/Tooltips (hover for definitions)
+  - [x] Embedded Documentation Widget (searchable guide)
   - [ ] **AI Help Assistant** (Chatbot for "How do I...?" questions)
 - [ ] **Navigation & UI Organization**:
   - [ ] Functional Grouping (Discovery, ELN, Analysis, Admin)
