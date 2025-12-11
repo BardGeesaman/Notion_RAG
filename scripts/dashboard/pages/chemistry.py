@@ -235,7 +235,7 @@ def render_chemistry_page() -> None:
                 cliff_thresh = st.slider(
                     "Cliff similarity threshold", min_value=0.5, max_value=1.0, value=0.8, step=0.01
                 )
-                cliffs = detect_activity_cliffs(merged, similarity_threshold=cliff_thresh)
+                cliffs = detect_activity_cliffs(similarity_threshold=cliff_thresh)
                 if cliffs:
                     st.markdown("**Activity Cliffs (top 50 by activity difference)**")
                     st.dataframe(cliffs[:50], hide_index=True, use_container_width=True)
