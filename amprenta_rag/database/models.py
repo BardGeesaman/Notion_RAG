@@ -636,6 +636,46 @@ class AuditLog(Base):
     user = relationship("User", backref="audit_logs")
 
 
+class Protocol(Base):
+    """Reusable experimental protocol template."""
+
+    __tablename__ = "protocols"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    version = Column(Integer, default=1)
+    category = Column(String(100), nullable=True)  # extraction, assay, analysis, etc.
+    description = Column(Text, nullable=True)
+    steps = Column(JSON, nullable=True)  # [{"order": 1, "title": "...", "instructions": "...", "duration": "..."}]
+    materials = Column(JSON, nullable=True)  # [{"name": "...", "quantity": "...", "unit": "..."}]
+    parameters = Column(JSON, nullable=True)  # {"temperature": "37C", "duration": "2h", ...}
+    is_template = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True)
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("protocols.id"), nullable=True)  # For versioning
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    parent = relationship("Protocol", remote_side=[id], backref="versions")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class ExperimentProtocol(Base):
+    """Link between experiments and protocols used."""
+
+    __tablename__ = "experiment_protocols"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=False)
+    protocol_id = Column(UUID(as_uuid=True), ForeignKey("protocols.id"), nullable=False)
+    executed_at = Column(DateTime, nullable=True)
+    notes = Column(Text, nullable=True)
+    deviations = Column(JSON, nullable=True)  # Any changes from standard protocol
+
+    experiment = relationship("Experiment", backref="protocol_links")
+    protocol = relationship("Protocol", backref="experiment_links")
+
+
 # Add relationship to LabNotebookEntry after LabNotebookEntryAssociation is defined
 LabNotebookEntry.linked_entities = relationship(
     "LabNotebookEntryAssociation",
