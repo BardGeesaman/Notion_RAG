@@ -78,6 +78,7 @@ from amprenta_rag.auth.session import get_current_user, clear_session, is_authen
 from amprenta_rag.auth.audit import log_logout
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import UserFavorite
+from scripts.dashboard.help_content import get_help, search_help
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # Page groups
@@ -328,6 +329,25 @@ if user and user.get("id") != "test":
     if st.sidebar.button(f"{star_label} Favorite", key="toggle_favorite", use_container_width=True):
         toggle_favorite(user.get("id"), page)
         st.rerun()
+
+# Help section
+with st.sidebar.expander("❓ Help", expanded=False):
+    # Search box
+    help_query = st.text_input("Search help", key="help_search")
+    if help_query:
+        results = search_help(help_query)
+        for r in results[:3]:
+            st.markdown(f"**{r['title']}**: {r['description']}")
+    else:
+        # Show help for current page
+        current_help = get_help(page)
+        if current_help:
+            st.markdown(f"### {current_help['title']}")
+            st.write(current_help['description'])
+            if current_help.get('tips'):
+                st.markdown("**Tips:**")
+                for tip in current_help['tips']:
+                    st.markdown(f"• {tip}")
 
 # Update recent pages
 update_recent_pages(page)

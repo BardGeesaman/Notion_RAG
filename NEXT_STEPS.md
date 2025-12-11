@@ -239,6 +239,12 @@
 - [ ] Flow Cytometry / FACS Data Ingestion
 - [ ] Biophysical Assay Support (SPR, MST, DSC)
 
+**Resource Management**:
+- [ ] **Cost Tracking & Budgeting**:
+  - [ ] Project Budget Allocation (CapEx/OpEx tracking)
+  - [ ] Experiment Cost Calculator (Reagents + Labor + Outsourcing)
+  - [ ] Purchase Request Approval Workflow
+
 **Scientific Q&A & Insight Tracker**:
 - [x] Question Registry (CRUD for scientific questions)
 - [x] Persistent RAG Answers (Save outputs + evidence)
