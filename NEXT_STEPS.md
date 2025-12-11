@@ -48,6 +48,7 @@
 - ✅ Screening ingestion pipeline
 - ✅ Compound-signature linking (reverse matching)
 - ✅ RAG integration for chemistry queries
+- ✅ RAG Integration: Compound embeddings to Pinecone (`upsert_compound_to_pinecone`, `query_compounds_vector`, `batch_upsert_compounds`)
 - ✅ Dashboard chemistry page with Signature Links tab
 - ✅ Unit tests for compound linking
 
@@ -102,11 +103,6 @@
 - [ ] Further optimize batch operations
 - [ ] Parallel processing for large datasets
 
-**RAG Integration**:
-- [ ] Embed promoted compounds into Pinecone (Enhancement)
-- [ ] Add compound summaries to RAG index
-- [ ] Enable compound queries in RAG
-
 ---
 
 ## 📊 MEDIUM PRIORITY (Future Enhancements)
@@ -157,8 +153,7 @@
 2. Security & Multi-User Support
 
 ### Phase 2: Future Innovations
-1. RAG Integration for Compounds
-2. Multi-dataset Pattern Detection
+1. Multi-dataset Pattern Detection
 
 ---
 
@@ -175,7 +170,6 @@
 **For Maximum Impact**:
 - Focus on Advanced Analytics (enables deeper biological insights)
 - Then Integration Enhancements (expands data sources and security)
-- Then RAG Integration for compounds (links chemistry to biology)
 
 **For Quick Wins**:
 - Automated Discovery Workflows (Public repos)
