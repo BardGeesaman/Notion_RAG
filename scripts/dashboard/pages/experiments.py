@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from typing import Any, Dict, List, Optional
+
 import pandas as pd
 import streamlit as st
 
@@ -9,37 +12,27 @@ from amprenta_rag.database.models import Experiment
 from scripts.dashboard.db_session import db_session
 
 
-def render_experiments_page() -> None:
-    """
-    Render the Experiments page with search, summary, and detailed views.
-
-    Features:
-    - Search experiments by name
-    - Summary table with export
-    - Detailed experiment views
-    - Show related datasets count
-    """
-    st.header("🔬 Experiments")
-
+def _render_browse_tab() -> None:
     with db_session() as db:
-        search_term = st.text_input("Search experiments by name", "")
+        search_term = st.text_input("Search experiments by name", "", key="exp_search")
 
         query = db.query(Experiment)
         if search_term:
             query = query.filter(Experiment.name.ilike(f"%{search_term}%"))
 
-        experiments = query.order_by(Experiment.created_at.desc()).all()
+        experiments: List[Experiment] = query.order_by(Experiment.created_at.desc()).all()
 
         st.metric("Total Experiments", len(experiments))
 
         if experiments:
             # Summary table
-            experiment_data = []
+            experiment_data: List[Dict[str, Any]] = []
             for exp in experiments:
                 experiment_data.append(
                     {
                         "Name": exp.name,
                         "Type": exp.type or "",
+                        "Design": exp.design_type or "",
                         "Disease": ", ".join(exp.disease) if exp.disease else "",
                         "Matrix": ", ".join(exp.matrix) if exp.matrix else "",
                         "Created": exp.created_at.strftime("%Y-%m-%d"),
@@ -70,16 +63,108 @@ def render_experiments_page() -> None:
                             st.write(f"**Type:** {experiment.type}")
                         if experiment.description:
                             st.write(f"**Description:** {experiment.description}")
+                        st.write(f"**Design:** {experiment.design_type or 'n/a'}")
                     with col2:
                         st.write(f"**Created:** {experiment.created_at.strftime('%Y-%m-%d %H:%M')}")
                         if experiment.disease:
                             st.write(f"**Disease:** {', '.join(experiment.disease)}")
                         if experiment.matrix:
                             st.write(f"**Matrix:** {', '.join(experiment.matrix)}")
+                        if experiment.sample_groups:
+                            st.write("**Sample Groups:**")
+                            st.json(experiment.sample_groups)
 
-                    # Count related datasets
                     dataset_count = len(experiment.datasets)
                     if dataset_count > 0:
                         st.write(f"**Related Datasets:** {dataset_count}")
         else:
             st.info("No experiments found.")
+
+
+def _render_edit_tab() -> None:
+    st.subheader("Edit Experimental Design")
+    with db_session() as db:
+        experiments: List[Experiment] = db.query(Experiment).order_by(Experiment.created_at.desc()).all()
+        if not experiments:
+            st.info("No experiments available to edit.")
+            return
+
+        exp_options = {exp.name: exp for exp in experiments}
+        selected_name = st.selectbox("Select experiment", list(exp_options.keys()))
+        experiment = exp_options[selected_name]
+
+        design_type = st.selectbox(
+            "Design type",
+            [
+                "case_control",
+                "time_course",
+                "intervention",
+                "dose_response",
+                "multi_factorial",
+                "observational",
+            ],
+            index=0 if not experiment.design_type else  \
+                [
+                    "case_control",
+                    "time_course",
+                    "intervention",
+                    "dose_response",
+                    "multi_factorial",
+                    "observational",
+                ].index(experiment.design_type)
+                if experiment.design_type in [
+                    "case_control",
+                    "time_course",
+                    "intervention",
+                    "dose_response",
+                    "multi_factorial",
+                    "observational",
+                ]
+                else 0,
+        )
+
+        sample_groups_text = st.text_area(
+            "Sample groups (JSON)",
+            value=json.dumps(experiment.sample_groups or {}, indent=2),
+            height=160,
+        )
+
+        timepoints_text = st.text_input(
+            "Timepoints (comma-separated, optional)",
+            value=", ".join(experiment.design_metadata.get("timepoints", [])) if experiment.design_metadata else "",
+        )
+
+        if st.button("Save design", type="primary"):
+            try:
+                sample_groups = json.loads(sample_groups_text) if sample_groups_text.strip() else {}
+            except Exception as exc:
+                st.error(f"Invalid sample groups JSON: {exc}")
+                return
+
+            metadata: Dict[str, Any] = experiment.design_metadata or {}
+            if timepoints_text.strip():
+                metadata["timepoints"] = [tp.strip() for tp in timepoints_text.split(",") if tp.strip()]
+
+            experiment.design_type = design_type
+            experiment.sample_groups = sample_groups
+            experiment.design_metadata = metadata
+
+            db.add(experiment)
+            db.commit()
+            st.success("Design updated.")
+
+
+def render_experiments_page() -> None:
+    """
+    Render the Experiments page with search, summary, and design editing.
+    """
+    st.header("🔬 Experiments")
+
+    tabs = st.tabs(["Browse Experiments", "Edit Design"])
+    with tabs[0]:
+        _render_browse_tab()
+    with tabs[1]:
+        _render_edit_tab()
+
+
+__all__ = ["render_experiments_page"]
