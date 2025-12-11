@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from amprenta_rag.analysis.enrichment import pathway_enrichment
+from amprenta_rag.analysis.pathway.enrichment import perform_pathway_enrichment
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Feature
 from scripts.dashboard.db_session import db_session
@@ -26,7 +26,7 @@ def _run_enrichment(dataset_id: str, top_n: int = 20) -> pd.DataFrame:
     genes = [f.name for f in feats]
     if not genes:
         return pd.DataFrame()
-    results = pathway_enrichment(genes)
+    results = perform_pathway_enrichment(genes)
     if not results:
         return pd.DataFrame()
     df = pd.DataFrame(results)

@@ -50,19 +50,24 @@ def _build_matrix(db: Session) -> pd.DataFrame:
 
 
 def _make_dendrogram(mat: pd.DataFrame) -> go.Figure:
-    # Compute distance and linkage
     data = mat.values
     if data.shape[0] <= 1:
         return go.Figure()
 
-    # Use correlation distance
+    # Correlation distance
     corr = np.corrcoef(data)
     dist = 1 - corr
-    # Ensure diagonals zero
     np.fill_diagonal(dist, 0)
 
-    # Convert to condensed form for linkage
     condensed = sch.distance.squareform(dist, checks=False)
+    condensed = np.nan_to_num(condensed, nan=0.0, posinf=1.0, neginf=0.0)
+
+    # If all zeros or no finite variation, bail gracefully
+    if not np.isfinite(condensed).any() or np.all(condensed == 0):
+        fig = go.Figure()
+        fig.add_annotation(text="Not enough variation to cluster", showarrow=False)
+        return fig
+
     Z = sch.linkage(condensed, method="average")
 
     dendro = sch.dendrogram(Z, labels=mat.index.tolist(), no_plot=True)
@@ -76,7 +81,7 @@ def _make_dendrogram(mat: pd.DataFrame) -> go.Figure:
 
     fig.update_layout(
         title="Dataset Similarity Dendrogram",
-        xaxis=dict(showticklabels=True, ticktext=labels, tickvals=range(5, 5 * len(labels) + 1, 10), tickangle=45),
+        xaxis=dict(showticklabels=True, ticktext=labels, tickvals=list(range(5, 5 * len(labels) + 1, 10)), tickangle=45),
         yaxis=dict(title="Distance"),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -97,6 +102,10 @@ def render() -> None:
         return
 
     fig = _make_dendrogram(mat)
+    if not fig.data:
+        st.info("Not enough variation to build a dendrogram.")
+        return
+
     st.plotly_chart(fig, use_container_width=True)
 
     st.download_button(
