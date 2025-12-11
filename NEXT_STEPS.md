@@ -271,7 +271,7 @@
 **SAR Analysis**:
 - [x] Calculated properties (LogP, MW, TPSA)
 - [x] Activity cliffs visualization
-- [ ] R-group decomposition
+- [x] R-group decomposition
 
 **Lead Optimization Data Models**:
 - [x] ADME/DMPK Assays (Stability, Permeability, CYP inhibition)
@@ -324,6 +324,10 @@
 **Collaboration**:
 - [ ] "Project" Workspace Abstraction
 - [ ] Contextual Commenting (on graphs/features)
+- [ ] **Email & Notifications**:
+  - [ ] Share Experiment Results via Email (PDF/Link)
+  - [ ] Automated Alerts (New data in subscribed project)
+  - [ ] Daily/Weekly Digest Summaries
 - [ ] **Automated Reporting & Slides**:
   - [ ] Auto-generate PowerPoint (.pptx) from Experiment/Dataset
   - [ ] "Smart Slides": Auto-layout plots, methods, and conclusions
