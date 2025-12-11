@@ -4,6 +4,7 @@ from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import User
 from amprenta_rag.auth.password import verify_password
 from amprenta_rag.auth.session import set_current_user
+from amprenta_rag.auth.audit import log_login
 from datetime import datetime
 
 
@@ -34,6 +35,7 @@ def render_login_page():
                     })
                     user.last_login = datetime.utcnow()
                     db.commit()
+                    log_login(str(user.id), user.username)
                     st.success("Login successful!")
                     st.rerun()
                 else:

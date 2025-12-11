@@ -602,6 +602,24 @@ class User(Base):
     last_login = Column(DateTime, nullable=True)
 
 
+class AuditLog(Base):
+    """Audit trail for user actions."""
+
+    __tablename__ = "audit_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    username = Column(String(100), nullable=True)  # Cached for when user deleted
+    action = Column(String(100), nullable=False)  # login, logout, create, update, delete
+    entity_type = Column(String(100), nullable=True)  # experiment, dataset, signature, etc.
+    entity_id = Column(String(100), nullable=True)  # UUID or identifier
+    details = Column(JSON, nullable=True)  # Additional context
+    ip_address = Column(String(50), nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="audit_logs")
+
+
 # Add relationship to LabNotebookEntry after LabNotebookEntryAssociation is defined
 LabNotebookEntry.linked_entities = relationship(
     "LabNotebookEntryAssociation",

@@ -74,6 +74,7 @@ sys.path.insert(0, str(project_root))
 
 import streamlit as st
 from amprenta_rag.auth.session import get_current_user, clear_session, is_authenticated
+from amprenta_rag.auth.audit import log_logout
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -120,6 +121,7 @@ if user:
     with st.sidebar:
         st.markdown(f"**👤 {user['username']}** ({user['role']})")
         if st.button("Logout", key="logout_btn"):
+            log_logout(user.get("id"), user.get("username"))
             clear_session()
             st.rerun()
         st.divider()
