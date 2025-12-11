@@ -20,6 +20,7 @@ from amprenta_rag.query.rag.match_processing import filter_matches, summarize_ma
 from amprenta_rag.query.rag.models import RAGQueryResult, Citation
 from amprenta_rag.query.rag.synthesis import synthesize_answer, synthesize_answer_with_citations
 from amprenta_rag.query.reranker import get_reranker
+from amprenta_rag.query.hyde import generate_hypothetical_answer
 
 logger = get_logger(__name__)
 
@@ -41,6 +42,7 @@ def query_rag(
     use_rerank: bool = False,
     rerank_model: Optional[str] = None,
     use_cache: bool = True,
+    use_hyde: bool = False,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -77,6 +79,14 @@ def query_rag(
         if cached is not None:
             logger.info("[RAG] Returning cached result")
             return cached
+    
+    # Generate hypothetical answer for HyDE if enabled
+    if use_hyde:
+        logger.info("[RAG][HYDE] Generating hypothetical answer")
+        search_query = generate_hypothetical_answer(user_query)
+    else:
+        search_query = user_query
+    
     logger.info("[RAG] Querying Pinecone (top_k=%d) for: %s", top_k, user_query)
     meta_filter = build_meta_filter(
         disease=disease,
@@ -87,7 +97,7 @@ def query_rag(
 
     # 1) Primary vector search (Pinecone)
     raw_matches = query_pinecone(
-        user_query,
+        search_query,
         top_k=top_k,
         meta_filter=meta_filter,
         source_types=source_types,
