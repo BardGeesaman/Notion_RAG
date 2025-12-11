@@ -37,11 +37,15 @@ from amprenta_rag.ingestion.repositories.metabolights import MetaboLightsReposit
 from amprenta_rag.ingestion.repositories.mw import MWRepository
 from amprenta_rag.ingestion.repositories.pride import PRIDERepository
 
+# Alias for common misspelling
+MetabolightsRepository = MetaboLightsRepository
+
 __all__ = [
     "RepositoryInterface",
     "GEORepository",
     "PRIDERepository",
     "MetaboLightsRepository",
+    "MetabolightsRepository",  # Alias
     "MWRepository",
     "ENARepository",
     "ArrayExpressRepository",
