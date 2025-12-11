@@ -20,6 +20,10 @@ from amprenta_rag.analysis.pattern_detection import (
     calculate_overlap,
     get_cross_dataset_summary,
 )
+from amprenta_rag.analysis.confounder_detection import (
+    detect_confounders,
+    get_confounder_report,
+)
 from amprenta_rag.database.models import Dataset, Program, Signature
 from scripts.dashboard.db_session import db_session
 
@@ -37,7 +41,7 @@ def render_analysis_page() -> None:
     st.markdown("Perform pathway enrichment, program signature mapping, and signature scoring.")
 
     # Tab selection
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Pathway Enrichment", "Program Signature Maps", "Signature Scoring", "Power Analysis", "Cross-Dataset Patterns"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Pathway Enrichment", "Program Signature Maps", "Signature Scoring", "Power Analysis", "Cross-Dataset Patterns", "Confounder Check"])
 
     # Tab 1: Pathway Enrichment
     with tab1:
@@ -688,3 +692,86 @@ def render_analysis_page() -> None:
                                     st.exception(e)
                 else:
                     st.info("Select at least 2 datasets to perform pattern analysis.")
+
+    # Tab 6: Confounder Check
+    with tab6:
+        st.subheader("Confounder Detection")
+        st.markdown("Upload sample metadata and detect potential confounders in experimental design.")
+        
+        uploaded_file = st.file_uploader(
+            "Upload Sample Metadata CSV",
+            type=["csv"],
+            help="CSV file with sample metadata (one row per sample)",
+        )
+        
+        if uploaded_file is not None:
+            try:
+                metadata_df = pd.read_csv(uploaded_file)
+                st.success(f"Loaded {len(metadata_df)} samples with {len(metadata_df.columns)} columns")
+                
+                # Display preview
+                with st.expander("Preview Data"):
+                    st.dataframe(metadata_df.head(10), use_container_width=True)
+                
+                # Select group column
+                group_column = st.selectbox(
+                    "Select Group Column",
+                    metadata_df.columns.tolist(),
+                    help="Column containing group labels (e.g., treatment vs control)",
+                )
+                
+                if st.button("Detect Confounders", type="primary"):
+                    with st.spinner("Analyzing potential confounders..."):
+                        try:
+                            # Detect confounders
+                            results = detect_confounders(metadata_df, group_column)
+                            
+                            if results:
+                                # Display results table
+                                st.markdown("### Confounder Detection Results")
+                                results_df = pd.DataFrame(results)
+                                results_df["p_value"] = results_df["p_value"].apply(lambda x: f"{x:.4f}" if x is not None else "N/A")
+                                results_df["is_confounder"] = results_df["is_confounder"].apply(lambda x: "⚠️ Yes" if x else "✓ No")
+                                results_df.columns = ["Column", "Test", "P-Value", "Confounder"]
+                                st.dataframe(results_df, hide_index=True, use_container_width=True)
+                                
+                                # Get report and show warnings
+                                report = get_confounder_report(metadata_df, group_column)
+                                
+                                st.markdown("### Summary")
+                                st.info(report["summary"])
+                                
+                                if report["warnings"]:
+                                    st.markdown("### Warnings")
+                                    for warning in report["warnings"]:
+                                        st.warning(warning)
+                                
+                                # Highlight significant confounders
+                                confounders = [r for r in results if r["is_confounder"]]
+                                if confounders:
+                                    st.markdown("### ⚠️ Significant Confounders Detected")
+                                    confounder_df = pd.DataFrame([
+                                        {
+                                            "Column": c["column"],
+                                            "Test": c["test"],
+                                            "P-Value": f"{c['p_value']:.4f}",
+                                        }
+                                        for c in confounders
+                                    ])
+                                    st.dataframe(confounder_df, hide_index=True, use_container_width=True)
+                                    st.markdown(
+                                        "**Recommendation:** Consider stratifying or adjusting for these variables "
+                                        "in your analysis to avoid confounding effects."
+                                    )
+                            else:
+                                st.info("No variables tested. Check that your metadata file has valid data.")
+                        
+                        except Exception as e:
+                            st.error(f"❌ Error detecting confounders: {str(e)}")
+                            st.exception(e)
+            
+            except Exception as e:
+                st.error(f"❌ Error reading CSV file: {str(e)}")
+                st.exception(e)
+        else:
+            st.info("Upload a CSV file with sample metadata to begin confounder detection.")

@@ -263,6 +263,14 @@
 - [x] Persistent RAG Answers (Save outputs + evidence)
 - [x] Versioning (Re-run questions as data updates)
 - [x] Export capabilities (PDF/CSV of Q&A reports)
+- [ ] **Literature Critical Analysis**:
+  - [ ] Auto-generated critiques (Strengths, Weaknesses, Limitations)
+  - [ ] Unanswered Questions Extraction
+  - [ ] Contradiction Detection (Paper A vs Paper B)
+- [ ] **Automated Study Critique**:
+  - [ ] Quality Assessment for internal/imported studies
+  - [ ] Design Flaw Detection (e.g., "Low N", "Missing Control")
+  - [ ] Data Gap Identification (Unanswered questions)
 
 ### 3. Chemistry Informatics Enhancements
 
