@@ -274,7 +274,7 @@
 **Cheminformatics Search**:
 - [x] Substructure search (SMARTS)
 - [x] Similarity search (Tanimoto)
-- [ ] Pharmacophore search
+- [x] Pharmacophore search
 
 **SAR Analysis**:
 - [x] Calculated properties (LogP, MW, TPSA)
