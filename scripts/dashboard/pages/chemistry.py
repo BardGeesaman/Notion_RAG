@@ -25,7 +25,6 @@ from amprenta_rag.chemistry.compound_linking import (
 from amprenta_rag.chemistry.database import get_chemistry_db_path
 from amprenta_rag.chemistry.registration import (
     check_duplicate,
-    generate_corporate_id,
     register_compound,
 )
 from amprenta_rag.chemistry.structure_search import substructure_search, similarity_search

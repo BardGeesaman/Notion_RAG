@@ -158,6 +158,11 @@
   - [ ] Interactive Feature Tours (e.g., "How to create a protocol")
   - [ ] Contextual Help/Tooltips (hover for definitions)
   - [ ] Embedded Documentation Widget (searchable guide)
+  - [ ] **AI Help Assistant** (Chatbot for "How do I...?" questions)
+- [ ] **Navigation & UI Organization**:
+  - [ ] Functional Grouping (Discovery, ELN, Analysis, Admin)
+  - [ ] Collapsible Sidebar Sections
+  - [ ] Favorites/Recent items list
 
 ### 2. ELN & Workflow Features
 
