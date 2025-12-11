@@ -6,7 +6,6 @@ from typing import List, Dict, Any
 
 from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.query.rag.query import query_rag
 
 logger = get_logger(__name__)
 
@@ -147,6 +146,9 @@ def agentic_rag(question: str, max_steps: int = 3) -> AgenticResult:
     Returns:
         AgenticResult with answer, steps, and total chunks used
     """
+    # Lazy import to avoid circular dependency
+    from amprenta_rag.query.rag.query import query_rag
+    
     logger.info("[AGENT] Starting agentic RAG for: %s", question[:50])
     
     # Step 1: Analyze question
