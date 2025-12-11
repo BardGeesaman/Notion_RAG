@@ -70,10 +70,12 @@ def query_rag(
     Returns:
         RAGQueryResult with matches, filtered matches, context chunks, and answer
     """
+    # Check semantic cache
     if use_cache and generate_answer:
         cache = get_semantic_cache()
         cached = cache.get(user_query)
         if cached is not None:
+            logger.info("[RAG] Returning cached result")
             return cached
     logger.info("[RAG] Querying Pinecone (top_k=%d) for: %s", top_k, user_query)
     meta_filter = build_meta_filter(
@@ -286,6 +288,7 @@ def query_rag(
         citations=citations,
     )
 
+    # Store in cache
     if use_cache and generate_answer:
         cache = get_semantic_cache()
         cache.set(user_query, result)
