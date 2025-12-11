@@ -227,9 +227,8 @@ def render_chemistry_page() -> None:
                         merged_clean,
                         x="logp",
                         y="molecular_weight",
-                        color="hit_flag",
                         title="LogP vs Molecular Weight (HTS)",
-                        hover_data=["compound_id", "corporate_id"],
+                        hover_data=["compound_id", "smiles"],
                     )
                     st.plotly_chart(scatter, use_container_width=True)
 
