@@ -94,3 +94,38 @@ def apply_design_extraction(
 
 
 __all__ = ["apply_design_extraction"]
+
+
+def batch_apply_design_extraction(repository_filter: Optional[str] = None) -> Dict[str, int]:
+    """Apply design extraction to all experiments missing design_type."""
+    db = next(get_db())
+    try:
+        query = db.query(Experiment).filter(Experiment.design_type.is_(None))
+        if repository_filter:
+            # Filter by repository in design_metadata if available
+            query = query.filter(Experiment.design_metadata["source_repository"].astext == repository_filter)
+
+        experiments = query.all()
+        results = {"processed": 0, "updated": 0, "failed": 0}
+
+        for exp in experiments:
+            results["processed"] += 1
+            design_type, confidence = detect_design_type(
+                sample_names=[],
+                sample_attributes=None,
+                study_description=exp.description,
+            )
+            if confidence > 0.5:
+                exp.design_type = design_type
+                meta = exp.design_metadata or {}
+                meta.update({"confidence": confidence, "auto_detected": True})
+                exp.design_metadata = meta
+                results["updated"] += 1
+
+        db.commit()
+        return results
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}
+    finally:
+        db.close()

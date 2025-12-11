@@ -134,6 +134,19 @@ def _render_edit_tab() -> None:
             value=", ".join(experiment.design_metadata.get("timepoints", [])) if experiment.design_metadata else "",
         )
 
+
+        if st.button("Auto-detect Design Types", type="secondary"):
+            from amprenta_rag.ingestion.design_integration import batch_apply_design_extraction
+
+            with st.spinner("Running auto-detection..."):
+                res = batch_apply_design_extraction()
+            if "error" in res:
+                st.error(f"Auto-detection failed: {res['error']}")
+            else:
+                st.success(
+                    f"Auto-detection complete: {res.get('updated', 0)} updated out of {res.get('processed', 0)} processed."
+                )
+
         if st.button("Save design", type="primary"):
             try:
                 sample_groups = json.loads(sample_groups_text) if sample_groups_text.strip() else {}
