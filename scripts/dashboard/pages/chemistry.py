@@ -217,7 +217,7 @@ def render_chemistry_page() -> None:
             act_df = get_activity_data()
             if not act_df.empty:
                 merged = act_df.merge(
-                    props_df[["compound_id", "smiles", "molecular_weight", "logp"]],
+                    props_df[["compound_id", "logp"]],
                     on="compound_id",
                     how="left",
                 )
