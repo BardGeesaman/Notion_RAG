@@ -8,6 +8,7 @@ RAG pipeline: Pinecone queries, match processing, chunk collection, and answer s
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
 
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.bm25_search import bm25_search, reciprocal_rank_fusion
@@ -16,10 +17,21 @@ from amprenta_rag.query.rag.chunk_collection import collect_chunks
 from amprenta_rag.rag.hybrid_chunk_collection import collect_hybrid_chunks
 from amprenta_rag.query.rag.match_processing import filter_matches, summarize_match
 from amprenta_rag.query.rag.models import RAGQueryResult
-from amprenta_rag.query.rag.synthesis import synthesize_answer
+from amprenta_rag.query.rag.synthesis import synthesize_answer, synthesize_answer_with_citations
 from amprenta_rag.query.reranker import get_reranker
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class Citation:
+    number: int
+    chunk_id: str
+    source_type: Optional[str] = None
+    title: Optional[str] = None
+    dataset_name: Optional[str] = None
+    experiment_name: Optional[str] = None
+    url: Optional[str] = None
 
 
 def query_rag(
@@ -253,7 +265,8 @@ def query_rag(
             answer="Answer generation disabled (generate_answer=False).",
         )
 
-    answer = synthesize_answer(user_query, chunks)
+    metadata_list = [m.metadata for m in filtered]
+    answer, citations = synthesize_answer_with_citations(user_query, chunks, metadata_list)
 
     # Add provenance summary
     source_counts: Dict[str, int] = {}
@@ -274,6 +287,7 @@ def query_rag(
         filtered_matches=filtered,
         context_chunks=chunks,
         answer=answer_with_provenance,
+        citations=citations,
     )
 
 

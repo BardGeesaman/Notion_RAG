@@ -191,6 +191,11 @@
   - [ ] Functional Grouping (Discovery, ELN, Analysis, Admin)
   - [ ] Collapsible Sidebar Sections
   - [ ] Favorites/Recent items list
+- [ ] **Advanced UI/UX Enhancements**:
+  - [ ] "Scientist's Cockpit" Dashboard (Widgets for recent data, alerts, tasks)
+  - [ ] Global "Spotlight" Search (Cmd+K for everything)
+  - [ ] Advanced Data Grids (Ag-Grid: filtering, sorting, pinning)
+  - [ ] Theme Density Control (Compact vs. Comfortable)
 
 ### 2. ELN & Workflow Features
 
@@ -259,8 +264,30 @@
 **Advanced Capabilities**:
 - [ ] Semantic Caching
 - [ ] Agentic RAG (multi-step reasoning)
+- [ ] **Hierarchical RAG Reasoning**:
+  - [ ] Data Trust Scoring (Validated Internal > External > General)
+  - [ ] Hybrid Prompting (Allow general knowledge as fallback)
+  - [ ] Source-weighted Generation
+- [ ] **Multi-Model Intelligence**:
+  - [ ] Model Selection UI (GPT-4o, Claude 3.5, Gemini 1.5)
+  - [ ] Parallel Reasoning (Run multiple models -> Synthesize)
+  - [ ] Chain-of-Thought (CoT) Prompting options
 
-### 5. Future Innovations
+### 6. Operational Maturity & Governance
+**Data Governance**:
+- [ ] Data Lineage Visualization (Provenance graph)
+- [ ] Retention & Archival Policies
+- [ ] Internal Ontology Management
+
+**Infrastructure**:
+- [ ] Job Queue System (Celery/Redis)
+- [ ] S3/Tiered Storage Integration
+
+**Collaboration**:
+- [ ] "Project" Workspace Abstraction
+- [ ] Contextual Commenting (on graphs/features)
+
+### 7. Future Innovations
 
 **Experimental Design Assistant**:
 - [ ] Power Analysis for sample size estimation
@@ -299,12 +326,14 @@
 
 ### Phase 4: RAG Maturity
 1. Hybrid Search & Reranking
-2. Citation & Attribution System
-3. Evaluation Pipeline
+2. Hierarchical Reasoning & Trust Scoring
+3. Citation & Attribution System
+4. Evaluation Pipeline
 
 ### Phase 5: Future Innovations
 1. Multi-dataset Pattern Detection
 2. Experimental Design Assistant & Power Analysis
+3. Genome Browser Integration (IGV.js)
 
 ---
 

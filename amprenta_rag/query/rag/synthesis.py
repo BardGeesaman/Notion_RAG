@@ -6,10 +6,11 @@ This module provides functions for synthesizing answers using OpenAI.
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Tuple, Optional, Dict, Any
 
 from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.query.rag.query import Citation
 
 logger = get_logger(__name__)
 
@@ -53,4 +54,44 @@ def synthesize_answer(user_query: str, chunks: List[str]) -> str:
         logger.error("[RAG] OpenAI API error synthesizing answer: %r", e)
         raise
     return resp.choices[0].message.content.strip()  # type: ignore[union-attr]
+
+
+def build_citation_context(chunks: List[str], metadata_list: List[Dict[str, Any]]) -> Tuple[str, List[Citation]]:
+    """Build numbered context and citation objects."""
+    citations: List[Citation] = []
+    numbered_chunks: List[str] = []
+    for i, (chunk, meta) in enumerate(zip(chunks, metadata_list), 1):
+        numbered_chunks.append(f"[{i}] {chunk}")
+        citations.append(
+            Citation(
+                number=i,
+                chunk_id=meta.get("chunk_id", meta.get("id", f"chunk_{i}")),
+                source_type=meta.get("source_type"),
+                title=meta.get("title"),
+                dataset_name=meta.get("dataset_name"),
+                experiment_name=meta.get("experiment_name"),
+                url=meta.get("url"),
+            )
+        )
+    context = "\n\n".join(numbered_chunks)
+    return context, citations
+
+
+def synthesize_answer_with_citations(
+    user_query: str,
+    chunks: List[str],
+    metadata_list: List[Dict[str, Any]],
+) -> Tuple[str, List[Citation]]:
+    """Generate answer with inline citations."""
+    context, citations = build_citation_context(chunks, metadata_list)
+
+    prompt = f\"\"\"Answer the following question using ONLY the provided sources.
+Include inline citations [1], [2], etc. when referencing information from sources.
+
+Sources:
+{context}
+
+Question: {user_query}
+
+Answer (cite sources with [1], [2], etc.):\"\"\"\n\n    # Use existing LLM call pattern from synthesize_answer\n    from amprenta_rag.query.llm import call_llm\n\n    answer = call_llm(prompt)\n    return answer, citations
 
