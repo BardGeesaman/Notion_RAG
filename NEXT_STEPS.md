@@ -128,7 +128,8 @@
 - ✅ Reciprocal Rank Fusion (RRF) for result merging
 - ✅ Cross-encoder reranking (ms-marco-MiniLM model)
 - ✅ Semantic Cache (embedding similarity, 1hr TTL, 0.92 threshold)
-- ✅ use_hybrid, hybrid_alpha, use_rerank, and use_cache params
+- ✅ HyDE (Hypothetical Document Embeddings) query expansion
+- ✅ use_hybrid, hybrid_alpha, use_rerank, use_cache, use_hyde params
 
 ### 12. Automated Discovery Workflow ✅ COMPLETE
 - ✅ DiscoveryJob/DiscoveredStudy models
@@ -259,7 +260,7 @@
 **Retrieval Optimization**:
 - [x] Hybrid Search (Sparse/BM25 + Dense Vectors)
 - [x] Reranking (Cross-encoder re-ranking)
-- [ ] Query Expansion/Transformation (HyDE)
+- [x] Query Expansion/Transformation (HyDE)
 
 **Quality & Attribution**:
 - [x] Citation/Source Attribution
