@@ -164,6 +164,7 @@ page = st.sidebar.radio(
         "Features",
         "Signatures",
         "Protocols",
+        "Q&A Tracker",
         "Literature",
         "Emails",
         "RAG Chunks",
@@ -279,6 +280,10 @@ try:
         from scripts.dashboard.pages.protocols import render_protocols_page
 
         render_protocols_page()
+    elif page == "Q&A Tracker":
+        from scripts.dashboard.pages.qa_tracker import render_qa_tracker_page
+
+        render_qa_tracker_page()
     elif page == "Features":
         from scripts.dashboard.pages.features import render_features_page
 
