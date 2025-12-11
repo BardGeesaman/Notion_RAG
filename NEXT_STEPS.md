@@ -130,7 +130,8 @@
 - ✅ Semantic Cache (embedding similarity, 1hr TTL, 0.92 threshold)
 - ✅ HyDE (Hypothetical Document Embeddings) query expansion
 - ✅ Hallucination Detection (Groundedness scoring, unsupported claims)
-- ✅ use_hybrid, hybrid_alpha, use_rerank, use_cache, use_hyde, check_hallucination params
+- ✅ RAGAS Evaluation Framework (Faithfulness, Relevance, Context Precision)
+- ✅ use_hybrid, hybrid_alpha, use_rerank, use_cache, use_hyde, check_hallucination, evaluate params
 
 ### 12. Automated Discovery Workflow ✅ COMPLETE
 - ✅ DiscoveryJob/DiscoveredStudy models
@@ -277,7 +278,7 @@
 
 **Quality & Attribution**:
 - [x] Citation/Source Attribution
-- [ ] Evaluation Framework (RAGAS/TruLens)
+- [x] Evaluation Framework (RAGAS/TruLens)
 - [x] Hallucination detection
 
 **Advanced Capabilities**:
