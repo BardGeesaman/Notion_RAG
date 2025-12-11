@@ -129,7 +129,8 @@
 - ✅ Cross-encoder reranking (ms-marco-MiniLM model)
 - ✅ Semantic Cache (embedding similarity, 1hr TTL, 0.92 threshold)
 - ✅ HyDE (Hypothetical Document Embeddings) query expansion
-- ✅ use_hybrid, hybrid_alpha, use_rerank, use_cache, use_hyde params
+- ✅ Hallucination Detection (Groundedness scoring, unsupported claims)
+- ✅ use_hybrid, hybrid_alpha, use_rerank, use_cache, use_hyde, check_hallucination params
 
 ### 12. Automated Discovery Workflow ✅ COMPLETE
 - ✅ DiscoveryJob/DiscoveredStudy models
@@ -265,7 +266,7 @@
 **Quality & Attribution**:
 - [x] Citation/Source Attribution
 - [ ] Evaluation Framework (RAGAS/TruLens)
-- [ ] Hallucination detection
+- [x] Hallucination detection
 
 **Advanced Capabilities**:
 - [x] Semantic Caching
