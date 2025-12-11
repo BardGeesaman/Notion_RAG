@@ -6,6 +6,7 @@ from uuid import UUID
 
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Experiment
+from amprenta_rag.models.repository import StudyMetadata
 from amprenta_rag.ingestion.design_extraction import (
     detect_design_type,
     extract_geo_design,
@@ -93,7 +94,7 @@ def apply_design_extraction(
         db.close()
 
 
-__all__ = ["apply_design_extraction"]
+__all__ = ["apply_design_extraction", "batch_apply_design_extraction", "create_experiment_from_study"]
 
 
 def batch_apply_design_extraction(repository_filter: Optional[str] = None) -> Dict[str, int]:
@@ -127,5 +128,66 @@ def batch_apply_design_extraction(repository_filter: Optional[str] = None) -> Di
     except Exception as e:
         db.rollback()
         return {"error": str(e)}
+    finally:
+        db.close()
+
+
+def create_experiment_from_study(
+    study_metadata: "StudyMetadata",
+    auto_detect_design: bool = True,
+):
+    """Create an Experiment from repository study metadata."""
+    db = next(get_db())
+    try:
+        existing = db.query(Experiment).filter(
+            Experiment.external_ids.contains({"study_id": study_metadata.study_id})
+        ).first()
+        if existing:
+            logger.info("[DESIGN] Experiment already exists for study %s", study_metadata.study_id)
+            return existing.id
+
+        experiment = Experiment(
+            name=study_metadata.title,
+            description=getattr(study_metadata, "summary", None),
+            type=getattr(study_metadata, "omics_type", None),
+            disease=getattr(study_metadata, "disease", None) or [],
+            matrix=getattr(study_metadata, "sample_type", None) or [],
+            external_ids={
+                "study_id": study_metadata.study_id,
+                "repository": study_metadata.repository,
+                "doi": getattr(study_metadata, "doi", None),
+            },
+        )
+
+        db.add(experiment)
+        db.flush()
+
+        if auto_detect_design:
+            design_type, confidence = detect_design_type(
+                sample_names=[],
+                sample_attributes=None,
+                study_description=getattr(study_metadata, "summary", None),
+            )
+            if confidence > 0.4:
+                experiment.design_type = design_type
+                experiment.design_metadata = {
+                    "confidence": confidence,
+                    "auto_detected": True,
+                    "source_repository": study_metadata.repository,
+                }
+
+        db.commit()
+        logger.info(
+            "[DESIGN] Created experiment %s from study %s (design_type=%s)",
+            experiment.id,
+            study_metadata.study_id,
+            experiment.design_type,
+        )
+        return experiment.id
+
+    except Exception as e:
+        logger.error("[DESIGN] Error creating experiment from study: %r", e)
+        db.rollback()
+        return None
     finally:
         db.close()

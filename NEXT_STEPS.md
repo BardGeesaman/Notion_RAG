@@ -134,6 +134,7 @@
 
 ### Phase 2: Future Innovations
 1. Multi-dataset Pattern Detection
+2. Experimental Design Assistant & Power Analysis
 
 ---
 
