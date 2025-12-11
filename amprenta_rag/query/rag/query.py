@@ -16,22 +16,11 @@ from amprenta_rag.query.pinecone_query import build_meta_filter, query_pinecone
 from amprenta_rag.query.rag.chunk_collection import collect_chunks
 from amprenta_rag.rag.hybrid_chunk_collection import collect_hybrid_chunks
 from amprenta_rag.query.rag.match_processing import filter_matches, summarize_match
-from amprenta_rag.query.rag.models import RAGQueryResult
+from amprenta_rag.query.rag.models import RAGQueryResult, Citation
 from amprenta_rag.query.rag.synthesis import synthesize_answer, synthesize_answer_with_citations
 from amprenta_rag.query.reranker import get_reranker
 
 logger = get_logger(__name__)
-
-
-@dataclass
-class Citation:
-    number: int
-    chunk_id: str
-    source_type: Optional[str] = None
-    title: Optional[str] = None
-    dataset_name: Optional[str] = None
-    experiment_name: Optional[str] = None
-    url: Optional[str] = None
 
 
 def query_rag(

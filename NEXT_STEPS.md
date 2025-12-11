@@ -178,6 +178,10 @@
 
 **Security & Collaboration**:
 - [ ] Team-based data access
+- [ ] **Feature Visibility Controls**:
+  - [ ] Admin UI to toggle features per user/role
+  - [ ] Role-based UI customization (e.g., Hide "Chemistry" for Biologists)
+  - [ ] Granular permission sets for menu items
 - [ ] **User Feedback System**:
   - [ ] Error Reporting (Automatic capture + user description)
   - [ ] Feature Request Tracker (Vote/Prioritize)

@@ -10,7 +10,7 @@ from typing import List, Tuple, Optional, Dict, Any
 
 from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.query.rag.query import Citation
+from amprenta_rag.query.rag.models import Citation
 
 logger = get_logger(__name__)
 
@@ -85,13 +85,22 @@ def synthesize_answer_with_citations(
     """Generate answer with inline citations."""
     context, citations = build_citation_context(chunks, metadata_list)
 
-    prompt = f\"\"\"Answer the following question using ONLY the provided sources.
-Include inline citations [1], [2], etc. when referencing information from sources.
+    prompt = (
+        "Answer the following question using ONLY the provided sources.\n"
+        "Include inline citations [1], [2], etc. when referencing information from sources.\n\n"
+        f"Sources:\n{context}\n\n"
+        f"Question: {user_query}\n\n"
+        "Answer (cite sources with [1], [2], etc.):"
+    )
 
-Sources:
-{context}
-
-Question: {user_query}
-
-Answer (cite sources with [1], [2], etc.):\"\"\"\n\n    # Use existing LLM call pattern from synthesize_answer\n    from amprenta_rag.query.llm import call_llm\n\n    answer = call_llm(prompt)\n    return answer, citations
+    from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
+    client = get_openai_client()
+    chat_model, _ = get_default_models()
+    response = client.chat.completions.create(
+        model=chat_model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+    )
+    answer = response.choices[0].message.content
+    return answer, citations
 

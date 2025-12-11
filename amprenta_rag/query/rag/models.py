@@ -24,6 +24,19 @@ class MatchSummary:
 
 
 @dataclass
+class Citation:
+    """Citation metadata for RAG answers."""
+
+    number: int
+    chunk_id: str
+    source_type: str | None = None
+    title: str | None = None
+    dataset_name: str | None = None
+    experiment_name: str | None = None
+    url: str | None = None
+
+
+@dataclass
 class RAGQueryResult:
     """Complete result from a RAG query."""
 
@@ -32,5 +45,5 @@ class RAGQueryResult:
     filtered_matches: List[MatchSummary]
     context_chunks: List[str]
     answer: str
-    citations: List[Any] = field(default_factory=list)
+    citations: List[Citation] = field(default_factory=list)
 
