@@ -408,7 +408,7 @@ def render_chemistry_page() -> None:
     with tab4:
         st.subheader("Signature Links")
 
-        # Helper: fetch compounds from SQLite (chemistry DB)
+        # Helper: fetch compound IDs from PostgreSQL
         def _load_compound_ids() -> list[str]:
             db_gen = get_db()
             db = next(db_gen)

@@ -1,8 +1,18 @@
 """
-SQLite database operations for chemistry and HTS data.
+DEPRECATED: SQLite database operations for chemistry.
 
-Provides functions to initialize the database and perform CRUD operations.
+This module is deprecated. Chemistry data is now stored in PostgreSQL.
+See amprenta_rag/database/models.py for the Compound model.
+
+Kept for backward compatibility and potential data migration scripts.
 """
+import warnings
+
+warnings.warn(
+    "amprenta_rag.chemistry.database is deprecated. Use PostgreSQL via amprenta_rag.database.models.Compound",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 from __future__ import annotations
 

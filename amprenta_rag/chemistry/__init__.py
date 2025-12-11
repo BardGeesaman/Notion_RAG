@@ -8,7 +8,6 @@ HTS campaigns, and biochemical assay results.
 from __future__ import annotations
 
 from amprenta_rag.chemistry.database import (
-    get_chemistry_db_path,
     get_hits_for_campaign,
     initialize_chemistry_database,
     find_compound_by_inchi_key,
@@ -40,7 +39,6 @@ __all__ = [
     "BiochemicalResult",
     "CompoundSignatureLink",
     "initialize_chemistry_database",
-    "get_chemistry_db_path",
     "insert_compound",
     "find_compound_by_inchi_key",
     "insert_hts_campaign",
