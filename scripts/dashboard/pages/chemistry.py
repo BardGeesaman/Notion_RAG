@@ -193,15 +193,10 @@ def render_chemistry_page() -> None:
         else:
             # Lipinski summary
             lipinski_results = props_df.apply(
-                lambda r: calculate_lipinski(
-                    r.get("molecular_weight"),
-                    r.get("logp"),
-                    r.get("hbd_count"),
-                    r.get("hba_count"),
-                ),
+                lambda r: calculate_lipinski(r.get("smiles", "")),
                 axis=1,
             )
-            props_df["lipinski_compliant"] = [res["compliant"] for res in lipinski_results]
+            props_df["lipinski_compliant"] = [res.get("passes_ro5", False) for res in lipinski_results]
             compliant = int(props_df["lipinski_compliant"].sum())
             st.metric("Compounds", len(props_df))
             st.metric("Lipinski Compliant", compliant)

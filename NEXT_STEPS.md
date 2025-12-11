@@ -207,6 +207,12 @@
 - [ ] In Vivo PK Studies (AUC, Cmax, Tmax, Bioavailability)
 - [ ] Safety & Toxicology (hERG, Ames, Cytotoxicity)
 
+**Structural Biology & Virtual Screening**:
+- [ ] Protein Structure Visualization (Mol* / PyMOL integration)
+- [ ] Virtual Docking Pipeline (AutoDock Vina / Smina)
+- [ ] Binding Site Analysis & Pocket Detection
+- [ ] Ligand-Protein Interaction Profiler
+
 ### 4. RAG Maturity & Enhancements
 
 **Retrieval Optimization**:
@@ -256,7 +262,8 @@
 1. Lead Optimization Data Models (ADME/PK)
 2. Chemical Registration System
 3. Advanced Structure Search
-4. SAR Analysis Tools
+4. Structural Biology Tools (Docking/Viz)
+5. SAR Analysis Tools
 
 ### Phase 4: RAG Maturity
 1. Hybrid Search & Reranking
