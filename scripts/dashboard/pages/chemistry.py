@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 # Import models - use direct module import to avoid caching issues
@@ -26,6 +27,12 @@ from amprenta_rag.chemistry.registration import (
     register_compound,
 )
 from amprenta_rag.chemistry.structure_search import substructure_search, similarity_search
+from amprenta_rag.chemistry.sar_analysis import (
+    get_compound_properties,
+    get_activity_data,
+    calculate_lipinski,
+    detect_activity_cliffs,
+)
 import sqlite3
 
 
@@ -42,8 +49,16 @@ def render_chemistry_page() -> None:
     st.header("⚗️ Chemistry")
 
     # Tabs for different chemistry entities
-    tab1, tab_reg, tab_struct, tab2, tab3, tab4 = st.tabs(
-        ["Compounds", "Register Compound", "Structure Search", "HTS Campaigns", "Biochemical Results", "Signature Links"]
+    tab1, tab_reg, tab_struct, tab_sar, tab2, tab3, tab4 = st.tabs(
+        [
+            "Compounds",
+            "Register Compound",
+            "Structure Search",
+            "SAR Analysis",
+            "HTS Campaigns",
+            "Biochemical Results",
+            "Signature Links",
+        ]
     )
 
     with tab1:
@@ -168,6 +183,67 @@ def render_chemistry_page() -> None:
                     st.dataframe(results, hide_index=True, use_container_width=True)
             except Exception as e:
                 st.error(f"Search failed: {e}")
+
+    with tab_sar:
+        st.subheader("SAR Analysis")
+        props_df = get_compound_properties()
+        if props_df.empty:
+            st.info("No compounds available for SAR analysis.")
+        else:
+            # Lipinski summary
+            lipinski_results = props_df.apply(
+                lambda r: calculate_lipinski(
+                    r.get("molecular_weight"),
+                    r.get("logp"),
+                    r.get("hbd_count"),
+                    r.get("hba_count"),
+                ),
+                axis=1,
+            )
+            props_df["lipinski_compliant"] = [res["compliant"] for res in lipinski_results]
+            compliant = int(props_df["lipinski_compliant"].sum())
+            st.metric("Compounds", len(props_df))
+            st.metric("Lipinski Compliant", compliant)
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                fig_mw = px.histogram(props_df, x="molecular_weight", nbins=40, title="Molecular Weight")
+                st.plotly_chart(fig_mw, use_container_width=True)
+            with col_b:
+                fig_logp = px.histogram(props_df, x="logp", nbins=40, title="LogP")
+                st.plotly_chart(fig_logp, use_container_width=True)
+
+            # Activity and cliffs
+            act_df = get_activity_data()
+            if not act_df.empty:
+                merged = act_df.merge(
+                    props_df[["compound_id", "smiles", "molecular_weight", "logp"]],
+                    on="compound_id",
+                    how="left",
+                )
+                merged_clean = merged.dropna(subset=["molecular_weight", "logp"])
+                if not merged_clean.empty:
+                    scatter = px.scatter(
+                        merged_clean,
+                        x="logp",
+                        y="molecular_weight",
+                        color="hit_flag",
+                        title="LogP vs Molecular Weight (HTS)",
+                        hover_data=["compound_id", "corporate_id"],
+                    )
+                    st.plotly_chart(scatter, use_container_width=True)
+
+                cliff_thresh = st.slider(
+                    "Cliff similarity threshold", min_value=0.5, max_value=1.0, value=0.8, step=0.01
+                )
+                cliffs = detect_activity_cliffs(merged, similarity_threshold=cliff_thresh)
+                if cliffs:
+                    st.markdown("**Activity Cliffs (top 50 by activity difference)**")
+                    st.dataframe(cliffs[:50], hide_index=True, use_container_width=True)
+                else:
+                    st.info("No activity cliffs detected at the selected threshold.")
+            else:
+                st.info("No HTS activity data available for cliff detection.")
 
     with tab2:
         st.subheader("HTS Campaigns")

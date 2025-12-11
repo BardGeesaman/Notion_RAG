@@ -154,6 +154,10 @@
   - [ ] Error Reporting (Automatic capture + user description)
   - [ ] Feature Request Tracker (Vote/Prioritize)
   - [ ] Admin Dashboard for triage
+- [ ] **In-App User Guidance**:
+  - [ ] Interactive Feature Tours (e.g., "How to create a protocol")
+  - [ ] Contextual Help/Tooltips (hover for definitions)
+  - [ ] Embedded Documentation Widget (searchable guide)
 
 ### 2. ELN & Workflow Features
 
