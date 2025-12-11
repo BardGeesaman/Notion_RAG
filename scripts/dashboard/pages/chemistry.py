@@ -15,6 +15,9 @@ from amprenta_rag.database.base import get_db
 Compound = db_models.Compound
 HTSCampaign = db_models.HTSCampaign
 BiochemicalResult = db_models.BiochemicalResult
+ADMEResult = db_models.ADMEResult
+PKStudy = db_models.PKStudy
+ToxicologyResult = db_models.ToxicologyResult
 
 from scripts.dashboard.db_session import db_session
 from amprenta_rag.chemistry.compound_linking import (
@@ -47,7 +50,7 @@ def render_chemistry_page() -> None:
     st.header("⚗️ Chemistry")
 
     # Tabs for different chemistry entities
-    tab1, tab_reg, tab_struct, tab_sar, tab2, tab3, tab4 = st.tabs(
+    tab1, tab_reg, tab_struct, tab_sar, tab2, tab3, tab4, tab5 = st.tabs(
         [
             "Compounds",
             "Register Compound",
@@ -56,6 +59,7 @@ def render_chemistry_page() -> None:
             "HTS Campaigns",
             "Biochemical Results",
             "Signature Links",
+            "Lead Optimization",
         ]
     )
 
@@ -450,54 +454,211 @@ def render_chemistry_page() -> None:
                 st.warning("Compound and Signature ID are required.")
 
         st.markdown("---")
-        st.markdown("### Find Compounds Reversing Signature")
-        search_sig_id = st.text_input("Signature ID", key="siglink_search_signature")
-        min_corr = st.slider(
-            "Minimum correlation (negative)",
-            min_value=-1.0,
-            max_value=0.0,
-            value=-0.5,
-            step=0.05,
-            key="siglink_min_corr",
-        )
-        if st.button("Search Reversing Compounds", key="siglink_search_btn"):
-            if search_sig_id:
+        st.info("Use linking above; advanced signature searches removed.")
+
+    with tab5:
+        st.subheader("Lead Optimization")
+        db_gen = get_db()
+        db = next(db_gen)
+        try:
+            compound_choices = [
+                c.compound_id for c in db.query(PgCompound).order_by(PgCompound.created_at.desc()).limit(500).all()
+            ]
+        except Exception:
+            compound_choices = []
+        finally:
+            db_gen.close()
+
+        col_lo1, col_lo2 = st.columns(2)
+
+        with col_lo1:
+            st.markdown("### ADME Data")
+            adme_comp = st.selectbox("Compound (ADME)", compound_choices, key="lo_adme_comp")
+            adme_assay = st.selectbox("Assay Type", ["permeability", "stability", "cyp_inhibition", "other"], key="lo_adme_assay")
+            adme_value = st.number_input("Value", value=0.0, step=0.1, key="lo_adme_value")
+            adme_unit = st.text_input("Unit", value="uM", key="lo_adme_unit")
+            adme_conditions = st.text_area("Conditions (JSON)", key="lo_adme_conditions")
+            if st.button("Save ADME", key="lo_adme_save"):
+                db_gen = get_db()
+                db = next(db_gen)
                 try:
-                    rows = find_compounds_reversing_signature(search_sig_id, min_correlation=min_corr)
-                    if rows:
-                        df = pd.DataFrame(rows, columns=["compound_id", "correlation", "p_value"])
-                        df["effect_type"] = "reverses"
-                        st.dataframe(df, hide_index=True, width='stretch')
-                    else:
-                        st.info("No reversing compounds found for this signature.")
+                    cond = None
+                    if adme_conditions.strip():
+                        import json
+                        cond = json.loads(adme_conditions)
+                    comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == adme_comp).first() if adme_comp else None
+                    rec = ADMEResult(
+                        compound_id=comp_obj.id if comp_obj else None,
+                        assay_type=adme_assay,
+                        value=adme_value,
+                        unit=adme_unit or None,
+                        conditions=cond,
+                    )
+                    db.add(rec)
+                    db.commit()
+                    st.success("ADME entry saved.")
                 except Exception as e:
-                    st.error(f"Error searching links: {e}")
-            else:
-                st.warning("Enter a signature ID to search.")
+                    db.rollback()
+                    st.error(f"Failed to save ADME: {e}")
+                finally:
+                    db_gen.close()
+
+        with col_lo2:
+            st.markdown("### PK Studies")
+            pk_comp = st.selectbox("Compound (PK)", compound_choices, key="lo_pk_comp")
+            pk_species = st.text_input("Species", value="mouse", key="lo_pk_species")
+            pk_route = st.text_input("Route", value="IV", key="lo_pk_route")
+            pk_dose = st.number_input("Dose", value=0.0, step=0.1, key="lo_pk_dose")
+            pk_dose_unit = st.text_input("Dose Unit", value="mg/kg", key="lo_pk_dose_unit")
+            pk_auc = st.number_input("AUC", value=0.0, step=0.1, key="lo_pk_auc")
+            pk_cmax = st.number_input("Cmax", value=0.0, step=0.1, key="lo_pk_cmax")
+            pk_tmax = st.number_input("Tmax", value=0.0, step=0.1, key="lo_pk_tmax")
+            pk_half = st.number_input("Half-life", value=0.0, step=0.1, key="lo_pk_half")
+            pk_f = st.number_input("Bioavailability (%)", value=0.0, step=0.1, key="lo_pk_f")
+            pk_cl = st.number_input("Clearance", value=0.0, step=0.1, key="lo_pk_cl")
+            pk_vd = st.number_input("Volume of Distribution", value=0.0, step=0.1, key="lo_pk_vd")
+            if st.button("Save PK", key="lo_pk_save"):
+                db_gen = get_db()
+                db = next(db_gen)
+                try:
+                    comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == pk_comp).first() if pk_comp else None
+                    rec = PKStudy(
+                        compound_id=comp_obj.id if comp_obj else None,
+                        species=pk_species or None,
+                        route=pk_route or None,
+                        dose=pk_dose or None,
+                        dose_unit=pk_dose_unit or None,
+                        auc=pk_auc or None,
+                        c_max=pk_cmax or None,
+                        t_max=pk_tmax or None,
+                        half_life=pk_half or None,
+                        bioavailability=pk_f or None,
+                        clearance=pk_cl or None,
+                        vd=pk_vd or None,
+                    )
+                    db.add(rec)
+                    db.commit()
+                    st.success("PK entry saved.")
+                except Exception as e:
+                    db.rollback()
+                    st.error(f"Failed to save PK: {e}")
+                finally:
+                    db_gen.close()
 
         st.markdown("---")
-        st.markdown("### View Signature Links for Compound")
-        compound_view_sel = st.selectbox(
-            "Compound", compound_options, key="siglink_view_compound"
-        )
-        if st.button("Show Links", key="siglink_view_btn"):
-            try:
-                links = find_signatures_affected_by_compound(compound_view_sel)
-                if links:
-                    df_links = pd.DataFrame(
-                        [
-                            {
-                                "signature_id": link.signature_id,
-                                "effect_type": link.effect_type,
-                                "correlation": link.correlation,
-                                "p_value": link.p_value,
-                                "evidence_source": link.evidence_source,
-                            }
-                            for link in links
-                        ]
+        col_tox, col_profile = st.columns(2)
+
+        with col_tox:
+            st.markdown("### Toxicology")
+            tox_comp = st.selectbox("Compound (Tox)", compound_choices, key="lo_tox_comp")
+            tox_assay = st.text_input("Assay Type", value="herg", key="lo_tox_assay")
+            tox_value = st.number_input("Value", value=0.0, step=0.1, key="lo_tox_value")
+            tox_unit = st.text_input("Unit", value="uM", key="lo_tox_unit")
+            tox_result = st.selectbox("Result", ["negative", "positive", "inconclusive"], key="lo_tox_result")
+            tox_conditions = st.text_area("Conditions (JSON)", key="lo_tox_conditions")
+            if st.button("Save Toxicology", key="lo_tox_save"):
+                db_gen = get_db()
+                db = next(db_gen)
+                try:
+                    cond = None
+                    if tox_conditions.strip():
+                        import json
+                        cond = json.loads(tox_conditions)
+                    comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == tox_comp).first() if tox_comp else None
+                    rec = ToxicologyResult(
+                        compound_id=comp_obj.id if comp_obj else None,
+                        assay_type=tox_assay or None,
+                        value=tox_value or None,
+                        unit=tox_unit or None,
+                        result=tox_result or None,
+                        conditions=cond,
                     )
-                    st.dataframe(df_links, hide_index=True, width='stretch')
-                else:
-                    st.info("No signature links for this compound.")
-            except Exception as e:
-                st.error(f"Error fetching links: {e}")
+                    db.add(rec)
+                    db.commit()
+                    st.success("Toxicology entry saved.")
+                except Exception as e:
+                    db.rollback()
+                    st.error(f"Failed to save Toxicology: {e}")
+                finally:
+                    db_gen.close()
+
+        with col_profile:
+            st.markdown("### Compound Profile")
+            profile_comp = st.selectbox("Compound (Profile)", compound_choices, key="lo_profile_comp")
+            if profile_comp:
+                db_gen = get_db()
+                db = next(db_gen)
+                try:
+                    comp = db.query(PgCompound).filter(PgCompound.compound_id == profile_comp).first()
+                    if comp:
+                        adme = db.query(ADMEResult).filter(ADMEResult.compound_id == comp.id).all()
+                        pk = db.query(PKStudy).filter(PKStudy.compound_id == comp.id).all()
+                        tox = db.query(ToxicologyResult).filter(ToxicologyResult.compound_id == comp.id).all()
+
+                        if adme:
+                            st.markdown("**ADME Results**")
+                            st.dataframe(
+                                [
+                                    {
+                                        "assay_type": a.assay_type,
+                                        "value": a.value,
+                                        "unit": a.unit,
+                                        "conditions": a.conditions,
+                                    }
+                                    for a in adme
+                                ],
+                                hide_index=True,
+                                use_container_width=True,
+                            )
+                        if pk:
+                            st.markdown("**PK Studies**")
+                            st.dataframe(
+                                [
+                                    {
+                                        "species": p.species,
+                                        "route": p.route,
+                                        "auc": p.auc,
+                                        "c_max": p.c_max,
+                                        "t_max": p.t_max,
+                                        "half_life": p.half_life,
+                                        "bioavailability": p.bioavailability,
+                                    }
+                                    for p in pk
+                                ],
+                                hide_index=True,
+                                use_container_width=True,
+                            )
+                        if tox:
+                            st.markdown("**Toxicology Results**")
+                            st.dataframe(
+                                [
+                                    {
+                                        "assay_type": t.assay_type,
+                                        "value": t.value,
+                                        "unit": t.unit,
+                                        "result": t.result,
+                                    }
+                                    for t in tox
+                                ],
+                                hide_index=True,
+                                use_container_width=True,
+                            )
+
+                        warnings_list = []
+                        for t in tox:
+                            if t.assay_type and t.assay_type.lower() == "herg" and t.value is not None and t.value < 10:
+                                warnings_list.append("Potential hERG liability (IC50 < 10 uM)")
+                            if t.assay_type and t.assay_type.lower() == "ames" and t.result and t.result.lower() == "positive":
+                                warnings_list.append("Ames positive")
+                        for p in pk:
+                            if p.bioavailability is not None and p.bioavailability < 10:
+                                warnings_list.append("Low bioavailability (<10%)")
+
+                        if warnings_list:
+                            for w in warnings_list:
+                                st.error(w)
+                        else:
+                            st.success("No major liabilities detected.")
+                finally:
+                    db_gen.close()
+
