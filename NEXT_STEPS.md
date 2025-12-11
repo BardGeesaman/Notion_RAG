@@ -353,7 +353,7 @@
 - [ ] Confounding variable detection
 
 **Advanced Analytics**:
-- [ ] Multi-dataset pattern detection
+- [x] Multi-dataset pattern detection
 - [ ] **Bayesian Inference & Optimization**:
   - [ ] Probabilistic Dose-Response (PyMC/Stan)
   - [ ] Bayesian Experimental Design (Next-best experiment suggestion)
