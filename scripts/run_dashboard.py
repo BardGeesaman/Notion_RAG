@@ -66,6 +66,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+import os
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -73,6 +74,7 @@ sys.path.insert(0, str(project_root))
 
 import streamlit as st
 from amprenta_rag.auth.session import get_current_user, clear_session, is_authenticated
+AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
 # from scripts.dashboard.pages import ...
@@ -86,11 +88,17 @@ st.set_page_config(
 )
 
 # Authentication check
-if not is_authenticated():
+if not AUTH_DISABLED and not is_authenticated():
     from scripts.dashboard.pages.auth.login import render_login_page
 
     render_login_page()
     st.stop()
+
+# Mock user when auth disabled (e.g., testing)
+if AUTH_DISABLED and not is_authenticated():
+    from amprenta_rag.auth.session import set_current_user
+
+    set_current_user({"id": "test", "username": "dev", "email": "dev@local", "role": "admin"})
 
 # Admin registration page
 if st.session_state.get("show_register"):
