@@ -448,6 +448,42 @@ class Compound(Base):
     programs = relationship("Program", secondary="compound_program", back_populates="compounds")
 
 
+class BiochemicalAssay(Base):
+    """Biochemical assay definition."""
+
+    __tablename__ = "biochemical_assays"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(200), nullable=False)
+    target = Column(String(200), nullable=True)  # e.g., "EGFR", "CDK4"
+    assay_type = Column(String(50), nullable=True)  # e.g., "IC50", "EC50", "Ki"
+    unit = Column(String(20), nullable=True)  # e.g., "nM", "uM"
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    results = relationship("ActivityResult", back_populates="assay")
+
+
+class ActivityResult(Base):
+    """Activity measurement for a compound in an assay."""
+
+    __tablename__ = "activity_results"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=False)
+    assay_id = Column(UUID(as_uuid=True), ForeignKey("biochemical_assays.id"), nullable=False)
+    value = Column(Float, nullable=False)  # The measured value
+    qualifier = Column(String(5), nullable=True)  # ">", "<", "=", "~"
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
+    # Relationships
+    compound = relationship("Compound", backref="activity_results")
+    assay = relationship("BiochemicalAssay", back_populates="results")
+    created_by = relationship("User")
+
+
 class HTSCampaign(Base):
     """High-throughput screening campaign."""
 
