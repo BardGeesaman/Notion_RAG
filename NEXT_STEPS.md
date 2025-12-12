@@ -337,6 +337,9 @@
 - [x] Duplicate checking logic
 
 **Cheminformatics Search**:
+- [ ] **Chemical Sketcher (Ketcher/MarvinJS)**:
+  - [ ] Draw structures to generate SMILES for search
+  - [ ] Visual structure editor for compound registration
 - [x] Substructure search (SMARTS)
 - [x] Similarity search (Tanimoto)
 - [x] Pharmacophore search
@@ -387,6 +390,9 @@
 
 ### 6. Operational Maturity & Governance
 **Data Governance**:
+- [ ] **Data Version Control (DVC)**:
+  - [ ] Version large files (FASTQ, Images, Models) alongside code
+  - [ ] Reproducible data pipelines
 - [x] Data Lineage Visualization (Provenance graph)
 - [x] Retention & Archival Policies
 - [x] Internal Ontology Management
@@ -396,6 +402,9 @@
   - [x] Real-time Presence (Who is viewing this page?) - partial, conflict detection only
 
 **Infrastructure**:
+- [ ] **Bioinformatics Pipeline Orchestrator**:
+  - [ ] **Nextflow / Snakemake Integration**: Run reproducible pipelines
+  - [ ] Job submission and status monitoring UI
 - [ ] Job Queue System (Celery/Redis)
 - [ ] S3/Tiered Storage Integration
 - [ ] **Automated Backup & Disaster Recovery**:
