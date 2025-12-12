@@ -81,6 +81,12 @@ from amprenta_rag.database.models import UserFavorite
 from scripts.dashboard.help_content import get_help, search_help
 from scripts.dashboard.help_chat import render_help_chat
 from scripts.dashboard.themes import apply_theme, get_theme_names
+from amprenta_rag.notifications.service import (
+    get_unread_count,
+    get_unread_notifications,
+    mark_as_read,
+    mark_all_read,
+)
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # Page groups
@@ -184,6 +190,50 @@ if user:
             log_logout(user.get("id"), user.get("username"))
             clear_session()
             st.rerun()
+        st.divider()
+        
+        # Notifications
+        user_id = user.get("id")
+        if user_id and user_id != "test":
+            try:
+                db_gen = get_db()
+                db = next(db_gen)
+                try:
+                    unread_count = get_unread_count(user_id, db)
+                    notifications = get_unread_notifications(user_id, db, limit=10)
+                    
+                    # Notification bell with count
+                    if unread_count > 0:
+                        st.markdown(f"**🔔 Notifications ({unread_count})**")
+                    else:
+                        st.markdown("**🔔 Notifications**")
+                    
+                    # Notifications expander
+                    with st.expander("View Notifications", expanded=False):
+                        if notifications:
+                            for notif in notifications:
+                                col1, col2 = st.columns([3, 1])
+                                with col1:
+                                    st.markdown(f"**{notif.title}**")
+                                    if notif.message:
+                                        st.caption(notif.message)
+                                    st.caption(f"{notif.created_at.strftime('%Y-%m-%d %H:%M') if notif.created_at else ''} • {notif.notification_type}")
+                                with col2:
+                                    if st.button("✓", key=f"mark_read_{notif.id}", help="Mark as read"):
+                                        mark_as_read(str(notif.id), db)
+                                        st.rerun()
+                                st.divider()
+                            
+                            if st.button("Mark All Read", key="mark_all_read", use_container_width=True):
+                                mark_all_read(user_id, db)
+                                st.rerun()
+                        else:
+                            st.info("No unread notifications")
+                finally:
+                    db_gen.close()
+            except Exception as e:
+                st.error(f"Error loading notifications: {e}")
+        
         st.divider()
         
         # Theme selector

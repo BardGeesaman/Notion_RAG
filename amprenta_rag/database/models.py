@@ -830,6 +830,22 @@ class UserFavorite(Base):
     user = relationship("User", backref="favorites")
 
 
+class Notification(Base):
+    """User notifications."""
+
+    __tablename__ = "notifications"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=True)
+    notification_type = Column(String(50), default="info")  # info, success, warning, discovery
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", backref="notifications")
+
+
 class AuditLog(Base):
     """Audit trail for user actions."""
 
