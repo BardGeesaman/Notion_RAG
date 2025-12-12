@@ -215,9 +215,7 @@
 - ✅ **Integration Verified**: Database, Pinecone, and LLM synthesis all working in concert
 
 ### ⚠️ Testing Gaps (Implemented but not in E2E Suite)
-- [ ] **Multi-Company Support**: Data segregation and Company Admin roles not tested in E2E
-- [ ] **Concurrent Editing**: Optimistic locking and conflict resolution UI not tested in E2E
-- [ ] **Scientific Q&A Export**: PDF export flow not verified in E2E (browser download)
+- [x] **Concurrent Editing**: Optimistic locking and conflict resolution UI implemented but not tested in E2E
 
 ---
 
@@ -332,7 +330,7 @@
 - [x] Question Registry (CRUD for scientific questions)
 - [x] Persistent RAG Answers (Save outputs + evidence)
 - [x] Versioning (Re-run questions as data updates)
-- [x] Export capabilities (PDF/CSV of Q&A reports)
+- [ ] Export capabilities (PDF/CSV of Q&A reports)
 - [ ] **Literature Critical Analysis**:
   - [x] Auto-generated critiques (Strengths, Weaknesses, Limitations)
   - [x] Unanswered Questions Extraction
