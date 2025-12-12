@@ -960,6 +960,43 @@ class LiteratureCritique(Base):
     created_by = relationship("User", foreign_keys=[created_by_id])
 
 
+class TargetProductProfile(Base):
+    """Target Product Profile (TPP) for candidate selection."""
+
+    __tablename__ = "target_product_profiles"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    criteria = Column(JSON, nullable=False)  # Array of {property, min, max, weight, unit}
+    is_active = Column(Boolean, default=True)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    created_by = relationship("User", foreign_keys=[created_by_id])
+    nominations = relationship("CandidateNomination", back_populates="tpp", cascade="all, delete-orphan")
+
+
+class CandidateNomination(Base):
+    """Candidate compound nomination against a TPP."""
+
+    __tablename__ = "candidate_nominations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=False)
+    tpp_id = Column(UUID(as_uuid=True), ForeignKey("target_product_profiles.id"), nullable=False)
+    scores = Column(JSON, nullable=True)  # Per-criterion results {property: {value, score, traffic_light}}
+    overall_score = Column(Float, nullable=True)
+    status = Column(String(50), default="nominated")  # nominated, approved, rejected
+    notes = Column(Text, nullable=True)
+    nominated_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    compound = relationship("Compound", foreign_keys=[compound_id])
+    tpp = relationship("TargetProductProfile", back_populates="nominations")
+    nominated_by = relationship("User", foreign_keys=[nominated_by_id])
+
+
 class AuditLog(Base):
     """Audit trail for user actions."""
 
