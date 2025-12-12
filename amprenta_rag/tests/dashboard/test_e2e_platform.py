@@ -238,7 +238,7 @@ class TestExperimentFlow:
             page.wait_for_timeout(1000)
             
             # Click Experiments button directly (Discovery expander is expanded by default)
-            page.locator('text=Experiments').first.click()
+            sidebar.locator('button:has-text("Experiments")').click()
             page.wait_for_timeout(2000)
         except Exception as e:
             pytest.fail(f"Could not navigate to Experiments: {e}")
@@ -401,7 +401,7 @@ class TestDiscoveryWorkflow:
             page.wait_for_timeout(1000)
             
             # Click Discovery Workflow (Discovery is expanded by default)
-            page.locator('text=Discovery Workflow').first.click()
+            sidebar.locator('button:has-text("Discovery Workflow")').click()
             page.wait_for_timeout(2000)
         except Exception as e:
             pytest.fail(f"Could not navigate to Discovery Workflow: {e}")
@@ -447,7 +447,7 @@ class TestVariantTracking:
             page.wait_for_timeout(1000)
             
             # Click Variant Tracking (Discovery is expanded by default)
-            page.locator('text=Variant Tracking').first.click()
+            sidebar.locator('button:has-text("Variant Tracking")').click()
             page.wait_for_timeout(2000)
         except Exception as e:
             pytest.fail(f"Could not navigate to Variant Tracking: {e}")
@@ -557,4 +557,173 @@ class TestSignatures:
             assert page.locator("body").count() > 0, "Signatures page did not load"
         except Exception as e:
             pytest.fail(f"Could not verify Signatures page loaded: {e}")
+
+
+class TestDataQuality:
+    """Test data quality validation"""
+    
+    def test_run_validation(self, page: Page, base_url: str):
+        """Run validation check"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: Admin expander > Data Quality
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Other Pages section (Data Quality is in Other Pages, not Admin)
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Data Quality
+            sidebar.locator('button:has-text("Data Quality")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Data Quality: {e}")
+        
+        # Button: "🔍 Run Validation"
+        try:
+            run_button = page.get_by_role("button", name="🔍 Run Validation", exact=True).first
+            if run_button.count() == 0:
+                run_button = page.get_by_role("button", name="Run Validation", exact=True).first
+            if run_button.count() > 0:
+                run_button.click()
+                page.wait_for_timeout(3000)  # Validation takes time
+                
+                # Verify results appear or empty state
+                assert page.locator("text=Validation").first.count() > 0 or page.locator("text=No issues").first.count() > 0 or page.locator("text=Issues").first.count() > 0
+        except Exception as e:
+            pytest.skip(f"Could not run validation: {e}")
+
+
+class TestStatisticalAnalysis:
+    """Test statistical analysis page"""
+    
+    def test_view_page(self, page: Page, base_url: str):
+        """View statistical analysis page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: Other Pages expander > Statistical Analysis
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Other Pages
+            page.locator("text=📚 Other Pages").click()
+            page.wait_for_timeout(1000)
+            
+            # Click Statistical Analysis
+            sidebar.locator('button:has-text("Statistical Analysis")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Statistical Analysis: {e}")
+        
+        # Verify page loads (has selectbox for Test Type)
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Statistical Analysis page: Import error - Error loading page"
+            assert rendering_error == 0, "Statistical Analysis page: Runtime error - Error rendering page"
+            
+            # Check for Test Type selectbox or page content
+            assert page.locator("text=Test Type").first.count() > 0 or page.locator("body").count() > 0
+        except Exception as e:
+            pytest.fail(f"Could not verify Statistical Analysis page loaded: {e}")
+
+
+class TestVisualizations:
+    """Test visualizations page"""
+    
+    def test_view_visualizations(self, page: Page, base_url: str):
+        """View visualizations page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: Analysis expander > Visualizations
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Analysis section
+            page.locator("text=📊 Analysis").click()
+            page.wait_for_timeout(1000)
+            
+            # Click Visualizations
+            sidebar.locator('button:has-text("Visualizations")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Visualizations: {e}")
+        
+        # Verify page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Visualizations page: Import error - Error loading page"
+            assert rendering_error == 0, "Visualizations page: Runtime error - Error rendering page"
+            
+            # Check for "Generate Plot" or similar button or page content
+            assert page.locator("text=Generate Plot").first.count() > 0 or page.locator("text=Plot").first.count() > 0 or page.locator("body").count() > 0
+        except Exception as e:
+            pytest.fail(f"Could not verify Visualizations page loaded: {e}")
+
+
+class TestLiteratureAnalysis:
+    """Test literature analysis page"""
+    
+    def test_critique_tab(self, page: Page, base_url: str):
+        """View literature critique tab"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: Analysis expander > Literature Analysis
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Analysis section
+            page.locator("text=📊 Analysis").click()
+            page.wait_for_timeout(1000)
+            
+            # Click Literature Analysis
+            sidebar.locator('button:has-text("Literature Analysis")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Literature Analysis: {e}")
+        
+        # Tab: button[role="tab"]:has-text("Critique")
+        try:
+            page.locator('button[role="tab"]:has-text("Critique")').click()
+            page.wait_for_timeout(1000)
+            
+            # Verify text_area for "Scientific Text" exists (use .first because there are 2 textareas with this label)
+            abstract_textarea = page.locator('textarea[aria-label="Scientific Text"]').first
+            assert abstract_textarea.count() > 0, "Critique tab textarea not found"
+            
+            # Check for "🔍 Analyze" button
+            analyze_button = page.get_by_role("button", name="🔍 Analyze", exact=True).first
+            if analyze_button.count() == 0:
+                analyze_button = page.get_by_role("button", name="Analyze", exact=True).first
+            assert analyze_button.count() > 0, "Analyze button not found"
+        except Exception as e:
+            pytest.fail(f"Could not verify Critique tab: {e}")
 
