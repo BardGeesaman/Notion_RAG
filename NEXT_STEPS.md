@@ -122,6 +122,7 @@
 - ✅ Role-based access (admin, researcher, viewer)
 - ✅ Admin-only user registration page
 - ✅ Logout functionality in sidebar
+- ✅ Session Timeout (auto-logout security)
 - ✅ DISABLE_AUTH env flag for testing
 
 ### 9. Audit & Data Ownership ✅ COMPLETE
