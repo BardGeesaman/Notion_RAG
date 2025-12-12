@@ -383,10 +383,10 @@
   - [x] Share Experiment Results via Email (PDF/Link)
   - [x] Automated Alerts (New data in subscribed project)
   - [x] Daily/Weekly Digest Summaries
-- [ ] **Automated Reporting & Slides**:
-  - [ ] Auto-generate PowerPoint (.pptx) from Experiment/Dataset
-  - [ ] "Smart Slides": Auto-layout plots, methods, and conclusions
-  - [ ] Meeting Deck Builder: Aggregating results across projects
+- [x] **Automated Reporting & Slides**:
+  - [x] Auto-generate PowerPoint (.pptx) from Experiment/Dataset
+  - [x] "Smart Slides": Auto-layout plots, methods, and conclusions
+  - [x] Meeting Deck Builder: Aggregating results across projects
 
 ### 7. Future Innovations
 
