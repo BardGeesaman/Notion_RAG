@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 from typing import Any, Dict, List
+from uuid import UUID
 
 import pandas as pd
 import streamlit as st
 
-from amprenta_rag.database.models import Experiment
+from amprenta_rag.database.models import Experiment, ExperimentTemplate
+from amprenta_rag.auth.session import get_current_user
 from amprenta_rag.ingestion.design_integration import (
     batch_apply_design_extraction,
     create_experiment_from_study,
@@ -95,6 +97,34 @@ def _render_browse_tab() -> None:
                     dataset_count = len(experiment.datasets)
                     if dataset_count > 0:
                         st.write(f"**Related Datasets:** {dataset_count}")
+                    
+                    # Save as Template button
+                    user = get_current_user()
+                    if user:
+                        if st.button("💾 Save as Template", key=f"save_template_{experiment.id}"):
+                            with st.form(f"template_form_{experiment.id}"):
+                                template_name = st.text_input("Template Name*", value=f"{experiment.name} Template")
+                                template_description = st.text_area("Description", value=experiment.description or "")
+                                
+                                if st.form_submit_button("Create Template", type="primary"):
+                                    if template_name:
+                                        try:
+                                            template = ExperimentTemplate(
+                                                name=template_name,
+                                                description=template_description if template_description.strip() else None,
+                                                design_type=experiment.design_type,
+                                                organism=None,  # Can be added later if needed
+                                                sample_groups=experiment.sample_groups,
+                                                created_by_id=UUID(user.get("id")) if user.get("id") and user.get("id") != "test" else None,
+                                            )
+                                            db.add(template)
+                                            db.commit()
+                                            st.success(f"Template '{template_name}' created!")
+                                            st.rerun()
+                                        except Exception as e:
+                                            st.error(f"Failed to create template: {e}")
+                                    else:
+                                        st.error("Template name is required")
         else:
             st.info("No experiments found.")
 
@@ -207,15 +237,103 @@ def _render_edit_tab() -> None:
             st.success("Design updated.")
 
 
+def _render_templates_tab() -> None:
+    """Render the Templates tab."""
+    user = get_current_user()
+    user_id = user.get("id") if user else None
+    
+    with db_session() as db:
+        templates = db.query(ExperimentTemplate).order_by(ExperimentTemplate.created_at.desc()).all()
+        
+        st.subheader("Experiment Templates")
+        st.markdown("Use templates to quickly create experiments with pre-filled values.")
+        
+        if templates:
+            for template in templates:
+                with st.expander(f"**{template.name}**"):
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.write(template.description or "_No description_")
+                        if template.design_type:
+                            st.write(f"**Design Type:** {template.design_type}")
+                        if template.organism:
+                            st.write(f"**Organism:** {', '.join(template.organism)}")
+                        if template.sample_groups:
+                            st.write("**Sample Groups:**")
+                            st.json(template.sample_groups)
+                    with col2:
+                        if st.button("Use Template", key=f"use_template_{template.id}"):
+                            st.session_state["use_template_id"] = str(template.id)
+                            st.session_state["template_data"] = {
+                                "name": template.name,
+                                "description": template.description,
+                                "design_type": template.design_type,
+                                "organism": template.organism,
+                                "sample_groups": template.sample_groups,
+                            }
+                            st.rerun()
+        else:
+            st.info("No templates available. Create one by saving an experiment as a template.")
+        
+        st.markdown("---")
+        st.subheader("Create from Template")
+        
+        if st.session_state.get("template_data"):
+            template_data = st.session_state["template_data"]
+            st.info("Template loaded. Fill in the form below and create your experiment.")
+            
+            with st.form("create_from_template"):
+                name = st.text_input("Experiment Name*", value=template_data.get("name", ""))
+                description = st.text_area("Description", value=template_data.get("description", ""))
+                design_type = st.selectbox(
+                    "Design Type",
+                    ["case_control", "time_course", "intervention", "dose_response", "multi_factorial", "observational"],
+                    index=["case_control", "time_course", "intervention", "dose_response", "multi_factorial", "observational"].index(template_data.get("design_type", "case_control")) if template_data.get("design_type") in ["case_control", "time_course", "intervention", "dose_response", "multi_factorial", "observational"] else 0,
+                )
+                organism_input = st.text_input("Organism (comma-separated)", value=", ".join(template_data.get("organism", [])) if template_data.get("organism") else "")
+                sample_groups_json = st.text_area("Sample Groups (JSON)", value=json.dumps(template_data.get("sample_groups", {}), indent=2), height=100)
+                
+                if st.form_submit_button("Create Experiment", type="primary"):
+                    if not name:
+                        st.error("Experiment name is required")
+                    else:
+                        try:
+                            sample_groups = json.loads(sample_groups_json) if sample_groups_json.strip() else {}
+                            organism = [o.strip() for o in organism_input.split(",") if o.strip()] if organism_input.strip() else None
+                            
+                            experiment = Experiment(
+                                name=name,
+                                description=description if description.strip() else None,
+                                design_type=design_type,
+                                organism=organism,
+                                sample_groups=sample_groups,
+                                created_by_id=UUID(user_id) if user_id and user_id != "test" else None,
+                            )
+                            
+                            db.add(experiment)
+                            db.commit()
+                            
+                            st.success(f"Experiment '{name}' created successfully!")
+                            st.session_state.pop("template_data", None)
+                            st.session_state.pop("use_template_id", None)
+                            st.rerun()
+                        except json.JSONDecodeError as e:
+                            st.error(f"Invalid JSON in sample groups: {e}")
+                        except Exception as e:
+                            st.error(f"Failed to create experiment: {e}")
+
+
 def render_experiments_page() -> None:
     """Render the Experiments page with search, summary, and design editing."""
     st.header("🔬 Experiments")
 
-    tabs = st.tabs(["Browse Experiments", "Edit Design"])
+    tabs = st.tabs(["Browse Experiments", "Edit Design", "Templates"])
     with tabs[0]:
         _render_browse_tab()
     with tabs[1]:
         _render_edit_tab()
+    with tabs[2]:
+        _render_templates_tab()
 
 
 __all__ = ["render_experiments_page"]
