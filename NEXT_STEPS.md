@@ -226,10 +226,10 @@
   - [ ] Company Model & Super Admin Role
   - [ ] Data Segregation (Row-level Security / Separate Schemas)
   - [ ] Company-specific Settings & Branding
-- [ ] **Feature Visibility Controls**:
-  - [ ] Admin UI to toggle features per user/role
-  - [ ] Role-based UI customization (e.g., Hide "Chemistry" for Biologists)
-  - [ ] Granular permission sets for menu items
+- [x] **Feature Visibility Controls**:
+  - [x] Admin UI to toggle features per user/role
+  - [x] Role-based UI customization (e.g., Hide "Chemistry" for Biologists)
+  - [x] Granular permission sets for menu items
 - [x] **User Feedback System**:
   - [x] Error Reporting (Automatic capture + user description)
   - [x] Feature Request Tracker (Vote/Prioritize)
