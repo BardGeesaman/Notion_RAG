@@ -382,7 +382,7 @@
 
 **Collaboration**:
 - [ ] "Project" Workspace Abstraction
-- [ ] Contextual Commenting (on graphs/features)
+- [x] Contextual Commenting (on graphs/features)
 - [x] **Email & Notifications**:
   - [x] Share Experiment Results via Email (PDF/Link)
   - [x] Automated Alerts (New data in subscribed project)
