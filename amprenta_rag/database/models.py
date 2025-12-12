@@ -150,6 +150,9 @@ class Experiment(Base):
     # Project
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=True)
 
+    # Version for concurrent editing safety
+    version = Column(Integer, default=1, nullable=False)
+
     # Relationships
     programs = relationship("Program", secondary=program_experiment_assoc, back_populates="experiments")
     datasets = relationship("Dataset", secondary=experiment_dataset_assoc, back_populates="experiments")
@@ -223,6 +226,9 @@ class Dataset(Base):
 
     # External identifiers (repository IDs, etc.)
     external_ids = Column(JSON, nullable=True)
+
+    # Version for concurrent editing safety
+    version = Column(Integer, default=1, nullable=False)
 
     # Ingestion status
     ingestion_status = Column(
@@ -444,6 +450,9 @@ class Compound(Base):
 
     # External identifiers
     external_ids = Column(JSON, nullable=True)
+
+    # Version for concurrent editing safety
+    version = Column(Integer, default=1, nullable=False)
 
     # Relationships
     hts_campaigns = relationship("HTSCampaign", back_populates="library")
@@ -1053,7 +1062,7 @@ class Protocol(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
     name = Column(String(255), nullable=False)
-    version = Column(Integer, default=1)
+    version = Column(Integer, default=1, nullable=False)
     category = Column(String(100), nullable=True)  # extraction, assay, analysis, etc.
     description = Column(Text, nullable=True)
     steps = Column(JSON, nullable=True)  # [{"order": 1, "title": "...", "instructions": "...", "duration": "..."}]

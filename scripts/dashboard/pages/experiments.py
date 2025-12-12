@@ -21,6 +21,7 @@ from amprenta_rag.utils.saved_filters import save_filter, get_user_filters, dele
 from amprenta_rag.analysis.study_critique import assess_study_quality
 from amprenta_rag.notifications.email_service import send_share_notification, is_email_configured
 from amprenta_rag.export.slide_generator import generate_experiment_slides
+from amprenta_rag.utils.optimistic_lock import update_with_lock, ConflictError
 from scripts.dashboard.db_session import db_session
 
 
@@ -267,6 +268,9 @@ def _render_edit_tab() -> None:
         exp_options = {exp.name: exp for exp in experiments}
         selected_name = st.selectbox("Select experiment", list(exp_options.keys()))
         experiment = exp_options[selected_name]
+        
+        # Store version for optimistic locking
+        st.session_state[f"edit_version_{experiment.id}"] = experiment.version
 
         design_type = st.selectbox(
             "Design type",
@@ -321,13 +325,36 @@ def _render_edit_tab() -> None:
             if timepoints_text.strip():
                 metadata["timepoints"] = [tp.strip() for tp in timepoints_text.split(",") if tp.strip()]
 
-            experiment.design_type = design_type
-            experiment.sample_groups = sample_groups
-            experiment.design_metadata = metadata
-
-            db.add(experiment)
-            db.commit()
-            st.success("Design updated.")
+            updates = {
+                "design_type": design_type,
+                "sample_groups": sample_groups,
+                "design_metadata": metadata,
+            }
+            
+            expected_version = st.session_state.get(f"edit_version_{experiment.id}", 1)
+            
+            try:
+                update_with_lock(experiment, updates, expected_version, db)
+                st.success("Saved successfully!")
+                # Update stored version
+                st.session_state[f"edit_version_{experiment.id}"] = experiment.version
+            except ConflictError as e:
+                st.error(f"⚠️ Conflict: This record was modified by another user.")
+                st.warning(f"Your version: {e.expected}, Current version: {e.actual}")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("Reload Latest", key=f"reload_{experiment.id}"):
+                        # Refresh experiment from DB
+                        db.refresh(experiment)
+                        st.session_state[f"edit_version_{experiment.id}"] = experiment.version
+                        st.rerun()
+                with col2:
+                    if st.button("Force Save", key=f"force_{experiment.id}"):
+                        # Update with current version
+                        update_with_lock(experiment, updates, experiment.version, db)
+                        st.success("Force saved!")
+                        st.session_state[f"edit_version_{experiment.id}"] = experiment.version
+                        st.rerun()
 
 
 def _render_templates_tab() -> None:
