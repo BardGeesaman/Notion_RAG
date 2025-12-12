@@ -89,6 +89,7 @@
 - ✅ **System Health Dashboard**: DB stats, API status, system metrics
 - ✅ **Keyboard Shortcuts**: Vim-style navigation and global hotkeys
 - ✅ **Global Search**: Unified cross-entity search ("Spotlight" style)
+- ✅ **Saved Filters**: Save and reuse filter presets for experiments/compounds
 - ✅ **Bookmarks System**: Pin items for quick access (sidebar favorites)
 - ✅ **Visualization**: Viz helpers (`viz_helpers.py`), Pathway Network Visualization (force-directed)
 - ✅ **Additional Visualizations**: Program-Signature heatmap, Dataset Similarity dendrogram, Pathway Enrichment bars, Cross-Omics Convergence
