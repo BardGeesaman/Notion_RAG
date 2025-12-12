@@ -250,6 +250,10 @@
 - [ ] Imaging Data Support (Microscopy/HCS metadata)
 - [ ] Flow Cytometry / FACS Data Ingestion
 - [ ] Biophysical Assay Support (SPR, MST, DSC)
+- [ ] **Genomic & Variant Tracking**:
+  - [ ] Mutation/Genotype Model (Gene, Variant, Zygosity)
+  - [ ] Cell Line/Organism Genotype Mapping (e.g., "HeLa -> p53 null")
+  - [ ] Variant-based Experiment Filtering
 
 **Resource Management**:
 - [ ] **Cost Tracking & Budgeting**:

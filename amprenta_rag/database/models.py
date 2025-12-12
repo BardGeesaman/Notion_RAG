@@ -846,6 +846,20 @@ class Notification(Base):
     user = relationship("User", backref="notifications")
 
 
+class Bookmark(Base):
+    """User bookmarks for entities."""
+
+    __tablename__ = "bookmarks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    entity_type = Column(String(50), nullable=False)  # experiment, compound, signature
+    entity_id = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", backref="bookmarks")
+
+
 class AuditLog(Base):
     """Audit trail for user actions."""
 

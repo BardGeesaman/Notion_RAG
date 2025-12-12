@@ -77,7 +77,7 @@ from uuid import UUID
 from amprenta_rag.auth.session import get_current_user, clear_session, is_authenticated
 from amprenta_rag.auth.audit import log_logout
 from amprenta_rag.database.base import get_db
-from amprenta_rag.database.models import UserFavorite
+from amprenta_rag.database.models import UserFavorite, Experiment, Compound, Signature
 from scripts.dashboard.help_content import get_help, search_help
 from scripts.dashboard.help_chat import render_help_chat
 from scripts.dashboard.themes import apply_theme, get_theme_names
@@ -89,6 +89,7 @@ from amprenta_rag.notifications.service import (
     mark_all_read,
 )
 from amprenta_rag.utils.global_search import global_search
+from amprenta_rag.utils.bookmarks import get_user_bookmarks
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # Page groups
@@ -397,6 +398,54 @@ if user and user.get("id") != "test":
                     update_recent_pages(page)
                     st.rerun()
         st.sidebar.divider()
+
+# Bookmarks section
+if user and user.get("id") != "test":
+    try:
+        db_gen = get_db()
+        db = next(db_gen)
+        try:
+            bookmarks = get_user_bookmarks(user.get("id"), db)
+            if bookmarks:
+                with st.sidebar.expander("📌 Bookmarks", expanded=False):
+                    # Group by entity type
+                    experiments = [b for b in bookmarks if b.entity_type == "experiment"]
+                    compounds = [b for b in bookmarks if b.entity_type == "compound"]
+                    signatures = [b for b in bookmarks if b.entity_type == "signature"]
+                    
+                    if experiments:
+                        st.markdown("**Experiments**")
+                        for bm in experiments:
+                            exp = db.query(Experiment).filter(Experiment.id == bm.entity_id).first()
+                            if exp:
+                                if st.button(f"🔬 {exp.name}", key=f"bm_exp_{bm.id}", use_container_width=True):
+                                    st.session_state["selected_page"] = "Experiments"
+                                    st.session_state["selected_experiment_id"] = str(bm.entity_id)
+                                    st.rerun()
+                    
+                    if compounds:
+                        st.markdown("**Compounds**")
+                        for bm in compounds:
+                            comp = db.query(Compound).filter(Compound.id == bm.entity_id).first()
+                            if comp:
+                                if st.button(f"⚗️ {comp.compound_id}", key=f"bm_comp_{bm.id}", use_container_width=True):
+                                    st.session_state["selected_page"] = "Chemistry"
+                                    st.session_state["selected_compound_id"] = str(bm.entity_id)
+                                    st.rerun()
+                    
+                    if signatures:
+                        st.markdown("**Signatures**")
+                        for bm in signatures:
+                            sig = db.query(Signature).filter(Signature.id == bm.entity_id).first()
+                            if sig:
+                                if st.button(f"📊 {sig.name}", key=f"bm_sig_{bm.id}", use_container_width=True):
+                                    st.session_state["selected_page"] = "Signatures"
+                                    st.session_state["selected_signature_id"] = str(bm.entity_id)
+                                    st.rerun()
+        finally:
+            db_gen.close()
+    except Exception:
+        pass  # Silently fail if bookmarks can't be loaded
 
 # Recent pages
 if st.session_state.get("recent_pages"):
