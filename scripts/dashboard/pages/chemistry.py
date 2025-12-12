@@ -46,6 +46,7 @@ from amprenta_rag.chemistry.pharmacophore import (
     get_pharmacophore_features,
     pharmacophore_search,
 )
+from amprenta_rag.chemistry.procurement import search_vendors, get_vendor_info
 
 
 def render_chemistry_page() -> None:
@@ -61,7 +62,7 @@ def render_chemistry_page() -> None:
     st.header("⚗️ Chemistry")
 
     # Tabs for different chemistry entities
-    tab1, tab_reg, tab_struct, tab_sar, tab2, tab3, tab4, tab5 = st.tabs(
+    tab1, tab_reg, tab_struct, tab_sar, tab2, tab3, tab4, tab5, tab_proc = st.tabs(
         [
             "Compounds",
             "Register Compound",
@@ -71,6 +72,7 @@ def render_chemistry_page() -> None:
             "Biochemical Results",
             "Signature Links",
             "Lead Optimization",
+            "Procurement",
         ]
     )
 
@@ -874,4 +876,73 @@ def render_chemistry_page() -> None:
                             st.success("No major liabilities detected.")
                 finally:
                     db_gen.close()
+    
+    with tab_proc:
+        _render_procurement_tab()
+
+
+def _render_procurement_tab() -> None:
+    """Render the Procurement tab for vendor search."""
+    st.subheader("🔍 Vendor Search")
+    st.markdown("Search for compounds across multiple vendor catalogs.")
+    
+    # Show supported vendors
+    st.markdown("### Supported Vendors")
+    vendors = get_vendor_info()
+    vendor_cols = st.columns(min(len(vendors), 4))
+    for idx, vendor in enumerate(vendors):
+        col_idx = idx % len(vendor_cols)
+        with vendor_cols[col_idx]:
+            st.markdown(f"**{vendor['name']}**")
+            st.caption(f"[Visit Site]({vendor['url']})")
+    
+    st.markdown("---")
+    
+    # Search form
+    search_query = st.text_input(
+        "Search Compound",
+        placeholder="Enter SMILES, CAS number, or compound name",
+        key="procurement_search"
+    )
+    
+    if st.button("🔍 Search Vendors", type="primary"):
+        if not search_query or not search_query.strip():
+            st.warning("Please enter a search query.")
+        else:
+            with st.spinner("Searching vendor catalogs..."):
+                try:
+                    results = search_vendors(search_query.strip())
+                    
+                    if results:
+                        st.success(f"Found {len(results)} vendor results")
+                        
+                        # Display results table
+                        results_data = []
+                        for result in results:
+                            results_data.append({
+                                "Vendor": result.get("vendor", "Unknown"),
+                                "Catalog ID": result.get("catalog_id", "N/A"),
+                                "Price": result.get("price", "N/A"),
+                                "Availability": result.get("availability", "Unknown"),
+                                "Link": result.get("url", ""),
+                            })
+                        
+                        df_results = pd.DataFrame(results_data)
+                        st.dataframe(df_results, use_container_width=True, hide_index=True)
+                        
+                        # Display clickable links
+                        st.markdown("---")
+                        st.subheader("Vendor Links")
+                        for result in results:
+                            vendor_name = result.get("vendor", "Unknown")
+                            url = result.get("url", "")
+                            catalog_id = result.get("catalog_id", "N/A")
+                            if url:
+                                st.markdown(f"- **{vendor_name}** ({catalog_id}): [View Product]({url})")
+                    else:
+                        st.info("No results found. Try a different search query.")
+                        
+                except Exception as e:
+                    st.error(f"Error searching vendors: {e}")
+                    st.exception(e)
 
