@@ -86,6 +86,7 @@
 - ✅ **Dashboard Themes**: Light/Dark mode support (via Streamlit config)
 - ✅ **Notifications System**: In-app alerts for job completions (toasts/status indicators)
 - ✅ **Activity Dashboard**: Recent activity feed, stats, quick actions
+- ✅ **Dashboard Widgets**: Metric cards on overview page (experiments, compounds, samples, discoveries)
 - ✅ **System Health Dashboard**: DB stats, API status, system metrics
 - ✅ **Keyboard Shortcuts**: Vim-style navigation and global hotkeys
 - ✅ **Global Search**: Unified cross-entity search ("Spotlight" style)
