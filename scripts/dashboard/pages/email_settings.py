@@ -16,12 +16,13 @@ def render_email_settings_page() -> None:
     st.markdown("Manage your email notification preferences")
     
     user = get_current_user()
-    if not user:
-        st.error("Please log in to manage email settings.")
+    if not user or user.get("id") == "test":
+        st.warning("Email settings require a logged-in user account.")
+        st.info("Currently in test/dev mode. Log in with a real account to manage email preferences.")
         return
     
     user_id = user.get("id")
-    if not user_id or user_id == "test":
+    if not user_id:
         st.error("Invalid user session.")
         return
     
