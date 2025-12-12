@@ -86,7 +86,7 @@ AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes
 DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow"]
 ANALYSIS_PAGES = ["Analysis Tools", "Chemistry", "Visualizations"]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
-ADMIN_PAGES = ["Audit Logs", "Teams & Projects", "Feedback"]
+ADMIN_PAGES = ["Audit Logs", "Teams & Projects", "Feedback", "Import Data"]
 ALL_PAGES = [
     "Overview",
     "Getting Started",
@@ -125,6 +125,7 @@ ALL_PAGES = [
     "Chemistry",
     "RAG Query",
     "Cross-Omics",
+    "Import Data",
 ]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -507,6 +508,10 @@ try:
         from scripts.dashboard.pages.cross_omics import render_cross_omics_page
 
         render_cross_omics_page()
+    elif page == "Import Data":
+        from scripts.dashboard.pages.import_data import render_import_page
+
+        render_import_page()
 except ImportError as e:
     st.error(f"❌ Error loading page: {page}")
     st.error(f"Import error: {str(e)}")
