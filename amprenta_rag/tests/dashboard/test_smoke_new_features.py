@@ -4,17 +4,17 @@ from playwright.sync_api import Page, expect
 
 
 @pytest.mark.parametrize("page_name,expected_text,expander", [
-    ("Compare", "Compare", "Other Pages"),
-    ("Timeline", "Timeline", "Other Pages"),
-    ("Data Quality", "Quality", "Other Pages"),
-    ("Workflows", "Workflow", "Admin"),
-    ("Literature Analysis", "Literature", "Analysis"),
-    ("Candidate Selection", "Candidate", "Analysis"),
-    ("Email Settings", "Email", "Other Pages"),
-    ("Data Lineage", "Lineage", "Other Pages"),
-    ("Experiments", "Experiment", "Discovery"),
-    ("Chemistry", "Chemistry", "Analysis"),
-    ("RAG Query", "RAG", "Other Pages"),
+    ("Compare", "Compare", "📚 Other Pages"),
+    ("Timeline", "Timeline", "📚 Other Pages"),
+    ("Data Quality", "Quality", "📚 Other Pages"),
+    ("Workflows", "Workflow", "⚙️ Admin"),
+    ("Literature Analysis", "Literature", "📊 Analysis"),
+    ("Candidate Selection", "Candidate", "📊 Analysis"),
+    ("Email Settings", "Email", "📚 Other Pages"),
+    ("Data Lineage", "Lineage", "📚 Other Pages"),
+    ("Experiments", "Experiment", "🔍 Discovery"),
+    ("Chemistry", "Chemistry", "📊 Analysis"),
+    ("RAG Query", "RAG", "📚 Other Pages"),
 ])
 def test_page_loads(page: Page, base_url: str, page_name: str, expected_text: str, expander: str) -> None:
     """
