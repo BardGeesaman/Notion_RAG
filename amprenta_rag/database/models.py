@@ -1278,6 +1278,28 @@ class ScheduledEvent(Base):
     created_by = relationship("User", foreign_keys=[created_by_id])
 
 
+class CostEntry(Base):
+    """Cost tracking entries for projects and experiments."""
+
+    __tablename__ = "cost_entries"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=True, index=True)
+    experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True, index=True)
+    category = Column(String(100), nullable=False, index=True)  # e.g., "equipment", "reagents", "personnel", "overhead"
+    description = Column(Text, nullable=False)
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), nullable=False, default="USD")
+    entry_date = Column(DateTime, nullable=False, index=True)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    project = relationship("Project", backref="cost_entries")
+    experiment = relationship("Experiment", backref="cost_entries")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
 # Add relationship to LabNotebookEntry after LabNotebookEntryAssociation is defined
 LabNotebookEntry.linked_entities = relationship(
     "LabNotebookEntryAssociation",
