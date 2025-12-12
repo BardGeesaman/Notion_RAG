@@ -12,7 +12,6 @@ from playwright.sync_api import Page, expect
     ("Candidate Selection", "Candidate", "📊 Analysis"),
     ("Email Settings", "Email", "📚 Other Pages"),
     ("Data Lineage", "Lineage", "📚 Other Pages"),
-    ("Experiments", "Experiment", "🔍 Discovery"),
     ("Chemistry", "Chemistry", "📊 Analysis"),
     ("RAG Query", "RAG", "📚 Other Pages"),
 ])
