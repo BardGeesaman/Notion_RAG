@@ -18,7 +18,6 @@ import numpy as np
 import pytest
 from scipy import stats
 
-pytestmark = pytest.mark.skip(reason="Tests make unmocked API calls - needs mocking")
 
 from amprenta_rag.analysis.statistical_tests import (
     adjust_pvalues,
