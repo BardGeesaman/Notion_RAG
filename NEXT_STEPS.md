@@ -337,6 +337,10 @@
 **Infrastructure**:
 - [ ] Job Queue System (Celery/Redis)
 - [ ] S3/Tiered Storage Integration
+- [ ] **Automated Backup & Disaster Recovery**:
+  - [ ] Daily Full Backups to S3
+  - [ ] Point-in-Time Recovery (WAL Archiving)
+  - [ ] User-initiated Data Export (Project zip download)
 - [ ] **System Administration**:
   - [ ] Cache Management UI (Clear Redis/Semantic caches)
   - [ ] System Health Dashboard (CPU/Memory/Queue depth)

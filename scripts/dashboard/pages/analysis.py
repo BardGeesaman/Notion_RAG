@@ -24,6 +24,11 @@ from amprenta_rag.analysis.confounder_detection import (
     detect_confounders,
     get_confounder_report,
 )
+from amprenta_rag.analysis.design_engine import (
+    recommend_design,
+    get_design_requirements,
+    validate_design,
+)
 from amprenta_rag.database.models import Dataset, Program, Signature
 from scripts.dashboard.db_session import db_session
 
@@ -41,7 +46,7 @@ def render_analysis_page() -> None:
     st.markdown("Perform pathway enrichment, program signature mapping, and signature scoring.")
 
     # Tab selection
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Pathway Enrichment", "Program Signature Maps", "Signature Scoring", "Power Analysis", "Cross-Dataset Patterns", "Confounder Check"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Pathway Enrichment", "Program Signature Maps", "Signature Scoring", "Power Analysis", "Cross-Dataset Patterns", "Confounder Check", "Design Assistant"])
 
     # Tab 1: Pathway Enrichment
     with tab1:
@@ -775,3 +780,91 @@ def render_analysis_page() -> None:
                 st.exception(e)
         else:
             st.info("Upload a CSV file with sample metadata to begin confounder detection.")
+
+    # Tab 7: Design Assistant
+    with tab7:
+        st.subheader("Experimental Design Assistant")
+        st.markdown("Get AI-powered recommendations for your experimental design based on your research question.")
+        
+        research_question = st.text_area(
+            "Research Question",
+            height=100,
+            placeholder="e.g., Does treatment X reduce disease severity compared to placebo?",
+            help="Describe what you want to investigate",
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            sample_count = st.number_input(
+                "Available Samples",
+                min_value=1,
+                value=20,
+                help="Total number of samples you have or plan to collect",
+            )
+        
+        with col2:
+            variables_input = st.text_input(
+                "Variables/Factors",
+                placeholder="e.g., treatment, age, gender",
+                help="Comma-separated list of variables or factors",
+            )
+        
+        if st.button("Get Recommendations", type="primary"):
+            if not research_question:
+                st.error("Please enter a research question")
+            else:
+                with st.spinner("Analyzing research question and generating recommendations..."):
+                    try:
+                        # Parse variables
+                        variables = [v.strip() for v in variables_input.split(",")] if variables_input else []
+                        
+                        # Get recommendation
+                        recommendation = recommend_design(
+                            research_question=research_question,
+                            sample_count=sample_count,
+                            variables=variables,
+                        )
+                        
+                        design_type = recommendation.get("design_type", "observational")
+                        
+                        # Display recommendation
+                        st.markdown("### Recommended Design")
+                        st.success(f"**Design Type:** {design_type.replace('_', ' ').title()}")
+                        
+                        st.markdown("**Rationale:**")
+                        st.write(recommendation.get("rationale", "No rationale provided"))
+                        
+                        # Get requirements
+                        requirements = get_design_requirements(design_type)
+                        
+                        st.markdown("### Design Requirements")
+                        st.info(f"**Description:** {requirements['description']}")
+                        
+                        st.markdown("**Minimum Requirements:**")
+                        for req in requirements["requirements"]:
+                            st.markdown(f"- {req}")
+                        
+                        st.metric("Minimum Samples", requirements["min_samples"])
+                        st.metric("Minimum Groups", requirements["min_groups"])
+                        
+                        # Validate design
+                        estimated_groups = len(variables) + 1 if variables else 2  # Rough estimate
+                        warnings = validate_design(design_type, sample_count, estimated_groups)
+                        
+                        if warnings:
+                            st.markdown("### ⚠️ Design Validation Warnings")
+                            for warning in warnings:
+                                st.warning(warning)
+                        else:
+                            st.success("✓ Design meets minimum requirements")
+                        
+                        # Show considerations
+                        considerations = recommendation.get("considerations", [])
+                        if considerations:
+                            st.markdown("### Additional Considerations")
+                            for consideration in considerations:
+                                st.markdown(f"- {consideration}")
+                    
+                    except Exception as e:
+                        st.error(f"❌ Error generating recommendations: {str(e)}")
+                        st.exception(e)
