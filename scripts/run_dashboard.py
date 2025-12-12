@@ -150,6 +150,7 @@ ALL_PAGES = [
     "Literature Analysis",
     "Candidate Selection",
     "Email Settings",
+    "Data Lineage",
 ]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -789,6 +790,10 @@ try:
         from scripts.dashboard.pages.email_settings import render_email_settings_page
 
         render_email_settings_page()
+    elif page == "Data Lineage":
+        from scripts.dashboard.pages.data_lineage import render_data_lineage_page
+
+        render_data_lineage_page()
 except ImportError as e:
     st.error(f"❌ Error loading page: {page}")
     st.error(f"Import error: {str(e)}")
