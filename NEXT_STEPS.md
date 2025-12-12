@@ -217,6 +217,9 @@
 ### ⚠️ Testing Gaps (Implemented but not in E2E Suite)
 - [x] **Concurrent Editing**: Optimistic locking and conflict resolution UI implemented but not tested in E2E
 
+### 🧪 Planned E2E Tests
+- [ ] **Concurrent Editing**: Verify optimistic locking and conflict resolution flow
+
 ---
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
