@@ -154,6 +154,7 @@ ALL_PAGES = [
     "Email Settings",
     "Data Lineage",
     "Feature Permissions",
+    "Schedule",
 ]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -826,6 +827,10 @@ try:
         from scripts.dashboard.pages.feature_permissions import render_feature_permissions_page
 
         render_feature_permissions_page()
+    elif page == "Schedule":
+        from scripts.dashboard.pages.schedule import render_schedule_page
+
+        render_schedule_page()
 except ImportError as e:
     st.error(f"❌ Error loading page: {page}")
     st.error(f"Import error: {str(e)}")

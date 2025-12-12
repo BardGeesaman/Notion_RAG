@@ -1257,6 +1257,27 @@ class GenericAssayResult(Base):
     created_by = relationship("User", foreign_keys=[created_by_id])
 
 
+class ScheduledEvent(Base):
+    """Scheduled events for experiments and resources."""
+
+    __tablename__ = "scheduled_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    title = Column(String(500), nullable=False)
+    event_type = Column(String(100), nullable=False, index=True)  # e.g., "experiment", "equipment", "meeting", "maintenance"
+    resource_name = Column(String(200), nullable=False, index=True)  # Equipment name, room, etc.
+    start_time = Column(DateTime, nullable=False, index=True)
+    end_time = Column(DateTime, nullable=False, index=True)
+    experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True, index=True)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    experiment = relationship("Experiment", backref="scheduled_events")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
 # Add relationship to LabNotebookEntry after LabNotebookEntryAssociation is defined
 LabNotebookEntry.linked_entities = relationship(
     "LabNotebookEntryAssociation",
