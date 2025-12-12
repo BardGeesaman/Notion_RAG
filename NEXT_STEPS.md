@@ -284,10 +284,10 @@
   - [x] Shared Calendar / Equipment Booking
   - [x] Gantt Chart view for Protocol timelines
   - [x] Personal Task Scheduler (integrates with Cockpit)
-- [ ] **Chemistry Procurement**:
-  - [ ] Vendor Catalog Search (MolPort, Mcule, Enamine)
-  - [ ] Availability & Pricing Check
-  - [ ] Shopping Cart & PO Generation
+- [x] **Chemistry Procurement**:
+  - [x] Vendor Catalog Search (MolPort, Mcule, Enamine)
+  - [x] Availability & Pricing Check
+  - [x] Shopping Cart & PO Generation
 
 **Scientific Q&A & Insight Tracker**:
 - [x] Question Registry (CRUD for scientific questions)
