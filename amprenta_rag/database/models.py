@@ -943,6 +943,23 @@ class WorkflowExecution(Base):
     rule = relationship("WorkflowRule", back_populates="executions")
 
 
+class LiteratureCritique(Base):
+    """Critical analysis of scientific literature."""
+
+    __tablename__ = "literature_critiques"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    source_type = Column(String(50), nullable=False)  # text, rag_chunk, literature
+    source_id = Column(UUID(as_uuid=True), nullable=True)  # Reference to source if applicable
+    source_text = Column(Text, nullable=False)  # Original text analyzed
+    critique_type = Column(String(50), nullable=False)  # critique, questions, contradiction
+    content = Column(JSON, nullable=False)  # The analysis result
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
 class AuditLog(Base):
     """Audit trail for user actions."""
 

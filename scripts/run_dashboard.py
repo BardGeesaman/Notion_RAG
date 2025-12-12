@@ -101,7 +101,7 @@ AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes
 
 # Page groups
 DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow"]
-ANALYSIS_PAGES = ["Analysis Tools", "Chemistry", "Visualizations"]
+ANALYSIS_PAGES = ["Analysis Tools", "Chemistry", "Visualizations", "Literature Analysis"]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = ["Audit Logs", "Teams & Projects", "Feedback", "Import Data", "Workflows"]
 ALL_PAGES = [
@@ -147,6 +147,7 @@ ALL_PAGES = [
     "Timeline",
     "Data Quality",
     "Workflows",
+    "Literature Analysis",
 ]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -774,6 +775,10 @@ try:
         from scripts.dashboard.pages.workflows import render_workflows_page
 
         render_workflows_page()
+    elif page == "Literature Analysis":
+        from scripts.dashboard.pages.literature_analysis import render_literature_analysis_page
+
+        render_literature_analysis_page()
 except ImportError as e:
     st.error(f"❌ Error loading page: {page}")
     st.error(f"Import error: {str(e)}")
