@@ -942,3 +942,208 @@ class TestOntologyManagement:
         except Exception as e:
             pytest.fail(f"Could not verify Ontology Management page loaded: {e}")
 
+
+class TestEmailSettings:
+    """Test email settings page"""
+    
+    def test_view_email_settings(self, page: Page, base_url: str):
+        """View email settings page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Email Settings
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Email Settings
+            sidebar.locator('button:has-text("Email Settings")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Email Settings: {e}")
+        
+        # Verify: page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Email Settings page: Import error - Error loading page"
+            assert rendering_error == 0, "Email Settings page: Runtime error - Error rendering page"
+            
+            # Check page loaded
+            assert page.locator("body").count() > 0, "Email Settings page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Email Settings page loaded: {e}")
+
+
+class TestDataLineage:
+    """Test data lineage page"""
+    
+    def test_view_data_lineage(self, page: Page, base_url: str):
+        """View data lineage page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Data Lineage
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Data Lineage
+            sidebar.locator('button:has-text("Data Lineage")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Data Lineage: {e}")
+        
+        # Verify: page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Data Lineage page: Import error - Error loading page"
+            assert rendering_error == 0, "Data Lineage page: Runtime error - Error rendering page"
+            
+            # Check page loaded
+            assert page.locator("body").count() > 0, "Data Lineage page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Data Lineage page loaded: {e}")
+
+
+class TestSchedule:
+    """Test schedule page"""
+    
+    def test_view_schedule(self, page: Page, base_url: str):
+        """View schedule page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Schedule
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Schedule
+            sidebar.locator('button:has-text("Schedule")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Schedule: {e}")
+        
+        # Verify: page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Schedule page: Import error - Error loading page"
+            assert rendering_error == 0, "Schedule page: Runtime error - Error rendering page"
+            
+            # Check page loaded
+            assert page.locator("body").count() > 0, "Schedule page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Schedule page loaded: {e}")
+
+
+class TestGenericAssays:
+    """Test generic assays page"""
+    
+    def test_view_generic_assays(self, page: Page, base_url: str):
+        """View generic assays page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Generic Assays
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Generic Assays
+            sidebar.locator('button:has-text("Generic Assays")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Generic Assays: {e}")
+        
+        # Verify: page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Generic Assays page: Import error - Error loading page"
+            assert rendering_error == 0, "Generic Assays page: Runtime error - Error rendering page"
+            
+            # Check page loaded
+            assert page.locator("body").count() > 0, "Generic Assays page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Generic Assays page loaded: {e}")
+
+
+class TestCompare:
+    """Test compare page"""
+    
+    def test_view_compare(self, page: Page, base_url: str):
+        """View compare page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Compare
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Compare
+            sidebar.locator('button:has-text("Compare")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Compare: {e}")
+        
+        # Verify: page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Compare page: Import error - Error loading page"
+            assert rendering_error == 0, "Compare page: Runtime error - Error rendering page"
+            
+            # Check page loaded
+            assert page.locator("body").count() > 0, "Compare page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Compare page loaded: {e}")
+
