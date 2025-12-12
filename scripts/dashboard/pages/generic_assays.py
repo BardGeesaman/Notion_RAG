@@ -41,12 +41,13 @@ def _render_browse_tab() -> None:
         
         with col2:
             # Get experiments that have assay results
-            experiments_with_results = (
-                db.query(Experiment)
-                .join(GenericAssayResult, Experiment.id == GenericAssayResult.experiment_id)
-                .distinct()
-                .all()
-            )
+            # Get distinct experiment IDs first, then fetch experiments
+            # Avoid DISTINCT on Experiment rows which have JSON columns
+            exp_ids = db.query(GenericAssayResult.experiment_id).filter(
+                GenericAssayResult.experiment_id.isnot(None)
+            ).distinct().all()
+            exp_ids = [e[0] for e in exp_ids if e[0]]
+            experiments_with_results = db.query(Experiment).filter(Experiment.id.in_(exp_ids)).all() if exp_ids else []
             experiment_options = ["All"] + [exp.name for exp in experiments_with_results]
             selected_experiment = st.selectbox("Filter by Experiment", experiment_options)
         
