@@ -130,6 +130,8 @@ def render_import_page() -> None:
                 
                 if result.get("created", 0) == 0 and not result.get("errors"):
                     st.warning("⚠️ No records were imported. Check your data and try again.")
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
     
     else:
         st.info("👆 Upload a file to begin importing data.")
