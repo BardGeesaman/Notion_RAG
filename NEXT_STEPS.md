@@ -276,10 +276,10 @@
   - [ ] Variant-based Experiment Filtering
 
 **Resource Management**:
-- [ ] **Cost Tracking & Budgeting**:
-  - [ ] Project Budget Allocation (CapEx/OpEx tracking)
-  - [ ] Experiment Cost Calculator (Reagents + Labor + Outsourcing)
-  - [ ] Purchase Request Approval Workflow
+- [x] **Cost Tracking & Budgeting**:
+  - [x] Project Budget Allocation (CapEx/OpEx tracking)
+  - [x] Experiment Cost Calculator (Reagents + Labor + Outsourcing)
+  - [x] Purchase Request Approval Workflow
 - [x] **Experiment Scheduling**:
   - [x] Shared Calendar / Equipment Booking
   - [x] Gantt Chart view for Protocol timelines
