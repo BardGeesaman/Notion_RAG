@@ -209,6 +209,10 @@
 
 **Public Repositories**:
 - [ ] Add more repository types (others)
+- [ ] **Integrate Semantic Scholar / OpenAlex**:
+  - [ ] Use Semantic Scholar API for citation graphs & AI relevance
+  - [ ] Use OpenAlex API for author/institution metadata
+  - [ ] Power "Automated Literature Analysis" with these sources
 - [x] Automated discovery workflows
 - [x] Scheduled harvesting
 - [ ] **Publication & Supplementary Data Extraction**:
