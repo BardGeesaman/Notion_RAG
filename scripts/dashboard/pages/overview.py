@@ -24,6 +24,12 @@ from amprenta_rag.utils.activity import (
     get_recent_discoveries,
     get_recent_experiments,
 )
+from amprenta_rag.utils.widgets import (
+    get_experiment_count,
+    get_compound_count,
+    get_sample_count,
+    get_discovery_count,
+)
 from scripts.dashboard.db_session import db_session
 
 
@@ -39,6 +45,23 @@ def render_overview_page() -> None:
     st.header("📊 Overview")
 
     with db_session() as db:
+        # Metrics row at top
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            exp_count = get_experiment_count(db)
+            st.metric("Experiments", exp_count, delta=None)
+        with col2:
+            comp_count = get_compound_count(db)
+            st.metric("Compounds", comp_count, delta=None)
+        with col3:
+            sample_count = get_sample_count(db)
+            st.metric("Samples", sample_count, delta=None)
+        with col4:
+            disc_count = get_discovery_count(days=7, db=db)
+            st.metric("Discoveries (7d)", disc_count, delta=None)
+        
+        st.markdown("---")
+        
         # Activity stats
         stats = get_activity_stats(db)
         
