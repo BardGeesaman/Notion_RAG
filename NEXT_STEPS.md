@@ -317,9 +317,9 @@
 - [x] In Vivo PK Studies (AUC, Cmax, Tmax, Bioavailability)
 - [x] Safety & Toxicology (hERG, Ames, Cytotoxicity)
 - [ ] **Candidate Selection Workflow**:
-  - [ ] Target Product Profile (TPP) Definition (Criteria & Thresholds)
-  - [ ] Development Candidate (DC) Nomination Checklist
-  - [ ] Traffic Light Scoring (Green/Yellow/Red vs TPP)
+  - [x] Target Product Profile (TPP) Definition (Criteria & Thresholds)
+  - [x] Development Candidate (DC) Nomination Checklist
+  - [x] Traffic Light Scoring (Green/Yellow/Red vs TPP)
 
 **Structural Biology & Virtual Screening**:
 - [ ] Protein Structure Visualization (Mol* / PyMOL integration)
