@@ -361,7 +361,7 @@
 
 **Experimental Design Assistant**:
 - [ ] Power Analysis for sample size estimation
-- [ ] Design recommendation engine
+- [x] Design recommendation engine
 - [x] Confounding variable detection
 
 **Advanced Analytics**:
