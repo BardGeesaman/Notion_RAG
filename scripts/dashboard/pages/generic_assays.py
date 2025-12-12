@@ -122,9 +122,9 @@ def _render_browse_tab() -> None:
                 st.subheader("Result Data")
                 st.json(result.result_data)
                 
-                if result.metadata:
+                if result.assay_metadata:
                     st.subheader("Metadata")
-                    st.json(result.metadata)
+                    st.json(result.assay_metadata)
         else:
             st.info("No results found. Add a new result using the 'Add Result' tab.")
 
@@ -203,7 +203,7 @@ def _render_add_tab() -> None:
                     try:
                         # Parse JSON
                         result_data = json.loads(result_data_text)
-                        metadata = json.loads(metadata_text) if metadata_text.strip() else None
+                        assay_metadata = json.loads(metadata_text) if metadata_text.strip() else None
                         
                         # Create result
                         result = GenericAssayResult(
@@ -212,7 +212,7 @@ def _render_add_tab() -> None:
                             experiment_id=experiment_id,
                             compound_id=compound_id,
                             result_data=result_data,
-                            metadata=metadata,
+                            assay_metadata=assay_metadata,
                             created_by_id=user_id,
                         )
                         

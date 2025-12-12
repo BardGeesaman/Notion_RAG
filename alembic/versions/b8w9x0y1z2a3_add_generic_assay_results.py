@@ -23,7 +23,7 @@ def upgrade():
         sa.Column('experiment_id', UUID(as_uuid=True), sa.ForeignKey('experiments.id'), nullable=True),
         sa.Column('compound_id', UUID(as_uuid=True), sa.ForeignKey('compounds.id'), nullable=True),
         sa.Column('result_data', JSON(), nullable=False),
-        sa.Column('metadata', JSON(), nullable=True),
+        sa.Column('assay_metadata', JSON(), nullable=True),
         sa.Column('created_by_id', UUID(as_uuid=True), sa.ForeignKey('users.id'), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )

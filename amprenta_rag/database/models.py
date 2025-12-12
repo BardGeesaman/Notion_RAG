@@ -1247,7 +1247,7 @@ class GenericAssayResult(Base):
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True, index=True)
     compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=True, index=True)
     result_data = Column(JSON, nullable=False)  # Flexible JSON structure for any assay data
-    metadata = Column(JSON, nullable=True)  # Additional metadata (conditions, units, etc.)
+    assay_metadata = Column(JSON, nullable=True)  # Additional metadata (conditions, units, etc.)
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
