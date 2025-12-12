@@ -3,23 +3,20 @@ import pytest
 from playwright.sync_api import Page, expect
 
 
-@pytest.mark.parametrize("page_name,expected_text", [
-    # Original pages
-    ("Compare", "Compare"),
-    ("Timeline", "Timeline"),
-    ("Data Quality", "Quality"),
-    # New standalone pages
-    ("Workflows", "Workflow"),
-    ("Literature Analysis", "Literature"),
-    ("Candidate Selection", "Candidate"),
-    ("Email Settings", "Email"),
-    ("Data Lineage", "Lineage"),
-    # Existing pages with new features (just verify loads)
-    ("Experiments", "Experiment"),
-    ("Chemistry", "Chemistry"),
-    ("RAG Query", "RAG"),
+@pytest.mark.parametrize("page_name,expected_text,expander", [
+    ("Compare", "Compare", "Other Pages"),
+    ("Timeline", "Timeline", "Other Pages"),
+    ("Data Quality", "Quality", "Other Pages"),
+    ("Workflows", "Workflow", "Admin"),
+    ("Literature Analysis", "Literature", "Analysis"),
+    ("Candidate Selection", "Candidate", "Analysis"),
+    ("Email Settings", "Email", "Other Pages"),
+    ("Data Lineage", "Lineage", "Other Pages"),
+    ("Experiments", "Experiment", "Discovery"),
+    ("Chemistry", "Chemistry", "Analysis"),
+    ("RAG Query", "RAG", "Other Pages"),
 ])
-def test_page_loads(page: Page, base_url: str, page_name: str, expected_text: str) -> None:
+def test_page_loads(page: Page, base_url: str, page_name: str, expected_text: str, expander: str) -> None:
     """
     Test that new feature pages load correctly.
     
@@ -28,31 +25,21 @@ def test_page_loads(page: Page, base_url: str, page_name: str, expected_text: st
         base_url: Base URL fixture from pytest-base-url
         page_name: Name of the page to navigate to
         expected_text: Expected text on the page (heading or key text)
+        expander: Name of the expander that contains this page
     """
     # Navigate to dashboard
     page.goto(base_url)
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(3000)  # Wait for Streamlit to fully load
     
-    # Expand all expanders to ensure page buttons are visible
-    # Pages can be in different expanders: Discovery, Analysis, ELN, Admin, Other Pages
-    expanders = [
-        "Discovery",
-        "Analysis",
-        "ELN",
-        "Admin",
-        "Other Pages",
-    ]
-    
-    for expander_name in expanders:
-        try:
-            expander = page.locator(f"text={expander_name}").first
-            if expander.is_visible():
-                expander.click()
-                page.wait_for_timeout(300)  # Wait for expander to open
-        except Exception:
-            # Expander might not exist or already be open, continue
-            pass
+    # Click the correct expander to reveal the page button
+    try:
+        expander_element = page.locator(f"text={expander}").first
+        if expander_element.is_visible():
+            expander_element.click()
+            page.wait_for_timeout(500)  # Wait for expander to open
+    except Exception as e:
+        pytest.fail(f"Could not find or click expander '{expander}': {e}")
     
     # Click the page button
     try:
