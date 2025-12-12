@@ -147,6 +147,7 @@ ALL_PAGES = [
     "Compare",
     "Timeline",
     "Data Quality",
+    "Generic Assays",
     "Workflows",
     "Literature Analysis",
     "Candidate Selection",
@@ -777,6 +778,10 @@ try:
         from scripts.dashboard.pages.rag_query import render_rag_query_page
 
         render_rag_query_page()
+    elif page == "Generic Assays":
+        from scripts.dashboard.pages.generic_assays import render_generic_assays_page
+
+        render_generic_assays_page()
     elif page == "Cross-Omics":
         from scripts.dashboard.pages.cross_omics import render_cross_omics_page
 

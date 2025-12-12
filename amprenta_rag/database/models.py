@@ -1236,6 +1236,27 @@ class Comment(Base):
     created_by = relationship("User", foreign_keys=[created_by_id])
 
 
+class GenericAssayResult(Base):
+    """Generic assay result that can be linked to experiments or compounds."""
+
+    __tablename__ = "generic_assay_results"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    assay_name = Column(String(200), nullable=False, index=True)
+    assay_type = Column(String(100), nullable=False, index=True)  # e.g., "biochemical", "cellular", "in_vivo", "custom"
+    experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True, index=True)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=True, index=True)
+    result_data = Column(JSON, nullable=False)  # Flexible JSON structure for any assay data
+    metadata = Column(JSON, nullable=True)  # Additional metadata (conditions, units, etc.)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    experiment = relationship("Experiment", backref="generic_assay_results")
+    compound = relationship("Compound", backref="generic_assay_results")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
 # Add relationship to LabNotebookEntry after LabNotebookEntryAssociation is defined
 LabNotebookEntry.linked_entities = relationship(
     "LabNotebookEntryAssociation",
