@@ -22,6 +22,10 @@ def render_evidence_report_page():
         else:
             options = [(s.id, s.name) for s in db.query(Signature).all()]
     
+    if not options:
+        st.warning("No entities found. Please create some data first.")
+        return
+    
     selected_id = st.selectbox("Select Entity", options, format_func=lambda x: x[1])
     if st.button("Generate Report"):
         if entity_type == "Program":

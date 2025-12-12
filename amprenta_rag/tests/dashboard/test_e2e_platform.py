@@ -1599,3 +1599,616 @@ class TestDataRetention:
         except Exception as e:
             pytest.fail(f"Could not verify Data Retention page loaded: {e}")
 
+
+class TestGettingStarted:
+    """Test getting started page"""
+    
+    def test_view_getting_started(self, page: Page, base_url: str):
+        """View getting started page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Getting Started
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Getting Started")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Getting Started: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Getting Started page: Import error - Error loading page"
+            assert rendering_error == 0, "Getting Started page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Getting Started page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Getting Started page loaded: {e}")
+
+
+class TestEvaluationWizard:
+    """Test evaluation wizard page"""
+    
+    def test_view_evaluation_wizard(self, page: Page, base_url: str):
+        """View evaluation wizard page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Evaluation Wizard
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Evaluation Wizard")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Evaluation Wizard: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Evaluation Wizard page: Import error - Error loading page"
+            assert rendering_error == 0, "Evaluation Wizard page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Evaluation Wizard page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Evaluation Wizard page loaded: {e}")
+
+
+class TestLabNotebook:
+    """Test lab notebook page"""
+    
+    def test_view_lab_notebook(self, page: Page, base_url: str):
+        """View lab notebook page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Lab Notebook
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Lab Notebook")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Lab Notebook: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Lab Notebook page: Import error - Error loading page"
+            assert rendering_error == 0, "Lab Notebook page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Lab Notebook page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Lab Notebook page loaded: {e}")
+
+
+class TestDataIngestion:
+    """Test data ingestion page"""
+    
+    def test_view_data_ingestion(self, page: Page, base_url: str):
+        """View data ingestion page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Data Ingestion
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Data Ingestion")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Data Ingestion: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Data Ingestion page: Import error - Error loading page"
+            assert rendering_error == 0, "Data Ingestion page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Data Ingestion page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Data Ingestion page loaded: {e}")
+
+
+class TestRepositories:
+    """Test repositories page"""
+    
+    def test_view_repositories(self, page: Page, base_url: str):
+        """View repositories page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Repositories
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Repositories")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Repositories: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Repositories page: Import error - Error loading page"
+            assert rendering_error == 0, "Repositories page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Repositories page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Repositories page loaded: {e}")
+
+
+class TestQualityChecks:
+    """Test quality checks page"""
+    
+    def test_view_quality_checks(self, page: Page, base_url: str):
+        """View quality checks page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Quality Checks
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Quality Checks")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Quality Checks: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Quality Checks page: Import error - Error loading page"
+            assert rendering_error == 0, "Quality Checks page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Quality Checks page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Quality Checks page loaded: {e}")
+
+
+class TestDiscoveryPage:
+    """Test discovery page (different from Discovery Workflow)"""
+    
+    def test_view_discovery(self, page: Page, base_url: str):
+        """View discovery page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Discovery
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Use selector that excludes "Discovery Workflow"
+            sidebar.locator('button:has-text("Discovery"):not(:has-text("Workflow"))').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Discovery: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Discovery page: Import error - Error loading page"
+            assert rendering_error == 0, "Discovery page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Discovery page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Discovery page loaded: {e}")
+
+
+class TestCoverageMap:
+    """Test coverage map page"""
+    
+    def test_view_coverage_map(self, page: Page, base_url: str):
+        """View coverage map page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Coverage Map
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Coverage Map")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Coverage Map: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Coverage Map page: Import error - Error loading page"
+            assert rendering_error == 0, "Coverage Map page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Coverage Map page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Coverage Map page loaded: {e}")
+
+
+class TestFeatureRecurrence:
+    """Test feature recurrence page"""
+    
+    def test_view_feature_recurrence(self, page: Page, base_url: str):
+        """View feature recurrence page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Feature Recurrence
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Feature Recurrence")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Feature Recurrence: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Feature Recurrence page: Import error - Error loading page"
+            assert rendering_error == 0, "Feature Recurrence page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Feature Recurrence page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Feature Recurrence page loaded: {e}")
+
+
+class TestEvidenceReport:
+    """Test evidence report page"""
+    
+    def test_view_evidence_report(self, page: Page, base_url: str):
+        """View evidence report page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Evidence Report
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Evidence Report")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Evidence Report: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Evidence Report page: Import error - Error loading page"
+            assert rendering_error == 0, "Evidence Report page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Evidence Report page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Evidence Report page loaded: {e}")
+
+
+class TestDataManagement:
+    """Test data management page"""
+    
+    def test_view_data_management(self, page: Page, base_url: str):
+        """View data management page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Data Management
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Data Management")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Data Management: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Data Management page: Import error - Error loading page"
+            assert rendering_error == 0, "Data Management page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Data Management page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Data Management page loaded: {e}")
+
+
+class TestRelationships:
+    """Test relationships page"""
+    
+    def test_view_relationships(self, page: Page, base_url: str):
+        """View relationships page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Relationships
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Relationships")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Relationships: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Relationships page: Import error - Error loading page"
+            assert rendering_error == 0, "Relationships page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Relationships page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Relationships page loaded: {e}")
+
+
+class TestPrograms:
+    """Test programs page"""
+    
+    def test_view_programs(self, page: Page, base_url: str):
+        """View programs page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Programs
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Programs")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Programs: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Programs page: Import error - Error loading page"
+            assert rendering_error == 0, "Programs page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Programs page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Programs page loaded: {e}")
+
+
+class TestFeatures:
+    """Test features page"""
+    
+    def test_view_features(self, page: Page, base_url: str):
+        """View features page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Features
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Features")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Features: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Features page: Import error - Error loading page"
+            assert rendering_error == 0, "Features page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Features page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Features page loaded: {e}")
+
+
+class TestLiterature:
+    """Test literature page"""
+    
+    def test_view_literature(self, page: Page, base_url: str):
+        """View literature page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Literature
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Literature")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Literature: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Literature page: Import error - Error loading page"
+            assert rendering_error == 0, "Literature page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Literature page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Literature page loaded: {e}")
+
+
+class TestEmails:
+    """Test emails page"""
+    
+    def test_view_emails(self, page: Page, base_url: str):
+        """View emails page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Emails
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Emails")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Emails: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Emails page: Import error - Error loading page"
+            assert rendering_error == 0, "Emails page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Emails page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Emails page loaded: {e}")
+
+
+class TestRAGChunks:
+    """Test RAG chunks page"""
+    
+    def test_view_rag_chunks(self, page: Page, base_url: str):
+        """View RAG chunks page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > RAG Chunks
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("RAG Chunks")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to RAG Chunks: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "RAG Chunks page: Import error - Error loading page"
+            assert rendering_error == 0, "RAG Chunks page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "RAG Chunks page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify RAG Chunks page loaded: {e}")
+
+
+class TestTimeline:
+    """Test timeline page"""
+    
+    def test_view_timeline(self, page: Page, base_url: str):
+        """View timeline page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Timeline
+        try:
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            sidebar.locator('button:has-text("Timeline")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Timeline: {e}")
+        
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Timeline page: Import error - Error loading page"
+            assert rendering_error == 0, "Timeline page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Timeline page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Timeline page loaded: {e}")
+
