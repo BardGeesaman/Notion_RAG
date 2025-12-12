@@ -214,6 +214,11 @@
   - Sample Inventory
 - ✅ **Integration Verified**: Database, Pinecone, and LLM synthesis all working in concert
 
+### ⚠️ Testing Gaps (Implemented but not in E2E Suite)
+- [ ] **Multi-Company Support**: Data segregation and Company Admin roles not tested in E2E
+- [ ] **Concurrent Editing**: Optimistic locking and conflict resolution UI not tested in E2E
+- [ ] **Scientific Q&A Export**: PDF export flow not verified in E2E (browser download)
+
 ---
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
