@@ -357,7 +357,7 @@
 
 ### 6. Operational Maturity & Governance
 **Data Governance**:
-- [ ] Data Lineage Visualization (Provenance graph)
+- [x] Data Lineage Visualization (Provenance graph)
 - [ ] Retention & Archival Policies
 - [ ] Internal Ontology Management
 - [ ] **Concurrent Editing Safety**:
