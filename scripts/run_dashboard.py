@@ -88,6 +88,7 @@ from amprenta_rag.notifications.service import (
     mark_as_read,
     mark_all_read,
 )
+from amprenta_rag.utils.global_search import global_search
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # Page groups
@@ -330,6 +331,58 @@ def update_recent_pages(page_name: str) -> None:
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
+
+# Global search
+search_query = st.sidebar.text_input("🔍 Search...", key="global_search", placeholder="Search experiments, compounds, datasets...")
+if search_query:
+    with st.sidebar.expander("🔍 Search Results", expanded=True):
+        try:
+            db_gen = get_db()
+            db = next(db_gen)
+            try:
+                results = global_search(search_query, db, limit=5)
+                
+                # Display results grouped by type
+                if results["experiments"]:
+                    st.markdown("**Experiments**")
+                    for exp in results["experiments"]:
+                        if st.button(f"🔬 {exp['name']}", key=f"search_exp_{exp['id']}", use_container_width=True):
+                            st.session_state["selected_page"] = "Experiments"
+                            st.session_state["selected_experiment_id"] = exp["id"]
+                            st.rerun()
+                
+                if results["compounds"]:
+                    st.markdown("**Compounds**")
+                    for comp in results["compounds"]:
+                        if st.button(f"⚗️ {comp['compound_id']}", key=f"search_comp_{comp['id']}", use_container_width=True):
+                            st.session_state["selected_page"] = "Chemistry"
+                            st.session_state["selected_compound_id"] = comp["id"]
+                            st.rerun()
+                
+                if results["signatures"]:
+                    st.markdown("**Signatures**")
+                    for sig in results["signatures"]:
+                        if st.button(f"📊 {sig['name']}", key=f"search_sig_{sig['id']}", use_container_width=True):
+                            st.session_state["selected_page"] = "Signatures"
+                            st.session_state["selected_signature_id"] = sig["id"]
+                            st.rerun()
+                
+                if results["datasets"]:
+                    st.markdown("**Datasets**")
+                    for ds in results["datasets"]:
+                        if st.button(f"📁 {ds['name']}", key=f"search_ds_{ds['id']}", use_container_width=True):
+                            st.session_state["selected_page"] = "Datasets"
+                            st.session_state["selected_dataset_id"] = ds["id"]
+                            st.rerun()
+                
+                if not any([results["experiments"], results["compounds"], results["signatures"], results["datasets"]]):
+                    st.info("No results found")
+            finally:
+                db_gen.close()
+        except Exception as e:
+            st.error(f"Search error: {e}")
+
+st.sidebar.divider()
 page = None
 
 # Favorites section
