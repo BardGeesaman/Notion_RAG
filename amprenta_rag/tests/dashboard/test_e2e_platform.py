@@ -1147,3 +1147,303 @@ class TestCompare:
         except Exception as e:
             pytest.fail(f"Could not verify Compare page loaded: {e}")
 
+
+class TestOverview:
+    """Test overview page"""
+    
+    def test_view_overview(self, page: Page, base_url: str):
+        """View overview page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 🔍 Discovery (expanded default, no expander click) > Overview
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Click Overview (Discovery is expanded by default)
+            sidebar.locator('button:has-text("Overview")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Overview: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Overview page: Import error - Error loading page"
+            assert rendering_error == 0, "Overview page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Overview page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Overview page loaded: {e}")
+
+
+class TestChat:
+    """Test chat page"""
+    
+    def test_view_chat(self, page: Page, base_url: str):
+        """View chat page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Chat
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Chat
+            sidebar.locator('button:has-text("Chat")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Chat: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Chat page: Import error - Error loading page"
+            assert rendering_error == 0, "Chat page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Chat page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Chat page loaded: {e}")
+
+
+class TestSearch:
+    """Test search page"""
+    
+    def test_view_search(self, page: Page, base_url: str):
+        """View search page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Search
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Search
+            sidebar.locator('button:has-text("Search")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Search: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Search page: Import error - Error loading page"
+            assert rendering_error == 0, "Search page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Search page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Search page loaded: {e}")
+
+
+class TestCrossOmics:
+    """Test cross-omics page"""
+    
+    def test_view_cross_omics(self, page: Page, base_url: str):
+        """View cross-omics page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Cross-Omics
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Cross-Omics
+            sidebar.locator('button:has-text("Cross-Omics")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Cross-Omics: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Cross-Omics page: Import error - Error loading page"
+            assert rendering_error == 0, "Cross-Omics page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Cross-Omics page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Cross-Omics page loaded: {e}")
+
+
+class TestSystemHealth:
+    """Test system health page"""
+    
+    def test_view_system_health(self, page: Page, base_url: str):
+        """View system health page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > System Health
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click System Health
+            sidebar.locator('button:has-text("System Health")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to System Health: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "System Health page: Import error - Error loading page"
+            assert rendering_error == 0, "System Health page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "System Health page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify System Health page loaded: {e}")
+
+
+class TestQATracker:
+    """Test Q&A tracker page"""
+    
+    def test_view_qa_tracker(self, page: Page, base_url: str):
+        """View Q&A tracker page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📋 ELN expander > Q&A Tracker
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand ELN section
+            page.locator("text=📋 ELN").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Q&A Tracker
+            sidebar.locator('button:has-text("Q&A Tracker")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Q&A Tracker: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Q&A Tracker page: Import error - Error loading page"
+            assert rendering_error == 0, "Q&A Tracker page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Q&A Tracker page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Q&A Tracker page loaded: {e}")
+
+
+class TestAnalysisTools:
+    """Test analysis tools page"""
+    
+    def test_view_analysis_tools(self, page: Page, base_url: str):
+        """View analysis tools page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📊 Analysis expander > Analysis Tools
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Analysis section
+            page.locator("text=📊 Analysis").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Analysis Tools
+            sidebar.locator('button:has-text("Analysis Tools")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Analysis Tools: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Analysis Tools page: Import error - Error loading page"
+            assert rendering_error == 0, "Analysis Tools page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Analysis Tools page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Analysis Tools page loaded: {e}")
+
+
+class TestCandidateSelection:
+    """Test candidate selection page"""
+    
+    def test_view_candidate_selection(self, page: Page, base_url: str):
+        """View candidate selection page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📊 Analysis expander > Candidate Selection
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Analysis section
+            page.locator("text=📊 Analysis").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Candidate Selection
+            sidebar.locator('button:has-text("Candidate Selection")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Candidate Selection: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Candidate Selection page: Import error - Error loading page"
+            assert rendering_error == 0, "Candidate Selection page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Candidate Selection page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Candidate Selection page loaded: {e}")
+

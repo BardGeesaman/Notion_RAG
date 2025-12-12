@@ -210,6 +210,13 @@
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
 
+### 🚨 HIGHEST PRIORITY
+- [ ] **Jupyter Notebook Integration**:
+  - [ ] **Data Visualization & Editing**: Launch notebook from any dataset for custom analysis
+  - [ ] **Two-way Sync**: Push changes from notebook back to platform
+  - [ ] **Embedded Environment**: Integrated JupyterLite or Kernel Gateway
+  - [ ] **Analysis Templates**: Pre-configured notebooks for common workflows (e.g., RNA-seq QC, Hit calling)
+
 ### 1. Integration Enhancements
 
 **Public Repositories**:
