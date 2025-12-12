@@ -2235,12 +2235,12 @@ class TestConcurrentEditing:
         except Exception as e:
             pytest.fail(f"Could not navigate to Experiments: {e}")
         
-        # Click Edit Experiment tab
+        # Click Edit Design tab
         try:
-            page.get_by_role("tab", name="Edit Experiment").click()
+            page.get_by_role("tab", name="Edit Design").click()
             page.wait_for_timeout(2000)
         except Exception as e:
-            pytest.fail(f"Could not find Edit Experiment tab: {e}")
+            pytest.fail(f"Could not find Edit Design tab: {e}")
         
         # Verify edit form elements exist (version tracking is internal)
         try:
