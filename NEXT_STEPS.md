@@ -347,9 +347,9 @@
   - [ ] Hybrid Prompting (Allow general knowledge as fallback)
   - [ ] Source-weighted Generation
 - [ ] **Multi-Model Intelligence**:
-  - [ ] Model Selection UI (GPT-4o, Claude 3.5, Gemini 1.5)
-  - [ ] Parallel Reasoning (Run multiple models -> Synthesize)
-  - [ ] Chain-of-Thought (CoT) Prompting options
+  - [x] Model Selection UI (GPT-4o, Claude 3.5, Gemini 1.5)
+  - [x] Parallel Reasoning (Run multiple models -> Synthesize)
+  - [x] Chain-of-Thought (CoT) Prompting options
 
 ### 6. Operational Maturity & Governance
 **Data Governance**:
