@@ -363,7 +363,7 @@
 **Data Governance**:
 - [x] Data Lineage Visualization (Provenance graph)
 - [x] Retention & Archival Policies
-- [ ] Internal Ontology Management
+- [x] Internal Ontology Management
 - [x] **Concurrent Editing Safety**:
   - [x] Optimistic Locking (Versioning/ETags for all models)
   - [x] Conflict Resolution UI ("Your changes conflict with...")
