@@ -670,9 +670,9 @@ try:
 
         render_management_page()
     elif page == "System Health":
-        from scripts.dashboard.pages.health import render_health_page
+        from scripts.dashboard.pages.system_health import render_system_health_page
 
-        render_health_page()
+        render_system_health_page()
     elif page == "Audit Logs":
         from scripts.dashboard.pages.audit_logs import render_audit_logs_page
 
