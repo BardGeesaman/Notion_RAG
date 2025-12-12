@@ -18,6 +18,7 @@ from amprenta_rag.ingestion.design_integration import (
 from amprenta_rag.ingestion.repositories import fetch_study_metadata
 from amprenta_rag.utils.data_export import export_experiments
 from amprenta_rag.utils.saved_filters import save_filter, get_user_filters, delete_filter
+from amprenta_rag.analysis.study_critique import assess_study_quality
 from scripts.dashboard.db_session import db_session
 
 
@@ -382,13 +383,98 @@ def render_experiments_page() -> None:
     """Render the Experiments page with search, summary, and design editing."""
     st.header("🔬 Experiments")
 
-    tabs = st.tabs(["Browse Experiments", "Edit Design", "Templates"])
+    tabs = st.tabs(["Browse Experiments", "Edit Design", "Templates", "Study Quality"])
     with tabs[0]:
         _render_browse_tab()
     with tabs[1]:
         _render_edit_tab()
     with tabs[2]:
         _render_templates_tab()
+    with tabs[3]:
+        _render_study_quality_tab()
+
+
+def _render_study_quality_tab() -> None:
+    """Render the Study Quality tab."""
+    st.subheader("Study Quality Assessment")
+    st.markdown("Automated quality assessment for experiments.")
+    
+    with db_session() as db:
+        experiments = db.query(Experiment).order_by(Experiment.created_at.desc()).limit(100).all()
+        
+        if not experiments:
+            st.info("No experiments available for assessment.")
+            return
+        
+        exp_options = {exp.name: exp.id for exp in experiments}
+        selected_name = st.selectbox("Select Experiment", list(exp_options.keys()))
+        
+        if st.button("🔍 Run Quality Assessment", type="primary"):
+            exp_id = exp_options[selected_name]
+            with st.spinner("Assessing study quality..."):
+                result = assess_study_quality(exp_id, db)
+                st.session_state["quality_assessment"] = result
+                st.session_state["assessed_experiment_id"] = str(exp_id)
+                st.rerun()
+        
+        if st.session_state.get("quality_assessment") and st.session_state.get("assessed_experiment_id") == str(exp_options.get(selected_name)):
+            result = st.session_state["quality_assessment"]
+            quality_score = result.get("quality_score", 0)
+            
+            # Quality Score with color
+            if quality_score >= 80:
+                delta_color = "normal"
+                st.metric("Quality Score", f"{quality_score}/100", delta=None, delta_color=delta_color)
+                st.success("✅ High Quality")
+            elif quality_score >= 50:
+                delta_color = "off"
+                st.metric("Quality Score", f"{quality_score}/100", delta=None, delta_color=delta_color)
+                st.warning("⚠️ Moderate Quality")
+            else:
+                delta_color = "inverse"
+                st.metric("Quality Score", f"{quality_score}/100", delta=None, delta_color=delta_color)
+                st.error("❌ Low Quality")
+            
+            st.markdown("---")
+            
+            # Overall Summary
+            st.markdown(f"### Summary")
+            st.info(result.get("summary", "No summary available"))
+            
+            st.markdown("---")
+            
+            # Design Flaws
+            issues = result.get("issues", [])
+            design_flaws = [i for i in issues if "flaw" in i]
+            data_gaps = [i for i in issues if i.get("flaw") in ["Missing organism field", "Missing description", "No linked datasets"]]
+            
+            if design_flaws:
+                st.markdown("### ⚠️ Design Flaws")
+                flaw_data = []
+                for flaw in design_flaws:
+                    severity_emoji = {
+                        "high": "🔴",
+                        "medium": "🟡",
+                        "low": "🟢"
+                    }.get(flaw.get("severity", "medium"), "⚪")
+                    
+                    flaw_data.append({
+                        "Severity": f"{severity_emoji} {flaw.get('severity', 'medium').upper()}",
+                        "Issue": flaw.get("flaw", ""),
+                        "Suggestion": flaw.get("suggestion", ""),
+                    })
+                
+                df_flaws = pd.DataFrame(flaw_data)
+                st.dataframe(df_flaws, use_container_width=True, hide_index=True)
+            
+            # Data Gaps
+            if data_gaps:
+                st.markdown("### 📋 Data Gaps")
+                for gap in data_gaps:
+                    st.markdown(f"- {gap.get('flaw', '')}")
+            
+            if not design_flaws and not data_gaps:
+                st.success("✅ No issues detected! Study quality is good.")
 
 
 __all__ = ["render_experiments_page"]
