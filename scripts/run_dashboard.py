@@ -143,6 +143,7 @@ ALL_PAGES = [
     "RAG Query",
     "Cross-Omics",
     "Import Data",
+    "Compare",
 ]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -745,6 +746,10 @@ try:
         from scripts.dashboard.pages.import_data import render_import_page
 
         render_import_page()
+    elif page == "Compare":
+        from scripts.dashboard.pages.compare import render_compare_page
+
+        render_compare_page()
 except ImportError as e:
     st.error(f"❌ Error loading page: {page}")
     st.error(f"Import error: {str(e)}")
