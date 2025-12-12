@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from amprenta_rag.query.semantic_cache import get_semantic_cache
 
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.utils.rate_limit import get_rate_limiter, RateLimitError
 from amprenta_rag.query.bm25_search import bm25_search, reciprocal_rank_fusion
 from amprenta_rag.query.pinecone_query import build_meta_filter, query_pinecone
 from amprenta_rag.query.rag.chunk_collection import collect_chunks
@@ -49,6 +50,7 @@ def query_rag(
     check_hallucination: bool = False,
     evaluate: bool = False,
     use_agent: bool = False,
+    user_id: Optional[str] = None,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -78,6 +80,22 @@ def query_rag(
     Returns:
         RAGQueryResult with matches, filtered matches, context chunks, and answer
     """
+    # Rate limiting check (30 queries per minute)
+    if user_id:
+        rate_limiter = get_rate_limiter()
+        if not rate_limiter.check_rate_limit(user_id, "query_rag", limit=30, window_seconds=60):
+            remaining = rate_limiter.get_remaining(user_id, "query_rag", limit=30, window_seconds=60)
+            error_msg = f"Rate limit exceeded. Please wait before making another query. ({remaining} requests remaining)"
+            logger.warning("[RAG] Rate limit exceeded for user %s", user_id)
+            return RAGQueryResult(
+                query=user_query,
+                answer=f"Error: {error_msg}",
+                matches=[],
+                filtered_matches=[],
+                context_chunks=[],
+                citations=[],
+            )
+    
     # Check semantic cache
     if use_cache and generate_answer:
         cache = get_semantic_cache()
