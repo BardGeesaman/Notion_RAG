@@ -51,6 +51,7 @@ def query_rag(
     evaluate: bool = False,
     use_agent: bool = False,
     user_id: Optional[str] = None,
+    model: str = "gpt-4o",
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -311,7 +312,7 @@ def query_rag(
         )
 
     metadata_list = [m.metadata for m in filtered]
-    answer, citations = synthesize_answer_with_citations(user_query, chunks, metadata_list)
+    answer, citations = synthesize_answer_with_citations(user_query, chunks, metadata_list, model=model)
 
     # Check for hallucinations if enabled
     if check_hallucination and answer:

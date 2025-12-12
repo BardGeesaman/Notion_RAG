@@ -11,23 +11,25 @@ from typing import List, Tuple, Optional, Dict, Any
 from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.rag.models import Citation
+from amprenta_rag.llm.model_registry import get_model_client, AVAILABLE_MODELS
 
 logger = get_logger(__name__)
 
 
-def synthesize_answer(user_query: str, chunks: List[str]) -> str:
+def synthesize_answer(user_query: str, chunks: List[str], model: str = "gpt-4o") -> str:
     """
     Use OpenAI to synthesize an answer given the query + context chunks.
 
     Args:
         user_query: User's query text
         chunks: List of context chunk texts from Notion
+        model: Model name to use (default: "gpt-4o")
 
     Returns:
         Synthesized answer string from OpenAI
     """
-    client = get_openai_client()
-    chat_model, _ = get_default_models()
+    client = get_model_client(model)
+    actual_model_name = AVAILABLE_MODELS[model]["name"]
 
     context = "\n\n---\n\n".join(chunks[:8])  # cap context for now
 
@@ -43,7 +45,7 @@ def synthesize_answer(user_query: str, chunks: List[str]) -> str:
 
     try:
         resp = client.chat.completions.create(
-            model=chat_model,
+            model=actual_model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
@@ -81,6 +83,7 @@ def synthesize_answer_with_citations(
     user_query: str,
     chunks: List[str],
     metadata_list: List[Dict[str, Any]],
+    model: str = "gpt-4o",
 ) -> Tuple[str, List[Citation]]:
     """Generate answer with inline citations."""
     context, citations = build_citation_context(chunks, metadata_list)
@@ -93,11 +96,10 @@ def synthesize_answer_with_citations(
         "Answer (cite sources with [1], [2], etc.):"
     )
 
-    from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
-    client = get_openai_client()
-    chat_model, _ = get_default_models()
+    client = get_model_client(model)
+    actual_model_name = AVAILABLE_MODELS[model]["name"]
     response = client.chat.completions.create(
-        model=chat_model,
+        model=actual_model_name,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2,
     )
