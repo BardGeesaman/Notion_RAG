@@ -2096,7 +2096,7 @@ class TestLiterature:
             page.locator("text=📚 Other Pages").first.click()
             page.wait_for_timeout(1000)
             
-            sidebar.locator('button:has-text("Literature")').click()
+            sidebar.get_by_role("button", name="Literature", exact=True).click()
             page.wait_for_timeout(2000)
         except Exception as e:
             pytest.fail(f"Could not navigate to Literature: {e}")
