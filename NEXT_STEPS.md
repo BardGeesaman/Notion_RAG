@@ -81,6 +81,7 @@
 **Implemented Features**:
 - ✅ **UX Polish**: Error Messages (`errors.py`), Progress Indicators (tqdm), Batch Summaries, Configuration Validation (`config_check.py`)
 - ✅ **PDF Export**: Report generation (`pdf_export.py`), Dashboard/CLI integration
+- ✅ **Data Export Suite**: CSV/JSON/Excel export for all entity types
 - ✅ **Visualization**: Viz helpers (`viz_helpers.py`), Pathway Network Visualization (force-directed)
 - ✅ **Additional Visualizations**: Program-Signature heatmap, Dataset Similarity dendrogram, Pathway Enrichment bars, Cross-Omics Convergence
 - ✅ **Performance Utilities**: Parallel processing helpers (`parallel_map`, `chunked_parallel`)
