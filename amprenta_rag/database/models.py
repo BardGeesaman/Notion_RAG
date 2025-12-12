@@ -153,6 +153,10 @@ class Experiment(Base):
     # Version for concurrent editing safety
     version = Column(Integer, default=1, nullable=False)
 
+    # Archive fields for data retention
+    is_archived = Column(Boolean, default=False, nullable=False)
+    archived_at = Column(DateTime, nullable=True)
+
     # Relationships
     programs = relationship("Program", secondary=program_experiment_assoc, back_populates="experiments")
     datasets = relationship("Dataset", secondary=experiment_dataset_assoc, back_populates="experiments")
@@ -229,6 +233,10 @@ class Dataset(Base):
 
     # Version for concurrent editing safety
     version = Column(Integer, default=1, nullable=False)
+
+    # Archive fields for data retention
+    is_archived = Column(Boolean, default=False, nullable=False)
+    archived_at = Column(DateTime, nullable=True)
 
     # Ingestion status
     ingestion_status = Column(
@@ -1276,6 +1284,20 @@ class ScheduledEvent(Base):
     # Relationships
     experiment = relationship("Experiment", backref="scheduled_events")
     created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class RetentionPolicy(Base):
+    """Data retention policies for entities."""
+
+    __tablename__ = "retention_policies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(200), nullable=False)
+    entity_type = Column(String(50), nullable=False, index=True)  # "experiment", "dataset", "compound", etc.
+    retention_days = Column(Integer, nullable=False)  # Number of days to retain before action
+    action = Column(String(50), nullable=False)  # "archive", "delete", "notify"
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class CostEntry(Base):
