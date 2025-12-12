@@ -350,10 +350,10 @@
 **Advanced Capabilities**:
 - [x] Semantic Caching
 - [x] Agentic RAG (multi-step reasoning)
-- [ ] **Hierarchical RAG Reasoning**:
-  - [ ] Data Trust Scoring (Validated Internal > External > General)
-  - [ ] Hybrid Prompting (Allow general knowledge as fallback)
-  - [ ] Source-weighted Generation
+- [x] **Hierarchical RAG Reasoning**:
+  - [x] Data Trust Scoring (Validated Internal > External > General)
+  - [x] Hybrid Prompting (Allow general knowledge as fallback)
+  - [x] Source-weighted Generation
 - [ ] **Multi-Model Intelligence**:
   - [x] Model Selection UI (GPT-4o, Claude 3.5, Gemini 1.5)
   - [x] Parallel Reasoning (Run multiple models -> Synthesize)
