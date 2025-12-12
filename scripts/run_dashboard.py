@@ -74,7 +74,14 @@ sys.path.insert(0, str(project_root))
 
 import streamlit as st
 from uuid import UUID
-from amprenta_rag.auth.session import get_current_user, clear_session, is_authenticated
+from amprenta_rag.auth.session import (
+    get_current_user,
+    clear_session,
+    is_authenticated,
+    update_last_activity,
+    check_session_timeout,
+    get_session_remaining,
+)
 from amprenta_rag.auth.audit import log_logout
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import UserFavorite, Experiment, Compound, Signature
@@ -149,12 +156,30 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Update last activity timestamp
+if is_authenticated():
+    update_last_activity()
+
 # Authentication check
 if not AUTH_DISABLED and not is_authenticated():
     from scripts.dashboard.pages.auth.login import render_login_page
 
     render_login_page()
     st.stop()
+
+# Check session timeout
+if not AUTH_DISABLED and is_authenticated():
+    if check_session_timeout(timeout_minutes=30):
+        clear_session()
+        st.warning("⏱️ Your session has expired. Please log in again.")
+        from scripts.dashboard.pages.auth.login import render_login_page
+        render_login_page()
+        st.stop()
+    else:
+        # Show warning if less than 5 minutes remaining
+        remaining = get_session_remaining(timeout_minutes=30)
+        if 0 < remaining < 5:
+            st.warning(f"⏱️ Your session will expire in {remaining} minute{'s' if remaining != 1 else ''}. Please save your work.")
 
 # Mock user when auth disabled (e.g., testing)
 if AUTH_DISABLED and not is_authenticated():
