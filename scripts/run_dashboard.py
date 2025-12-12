@@ -79,6 +79,7 @@ from amprenta_rag.auth.audit import log_logout
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import UserFavorite
 from scripts.dashboard.help_content import get_help, search_help
+from scripts.dashboard.help_chat import render_help_chat
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # Page groups
@@ -348,6 +349,10 @@ with st.sidebar.expander("❓ Help", expanded=False):
                 st.markdown("**Tips:**")
                 for tip in current_help['tips']:
                     st.markdown(f"• {tip}")
+
+# Help chat assistant
+with st.sidebar.expander("🤖 Ask Assistant", expanded=False):
+    render_help_chat()
 
 # Update recent pages
 update_recent_pages(page)
