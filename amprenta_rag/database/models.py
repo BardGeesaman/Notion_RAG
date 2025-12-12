@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text, func
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, TSVECTOR
 from sqlalchemy.orm import relationship
 
@@ -859,6 +859,22 @@ class EmailSubscription(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", backref="email_subscriptions")
+
+
+class FeaturePermission(Base):
+    """Feature visibility permissions by role."""
+
+    __tablename__ = "feature_permissions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    role = Column(String(50), nullable=False)  # admin, researcher, viewer
+    page_name = Column(String(100), nullable=False)  # page identifier
+    is_visible = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("role", "page_name", name="uq_feature_permissions_role_page"),
+    )
 
 
 class Bookmark(Base):

@@ -222,6 +222,10 @@
 
 **Security & Collaboration**:
 - [x] Team-based data access
+- [ ] **Multi-Company Support (Multi-Tenancy)**:
+  - [ ] Company Model & Super Admin Role
+  - [ ] Data Segregation (Row-level Security / Separate Schemas)
+  - [ ] Company-specific Settings & Branding
 - [ ] **Feature Visibility Controls**:
   - [ ] Admin UI to toggle features per user/role
   - [ ] Role-based UI customization (e.g., Hide "Chemistry" for Biologists)

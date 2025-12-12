@@ -83,6 +83,7 @@ from amprenta_rag.auth.session import (
     get_session_remaining,
 )
 from amprenta_rag.auth.audit import log_logout
+from amprenta_rag.auth.feature_permissions import get_visible_pages
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import UserFavorite, Experiment, Compound, Signature
 from scripts.dashboard.help_content import get_help, search_help
@@ -211,6 +212,16 @@ st.markdown("**Data Dashboard** - Browse and explore your multi-omics data")
 
 # Sidebar navigation
 user = get_current_user()
+
+# Get visible pages for user's role
+user_role = user.get("role", "viewer") if user else "viewer"
+try:
+    db_gen = get_db()
+    db = next(db_gen)
+    visible_pages = get_visible_pages(user_role, db)
+    db_gen.close()
+except Exception:
+    visible_pages = ALL_PAGES  # Fallback to all if error
 
 # Initialize theme
 if "theme" not in st.session_state:
@@ -527,33 +538,42 @@ render_command_palette()
 if page is None:
     page = st.session_state.get("selected_page", "Overview")
     
-    with st.sidebar.expander("🔍 Discovery", expanded=True):
-        for p in DISCOVERY_PAGES:
-            if st.button(p, key=f"btn_{p}", use_container_width=True):
-                page = p
-                st.session_state["selected_page"] = p
-                update_recent_pages(p)
-                st.rerun()
+    # Filter page groups by visible pages
+    filtered_discovery_pages = [p for p in DISCOVERY_PAGES if p in visible_pages]
+    filtered_analysis_pages = [p for p in ANALYSIS_PAGES if p in visible_pages]
+    filtered_eln_pages = [p for p in ELN_PAGES if p in visible_pages]
+    filtered_admin_pages = [p for p in ADMIN_PAGES if p in visible_pages]
     
-    with st.sidebar.expander("📊 Analysis", expanded=False):
-        for p in ANALYSIS_PAGES:
-            if st.button(p, key=f"btn_{p}", use_container_width=True):
-                page = p
-                st.session_state["selected_page"] = p
-                update_recent_pages(p)
-                st.rerun()
+    if filtered_discovery_pages:
+        with st.sidebar.expander("🔍 Discovery", expanded=True):
+            for p in filtered_discovery_pages:
+                if st.button(p, key=f"btn_{p}", use_container_width=True):
+                    page = p
+                    st.session_state["selected_page"] = p
+                    update_recent_pages(p)
+                    st.rerun()
     
-    with st.sidebar.expander("📋 ELN", expanded=False):
-        for p in ELN_PAGES:
-            if st.button(p, key=f"btn_{p}", use_container_width=True):
-                page = p
-                st.session_state["selected_page"] = p
-                update_recent_pages(p)
-                st.rerun()
+    if filtered_analysis_pages:
+        with st.sidebar.expander("📊 Analysis", expanded=False):
+            for p in filtered_analysis_pages:
+                if st.button(p, key=f"btn_{p}", use_container_width=True):
+                    page = p
+                    st.session_state["selected_page"] = p
+                    update_recent_pages(p)
+                    st.rerun()
     
-    if user and user.get("role") == "admin":
+    if filtered_eln_pages:
+        with st.sidebar.expander("📋 ELN", expanded=False):
+            for p in filtered_eln_pages:
+                if st.button(p, key=f"btn_{p}", use_container_width=True):
+                    page = p
+                    st.session_state["selected_page"] = p
+                    update_recent_pages(p)
+                    st.rerun()
+    
+    if user and user.get("role") == "admin" and filtered_admin_pages:
         with st.sidebar.expander("⚙️ Admin", expanded=False):
-            for p in ADMIN_PAGES:
+            for p in filtered_admin_pages:
                 if st.button(p, key=f"btn_{p}", use_container_width=True):
                     page = p
                     st.session_state["selected_page"] = p
@@ -562,13 +582,15 @@ if page is None:
     
     # Other pages
     other_pages = [p for p in ALL_PAGES if p not in DISCOVERY_PAGES + ANALYSIS_PAGES + ELN_PAGES + ADMIN_PAGES]
-    with st.sidebar.expander("📚 Other Pages", expanded=False):
-        for p in other_pages:
-            if st.button(p, key=f"btn_{p}", use_container_width=True):
-                page = p
-                st.session_state["selected_page"] = p
-                update_recent_pages(p)
-                st.rerun()
+    filtered_other_pages = [p for p in other_pages if p in visible_pages]
+    if filtered_other_pages:
+        with st.sidebar.expander("📚 Other Pages", expanded=False):
+            for p in filtered_other_pages:
+                if st.button(p, key=f"btn_{p}", use_container_width=True):
+                    page = p
+                    st.session_state["selected_page"] = p
+                    update_recent_pages(p)
+                    st.rerun()
 
 # Get final page selection from session state
 page = st.session_state.get("selected_page", "Overview")
