@@ -364,10 +364,10 @@
 - [x] Data Lineage Visualization (Provenance graph)
 - [ ] Retention & Archival Policies
 - [ ] Internal Ontology Management
-- [ ] **Concurrent Editing Safety**:
-  - [ ] Optimistic Locking (Versioning/ETags for all models)
-  - [ ] Conflict Resolution UI ("Your changes conflict with...")
-  - [ ] Real-time Presence (Who is viewing this page?)
+- [x] **Concurrent Editing Safety**:
+  - [x] Optimistic Locking (Versioning/ETags for all models)
+  - [x] Conflict Resolution UI ("Your changes conflict with...")
+  - [x] Real-time Presence (Who is viewing this page?) - partial, conflict detection only
 
 **Infrastructure**:
 - [ ] Job Queue System (Celery/Redis)
