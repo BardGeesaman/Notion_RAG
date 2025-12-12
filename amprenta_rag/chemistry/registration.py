@@ -89,7 +89,16 @@ def register_compound(
         
         db.add(compound)
         db.commit()
+        db.refresh(compound)
         logger.info("[CHEMISTRY][REG] Registered %s", corporate_id)
+        
+        # Fire workflow trigger
+        from amprenta_rag.automation.engine import fire_trigger
+        fire_trigger("compound_registered", {
+            "compound_id": str(compound.id),
+            "smiles": compound.smiles
+        }, db)
+        
         return corporate_id
     finally:
         db_gen.close()

@@ -359,6 +359,14 @@ def _render_templates_tab() -> None:
                             
                             db.add(experiment)
                             db.commit()
+                            db.refresh(experiment)
+                            
+                            # Fire workflow trigger
+                            from amprenta_rag.automation.engine import fire_trigger
+                            fire_trigger("experiment_created", {
+                                "experiment_id": str(experiment.id),
+                                "name": experiment.name
+                            }, db)
                             
                             st.success(f"Experiment '{name}' created successfully!")
                             st.session_state.pop("template_data", None)
