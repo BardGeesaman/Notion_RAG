@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from amprenta_rag.database.models import Dataset
+from amprenta_rag.export.slide_generator import generate_dataset_slides
 from scripts.dashboard.db_session import db_session
 
 
@@ -158,6 +159,20 @@ def render_datasets_page() -> None:
 
                     if dataset.disease:
                         st.write(f"**Disease:** {', '.join(dataset.disease)}")
+
+                    # Export as PowerPoint button
+                    try:
+                        pptx_data = generate_dataset_slides(dataset.id, db)
+                        dataset_name_safe = (dataset.name or "dataset").replace(" ", "_").replace("/", "_")[:50]
+                        st.download_button(
+                            label="📊 Export as PowerPoint",
+                            data=pptx_data,
+                            file_name=f"{dataset_name_safe}.pptx",
+                            mime_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            key=f"export_pptx_{dataset.id}",
+                        )
+                    except Exception as e:
+                        st.error(f"Failed to generate PowerPoint: {e}")
 
                     # Related entities (Postgres relationships - access while session is open)
                     if dataset.programs:

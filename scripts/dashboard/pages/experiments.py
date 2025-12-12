@@ -20,6 +20,7 @@ from amprenta_rag.utils.data_export import export_experiments
 from amprenta_rag.utils.saved_filters import save_filter, get_user_filters, delete_filter
 from amprenta_rag.analysis.study_critique import assess_study_quality
 from amprenta_rag.notifications.email_service import send_share_notification, is_email_configured
+from amprenta_rag.export.slide_generator import generate_experiment_slides
 from scripts.dashboard.db_session import db_session
 
 
@@ -146,6 +147,20 @@ def _render_browse_tab() -> None:
                     dataset_count = len(experiment.datasets)
                     if dataset_count > 0:
                         st.write(f"**Related Datasets:** {dataset_count}")
+                    
+                    # Export as PowerPoint button
+                    try:
+                        pptx_data = generate_experiment_slides(experiment.id, db)
+                        experiment_name_safe = (experiment.name or "experiment").replace(" ", "_").replace("/", "_")[:50]
+                        st.download_button(
+                            label="📊 Export as PowerPoint",
+                            data=pptx_data,
+                            file_name=f"{experiment_name_safe}.pptx",
+                            mime_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            key=f"export_pptx_{experiment.id}",
+                        )
+                    except Exception as e:
+                        st.error(f"Failed to generate PowerPoint: {e}")
                     
                     # Share via Email section
                     if is_email_configured():
