@@ -509,6 +509,15 @@ if st.session_state.get("show_shortcuts", False):
         st.session_state.pop("show_shortcuts", None)
         st.rerun()
 
+# Command palette
+from scripts.dashboard.components.command_palette import render_command_palette
+
+render_command_palette()
+
+# Command palette
+from scripts.dashboard.components.command_palette import render_command_palette
+render_command_palette()
+
 # Page groups
 if page is None:
     page = st.session_state.get("selected_page", "Overview")

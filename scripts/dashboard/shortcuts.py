@@ -6,6 +6,7 @@ import streamlit.components.v1 as components
 
 SHORTCUTS = {
     "?": "Show keyboard shortcuts help",
+    "ctrl+k": "Open command palette",
     "g+h": "Go to Home/Overview",
     "g+e": "Go to Experiments",
     "g+c": "Go to Chemistry",
@@ -64,6 +65,16 @@ def inject_shortcuts_js() -> None:
                 window.parent.postMessage({
                     type: 'streamlit:setComponentValue',
                     value: {action: 'show_shortcuts'}
+                }, '*');
+                return;
+            }
+            
+            // Ctrl+K for command palette
+            if ((key === 'k' || key === 'K') && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                window.parent.postMessage({
+                    type: 'streamlit:setComponentValue',
+                    value: {action: 'toggle_palette'}
                 }, '*');
                 return;
             }
