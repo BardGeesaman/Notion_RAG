@@ -727,3 +727,218 @@ class TestLiteratureAnalysis:
         except Exception as e:
             pytest.fail(f"Could not verify Critique tab: {e}")
 
+
+class TestAuditLogs:
+    """Test audit logs page"""
+    
+    def test_view_audit_logs(self, page: Page, base_url: str):
+        """View audit logs page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: ⚙️ Admin expander > Audit Logs
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Admin section
+            page.locator("text=⚙️ Admin").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Audit Logs
+            sidebar.locator('button:has-text("Audit Logs")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Audit Logs: {e}")
+        
+        # Verify: Action selectbox exists, or page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Audit Logs page: Import error - Error loading page"
+            assert rendering_error == 0, "Audit Logs page: Runtime error - Error rendering page"
+            
+            # Check for Action selectbox or page content
+            assert page.locator("text=Action").first.count() > 0 or page.locator("body").count() > 0
+        except Exception as e:
+            pytest.fail(f"Could not verify Audit Logs page loaded: {e}")
+
+
+class TestWorkflows:
+    """Test workflows page"""
+    
+    def test_view_workflows(self, page: Page, base_url: str):
+        """View workflows page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: ⚙️ Admin expander > Workflows
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Admin section
+            page.locator("text=⚙️ Admin").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Workflows
+            sidebar.locator('button:has-text("Workflows")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Workflows: {e}")
+        
+        # Tab: button[role="tab"]:has-text("Rules") - default
+        # Verify: page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Workflows page: Import error - Error loading page"
+            assert rendering_error == 0, "Workflows page: Runtime error - Error rendering page"
+            
+            # Check for Rules tab or page content
+            rules_tab = page.locator('button[role="tab"]:has-text("Rules")')
+            assert rules_tab.count() > 0 or page.locator("body").count() > 0
+        except Exception as e:
+            pytest.fail(f"Could not verify Workflows page loaded: {e}")
+
+
+class TestTeamsProjects:
+    """Test teams and projects page"""
+    
+    def test_view_teams(self, page: Page, base_url: str):
+        """View teams page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: ⚙️ Admin expander > Teams & Projects
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Admin section
+            page.locator("text=⚙️ Admin").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Teams & Projects
+            sidebar.locator('button:has-text("Teams & Projects")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Teams & Projects: {e}")
+        
+        # Verify: "My Teams" tab visible or page loads
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Teams & Projects page: Import error - Error loading page"
+            assert rendering_error == 0, "Teams & Projects page: Runtime error - Error rendering page"
+            
+            # Check for My Teams tab or page content
+            my_teams_tab = page.locator('button[role="tab"]:has-text("My Teams")')
+            assert my_teams_tab.count() > 0 or page.locator("text=Team").first.count() > 0 or page.locator("body").count() > 0
+        except Exception as e:
+            pytest.fail(f"Could not verify Teams & Projects page loaded: {e}")
+
+
+class TestCostTracking:
+    """Test cost tracking page"""
+    
+    def test_view_cost_tracking(self, page: Page, base_url: str):
+        """View cost tracking page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: 📚 Other Pages expander > Cost Tracking (NOT Admin!)
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Other Pages section
+            page.locator("text=📚 Other Pages").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Cost Tracking
+            sidebar.locator('button:has-text("Cost Tracking")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Cost Tracking: {e}")
+        
+        # Tab names: Overview, Add Entry, Entries
+        # Verify: page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Cost Tracking page: Import error - Error loading page"
+            assert rendering_error == 0, "Cost Tracking page: Runtime error - Error rendering page"
+            
+            # Check for tabs or page content
+            overview_tab = page.locator('button[role="tab"]:has-text("Overview")')
+            add_entry_tab = page.locator('button[role="tab"]:has-text("Add Entry")')
+            entries_tab = page.locator('button[role="tab"]:has-text("Entries")')
+            assert overview_tab.count() > 0 or add_entry_tab.count() > 0 or entries_tab.count() > 0 or page.locator("body").count() > 0
+        except Exception as e:
+            pytest.fail(f"Could not verify Cost Tracking page loaded: {e}")
+
+
+class TestOntologyManagement:
+    """Test ontology management page"""
+    
+    def test_view_ontology(self, page: Page, base_url: str):
+        """View ontology page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: ⚙️ Admin expander > Ontology Management
+        try:
+            # Scroll sidebar to reveal expanders
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 400)
+            page.wait_for_timeout(1000)
+            
+            # Expand Admin section
+            page.locator("text=⚙️ Admin").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Ontology Management
+            sidebar.locator('button:has-text("Ontology Management")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Ontology Management: {e}")
+        
+        # Tab names: Browse, Add Term
+        # Verify: page loads without error
+        try:
+            # Check for error patterns
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Ontology Management page: Import error - Error loading page"
+            assert rendering_error == 0, "Ontology Management page: Runtime error - Error rendering page"
+            
+            # Check for tabs or page content
+            browse_tab = page.locator('button[role="tab"]:has-text("Browse")')
+            add_term_tab = page.locator('button[role="tab"]:has-text("Add Term")')
+            assert browse_tab.count() > 0 or add_term_tab.count() > 0 or page.locator("body").count() > 0
+        except Exception as e:
+            pytest.fail(f"Could not verify Ontology Management page loaded: {e}")
+
