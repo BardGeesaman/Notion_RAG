@@ -402,6 +402,12 @@
   - [x] Real-time Presence (Who is viewing this page?) - partial, conflict detection only
 
 **Infrastructure**:
+- [ ] **AWS Cloud Deployment**:
+  - [ ] **Container Orchestration**: Deploy Streamlit/FastAPI on ECS (Fargate) or EKS
+  - [ ] **Database**: Migrate local Postgres to RDS (Aurora PostgreSQL)
+  - [ ] **Caching**: Migrate local Redis to ElastiCache
+  - [ ] **Infrastructure as Code (IaC)**: Terraform/Pulumi scripts for reproducibility
+  - [ ] **CI/CD Pipeline**: GitHub Actions -> AWS ECR -> ECS deploy
 - [ ] **Bioinformatics Pipeline Orchestrator**:
   - [ ] **Nextflow / Snakemake Integration**: Run reproducible pipelines
   - [ ] Job submission and status monitoring UI

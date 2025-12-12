@@ -44,12 +44,12 @@ def render_coverage_page():
             view = view[view["disease"] == filter_dis]
         pivot = view.pivot_table(index="program", columns="omics", aggfunc="size", fill_value=0)
         if not abs_toggle:
-            pivot = pivot.applymap(lambda x: 1 if x > 0 else 0)
+            pivot = pivot.map(lambda x: 1 if x > 0 else 0)
         st.subheader("Program × Omics")
         st.dataframe(pivot, width='stretch')
         st.subheader("Disease × Omics")
         pivot2 = view.pivot_table(index="disease", columns="omics", aggfunc="size", fill_value=0)
         if not abs_toggle:
-            pivot2 = pivot2.applymap(lambda x: 1 if x > 0 else 0)
+            pivot2 = pivot2.map(lambda x: 1 if x > 0 else 0)
         st.dataframe(pivot2, width='stretch')
         st.caption("Status is now explicit (pending, in_progress, complete, failed)")

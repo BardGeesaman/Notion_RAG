@@ -59,7 +59,7 @@ def render_data_quality_page() -> None:
                     return "background-color: #fff4cc"
                 return ""
             
-            styled_df = df.style.applymap(color_severity, subset=["Severity"])
+            styled_df = df.style.map(color_severity, subset=["Severity"])
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
             
             # Download option

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from amprenta_rag.database.models import Literature
@@ -55,7 +56,7 @@ def render_literature_page() -> None:
             query = query.filter(
                 (Literature.title.ilike(f"%{search_term}%"))
                 | (Literature.doi.ilike(f"%{search_term}%"))
-                | (Literature.authors.any(lambda x: search_term.lower() in x.lower() if x else False))
+                | (func.array_to_string(Literature.authors, ' ').ilike(f"%{search_term}%"))
             )
 
         literature_items = query.order_by(Literature.created_at.desc()).limit(100).all()

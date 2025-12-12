@@ -1,6 +1,5 @@
 import streamlit as st
 
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Dataset, Program, Signature
 from amprenta_rag.reporting.evidence_report import (
     generate_dataset_report,
@@ -8,18 +7,21 @@ from amprenta_rag.reporting.evidence_report import (
     generate_signature_report,
 )
 from amprenta_rag.reporting.pdf_export import export_evidence_report_to_pdf
+from scripts.dashboard.db_session import db_session
 
 
 def render_evidence_report_page():
     st.header("Evidence Report Viewer")
     entity_type = st.selectbox("Select Entity Type", ["Program", "Dataset", "Signature"])
-    db = next(get_db())
-    if entity_type == "Program":
-        options = [(p.id, p.name) for p in db.query(Program).all()]
-    elif entity_type == "Dataset":
-        options = [(d.id, d.name) for d in db.query(Dataset).all()]
-    else:
-        options = [(s.id, s.name) for s in db.query(Signature).all()]
+    
+    with db_session() as db:
+        if entity_type == "Program":
+            options = [(p.id, p.name) for p in db.query(Program).all()]
+        elif entity_type == "Dataset":
+            options = [(d.id, d.name) for d in db.query(Dataset).all()]
+        else:
+            options = [(s.id, s.name) for s in db.query(Signature).all()]
+    
     selected_id = st.selectbox("Select Entity", options, format_func=lambda x: x[1])
     if st.button("Generate Report"):
         if entity_type == "Program":

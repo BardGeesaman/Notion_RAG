@@ -1447,3 +1447,155 @@ class TestCandidateSelection:
         except Exception as e:
             pytest.fail(f"Could not verify Candidate Selection page loaded: {e}")
 
+
+class TestImportData:
+    """Test import data page"""
+    
+    def test_view_import_data(self, page: Page, base_url: str):
+        """View import data page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: ⚙️ Admin expander > Import Data
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Admin section
+            page.locator("text=⚙️ Admin").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Import Data
+            sidebar.locator('button:has-text("Import Data")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Import Data: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Import Data page: Import error - Error loading page"
+            assert rendering_error == 0, "Import Data page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Import Data page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Import Data page loaded: {e}")
+
+
+class TestFeedback:
+    """Test feedback page"""
+    
+    def test_view_feedback(self, page: Page, base_url: str):
+        """View feedback page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: ⚙️ Admin expander > Feedback
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Admin section
+            page.locator("text=⚙️ Admin").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Feedback
+            sidebar.locator('button:has-text("Feedback")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Feedback: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Feedback page: Import error - Error loading page"
+            assert rendering_error == 0, "Feedback page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Feedback page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Feedback page loaded: {e}")
+
+
+class TestFeaturePermissions:
+    """Test feature permissions page"""
+    
+    def test_view_feature_permissions(self, page: Page, base_url: str):
+        """View feature permissions page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: ⚙️ Admin expander > Feature Permissions
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Admin section
+            page.locator("text=⚙️ Admin").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Feature Permissions
+            sidebar.locator('button:has-text("Feature Permissions")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Feature Permissions: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Feature Permissions page: Import error - Error loading page"
+            assert rendering_error == 0, "Feature Permissions page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Feature Permissions page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Feature Permissions page loaded: {e}")
+
+
+class TestDataRetention:
+    """Test data retention page"""
+    
+    def test_view_data_retention(self, page: Page, base_url: str):
+        """View data retention page"""
+        page.goto(base_url)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(3000)
+        
+        # Navigate: ⚙️ Admin expander > Data Retention
+        try:
+            # Sidebar setup
+            sidebar = page.locator('[data-testid="stSidebar"]').first
+            sidebar.hover()
+            page.mouse.wheel(0, 600)
+            page.wait_for_timeout(2000)
+            
+            # Expand Admin section
+            page.locator("text=⚙️ Admin").first.click()
+            page.wait_for_timeout(1000)
+            
+            # Click Data Retention
+            sidebar.locator('button:has-text("Data Retention")').click()
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            pytest.fail(f"Could not navigate to Data Retention: {e}")
+        
+        # Verify page loads without error
+        try:
+            loading_error = page.locator("text=Error loading page").count()
+            rendering_error = page.locator("text=Error rendering page").count()
+            assert loading_error == 0, "Data Retention page: Import error - Error loading page"
+            assert rendering_error == 0, "Data Retention page: Runtime error - Error rendering page"
+            assert page.locator("body").count() > 0, "Data Retention page did not load"
+        except Exception as e:
+            pytest.fail(f"Could not verify Data Retention page loaded: {e}")
+
