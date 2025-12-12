@@ -30,6 +30,9 @@ def render_rag_query_page() -> None:
     # Parallel mode checkbox
     use_parallel = st.checkbox("Use Multiple Models", value=False, help="Query multiple models in parallel and synthesize responses")
     
+    selected_model_names = []  # Initialize for parallel mode
+    selected_model_name = default_model  # Initialize for single mode
+    
     if use_parallel:
         selected_models = st.multiselect(
             "Select models to use",
@@ -63,6 +66,13 @@ def render_rag_query_page() -> None:
             "Filter by source type (optional)",
             ["All", "Literature", "Email", "Dataset", "Experiment"],
         )
+    
+    # Trust scoring option
+    use_trust = st.checkbox(
+        "Apply Trust Scoring",
+        value=False,
+        help="Weight results by source reliability (internal > external > general)"
+    )
 
     # Query button
     if st.button("🔍 Search", type="primary"):
@@ -84,6 +94,7 @@ def render_rag_query_page() -> None:
                                 top_k=top_k,
                                 source_types=[source_type_filter] if source_type_filter != "All" else None,
                                 model=default_model,
+                                use_trust_scoring=use_trust,
                             )
                             
                             # Then run parallel reasoning on the question
@@ -92,6 +103,26 @@ def render_rag_query_page() -> None:
                             # Display RAG matches
                             if rag_result and rag_result.matches:
                                 st.success(f"Found {len(rag_result.matches)} RAG results")
+                                
+                                # Display trust summary if trust scoring enabled
+                                if use_trust and rag_result.trust_summary:
+                                    st.subheader("📊 Source Trust Analysis")
+                                    col1, col2 = st.columns(2)
+                                    with col1:
+                                        avg_trust = rag_result.trust_summary.get("average_trust", 0.0)
+                                        st.metric("Average Trust", f"{avg_trust:.0%}")
+                                    with col2:
+                                        high_trust_count = rag_result.trust_summary.get("high_trust_count", 0)
+                                        st.metric("High Trust Sources", high_trust_count)
+                                    
+                                    # Show trust level breakdown
+                                    st.write("**Trust Level Distribution:**")
+                                    levels = rag_result.trust_summary.get("levels", {})
+                                    for level, count in levels.items():
+                                        if count > 0:
+                                            level_label = level.replace("_", " ").title()
+                                            st.write(f"  - {level_label}: {count}")
+                                    st.markdown("---")
                                 
                                 # Display individual model responses
                                 st.subheader("🤖 Individual Model Responses")
@@ -123,18 +154,35 @@ def render_rag_query_page() -> None:
                                 # Display matches
                                 st.subheader("Matches")
                                 for i, match in enumerate(rag_result.matches, 1):
-                                    with st.expander(f"**Result {i}** - Score: {match.score:.3f}"):
+                                    # Get trust score if available
+                                    metadata = match.metadata or {}
+                                    trust_score = metadata.get("trust_score")
+                                    if trust_score is not None:
+                                        if trust_score >= 0.7:
+                                            trust_badge = "🟢 High"
+                                        elif trust_score >= 0.4:
+                                            trust_badge = "🟡 Medium"
+                                        else:
+                                            trust_badge = "🔴 Low"
+                                        score_display = f"**Result {i}** - Score: {match.score:.3f} {trust_badge}"
+                                    else:
+                                        score_display = f"**Result {i}** - Score: {match.score:.3f}"
+                                    
+                                    with st.expander(score_display):
                                         # Metadata
-                                        metadata = match.metadata or {}
-
                                         col1, col2 = st.columns(2)
                                         with col1:
                                             if metadata.get("source"):
-                                                st.write(f"**Source:** {metadata['source']}")
+                                                source_text = f"**Source:** {metadata['source']}"
+                                                if trust_badge and trust_score is not None:
+                                                    source_text += f" {trust_badge}"
+                                                st.write(source_text)
                                             if metadata.get("source_type"):
                                                 st.write(f"**Source Type:** {metadata['source_type']}")
                                             if metadata.get("title"):
                                                 st.write(f"**Title:** {metadata['title']}")
+                                            if trust_score is not None:
+                                                st.caption(f"Trust Score: {trust_score:.0%}")
                                         with col2:
                                             if metadata.get("chunk_id"):
                                                 st.write(f"**Chunk ID:** `{metadata['chunk_id']}`")
@@ -177,10 +225,31 @@ def render_rag_query_page() -> None:
                             top_k=top_k,
                             source_types=[source_type_filter] if source_type_filter != "All" else None,
                             model=selected_model_name,
+                            use_trust_scoring=use_trust,
                         )
 
                         if result and result.matches:
                             st.success(f"Found {len(result.matches)} results")
+
+                            # Display trust summary if trust scoring enabled
+                            if use_trust and result.trust_summary:
+                                st.subheader("📊 Source Trust Analysis")
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    avg_trust = result.trust_summary.get("average_trust", 0.0)
+                                    st.metric("Average Trust", f"{avg_trust:.0%}")
+                                with col2:
+                                    high_trust_count = result.trust_summary.get("high_trust_count", 0)
+                                    st.metric("High Trust Sources", high_trust_count)
+                                
+                                # Show trust level breakdown
+                                st.write("**Trust Level Distribution:**")
+                                levels = result.trust_summary.get("levels", {})
+                                for level, count in levels.items():
+                                    if count > 0:
+                                        level_label = level.replace("_", " ").title()
+                                        st.write(f"  - {level_label}: {count}")
+                                st.markdown("---")
 
                             # Display answer if available
                             if result.answer:
@@ -191,18 +260,35 @@ def render_rag_query_page() -> None:
                             # Display matches
                             st.subheader("Matches")
                             for i, match in enumerate(result.matches, 1):
-                                with st.expander(f"**Result {i}** - Score: {match.score:.3f}"):
+                                # Get trust score if available
+                                metadata = match.metadata or {}
+                                trust_score = metadata.get("trust_score")
+                                if trust_score is not None:
+                                    if trust_score >= 0.7:
+                                        trust_badge = "🟢 High"
+                                    elif trust_score >= 0.4:
+                                        trust_badge = "🟡 Medium"
+                                    else:
+                                        trust_badge = "🔴 Low"
+                                    score_display = f"**Result {i}** - Score: {match.score:.3f} {trust_badge}"
+                                else:
+                                    score_display = f"**Result {i}** - Score: {match.score:.3f}"
+                                
+                                with st.expander(score_display):
                                     # Metadata
-                                    metadata = match.metadata or {}
-
                                     col1, col2 = st.columns(2)
                                     with col1:
                                         if metadata.get("source"):
-                                            st.write(f"**Source:** {metadata['source']}")
+                                            source_text = f"**Source:** {metadata['source']}"
+                                            if trust_badge and trust_score is not None:
+                                                source_text += f" {trust_badge}"
+                                            st.write(source_text)
                                         if metadata.get("source_type"):
                                             st.write(f"**Source Type:** {metadata['source_type']}")
                                         if metadata.get("title"):
                                             st.write(f"**Title:** {metadata['title']}")
+                                        if trust_score is not None:
+                                            st.caption(f"Trust Score: {trust_score:.0%}")
                                     with col2:
                                         if metadata.get("chunk_id"):
                                             st.write(f"**Chunk ID:** `{metadata['chunk_id']}`")

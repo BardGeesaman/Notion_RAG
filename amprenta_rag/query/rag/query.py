@@ -25,6 +25,7 @@ from amprenta_rag.query.hyde import generate_hypothetical_answer
 from amprenta_rag.query.hallucination import check_groundedness
 from amprenta_rag.query.evaluation import evaluate_rag_response, EvalResult
 from amprenta_rag.query.agent import agentic_rag
+from amprenta_rag.query.trust_scoring import weight_results_by_trust, get_trust_summary
 
 logger = get_logger(__name__)
 
@@ -52,6 +53,7 @@ def query_rag(
     use_agent: bool = False,
     user_id: Optional[str] = None,
     model: str = "gpt-4o",
+    use_trust_scoring: bool = False,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -275,6 +277,43 @@ def query_rag(
             answer="No matches returned from Pinecone.",
         )
 
+    # Apply trust scoring if enabled
+    if use_trust_scoring and raw_matches:
+        logger.info("[RAG] Applying trust scoring to matches")
+        # Convert raw_matches to dict format for trust scoring
+        match_dicts = []
+        for m in raw_matches:
+            if isinstance(m, dict):
+                match_dicts.append(m)
+            else:
+                # Convert object to dict
+                meta = getattr(m, "metadata", None) or {}
+                match_dicts.append({
+                    "id": getattr(m, "id", None) or "",
+                    "score": getattr(m, "score", None) or 0.0,
+                    "metadata": meta,
+                })
+        
+        # Apply trust weighting
+        weighted_dicts = weight_results_by_trust(match_dicts)
+        
+        # Convert back to original format (preserve order)
+        raw_matches = []
+        for wd in weighted_dicts:
+            # Find original match and update score
+            original_id = wd.get("id")
+            for orig_m in match_dicts:
+                orig_id = orig_m.get("id") if isinstance(orig_m, dict) else getattr(orig_m, "id", None)
+                if orig_id == original_id:
+                    # Update score in original match
+                    if isinstance(orig_m, dict):
+                        orig_m["score"] = wd.get("final_score", orig_m.get("score", 0.0))
+                        orig_m["trust_score"] = wd.get("trust_score", 0.0)
+                    else:
+                        orig_m.score = wd.get("final_score", getattr(orig_m, "score", 0.0))
+                    raw_matches.append(orig_m)
+                    break
+    
     matches = [summarize_match(m) for m in raw_matches]
     filtered = filter_matches(matches, tag=tag)
 
@@ -331,6 +370,18 @@ def query_rag(
     else:
         eval_result = None
 
+    # Get trust summary if trust scoring enabled
+    trust_summary = None
+    if use_trust_scoring and filtered:
+        # Convert filtered matches to dict format for trust summary
+        match_dicts = []
+        for m in filtered:
+            match_dicts.append({
+                "score": m.score,
+                "metadata": m.metadata,
+            })
+        trust_summary = get_trust_summary(match_dicts)
+
     # Add provenance summary
     source_counts: Dict[str, int] = {}
     for m in filtered:
@@ -354,6 +405,7 @@ def query_rag(
         groundedness_score=groundedness_score,
         unsupported_claims=unsupported_claims,
         evaluation=eval_result,
+        trust_summary=trust_summary,
     )
 
     # Store in cache

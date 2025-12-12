@@ -52,4 +52,5 @@ class RAGQueryResult:
     groundedness_score: Optional[float] = None
     unsupported_claims: List[str] = field(default_factory=list)
     evaluation: Optional["EvalResult"] = None
+    trust_summary: Optional[Dict[str, Any]] = None
 
