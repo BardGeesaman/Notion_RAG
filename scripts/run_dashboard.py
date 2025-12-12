@@ -198,7 +198,7 @@ if not AUTH_DISABLED and is_authenticated():
 if AUTH_DISABLED and not is_authenticated():
     from amprenta_rag.auth.session import set_current_user
 
-    set_current_user({"id": "test", "username": "dev", "email": "dev@local", "role": "admin"})
+    set_current_user({"id": "00000000-0000-0000-0000-000000000001", "username": "dev", "email": "dev@local", "role": "admin"})
 
 # Admin registration page
 if st.session_state.get("show_register"):
@@ -245,7 +245,7 @@ if user:
         
         # Notifications
         user_id = user.get("id")
-        if user_id and user_id != "test":
+        if user_id and user_id != "00000000-0000-0000-0000-000000000001":
             try:
                 db_gen = get_db()
                 db = next(db_gen)
@@ -327,7 +327,7 @@ if "recent_pages" not in st.session_state:
 # Helper functions for favorites
 def get_user_favorites(user_id: str) -> list[str]:
     """Get user's favorite pages."""
-    if not user_id or user_id == "test":
+    if not user_id or user_id == "00000000-0000-0000-0000-000000000001":
         return []
     try:
         db_gen = get_db()
@@ -344,7 +344,7 @@ def get_user_favorites(user_id: str) -> list[str]:
 
 def toggle_favorite(user_id: str, page_name: str) -> None:
     """Add or remove favorite."""
-    if not user_id or user_id == "test":
+    if not user_id or user_id == "00000000-0000-0000-0000-000000000001":
         return
     try:
         db_gen = get_db()
@@ -435,7 +435,7 @@ st.sidebar.divider()
 page = None
 
 # Favorites section
-if user and user.get("id") != "test":
+if user and user.get("id") != "00000000-0000-0000-0000-000000000001":
     favorites = get_user_favorites(user.get("id"))
     if favorites:
         with st.sidebar.expander("⭐ Favorites", expanded=True):
@@ -448,7 +448,7 @@ if user and user.get("id") != "test":
         st.sidebar.divider()
 
 # Bookmarks section
-if user and user.get("id") != "test":
+if user and user.get("id") != "00000000-0000-0000-0000-000000000001":
     try:
         db_gen = get_db()
         db = next(db_gen)
@@ -600,7 +600,7 @@ if page is None:
 page = st.session_state.get("selected_page", "Overview")
 
 # Star button for favorites
-if user and user.get("id") != "test":
+if user and user.get("id") != "00000000-0000-0000-0000-000000000001":
     favorites = get_user_favorites(user.get("id"))
     is_favorite = page in favorites
     star_label = "⭐" if is_favorite else "☆"
