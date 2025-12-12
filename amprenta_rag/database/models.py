@@ -1316,6 +1316,24 @@ class OntologyTerm(Base):
     # Relationships
     parent = relationship("OntologyTerm", remote_side=[id], backref="children")
 
+
+class GeneticVariant(Base):
+    """Genetic variants tracked in experiments and cell lines."""
+
+    __tablename__ = "genetic_variants"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    gene = Column(String, nullable=False, index=True)
+    variant = Column(String, nullable=False)
+    zygosity = Column(String)  # homozygous, heterozygous, hemizygous
+    organism = Column(String, nullable=False)  # cell line or organism name
+    experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True)
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    experiment = relationship("Experiment", backref="variants")
+
     # Unique constraint on (vocabulary, term)
     __table_args__ = (UniqueConstraint("vocabulary", "term", name="uq_ontology_terms_vocab_term"),)
 

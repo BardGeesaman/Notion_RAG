@@ -101,7 +101,7 @@ from amprenta_rag.utils.bookmarks import get_user_bookmarks
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # Page groups
-DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow"]
+DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow", "Variant Tracking"]
 ANALYSIS_PAGES = ["Analysis Tools", "Chemistry", "Visualizations", "Literature Analysis", "Candidate Selection"]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = ["Audit Logs", "Teams & Projects", "Feedback", "Import Data", "Workflows", "Feature Permissions", "Data Retention", "Ontology Management"]
@@ -116,6 +116,7 @@ ALL_PAGES = [
     "Data Ingestion",
     "Repositories",
     "Discovery Workflow",
+    "Variant Tracking",
     "Analysis Tools",
     "Visualizations",
     "Quality Checks",
@@ -678,6 +679,10 @@ try:
         from scripts.dashboard.pages.discovery_workflow import render_discovery_workflow_page
 
         render_discovery_workflow_page()
+    elif page == "Variant Tracking":
+        from scripts.dashboard.pages.variants import render_variants_page
+
+        render_variants_page()
     elif page == "Analysis Tools":
         from scripts.dashboard.pages.analysis import render_analysis_page
 
