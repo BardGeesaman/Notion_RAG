@@ -379,10 +379,10 @@
 **Collaboration**:
 - [ ] "Project" Workspace Abstraction
 - [ ] Contextual Commenting (on graphs/features)
-- [ ] **Email & Notifications**:
-  - [ ] Share Experiment Results via Email (PDF/Link)
-  - [ ] Automated Alerts (New data in subscribed project)
-  - [ ] Daily/Weekly Digest Summaries
+- [x] **Email & Notifications**:
+  - [x] Share Experiment Results via Email (PDF/Link)
+  - [x] Automated Alerts (New data in subscribed project)
+  - [x] Daily/Weekly Digest Summaries
 - [ ] **Automated Reporting & Slides**:
   - [ ] Auto-generate PowerPoint (.pptx) from Experiment/Dataset
   - [ ] "Smart Slides": Auto-layout plots, methods, and conclusions
