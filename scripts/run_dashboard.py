@@ -81,6 +81,7 @@ from amprenta_rag.database.models import UserFavorite
 from scripts.dashboard.help_content import get_help, search_help
 from scripts.dashboard.help_chat import render_help_chat
 from scripts.dashboard.themes import apply_theme, get_theme_names
+from scripts.dashboard.shortcuts import inject_shortcuts_js, handle_shortcut_action, render_shortcuts_help
 from amprenta_rag.notifications.service import (
     get_unread_count,
     get_unread_notifications,
@@ -359,6 +360,25 @@ if st.session_state.get("recent_pages"):
 if "selected_page" not in st.session_state:
     st.session_state["selected_page"] = "Overview"
 
+# Handle shortcut actions (check for navigation triggers)
+shortcut_actions = [
+    "navigate_home", "navigate_experiments", "navigate_chemistry", 
+    "navigate_analysis", "navigate_search", "navigate_ingestion",
+    "navigate_protocols", "navigate_qa"
+]
+for action in shortcut_actions:
+    if st.session_state.get(f"shortcut_{action}", False):
+        handle_shortcut_action(action)
+        st.session_state.pop(f"shortcut_{action}", None)
+        break
+
+# Show shortcuts help if requested
+if st.session_state.get("show_shortcuts", False):
+    render_shortcuts_help()
+    if st.button("Close", key="close_shortcuts"):
+        st.session_state.pop("show_shortcuts", None)
+        st.rerun()
+
 # Page groups
 if page is None:
     page = st.session_state.get("selected_page", "Overview")
@@ -613,6 +633,8 @@ except Exception as e:
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Amprenta Multi-Omics Platform**")
 st.sidebar.markdown("Data stored in Postgres")
+st.sidebar.caption("Press `?` for keyboard shortcuts")
+st.sidebar.caption("Press `?` for keyboard shortcuts")
 
 # Add refresh button
 if st.sidebar.button("🔄 Refresh Data"):
