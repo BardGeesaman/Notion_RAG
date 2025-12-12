@@ -144,6 +144,7 @@ ALL_PAGES = [
     "Cross-Omics",
     "Import Data",
     "Compare",
+    "Timeline",
 ]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -750,6 +751,10 @@ try:
         from scripts.dashboard.pages.compare import render_compare_page
 
         render_compare_page()
+    elif page == "Timeline":
+        from scripts.dashboard.pages.timeline import render_timeline_page
+
+        render_timeline_page()
 except ImportError as e:
     st.error(f"❌ Error loading page: {page}")
     st.error(f"Import error: {str(e)}")
