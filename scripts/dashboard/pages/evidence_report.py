@@ -6,7 +6,6 @@ from amprenta_rag.reporting.evidence_report import (
     generate_program_report,
     generate_signature_report,
 )
-from amprenta_rag.reporting.pdf_export import export_evidence_report_to_pdf
 from scripts.dashboard.db_session import db_session
 
 
@@ -61,6 +60,7 @@ def render_evidence_report_page():
 
         with col2:
             try:
+                from amprenta_rag.reporting.pdf_export import export_evidence_report_to_pdf
                 pdf_bytes = export_evidence_report_to_pdf(rep)
                 st.download_button(
                     "📕 Download PDF",
