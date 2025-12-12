@@ -83,6 +83,7 @@
 - ✅ **PDF Export**: Report generation (`pdf_export.py`), Dashboard/CLI integration
 - ✅ **Data Export Suite**: CSV/JSON/Excel export for all entity types
 - ✅ **Data Import Suite**: CSV/JSON bulk import with validation
+- ✅ **Dashboard Themes**: Light/Dark mode support (via Streamlit config)
 - ✅ **Visualization**: Viz helpers (`viz_helpers.py`), Pathway Network Visualization (force-directed)
 - ✅ **Additional Visualizations**: Program-Signature heatmap, Dataset Similarity dendrogram, Pathway Enrichment bars, Cross-Omics Convergence
 - ✅ **Performance Utilities**: Parallel processing helpers (`parallel_map`, `chunked_parallel`)
