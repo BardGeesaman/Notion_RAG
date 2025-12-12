@@ -30,6 +30,7 @@ from amprenta_rag.analysis.design_engine import (
     validate_design,
 )
 from amprenta_rag.database.models import Dataset, Program, Signature
+from amprenta_rag.utils.data_export import export_to_csv, export_to_json, export_to_excel
 from scripts.dashboard.db_session import db_session
 
 
@@ -126,14 +127,28 @@ def render_analysis_page() -> None:
                                         df_results = pd.DataFrame(results_data)
                                         st.dataframe(df_results, width='stretch', hide_index=True)
 
-                                        # Download button
-                                        csv_results = df_results.to_csv(index=False)
-                                        st.download_button(
-                                            label="📥 Download Results (CSV)",
-                                            data=csv_results,
-                                            file_name=f"pathway_enrichment_{dataset_id}.csv",
-                                            mime="text/csv",
-                                        )
+                                        # Export section
+                                        st.markdown("### Export")
+                                        col1, col2 = st.columns([1, 3])
+                                        with col1:
+                                            export_format = st.selectbox("Format", ["csv", "json", "excel"], key="pathway_export_format_ds")
+                                        with col2:
+                                            mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+                                            file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
+                                            
+                                            if export_format == "csv":
+                                                export_data = export_to_csv(df_results)
+                                            elif export_format == "json":
+                                                export_data = export_to_json(df_results)
+                                            else:
+                                                export_data = export_to_excel(df_results)
+                                            
+                                            st.download_button(
+                                                label=f"📥 Download Results ({export_format.upper()})",
+                                                data=export_data,
+                                                file_name=f"pathway_enrichment_{dataset_id}.{file_extensions[export_format]}",
+                                                mime=mime_types[export_format],
+                                            )
                                     else:
                                         st.warning(
                                             "No significantly enriched pathways found. Try adjusting the p-value threshold."
@@ -219,13 +234,28 @@ def render_analysis_page() -> None:
                                         df_results = pd.DataFrame(results_data)
                                         st.dataframe(df_results, width='stretch', hide_index=True)
 
-                                        csv_results = df_results.to_csv(index=False)
-                                        st.download_button(
-                                            label="📥 Download Results (CSV)",
-                                            data=csv_results,
-                                            file_name=f"pathway_enrichment_{signature_id}.csv",
-                                            mime="text/csv",
-                                        )
+                                        # Export section
+                                        st.markdown("### Export")
+                                        col1, col2 = st.columns([1, 3])
+                                        with col1:
+                                            export_format = st.selectbox("Format", ["csv", "json", "excel"], key="pathway_export_format_sig")
+                                        with col2:
+                                            mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+                                            file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
+                                            
+                                            if export_format == "csv":
+                                                export_data = export_to_csv(df_results)
+                                            elif export_format == "json":
+                                                export_data = export_to_json(df_results)
+                                            else:
+                                                export_data = export_to_excel(df_results)
+                                            
+                                            st.download_button(
+                                                label=f"📥 Download Results ({export_format.upper()})",
+                                                data=export_data,
+                                                file_name=f"pathway_enrichment_{signature_id}.{file_extensions[export_format]}",
+                                                mime=mime_types[export_format],
+                                            )
                                     else:
                                         st.warning("No significantly enriched pathways found.")
 
@@ -314,13 +344,28 @@ def render_analysis_page() -> None:
                                 df_results = pd.DataFrame(results_data)
                                 st.dataframe(df_results, width='stretch', hide_index=True)
 
-                                csv_results = df_results.to_csv(index=False)
-                                st.download_button(
-                                    label="📥 Download Results (CSV)",
-                                    data=csv_results,
-                                    file_name="pathway_enrichment_custom.csv",
-                                    mime="text/csv",
-                                )
+                                # Export section
+                                st.markdown("### Export")
+                                col1, col2 = st.columns([1, 3])
+                                with col1:
+                                    export_format = st.selectbox("Format", ["csv", "json", "excel"], key="pathway_export_format_custom")
+                                with col2:
+                                    mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+                                    file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
+                                    
+                                    if export_format == "csv":
+                                        export_data = export_to_csv(df_results)
+                                    elif export_format == "json":
+                                        export_data = export_to_json(df_results)
+                                    else:
+                                        export_data = export_to_excel(df_results)
+                                    
+                                    st.download_button(
+                                        label=f"📥 Download Results ({export_format.upper()})",
+                                        data=export_data,
+                                        file_name=f"pathway_enrichment_custom.{file_extensions[export_format]}",
+                                        mime=mime_types[export_format],
+                                    )
                             else:
                                 st.warning("No significantly enriched pathways found.")
 
@@ -479,14 +524,28 @@ def render_analysis_page() -> None:
                                         df_matches = pd.DataFrame(match_data)
                                         st.dataframe(df_matches, width='stretch', hide_index=True)
 
-                                        # Download results
-                                        csv = df_matches.to_csv(index=False)
-                                        st.download_button(
-                                            label="📥 Download Results (CSV)",
-                                            data=csv,
-                                            file_name=f"signature_scores_{signature_id}_{dataset_id}.csv",
-                                            mime="text/csv",
-                                        )
+                                        # Export section
+                                        st.markdown("### Export")
+                                        col1, col2 = st.columns([1, 3])
+                                        with col1:
+                                            export_format = st.selectbox("Format", ["csv", "json", "excel"], key="signature_score_export_format")
+                                        with col2:
+                                            mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+                                            file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
+                                            
+                                            if export_format == "csv":
+                                                export_data = export_to_csv(df_matches)
+                                            elif export_format == "json":
+                                                export_data = export_to_json(df_matches)
+                                            else:
+                                                export_data = export_to_excel(df_matches)
+                                            
+                                            st.download_button(
+                                                label=f"📥 Download Results ({export_format.upper()})",
+                                                data=export_data,
+                                                file_name=f"signature_scores_{signature_id}_{dataset_id}.{file_extensions[export_format]}",
+                                                mime=mime_types[export_format],
+                                            )
                                     else:
                                         st.info("No matching signatures found (overlap threshold: 0.3)")
                         except Exception as e:

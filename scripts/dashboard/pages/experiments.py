@@ -14,6 +14,7 @@ from amprenta_rag.ingestion.design_integration import (
     create_experiment_from_study,
 )
 from amprenta_rag.ingestion.repositories import fetch_study_metadata
+from amprenta_rag.utils.data_export import export_experiments
 from scripts.dashboard.db_session import db_session
 
 
@@ -47,13 +48,26 @@ def _render_browse_tab() -> None:
             df_experiments = pd.DataFrame(experiment_data)
             st.dataframe(df_experiments, width='stretch', hide_index=True)
 
-            csv_experiments = df_experiments.to_csv(index=False)
-            st.download_button(
-                label="📥 Download Experiments (CSV)",
-                data=csv_experiments,
-                file_name="experiments.csv",
-                mime="text/csv",
-            )
+            # Export section
+            st.markdown("### Export")
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                export_format = st.selectbox("Format", ["csv", "json", "excel"], key="exp_export_format")
+            with col2:
+                experiment_ids = [str(exp.id) for exp in experiments]
+                mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+                file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
+                
+                try:
+                    export_data = export_experiments(experiment_ids, export_format, db)
+                    st.download_button(
+                        label=f"📥 Download Experiments ({export_format.upper()})",
+                        data=export_data,
+                        file_name=f"experiments.{file_extensions[export_format]}",
+                        mime=mime_types[export_format],
+                    )
+                except Exception as e:
+                    st.error(f"Export failed: {e}")
 
             st.markdown("---")
             st.subheader("Experiment Details")

@@ -29,6 +29,7 @@ from amprenta_rag.chemistry.registration import (
     check_duplicate,
     register_compound,
 )
+from amprenta_rag.utils.data_export import export_compounds
 from amprenta_rag.chemistry.structure_search import substructure_search, similarity_search
 from amprenta_rag.chemistry.sar_analysis import (
     get_compound_properties,
@@ -112,15 +113,27 @@ def render_chemistry_page() -> None:
                 df_compounds = pd.DataFrame(compound_data)
                 st.dataframe(df_compounds, width='stretch', hide_index=True)
 
-                # Export button
-                csv_compounds = df_compounds.to_csv(index=False)
-                st.download_button(
-                    label="📥 Download Compounds (CSV)",
-                    data=csv_compounds,
-                    file_name="compounds.csv",
-                    mime="text/csv",
-                    key="export_compounds",
-                )
+                # Export section
+                st.markdown("### Export")
+                col1, col2 = st.columns([1, 3])
+                with col1:
+                    export_format = st.selectbox("Format", ["csv", "json", "excel"], key="compound_export_format")
+                with col2:
+                    compound_ids = [c.compound_id for c in compounds]
+                    mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+                    file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
+                    
+                    try:
+                        export_data = export_compounds(compound_ids, export_format, db)
+                        st.download_button(
+                            label=f"📥 Download Compounds ({export_format.upper()})",
+                            data=export_data,
+                            file_name=f"compounds.{file_extensions[export_format]}",
+                            mime=mime_types[export_format],
+                            key="export_compounds",
+                        )
+                    except Exception as e:
+                        st.error(f"Export failed: {e}")
 
                 st.markdown("---")
                 st.subheader("Compound Details")
