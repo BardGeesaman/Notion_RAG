@@ -291,9 +291,9 @@
   - [x] Unanswered Questions Extraction
   - [x] Contradiction Detection (Paper A vs Paper B)
 - [ ] **Automated Study Critique**:
-  - [ ] Quality Assessment for internal/imported studies
-  - [ ] Design Flaw Detection (e.g., "Low N", "Missing Control")
-  - [ ] Data Gap Identification (Unanswered questions)
+  - [x] Quality Assessment for internal/imported studies
+  - [x] Design Flaw Detection (e.g., "Low N", "Missing Control")
+  - [x] Data Gap Identification (Unanswered questions)
 
 ### 3. Chemistry Informatics Enhancements
 
