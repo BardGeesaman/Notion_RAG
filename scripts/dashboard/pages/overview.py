@@ -18,6 +18,12 @@ from amprenta_rag.database.models import (
     RAGChunk,
     Signature,
 )
+from amprenta_rag.utils.activity import (
+    get_activity_stats,
+    get_recent_compounds,
+    get_recent_discoveries,
+    get_recent_experiments,
+)
 from scripts.dashboard.db_session import db_session
 
 
@@ -33,6 +39,71 @@ def render_overview_page() -> None:
     st.header("📊 Overview")
 
     with db_session() as db:
+        # Activity stats
+        stats = get_activity_stats(db)
+        
+        # Stats row
+        st.subheader("📈 Platform Statistics")
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Experiments", stats["total_experiments"])
+        with col2:
+            st.metric("Total Compounds", stats["total_compounds"])
+        with col3:
+            st.metric("Total Datasets", stats["total_datasets"])
+        with col4:
+            st.metric("Total Users", stats["total_users"])
+        
+        st.markdown("---")
+        
+        # Quick Actions
+        st.subheader("⚡ Quick Actions")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("➕ New Experiment", use_container_width=True, type="primary"):
+                st.session_state["selected_page"] = "Experiments"
+                st.rerun()
+        with col2:
+            if st.button("⚗️ Register Compound", use_container_width=True, type="primary"):
+                st.session_state["selected_page"] = "Chemistry"
+                st.rerun()
+        with col3:
+            if st.button("🔬 Run Analysis", use_container_width=True, type="primary"):
+                st.session_state["selected_page"] = "Analysis Tools"
+                st.rerun()
+        
+        st.markdown("---")
+        
+        # Recent Activity
+        st.subheader("🕐 Recent Activity")
+        
+        # Recent experiments
+        recent_experiments = get_recent_experiments(db, limit=5)
+        if recent_experiments:
+            st.markdown("**Recent Experiments**")
+            for exp in recent_experiments:
+                created_by = f" by {exp['created_by']}" if exp['created_by'] else ""
+                created_at = exp['created_at'][:10] if exp['created_at'] else "Unknown"
+                # Create a link-like display (clicking would navigate to Experiments page)
+                st.markdown(f"- **[{exp['name']}](?page=Experiments)** ({created_at}){created_by}")
+        
+        # Recent discoveries
+        recent_discoveries = get_recent_discoveries(db, limit=5)
+        if recent_discoveries:
+            st.markdown("**Recent Discoveries**")
+            for disc in recent_discoveries:
+                st.markdown(f"- **{disc['study_id']}** ({disc['repository']}) - {disc['title'] or 'No title'} ({disc['discovered_at'][:10] if disc['discovered_at'] else 'Unknown'})")
+        
+        # Recent compounds
+        recent_compounds = get_recent_compounds(db, limit=5)
+        if recent_compounds:
+            st.markdown("**Recent Compounds**")
+            for comp in recent_compounds:
+                st.markdown(f"- **{comp['compound_id']}** - {comp['smiles']} ({comp['created_at'][:10] if comp['created_at'] else 'Unknown'})")
+        
+        st.markdown("---")
+        
+        # Original statistics section
         # Statistics - Core entities
         col1, col2, col3, col4, col5 = st.columns(5)
 
