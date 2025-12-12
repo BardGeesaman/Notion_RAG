@@ -892,6 +892,21 @@ class Note(Base):
     created_by = relationship("User", foreign_keys=[created_by_id])
 
 
+class SavedFilter(Base):
+    """Saved filter presets for entity lists."""
+
+    __tablename__ = "saved_filters"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    entity_type = Column(String(50), nullable=False)  # experiment, compound, etc.
+    filters = Column(JSON, nullable=False)  # Filter criteria as dict
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", foreign_keys=[user_id])
+
+
 class AuditLog(Base):
     """Audit trail for user actions."""
 

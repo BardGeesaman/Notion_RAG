@@ -17,11 +17,58 @@ from amprenta_rag.ingestion.design_integration import (
 )
 from amprenta_rag.ingestion.repositories import fetch_study_metadata
 from amprenta_rag.utils.data_export import export_experiments
+from amprenta_rag.utils.saved_filters import save_filter, get_user_filters, delete_filter
 from scripts.dashboard.db_session import db_session
 
 
 def _render_browse_tab() -> None:
     with db_session() as db:
+        # Saved Filters section
+        user = get_current_user()
+        if user:
+            saved_filters = get_user_filters("experiment", user.get("id"), db)
+            
+            col1, col2, col3 = st.columns([2, 1, 1])
+            with col1:
+                if saved_filters:
+                    filter_names = [f.name for f in saved_filters]
+                    selected_filter_name = st.selectbox(
+                        "📌 Saved Filters",
+                        ["None"] + filter_names,
+                        key="saved_filter_select"
+                    )
+                    if selected_filter_name != "None":
+                        selected_filter = next(f for f in saved_filters if f.name == selected_filter_name)
+                        st.info(f"Filter '{selected_filter_name}' selected. Filters: {selected_filter.filters}")
+            with col2:
+                if st.session_state.get("show_save_filter", False):
+                    with st.form("save_filter_form"):
+                        filter_name = st.text_input("Filter name", key="filter_name_input")
+                        submitted = st.form_submit_button("Save", type="primary")
+                        if submitted and filter_name:
+                            # Get current filter state (would need to capture from UI)
+                            current_filters = {"search": st.session_state.get("exp_search", "")}  # Capture search term
+                            save_filter(filter_name, "experiment", current_filters, user.get("id"), db)
+                            st.session_state["show_save_filter"] = False
+                            st.success(f"Filter '{filter_name}' saved!")
+                            st.rerun()
+                        if st.form_submit_button("Cancel"):
+                            st.session_state["show_save_filter"] = False
+                            st.rerun()
+                else:
+                    if st.button("💾 Save Current", key="save_filter_btn"):
+                        st.session_state["show_save_filter"] = True
+                        st.rerun()
+            with col3:
+                if saved_filters and st.session_state.get("saved_filter_select") != "None":
+                    selected_filter_name = st.session_state.get("saved_filter_select")
+                    if selected_filter_name and selected_filter_name != "None":
+                        if st.button("🗑️ Delete", key="delete_filter_btn"):
+                            selected_filter = next(f for f in saved_filters if f.name == selected_filter_name)
+                            delete_filter(str(selected_filter.id), db)
+                            st.success("Filter deleted!")
+                            st.rerun()
+        
         search_term = st.text_input("Search experiments by name", "", key="exp_search")
 
         query = db.query(Experiment)
