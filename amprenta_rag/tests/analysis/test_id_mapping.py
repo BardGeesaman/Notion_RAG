@@ -28,8 +28,6 @@ from amprenta_rag.analysis.id_mapping import (
     map_protein_to_uniprot,
 )
 
-pytestmark = pytest.mark.skip(reason="Tests make unmocked API calls - needs requests.get mocking in addition to requests.post")
-
 
 class TestMapProteinToUniprot:
     """Tests for map_protein_to_uniprot function."""
@@ -50,14 +48,21 @@ class TestMapProteinToUniprot:
             # Should return the ID as-is if it matches UniProt pattern
             assert result == uid or result is None  # None if API call fails
 
+    @patch("amprenta_rag.analysis.id_mapping.requests.get")
     @patch("amprenta_rag.analysis.id_mapping.requests.post")
-    def test_gene_name_mapping_success(self, mock_post):
+    def test_gene_name_mapping_success(self, mock_post, mock_get):
         """Test mapping gene name to UniProt ID via API."""
-        # Mock successful API response
+        # Mock POST for job submission
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"jobId": "test-job-123"}
         mock_post.return_value = mock_response
+        
+        # Mock GET for polling results
+        mock_get_response = MagicMock()
+        mock_get_response.status_code = 200
+        mock_get_response.json.return_value = {"results": [{"to": {"primaryAccession": "P04637"}}]}
+        mock_get.return_value = mock_get_response
 
         # Clear cache to ensure fresh lookup
         clear_id_mapping_cache()
@@ -67,11 +72,13 @@ class TestMapProteinToUniprot:
         # Should attempt API call
         assert mock_post.called or result is None
 
+    @patch("amprenta_rag.analysis.id_mapping.requests.get")
     @patch("amprenta_rag.analysis.id_mapping.requests.post")
-    def test_invalid_protein_returns_none(self, mock_post):
+    def test_invalid_protein_returns_none(self, mock_post, mock_get):
         """Invalid protein IDs should return None."""
-        # Mock failed API response
+        # Mock both to fail
         mock_post.side_effect = Exception("API error")
+        mock_get.side_effect = Exception("API error")
         clear_id_mapping_cache()
 
         result = map_protein_to_uniprot("INVALID_PROTEIN_XYZ_12345")
