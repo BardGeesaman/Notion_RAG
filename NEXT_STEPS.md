@@ -266,7 +266,7 @@
   - [ ] Experiment-to-IP Linking (Trace data to claims)
 
 **General Experimental Data Support**:
-- [ ] Generic Assay Result Model (for non-standard assays)
+- [x] Generic Assay Result Model (for non-standard assays)
 - [ ] Imaging Data Support (Microscopy/HCS metadata)
 - [ ] Flow Cytometry / FACS Data Ingestion
 - [ ] Biophysical Assay Support (SPR, MST, DSC)
