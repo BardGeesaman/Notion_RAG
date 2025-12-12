@@ -88,6 +88,7 @@
 - ✅ **Activity Dashboard**: Recent activity feed, stats, quick actions
 - ✅ **Keyboard Shortcuts**: Vim-style navigation and global hotkeys
 - ✅ **Global Search**: Unified cross-entity search ("Spotlight" style)
+- ✅ **Bookmarks System**: Pin items for quick access (sidebar favorites)
 - ✅ **Visualization**: Viz helpers (`viz_helpers.py`), Pathway Network Visualization (force-directed)
 - ✅ **Additional Visualizations**: Program-Signature heatmap, Dataset Similarity dendrogram, Pathway Enrichment bars, Cross-Omics Convergence
 - ✅ **Performance Utilities**: Parallel processing helpers (`parallel_map`, `chunked_parallel`)
