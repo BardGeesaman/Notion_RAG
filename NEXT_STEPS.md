@@ -217,7 +217,22 @@
   - [ ] **Embedded Environment**: Integrated JupyterLite or Kernel Gateway
   - [ ] **Analysis Templates**: Pre-configured notebooks for common workflows (e.g., RNA-seq QC, Hit calling)
 
-### 1. Integration Enhancements
+### 2. Advanced Visualization Suite
+- [ ] **Cytoscape.js Integration**:
+  - [ ] Interactive Network Graphs (PPI, signaling pathways)
+  - [ ] Force-directed and circular layouts
+  - [ ] Overlay expression data on nodes/edges
+- [ ] **IGV.js (Integrative Genomics Viewer)**:
+  - [ ] Genome browser component for variant visualization
+  - [ ] BAM/VCF track support
+- [ ] **Ag-Grid Enterprise**:
+  - [ ] Excel-like filtering, pivoting, and grouping
+  - [ ] Range selection and bulk editing
+- [ ] **High-Dimensional Projector**:
+  - [ ] Interactive 3D scatter plots (UMAP/t-SNE) for embeddings
+  - [ ] TensorBoard-style point cloud visualization
+
+### 3. Integration Enhancements
 
 **Public Repositories**:
 - [ ] Add more repository types (others)

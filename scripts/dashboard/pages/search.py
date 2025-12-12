@@ -29,7 +29,7 @@ def render_search_page() -> None:
     search_query = st.text_input(
         "Search",
         placeholder="Enter search term...",
-        key="global_search",
+        key="search_page_query",
     )
 
     # Entity type filter
