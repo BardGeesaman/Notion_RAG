@@ -287,9 +287,9 @@
 - [x] Versioning (Re-run questions as data updates)
 - [x] Export capabilities (PDF/CSV of Q&A reports)
 - [ ] **Literature Critical Analysis**:
-  - [ ] Auto-generated critiques (Strengths, Weaknesses, Limitations)
-  - [ ] Unanswered Questions Extraction
-  - [ ] Contradiction Detection (Paper A vs Paper B)
+  - [x] Auto-generated critiques (Strengths, Weaknesses, Limitations)
+  - [x] Unanswered Questions Extraction
+  - [x] Contradiction Detection (Paper A vs Paper B)
 - [ ] **Automated Study Critique**:
   - [ ] Quality Assessment for internal/imported studies
   - [ ] Design Flaw Detection (e.g., "Low N", "Missing Control")
