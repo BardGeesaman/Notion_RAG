@@ -12,7 +12,7 @@ from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, TSVECTOR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 
 from amprenta_rag.database.base import Base
 
@@ -1215,6 +1215,25 @@ class SampleTransfer(Base):
     from_location = relationship("StorageLocation", foreign_keys=[from_location_id], backref="outgoing_transfers")
     to_location = relationship("StorageLocation", foreign_keys=[to_location_id], backref="incoming_transfers")
     transferred_by = relationship("User", foreign_keys=[transferred_by_id])
+
+
+class Comment(Base):
+    """Contextual comments on entities (experiments, datasets, signatures, compounds)."""
+
+    __tablename__ = "comments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    entity_type = Column(String(50), nullable=False, index=True)  # "experiment", "dataset", "signature", "compound"
+    entity_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("comments.id"), nullable=True, index=True)  # For replies
+    content = Column(Text, nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    # Relationships
+    replies = relationship("Comment", backref=backref("parent", remote_side=[id]))
+    created_by = relationship("User", foreign_keys=[created_by_id])
 
 
 # Add relationship to LabNotebookEntry after LabNotebookEntryAssociation is defined
