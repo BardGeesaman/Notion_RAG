@@ -149,6 +149,7 @@ ALL_PAGES = [
     "Workflows",
     "Literature Analysis",
     "Candidate Selection",
+    "Email Settings",
 ]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -784,6 +785,10 @@ try:
         from scripts.dashboard.pages.candidate_selection import render_candidate_selection_page
 
         render_candidate_selection_page()
+    elif page == "Email Settings":
+        from scripts.dashboard.pages.email_settings import render_email_settings_page
+
+        render_email_settings_page()
 except ImportError as e:
     st.error(f"❌ Error loading page: {page}")
     st.error(f"Import error: {str(e)}")

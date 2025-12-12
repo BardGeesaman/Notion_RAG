@@ -846,6 +846,21 @@ class Notification(Base):
     user = relationship("User", backref="notifications")
 
 
+class EmailSubscription(Base):
+    """Email subscription preferences for users."""
+
+    __tablename__ = "email_subscriptions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    subscription_type = Column(String(50), nullable=False)  # digest, alerts, shares
+    frequency = Column(String(50), nullable=False)  # daily, weekly, immediate
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", backref="email_subscriptions")
+
+
 class Bookmark(Base):
     """User bookmarks for entities."""
 

@@ -19,6 +19,7 @@ from amprenta_rag.ingestion.repositories import fetch_study_metadata
 from amprenta_rag.utils.data_export import export_experiments
 from amprenta_rag.utils.saved_filters import save_filter, get_user_filters, delete_filter
 from amprenta_rag.analysis.study_critique import assess_study_quality
+from amprenta_rag.notifications.email_service import send_share_notification, is_email_configured
 from scripts.dashboard.db_session import db_session
 
 
@@ -145,6 +146,35 @@ def _render_browse_tab() -> None:
                     dataset_count = len(experiment.datasets)
                     if dataset_count > 0:
                         st.write(f"**Related Datasets:** {dataset_count}")
+                    
+                    # Share via Email section
+                    if is_email_configured():
+                        st.markdown("---")
+                        st.markdown("### 📧 Share via Email")
+                        with st.form(f"share_email_form_{experiment.id}"):
+                            recipient_email = st.text_input("Recipient Email", key=f"recipient_email_{experiment.id}")
+                            share_message = st.text_area("Optional Message", key=f"share_message_{experiment.id}", placeholder="Add a personal message...")
+                            if st.form_submit_button("Send", type="primary"):
+                                if recipient_email:
+                                    user = get_current_user()
+                                    from_user = user.get("username", "Unknown User") if user else "Unknown User"
+                                    try:
+                                        success = send_share_notification(
+                                            entity_type="Experiment",
+                                            entity_id=experiment.id,
+                                            to=recipient_email,
+                                            from_user=from_user,
+                                            message=share_message if share_message.strip() else None,
+                                            db=db,
+                                        )
+                                        if success:
+                                            st.success(f"Email sent successfully to {recipient_email}!")
+                                        else:
+                                            st.error("Failed to send email. Please check the logs.")
+                                    except Exception as e:
+                                        st.error(f"Error sending email: {e}")
+                                else:
+                                    st.error("Please enter a recipient email address")
                     
                     # Save as Template button
                     user = get_current_user()

@@ -8,6 +8,12 @@ from amprenta_rag.notifications.service import (
     mark_all_read,
     mark_as_read,
 )
+from amprenta_rag.notifications.email_service import (
+    send_email,
+    is_email_configured,
+    send_experiment_summary,
+    send_share_notification,
+)
 
 __all__ = [
     "create_notification",
@@ -15,4 +21,8 @@ __all__ = [
     "get_unread_count",
     "mark_as_read",
     "mark_all_read",
+    "send_email",
+    "is_email_configured",
+    "send_experiment_summary",
+    "send_share_notification",
 ]
