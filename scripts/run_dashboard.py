@@ -145,6 +145,7 @@ ALL_PAGES = [
     "Import Data",
     "Compare",
     "Timeline",
+    "Data Quality",
 ]
 
 # LAZY IMPORTS: Don't import pages until needed to avoid cascading import failures
@@ -755,6 +756,10 @@ try:
         from scripts.dashboard.pages.timeline import render_timeline_page
 
         render_timeline_page()
+    elif page == "Data Quality":
+        from scripts.dashboard.pages.data_quality import render_data_quality_page
+
+        render_data_quality_page()
 except ImportError as e:
     st.error(f"❌ Error loading page: {page}")
     st.error(f"Import error: {str(e)}")
