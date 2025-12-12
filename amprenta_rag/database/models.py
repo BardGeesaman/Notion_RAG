@@ -1300,6 +1300,26 @@ class RetentionPolicy(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class OntologyTerm(Base):
+    """Ontology terms for controlled vocabularies."""
+
+    __tablename__ = "ontology_terms"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    vocabulary = Column(String(100), nullable=False, index=True)  # e.g., "disease", "tissue", "cell_type"
+    term = Column(String(500), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("ontology_terms.id"), nullable=True, index=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    parent = relationship("OntologyTerm", remote_side=[id], backref="children")
+
+    # Unique constraint on (vocabulary, term)
+    __table_args__ = (UniqueConstraint("vocabulary", "term", name="uq_ontology_terms_vocab_term"),)
+
+
 class CostEntry(Base):
     """Cost tracking entries for projects and experiments."""
 
