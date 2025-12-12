@@ -80,6 +80,7 @@ from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import UserFavorite
 from scripts.dashboard.help_content import get_help, search_help
 from scripts.dashboard.help_chat import render_help_chat
+from scripts.dashboard.themes import apply_theme, get_theme_names
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 # Page groups
@@ -168,6 +169,14 @@ st.markdown("**Data Dashboard** - Browse and explore your multi-omics data")
 
 # Sidebar navigation
 user = get_current_user()
+
+# Initialize theme
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "dark"
+
+# Apply theme (must be before sidebar content)
+apply_theme(st.session_state["theme"])
+
 if user:
     with st.sidebar:
         st.markdown(f"**👤 {user['username']}** ({user['role']})")
@@ -176,12 +185,39 @@ if user:
             clear_session()
             st.rerun()
         st.divider()
+        
+        # Theme selector
+        theme_options = get_theme_names()
+        selected_theme = st.selectbox(
+            "Theme",
+            theme_options,
+            index=theme_options.index(st.session_state["theme"]) if st.session_state["theme"] in theme_options else 0,
+            key="theme_selector"
+        )
+        if selected_theme != st.session_state["theme"]:
+            st.session_state["theme"] = selected_theme
+            st.rerun()
+        
+        st.divider()
         if user.get("role") == "admin":
             if st.button("➕ Register User", key="register_btn"):
                 from scripts.dashboard.pages.auth.register import render_register_page
 
                 st.session_state["show_register"] = True
                 st.rerun()
+else:
+    # Theme selector for non-authenticated users
+    with st.sidebar:
+        theme_options = get_theme_names()
+        selected_theme = st.selectbox(
+            "Theme",
+            theme_options,
+            index=theme_options.index(st.session_state["theme"]) if st.session_state["theme"] in theme_options else 0,
+            key="theme_selector"
+        )
+        if selected_theme != st.session_state["theme"]:
+            st.session_state["theme"] = selected_theme
+            st.rerun()
 
 # Initialize recent pages
 if "recent_pages" not in st.session_state:
