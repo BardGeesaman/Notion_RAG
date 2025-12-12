@@ -195,6 +195,12 @@
 - ✅ Embedded Documentation Widget (searchable guide)
 - ✅ Interactive Feature Tours (via driver.js integration)
 
+### 19. Workflow Automation Engine ✅ COMPLETE
+- ✅ WorkflowRule and WorkflowExecution models
+- ✅ Trigger types: experiment_created, compound_registered, discovery_imported, sample_transferred
+- ✅ Action types: send_notification, add_note, run_validation
+- ✅ Dashboard page for creating/managing rules and viewing execution history
+
 ---
 
 ## 🎯 IMMEDIATE NEXT STEPS (Priority Order)
