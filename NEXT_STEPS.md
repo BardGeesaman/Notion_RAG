@@ -274,6 +274,9 @@
   - [ ] Mutation/Genotype Model (Gene, Variant, Zygosity)
   - [ ] Cell Line/Organism Genotype Mapping (e.g., "HeLa -> p53 null")
   - [ ] Variant-based Experiment Filtering
+  - [ ] **Integrate ClinVar & dbSNP**:
+    - [ ] Link internal variants to dbSNP rsIDs
+    - [ ] Annotate with ClinVar significance (Pathogenic/Benign)
 
 **Resource Management**:
 - [x] **Cost Tracking & Budgeting**:

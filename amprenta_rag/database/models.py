@@ -1334,9 +1334,6 @@ class GeneticVariant(Base):
     # Relationships
     experiment = relationship("Experiment", backref="variants")
 
-    # Unique constraint on (vocabulary, term)
-    __table_args__ = (UniqueConstraint("vocabulary", "term", name="uq_ontology_terms_vocab_term"),)
-
 
 class CostEntry(Base):
     """Cost tracking entries for projects and experiments."""
