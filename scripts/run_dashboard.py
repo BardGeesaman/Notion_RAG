@@ -230,6 +230,10 @@ try:
 except Exception:
     visible_pages = ALL_PAGES  # Fallback to all if error
 
+# Safety: if no visible pages, show all
+if not visible_pages:
+    visible_pages = ALL_PAGES
+
 # Initialize theme
 if "theme" not in st.session_state:
     st.session_state["theme"] = "dark"
