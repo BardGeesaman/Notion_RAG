@@ -1,42 +1,76 @@
 """
-Chunk collection from Notion for RAG queries.
+Chunk collection for RAG queries.
 
-This module provides functions for retrieving full chunk text from Notion.
+Historically, `collect_chunks()` returned a list of context strings built from
+the `snippet` fields in match results.
+
+In the Postgres-backed system, we can additionally fetch chunk text from the
+`RAGChunk` table when a match provides a `chunk_id`.
 """
 
 from __future__ import annotations
 
-from typing import List
+from typing import Dict, List, Optional
 
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.rag.models import MatchSummary
+from amprenta_rag.database.session import db_session
+from amprenta_rag.database.models import RAGChunk
 
 logger = get_logger(__name__)
 
 
+def _get_match_chunk_id(match: MatchSummary) -> Optional[str]:
+    chunk_id = getattr(match, "chunk_id", None)
+    if chunk_id:
+        return str(chunk_id)
+    # Back-compat: sometimes the match id itself is the chunk id
+    if getattr(match, "id", None):
+        return str(match.id)
+    return None
+
+
 def collect_chunks(matches: List[MatchSummary]) -> List[str]:
     """
-    DEPRECATED: Notion support has been removed.
-    
-    This function previously retrieved full chunk text from Notion.
-    Postgres is now the source of truth.
-    
-    TODO: Phase 3 - Implement Postgres-based chunk retrieval or remove this function.
-    
-    Args:
-        matches: List of MatchSummary objects
+    Collect context chunks for the given matches.
 
-    Returns:
-        Empty list (Notion support removed)
+    Priority:
+    - Use `match.snippet` if present (fast, no DB required).
+    - Otherwise, attempt to load the full chunk text from Postgres via `RAGChunk`.
     """
-    logger.debug(
-        "[RAG][CHUNK-COLLECTION] collect_chunks() deprecated - Notion support removed"
-    )
-    # Return empty chunks - use snippet from metadata if available
-    chunks: List[str] = []
+    # 1) Use snippets where available
+    snippets: List[Optional[str]] = []
+    missing_ids: List[str] = []
     for m in matches:
-        snippet = m.metadata.get("snippet") or m.snippet
-        if snippet:
-            chunks.append(snippet)
-    return chunks
+        snippet = getattr(m, "snippet", None)
+        if isinstance(snippet, str) and snippet.strip():
+            snippets.append(snippet)
+            continue
+        snippets.append(None)
+        mid = _get_match_chunk_id(m)
+        if mid:
+            missing_ids.append(mid)
+
+    id_to_text: Dict[str, str] = {}
+    if missing_ids:
+        try:
+            with db_session() as db:
+                rows = db.query(RAGChunk).filter(RAGChunk.id.in_(missing_ids)).all()
+                for row in rows:
+                    text = getattr(row, "chunk_text", None) or getattr(row, "chunk", None)
+                    if text:
+                        id_to_text[str(row.id)] = str(text)
+        except Exception as e:
+            logger.warning("[RAG] Failed to fetch chunks from Postgres: %r", e)
+
+    # 2) Return in the original order, skipping missing content
+    out: List[str] = []
+    for idx, m in enumerate(matches):
+        if snippets[idx]:
+            out.append(snippets[idx])  # type: ignore[arg-type]
+            continue
+        mid = _get_match_chunk_id(m)
+        if mid and mid in id_to_text:
+            out.append(id_to_text[mid])
+    return out
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 from amprenta_rag.query.rag.chunk_collection import collect_chunks
 from amprenta_rag.query.rag.match_processing import filter_matches, summarize_match
 from amprenta_rag.query.rag.models import MatchSummary, RAGQueryResult
-from amprenta_rag.query.rag.query import query_rag, signature_similarity_query
+from amprenta_rag.query.rag.query import query_rag
 from amprenta_rag.query.rag.synthesis import synthesize_answer
 
 __all__ = [
@@ -23,6 +23,5 @@ __all__ = [
     "collect_chunks",
     "synthesize_answer",
     "query_rag",
-    "signature_similarity_query",
 ]
 
