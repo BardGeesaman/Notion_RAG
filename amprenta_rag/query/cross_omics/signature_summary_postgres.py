@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Signature as SignatureModel
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.cross_omics.helpers import (
@@ -59,69 +59,59 @@ def cross_omics_signature_summary_postgres(
         "[RAG][CROSS-OMICS][POSTGRES] Generating cross-omics summary for signature",
     )
 
-    # Get database session
-    db = next(get_db())
-    try:
-        # Find signature in Postgres
+    with db_session() as db:
         signature: SignatureModel | None = None
-
+        
         if signature_id:
-            # Query by UUID
             signature = db.query(SignatureModel).filter(SignatureModel.id == signature_id).first()
             if not signature:
                 return f"Error: Signature with ID {signature_id} not found in Postgres."
         elif signature_name:
-            # Query by name
             signature = db.query(SignatureModel).filter(SignatureModel.name == signature_name).first()
             if not signature:
-                # Try short_id
                 signature = db.query(SignatureModel).filter(SignatureModel.short_id == signature_name).first()
             if not signature:
                 return f"Error: Signature '{signature_name}' not found in Postgres."
         else:
             return "Error: Must provide either signature_id or signature_name."
-
+        
         signature_name_display = signature.name or "Unknown Signature"
         modalities = signature.modalities or []
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Found signature: %s (modalities: %s)",
             signature_name_display,
             modalities,
         )
-
-        # Get linked datasets via relationship
+        
         datasets = signature.datasets
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Found %d linked datasets for signature %s",
             len(datasets),
             signature_name_display,
         )
-
-        # Get signature components/features
+        
         components = signature.components
         feature_types_in_signature = list(set([c.feature_type for c in components if c.feature_type]))
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Signature has %d components across %s",
             len(components),
             feature_types_in_signature,
         )
-
-        # Get Notion page IDs for chunk retrieval (backward compatibility)
+        
         dataset_page_ids: List[str] = []
         for dataset in datasets[:top_k_datasets]:
             if dataset.notion_page_id:
                 dataset_page_ids.append(dataset.notion_page_id)
-
-        # Query Pinecone for chunks with this signature
+        
         all_chunks: List[Dict[str, Any]] = []
-
+        
         if signature.notion_page_id:
             signature_id_clean = signature.notion_page_id.replace("-", "")
             meta_filter = {"signature_page_id": signature_id_clean}
-
+            
             signature_chunks = query_pinecone(
                 user_query=f"signature {signature_name_display} multi-omics analysis",
                 top_k=top_k_chunks,
@@ -129,8 +119,7 @@ def cross_omics_signature_summary_postgres(
                 source_types=["Signature", "Dataset"],
             )
             all_chunks.extend(signature_chunks)
-
-        # Also get chunks from linked datasets
+        
         if dataset_page_ids:
             dataset_chunks = retrieve_chunks_for_objects(
                 dataset_page_ids,
@@ -138,33 +127,31 @@ def cross_omics_signature_summary_postgres(
                 top_k_per_object=top_k_chunks // max(len(dataset_page_ids), 1),
             )
             all_chunks.extend(dataset_chunks)
-
+        
         if not all_chunks:
             logger.warning(
                 "[RAG][CROSS-OMICS][POSTGRES] No chunks found for signature %s. "
                 "Linked datasets may not have been ingested into RAG.",
                 signature_name_display,
             )
-
-            # Fall back to metadata-only summary
+            
             aggregated_context = aggregate_context_from_models(datasets, [])
             comparative_context = identify_comparative_context_postgres(aggregated_context)
-
+            
             omics_types = {}
             for dataset in datasets:
                 omics_type = dataset.omics_type or "Other"
                 omics_types[omics_type] = omics_types.get(omics_type, 0) + 1
-
-            # Build signature component summary
+            
             component_summary = []
-            for comp in components[:10]:  # Limit to first 10
+            for comp in components[:10]:
                 comp_str = comp.feature_name or f"{comp.feature_type} feature"
                 if comp.direction:
                     comp_str += f" ({comp.direction})"
                 if comp.weight:
                     comp_str += f" [weight: {comp.weight}]"
                 component_summary.append(comp_str)
-
+            
             additional_info = f"""This signature contains:
 - {len(components)} component(s) across {len(feature_types_in_signature)} feature type(s): {', '.join(feature_types_in_signature)}
 - {len(datasets)} linked dataset(s)
@@ -194,44 +181,39 @@ Key components: {', '.join(component_summary[:5])}{'...' if len(component_summar
 
             return summary
 
-        # Group by omics type
         chunks_by_omics = group_chunks_by_omics_type(all_chunks)
-
-        # Get chunk texts
+        
         context_chunks: List[str] = []
         for chunk in all_chunks[:top_k_chunks]:
             meta = chunk.get("metadata", {}) or getattr(chunk, "metadata", {})
             title = meta.get("title", "")
             source = meta.get("source_type", "")
-
+            
             chunk_text = get_chunk_text(chunk)
             if chunk_text:
                 context_chunks.append(f"[{source}] {title}\n{chunk_text}")
-
+        
         omics_counts = {omics: len(chunks) for omics, chunks in chunks_by_omics.items() if chunks}
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Retrieved %d chunks for signature %s: %s",
             len(all_chunks),
             signature_name_display,
             omics_counts,
         )
-
-        # Aggregate context from linked datasets
+        
         aggregated_context = aggregate_context_from_models(datasets, [])
         comparative_context = identify_comparative_context_postgres(aggregated_context)
-
-        # Build signature component summary
+        
         component_summary = []
-        for comp in components[:10]:  # Limit to first 10
+        for comp in components[:10]:
             comp_str = comp.feature_name or f"{comp.feature_type} feature"
             if comp.direction:
                 comp_str += f" ({comp.direction})"
             if comp.weight:
                 comp_str += f" [weight: {comp.weight}]"
             component_summary.append(comp_str)
-
-        # Build additional info
+        
         additional_info = f"""This signature contains:
 - {len(components)} component(s) across {len(feature_types_in_signature)} feature type(s): {', '.join(feature_types_in_signature)}
 - {len(datasets)} linked dataset(s)
@@ -265,6 +247,3 @@ Key components: {', '.join(component_summary[:5])}{'...' if len(component_summar
         )
 
         return summary
-
-    finally:
-        db.close()

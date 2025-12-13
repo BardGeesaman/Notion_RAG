@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.database.models import Experiment as ExperimentModel
 from amprenta_rag.database.models import Program as ProgramModel
@@ -150,65 +150,53 @@ def cross_omics_program_summary_postgres(
         program_id,
     )
 
-    # Get database session
-    db = next(get_db())
-    try:
-        # Query program from Postgres
+    with db_session() as db:
         program = db.query(ProgramModel).filter(ProgramModel.id == program_id).first()
         if not program:
             return f"Error: Program with ID {program_id} not found in Postgres."
-
+        
         program_name = program.name or "Unknown Program"
-
-        # Get linked experiments and datasets via relationships
+        
         experiments = program.experiments
         datasets = program.datasets
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Found %d experiments, %d datasets for program %s",
             len(experiments),
             len(datasets),
             program_name,
         )
-
+        
         if not experiments and not datasets:
             return (
                 f"No sufficient multi-omics context found for program '{program_name}'. "
                 "No experiments or datasets are linked to this program."
             )
-
-        # Get Notion page IDs for chunk retrieval (backward compatibility)
-        # Chunks in Pinecone are currently indexed with Notion page IDs
+        
         dataset_page_ids: List[str] = []
         experiment_page_ids: List[str] = []
-
+        
         for dataset in datasets:
             if dataset.notion_page_id:
                 dataset_page_ids.append(dataset.notion_page_id)
-
+        
         for experiment in experiments:
             if experiment.notion_page_id:
                 experiment_page_ids.append(experiment.notion_page_id)
-
-        # If no Notion page IDs, we can't retrieve chunks yet
-        # Note: Chunks in Pinecone are currently indexed with Notion page IDs.
-        # Once Pinecone is re-indexed with Postgres UUIDs, we can retrieve chunks
-        # directly using Postgres UUIDs instead of notion_page_id.
+        
         if not dataset_page_ids and not experiment_page_ids:
             logger.warning(
                 "[RAG][CROSS-OMICS][POSTGRES] No Notion page IDs found for datasets/experiments. "
                 "Chunks may not be retrievable. Consider re-indexing with Postgres UUIDs."
             )
-            # Still generate summary from metadata
             aggregated_context = aggregate_context_from_models(datasets, experiments)
             comparative_context = identify_comparative_context_postgres(aggregated_context)
-
-            # Build summary from metadata only
+            
             omics_types = {}
             for dataset in datasets:
                 omics_type = dataset.omics_type or "Other"
                 omics_types[omics_type] = omics_types.get(omics_type, 0) + 1
-
+            
             additional_info = f"""The program is linked to:
 - {len(experiments)} experiment(s)
 - {len(datasets)} dataset(s)
@@ -237,37 +225,34 @@ def cross_omics_program_summary_postgres(
 
             return summary
 
-        # Retrieve chunks from datasets
         dataset_chunks = retrieve_chunks_for_objects(
             dataset_page_ids,
             "dataset",
             top_k_per_object=top_k_per_omics,
         )
-
-        # Retrieve chunks from experiments
+        
         experiment_chunks = retrieve_chunks_for_objects(
             experiment_page_ids,
             "experiment",
             top_k_per_object=top_k_per_omics,
         )
-
+        
         all_chunks = dataset_chunks + experiment_chunks
-
+        
         if not all_chunks:
             logger.warning(
                 "[RAG][CROSS-OMICS][POSTGRES] No chunks found for program %s. "
                 "Linked datasets and experiments may not have been ingested into RAG.",
                 program_name,
             )
-            # Fall back to metadata-only summary
             aggregated_context = aggregate_context_from_models(datasets, experiments)
             comparative_context = identify_comparative_context_postgres(aggregated_context)
-
+            
             omics_types = {}
             for dataset in datasets:
                 omics_type = dataset.omics_type or "Other"
                 omics_types[omics_type] = omics_types.get(omics_type, 0) + 1
-
+            
             additional_info = f"""The program is linked to:
 - {len(experiments)} experiment(s)
 - {len(datasets)} dataset(s)
@@ -295,34 +280,30 @@ def cross_omics_program_summary_postgres(
 
             return summary
 
-        # Extract aggregated context from Postgres models
         aggregated_context = aggregate_context_from_models(datasets, experiments)
         comparative_context = identify_comparative_context_postgres(aggregated_context)
-
-        # Group chunks by omics type
+        
         chunks_by_omics = group_chunks_by_omics_type(all_chunks)
-
-        # Get chunk texts
+        
         context_chunks: List[str] = []
         for chunk in all_chunks:
             meta = chunk.get("metadata", {}) or getattr(chunk, "metadata", {})
             title = meta.get("title", "")
             source = meta.get("source_type", "")
-
+            
             chunk_text = get_chunk_text(chunk)
             if chunk_text:
                 context_chunks.append(f"[{source}] {title}\n{chunk_text}")
-
+        
         omics_counts = {omics: len(chunks) for omics, chunks in chunks_by_omics.items() if chunks}
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Retrieved %d total chunks for program %s: %s",
             len(all_chunks),
             program_name,
             omics_counts,
         )
-
-        # Build additional info
+        
         additional_info = f"""The program is linked to:
 - {len(experiments)} experiment(s)
 - {len(datasets)} dataset(s)"""
@@ -351,6 +332,3 @@ def cross_omics_program_summary_postgres(
         )
 
         return summary
-
-    finally:
-        db.close()

@@ -12,7 +12,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import (
     Program as ProgramModel,
     Experiment as ExperimentModel,
@@ -99,15 +99,20 @@ def fetch_postgres_context(
         Text representation for RAG, or None if not found
     """
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return fetch_postgres_context(
+                postgres_id,
+                entity_type,
+                db=db,
+                include_notion_narrative=include_notion_narrative,
+            )
     
     try:
         if entity_type == "Dataset":
             return build_dataset_rag_text(postgres_id, db=db, include_notion_narrative=include_notion_narrative)
-        elif entity_type == "Program":
+        if entity_type == "Program":
             return build_program_rag_text(postgres_id, db=db, include_notion_narrative=include_notion_narrative)
-        elif entity_type == "Experiment":
-            # For experiments, build a simple text representation
+        if entity_type == "Experiment":
             experiment = db.query(ExperimentModel).filter(ExperimentModel.id == postgres_id).first()
             if experiment:
                 parts = [f"Experiment: {experiment.name}"]
@@ -116,7 +121,7 @@ def fetch_postgres_context(
                 if experiment.disease:
                     parts.append(f"Disease: {', '.join(experiment.disease)}")
                 return "\n".join(parts)
-        elif entity_type == "Signature":
+        if entity_type == "Signature":
             signature = db.query(SignatureModel).filter(SignatureModel.id == postgres_id).first()
             if signature:
                 parts = [f"Signature: {signature.name}"]
@@ -125,7 +130,7 @@ def fetch_postgres_context(
                 if signature.modalities:
                     parts.append(f"Modalities: {', '.join(signature.modalities)}")
                 return "\n".join(parts)
-        elif entity_type == "Feature":
+        if entity_type == "Feature":
             feature = db.query(FeatureModel).filter(FeatureModel.id == postgres_id).first()
             if feature:
                 return f"Feature: {feature.name} (Type: {feature.feature_type})"
@@ -161,22 +166,23 @@ def get_notion_id_from_postgres(
         Notion page ID if available, None otherwise
     """
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return get_notion_id_from_postgres(postgres_id, entity_type, db=db)
     
     try:
         if entity_type == "Dataset":
             dataset = db.query(DatasetModel).filter(DatasetModel.id == postgres_id).first()
             return dataset.notion_page_id if dataset else None
-        elif entity_type == "Program":
+        if entity_type == "Program":
             program = db.query(ProgramModel).filter(ProgramModel.id == postgres_id).first()
             return program.notion_page_id if program else None
-        elif entity_type == "Experiment":
+        if entity_type == "Experiment":
             experiment = db.query(ExperimentModel).filter(ExperimentModel.id == postgres_id).first()
             return experiment.notion_page_id if experiment else None
-        elif entity_type == "Signature":
+        if entity_type == "Signature":
             signature = db.query(SignatureModel).filter(SignatureModel.id == postgres_id).first()
             return signature.notion_page_id if signature else None
-        elif entity_type == "Feature":
+        if entity_type == "Feature":
             feature = db.query(FeatureModel).filter(FeatureModel.id == postgres_id).first()
             return feature.notion_page_id if feature else None
         

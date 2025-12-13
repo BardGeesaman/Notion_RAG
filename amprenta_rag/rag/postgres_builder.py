@@ -12,7 +12,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import (
     Program as ProgramModel,
     Experiment as ExperimentModel,
@@ -43,7 +43,8 @@ def build_dataset_rag_metadata(
         Dictionary of metadata for Pinecone
     """
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return build_dataset_rag_metadata(dataset_id, db=db, include_notion_id=include_notion_id)
     
     dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
     if not dataset:
@@ -89,7 +90,8 @@ def build_program_rag_metadata(
 ) -> Dict[str, Any]:
     """Build RAG metadata for a program using Postgres data."""
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return build_program_rag_metadata(program_id, db=db, include_notion_id=include_notion_id)
     
     program = db.query(ProgramModel).filter(ProgramModel.id == program_id).first()
     if not program:
@@ -118,7 +120,8 @@ def build_experiment_rag_metadata(
 ) -> Dict[str, Any]:
     """Build RAG metadata for an experiment using Postgres data."""
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return build_experiment_rag_metadata(experiment_id, db=db, include_notion_id=include_notion_id)
     
     experiment = db.query(ExperimentModel).filter(ExperimentModel.id == experiment_id).first()
     if not experiment:
@@ -156,7 +159,8 @@ def build_signature_rag_metadata(
 ) -> Dict[str, Any]:
     """Build RAG metadata for a signature using Postgres data."""
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return build_signature_rag_metadata(signature_id, db=db, include_notion_id=include_notion_id)
     
     signature = db.query(SignatureModel).filter(SignatureModel.id == signature_id).first()
     if not signature:
@@ -188,7 +192,8 @@ def build_feature_rag_metadata(
 ) -> Dict[str, Any]:
     """Build RAG metadata for a feature using Postgres data."""
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return build_feature_rag_metadata(feature_id, db=db, include_notion_id=include_notion_id)
     
     feature = db.query(FeatureModel).filter(FeatureModel.id == feature_id).first()
     if not feature:
@@ -223,7 +228,8 @@ def build_dataset_rag_text(
         Text representation for embedding
     """
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return build_dataset_rag_text(dataset_id, db=db)
     
     dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
     if not dataset:
@@ -267,7 +273,8 @@ def build_program_rag_text(
 ) -> str:
     """Build RAG text representation for a program."""
     if db is None:
-        db = next(get_db())
+        with db_session() as db:
+            return build_program_rag_text(program_id, db=db)
     
     program = db.query(ProgramModel).filter(ProgramModel.id == program_id).first()
     if not program:

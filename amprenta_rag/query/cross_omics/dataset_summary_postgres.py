@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.cross_omics.helpers import (
@@ -55,41 +55,36 @@ def cross_omics_dataset_summary_postgres(
         dataset_id,
     )
 
-    # Get database session
-    db = next(get_db())
-    try:
+    with db_session() as db:
         # Query dataset from Postgres
         dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
         if not dataset:
             return f"Error: Dataset with ID {dataset_id} not found in Postgres."
-
+        
         dataset_name = dataset.name or "Unknown Dataset"
         omics_type = dataset.omics_type or "Unknown"
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Found dataset: %s (%s)",
             dataset_name,
             omics_type,
         )
-
-        # Get linked programs and experiments
+        
         programs = dataset.programs
         experiments = dataset.experiments
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Dataset linked to %d program(s), %d experiment(s)",
             len(programs),
             len(experiments),
         )
-
-        # Get Notion page ID for chunk retrieval (backward compatibility)
+        
         dataset_page_ids: List[str] = []
         if dataset.notion_page_id:
             dataset_page_ids.append(dataset.notion_page_id)
-
-        # Retrieve chunks from dataset
+        
         all_chunks: List[Dict[str, Any]] = []
-
+        
         if dataset_page_ids:
             dataset_chunks = retrieve_chunks_for_objects(
                 dataset_page_ids,
@@ -97,20 +92,19 @@ def cross_omics_dataset_summary_postgres(
                 top_k_per_object=top_k_chunks,
             )
             all_chunks.extend(dataset_chunks)
-
+        
         if not all_chunks:
             logger.warning(
                 "[RAG][CROSS-OMICS][POSTGRES] No chunks found for dataset %s. "
                 "Dataset may not have been ingested into RAG.",
                 dataset_name,
             )
-
-            # Fall back to metadata-only summary
+            
             aggregated_context = aggregate_context_from_models([dataset], experiments)
             comparative_context = identify_comparative_context_postgres(aggregated_context)
-
+            
             omics_counts = {omics_type: 1} if omics_type != "Unknown" else {}
-
+            
             additional_info = f"""This dataset:
 - Omics type: {omics_type}
 - Linked to {len(programs)} program(s)
@@ -139,34 +133,30 @@ def cross_omics_dataset_summary_postgres(
 
             return summary
 
-        # Group by omics type
         chunks_by_omics = group_chunks_by_omics_type(all_chunks)
-
-        # Get chunk texts
+        
         context_chunks: List[str] = []
         for chunk in all_chunks[:top_k_chunks]:
             meta = chunk.get("metadata", {}) or getattr(chunk, "metadata", {})
             title = meta.get("title", "")
             source = meta.get("source_type", "")
-
+            
             chunk_text = get_chunk_text(chunk)
             if chunk_text:
                 context_chunks.append(f"[{source}] {title}\n{chunk_text}")
-
+        
         omics_counts = {omics: len(chunks) for omics, chunks in chunks_by_omics.items() if chunks}
-
+        
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Retrieved %d chunks for dataset %s: %s",
             len(all_chunks),
             dataset_name,
             omics_counts,
         )
-
-        # Aggregate context from dataset and linked experiments
+        
         aggregated_context = aggregate_context_from_models([dataset], experiments)
         comparative_context = identify_comparative_context_postgres(aggregated_context)
-
-        # Build additional info
+        
         additional_info = f"""This dataset:
 - Omics type: {omics_type}
 - Linked to {len(programs)} program(s)
@@ -200,6 +190,3 @@ def cross_omics_dataset_summary_postgres(
         )
 
         return summary
-
-    finally:
-        db.close()

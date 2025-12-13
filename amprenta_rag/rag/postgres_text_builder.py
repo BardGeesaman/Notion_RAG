@@ -20,7 +20,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session, selectinload
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Program, Experiment, Dataset, Feature, Signature
 from amprenta_rag.logging_utils import get_logger
 
@@ -500,29 +500,22 @@ def build_text_for_entity(
         Formatted text summary
     """
     if db is None:
-        db = next(get_db())
-        close_db = True
-    else:
-        close_db = False
+        with db_session() as db:
+            return build_text_for_entity(entity_type, entity_id, db=db)
     
-    try:
-        entity_type_lower = entity_type.lower()
-        
-        if entity_type_lower == "program":
-            return build_program_text(db, entity_id)
-        elif entity_type_lower == "experiment":
-            return build_experiment_text(db, entity_id)
-        elif entity_type_lower == "dataset":
-            return build_dataset_text(db, entity_id)
-        elif entity_type_lower == "feature":
-            return build_feature_text(db, entity_id)
-        elif entity_type_lower == "signature":
-            return build_signature_text(db, entity_id)
-        else:
-            logger.error("[RAG][TEXT-BUILDER] Unknown entity type: %s", entity_type)
-            return ""
+    entity_type_lower = entity_type.lower()
     
-    finally:
-        if close_db:
-            db.close()
+    if entity_type_lower == "program":
+        return build_program_text(db, entity_id)
+    if entity_type_lower == "experiment":
+        return build_experiment_text(db, entity_id)
+    if entity_type_lower == "dataset":
+        return build_dataset_text(db, entity_id)
+    if entity_type_lower == "feature":
+        return build_feature_text(db, entity_id)
+    if entity_type_lower == "signature":
+        return build_signature_text(db, entity_id)
+    
+    logger.error("[RAG][TEXT-BUILDER] Unknown entity type: %s", entity_type)
+    return ""
 
