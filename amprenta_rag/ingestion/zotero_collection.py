@@ -157,17 +157,16 @@ def incremental_ingest_collection(
         title = data.get("title") or "(untitled)"
         item_type = data.get("itemType")
 
-        print(f"\n=== [{idx}/{total}] {title} ({item_key}) [{item_type}] ===")
+        logger.info("=== [%d/%d] %s (%s) [%s] ===", idx, total, title, item_key, item_type)
 
         try:
             ingest_zotero_item(item_key=item_key, parent_type=parent_type)
         except Exception as e:  # noqa: BLE001
-            print(f"❌ Skipping item {item_key} due to error: {e}")
+            logger.error("Skipping item %s due to error: %r", item_key, e)
             continue
+        logger.info("")
 
-        print("")
-
-    print("\n🎉 Incremental collection ingest complete.")
+    logger.info("Incremental collection ingest complete.")
 
 
 def resync_collection(
@@ -198,13 +197,13 @@ def resync_collection(
         title = data.get("title") or "(untitled)"
         item_type = data.get("itemType")
 
-        print(f"\n=== [{idx}/{total}] {title} ({item_key}) [{item_type}] ===")
+        logger.info("=== [%d/%d] %s (%s) [%s] ===", idx, total, title, item_key, item_type)
 
-        print(f"🧹 Clearing old data for {item_key}...")
+        logger.info("🧹 Clearing old data for %s...", item_key)
         delete_pinecone_vectors_for_item(item_key)
         delete_rag_pages_for_item(item_key)
 
-        print(f"🔄 Re-ingesting {item_key}...")
+        logger.info("🔄 Re-ingesting %s...", item_key)
         try:
             ingest_zotero_item(
                 item_key=item_key,
@@ -213,9 +212,8 @@ def resync_collection(
             )
 
         except Exception as e:  # noqa: BLE001
-            print(f"❌ Skipping item {item_key} due to error: {e}")
+            logger.error("Skipping item %s due to error: %r", item_key, e)
             continue
+        logger.info("")
 
-        print("")
-
-    print("\n🎉 Collection resync complete.")
+    logger.info("Collection resync complete.")

@@ -3,6 +3,10 @@ from __future__ import annotations
 
 from typing import Dict, List
 
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
 ERROR_MESSAGES: Dict[str, Dict[str, List[str] | str]] = {
     "db_connection": {
         "message": "Database connection failed: {details}",
@@ -79,7 +83,7 @@ def render_cli_error(category: str, **kwargs: str) -> None:
     text = format_error(category, **kwargs)
     red = "\033[91m"
     reset = "\033[0m"
-    print(f"{red}{text}{reset}")
+    logger.error(f"{red}{text}{reset}")
 
 
 __all__ = ["ERROR_MESSAGES", "format_error", "render_cli_error"]
