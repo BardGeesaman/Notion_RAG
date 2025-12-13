@@ -1,119 +1,67 @@
 from __future__ import annotations
 
-import sqlite3
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from fastapi import HTTPException
-
-from amprenta_rag.chemistry.database import get_chemistry_db_path
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
+from amprenta_rag.database.session import db_session
+from amprenta_rag.database.models import HTSCampaign, HTSResult
 
 
-def list_campaigns() -> List[dict]:
-    db_path = get_chemistry_db_path()
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            """
-            SELECT campaign_id, campaign_name, description, assay_type,
-                   target, library_id, total_wells, hit_count, run_date
-            FROM hts_campaigns
-            ORDER BY run_date DESC
-            """
+def list_campaigns() -> List[Dict]:
+    """List HTS campaigns ordered by run date descending."""
+    with db_session() as db:
+        rows = db.query(HTSCampaign).order_by(HTSCampaign.run_date.desc()).all()
+        return [_campaign_to_dict(c) for c in rows]
+
+
+def get_campaign(campaign_id: str) -> Optional[Dict]:
+    """Fetch a campaign by campaign_id."""
+    with db_session() as db:
+        obj = db.query(HTSCampaign).filter(HTSCampaign.campaign_id == campaign_id).first()
+        return _campaign_to_dict(obj) if obj else None
+
+
+def get_campaign_hits(campaign_id: str) -> List[Dict]:
+    """Get hit results for a campaign."""
+    with db_session() as db:
+        rows = (
+            db.query(HTSResult)
+            .join(HTSCampaign, HTSResult.campaign_id == HTSCampaign.id)
+            .filter(HTSCampaign.campaign_id == campaign_id, HTSResult.hit_flag.is_(True))
+            .order_by(HTSResult.normalized_value.desc())
+            .all()
         )
-        rows = cursor.fetchall()
-        return [
-            {
-                "campaign_id": r[0],
-                "campaign_name": r[1],
-                "description": r[2],
-                "assay_type": r[3],
-                "target": r[4],
-                "library_id": r[5],
-                "total_wells": r[6],
-                "hit_count": r[7],
-                "run_date": r[8],
-            }
-            for r in rows
-        ]
-    except sqlite3.Error as e:
-        logger.error("[API][SCREENING] Database error listing campaigns: %r", e)
-        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
-    finally:
-        conn.close()
+        return [_result_to_dict(r) for r in rows]
 
 
-def get_campaign(campaign_id: str) -> Optional[dict]:
-    db_path = get_chemistry_db_path()
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            """
-            SELECT campaign_id, campaign_name, description, assay_type,
-                   target, library_id, total_wells, hit_count, run_date
-            FROM hts_campaigns
-            WHERE campaign_id = ?
-            """,
-            (campaign_id,),
-        )
-        r = cursor.fetchone()
-        if not r:
-            return None
-        return {
-            "campaign_id": r[0],
-            "campaign_name": r[1],
-            "description": r[2],
-            "assay_type": r[3],
-            "target": r[4],
-            "library_id": r[5],
-            "total_wells": r[6],
-            "hit_count": r[7],
-            "run_date": r[8],
-        }
-    except sqlite3.Error as e:
-        logger.error("[API][SCREENING] Database error fetching campaign %s: %r", campaign_id, e)
-        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
-    finally:
-        conn.close()
+def _campaign_to_dict(c: HTSCampaign) -> Dict:
+    if not c:
+        return {}
+    return {
+        "id": str(getattr(c, "id", "")) if getattr(c, "id", None) else None,
+        "campaign_id": getattr(c, "campaign_id", None),
+        "campaign_name": getattr(c, "campaign_name", None),
+        "description": getattr(c, "description", None),
+        "assay_type": getattr(c, "assay_type", None),
+        "target": getattr(c, "target", None),
+        "library_id": getattr(c, "library_id", None),
+        "total_wells": getattr(c, "total_wells", None),
+        "hit_count": getattr(c, "hit_count", None),
+        "run_date": c.run_date.isoformat() if getattr(c, "run_date", None) else None,
+    }
 
 
-def get_campaign_hits(campaign_id: str) -> List[dict]:
-    db_path = get_chemistry_db_path()
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            """
-            SELECT result_id, compound_id, well_position,
-                   raw_value, normalized_value, z_score,
-                   hit_flag, hit_category
-            FROM hts_results
-            WHERE campaign_id = ? AND hit_flag = 1
-            ORDER BY normalized_value DESC
-            """,
-            (campaign_id,),
-        )
-        rows = cursor.fetchall()
-        return [
-            {
-                "result_id": r[0],
-                "compound_id": r[1],
-                "well_position": r[2],
-                "raw_value": r[3],
-                "normalized_value": r[4],
-                "z_score": r[5],
-                "hit_flag": r[6],
-                "hit_category": r[7],
-            }
-            for r in rows
-        ]
-    except sqlite3.Error as e:
-        logger.error("[API][SCREENING] Database error fetching hits for %s: %r", campaign_id, e)
-        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
-    finally:
-        conn.close()
+def _result_to_dict(r: HTSResult) -> Dict:
+    if not r:
+        return {}
+    return {
+        "id": str(getattr(r, "id", "")) if getattr(r, "id", None) else None,
+        "result_id": getattr(r, "result_id", None),
+        "compound_id": getattr(r, "compound_id", None),
+        "well_position": getattr(r, "well_position", None),
+        "raw_value": getattr(r, "raw_value", None),
+        "normalized_value": getattr(r, "normalized_value", None),
+        "z_score": getattr(r, "z_score", None),
+        "hit_flag": getattr(r, "hit_flag", None),
+        "hit_category": getattr(r, "hit_category", None),
+    }
 

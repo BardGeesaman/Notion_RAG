@@ -1,119 +1,61 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-import sqlite3
-from fastapi import HTTPException
-
-from amprenta_rag.chemistry.database import get_chemistry_db_path
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
+from amprenta_rag.database.session import db_session
+from amprenta_rag.database.models import Compound
 
 
-def list_compounds() -> List[dict]:
-    """List all compounds."""
-    db_path = get_chemistry_db_path()
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            """
-            SELECT compound_id, smiles, inchi_key, canonical_smiles,
-                   molecular_formula, molecular_weight, logp,
-                   hbd_count, hba_count, rotatable_bonds
-            FROM compounds
-            ORDER BY updated_at DESC
-            """
+def list_compounds() -> List[Dict]:
+    """List compounds ordered by latest update."""
+    with db_session() as db:
+        rows = (
+            db.query(Compound)
+            .order_by(Compound.updated_at.desc() if hasattr(Compound, "updated_at") else Compound.created_at.desc())
+            .all()
         )
-        rows = cursor.fetchall()
+        return [_compound_to_dict(c) for c in rows]
+
+
+def get_compound_by_id(compound_id: str) -> Optional[Dict]:
+    """Fetch a compound by compound_id."""
+    with db_session() as db:
+        obj = db.query(Compound).filter(Compound.compound_id == compound_id).first()
+        return _compound_to_dict(obj) if obj else None
+
+
+def get_compound_programs(compound_id: str) -> List[Dict]:
+    """Return programs linked to a compound."""
+    with db_session() as db:
+        obj = db.query(Compound).filter(Compound.compound_id == compound_id).first()
+        if not obj or not getattr(obj, "programs", None):
+            return []
         return [
             {
-                "compound_id": r[0],
-                "smiles": r[1],
-                "inchi_key": r[2],
-                "canonical_smiles": r[3],
-                "molecular_formula": r[4],
-                "molecular_weight": r[5],
-                "logp": r[6],
-                "hbd_count": r[7],
-                "hba_count": r[8],
-                "rotatable_bonds": r[9],
+                "id": str(getattr(p, "id", "")) if getattr(p, "id", None) else None,
+                "name": getattr(p, "name", None),
+                "description": getattr(p, "description", None),
             }
-            for r in rows
+            for p in obj.programs
         ]
-    except sqlite3.Error as e:
-        logger.error("[API][COMPOUNDS] Database error listing compounds: %r", e)
-        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
-    finally:
-        conn.close()
 
 
-def get_compound_by_id(compound_id: str) -> Optional[dict]:
-    """Get compound details by ID."""
-    db_path = get_chemistry_db_path()
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            """
-            SELECT compound_id, smiles, inchi_key, canonical_smiles,
-                   molecular_formula, molecular_weight, logp,
-                   hbd_count, hba_count, rotatable_bonds
-            FROM compounds
-            WHERE compound_id = ?
-            """,
-            (compound_id,),
-        )
-        r = cursor.fetchone()
-        if not r:
-            return None
-        return {
-            "compound_id": r[0],
-            "smiles": r[1],
-            "inchi_key": r[2],
-            "canonical_smiles": r[3],
-            "molecular_formula": r[4],
-            "molecular_weight": r[5],
-            "logp": r[6],
-            "hbd_count": r[7],
-            "hba_count": r[8],
-            "rotatable_bonds": r[9],
-        }
-    except sqlite3.Error as e:
-        logger.error("[API][COMPOUNDS] Database error fetching %s: %r", compound_id, e)
-        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
-    finally:
-        conn.close()
-
-
-def get_compound_programs(compound_id: str) -> List[dict]:
-    """Return programs linked to a compound (compound_program table)."""
-    db_path = get_chemistry_db_path()
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            """
-            SELECT program_id, status, notes, created_at
-            FROM compound_program
-            WHERE compound_id = ?
-            """,
-            (compound_id,),
-        )
-        rows = cursor.fetchall()
-        return [
-            {
-                "program_id": r[0],
-                "status": r[1],
-                "notes": r[2],
-                "created_at": r[3],
-            }
-            for r in rows
-        ]
-    except sqlite3.Error as e:
-        logger.error("[API][COMPOUNDS] Database error fetching programs for %s: %r", compound_id, e)
-        raise HTTPException(status_code=500, detail=f"Database error: {e}") from e
-    finally:
-        conn.close()
+def _compound_to_dict(c: Compound) -> Dict:
+    if not c:
+        return {}
+    return {
+        "id": str(getattr(c, "id", "")) if getattr(c, "id", None) else None,
+        "compound_id": getattr(c, "compound_id", None),
+        "smiles": getattr(c, "smiles", None),
+        "inchi_key": getattr(c, "inchi_key", None),
+        "canonical_smiles": getattr(c, "canonical_smiles", None),
+        "molecular_formula": getattr(c, "molecular_formula", None),
+        "molecular_weight": getattr(c, "molecular_weight", None),
+        "logp": getattr(c, "logp", None),
+        "hbd_count": getattr(c, "hbd_count", None),
+        "hba_count": getattr(c, "hba_count", None),
+        "rotatable_bonds": getattr(c, "rotatable_bonds", None),
+        "created_at": c.created_at.isoformat() if getattr(c, "created_at", None) else None,
+        "updated_at": c.updated_at.isoformat() if getattr(c, "updated_at", None) else None,
+    }
 
