@@ -1,7 +1,7 @@
 # AMPrenta Multi-Agent Team Charter (Cursor)
 
 ## 1. Purpose
-This charter defines how the six-agent Cursor system works together to accelerate development of the Amprenta RAG system, including ingestion pipelines, multi-omics reasoning, Notion + Pinecone integration, and biomedical intelligence modeling. You (the human) communicate ONLY with the Architect; all other agents are controlled indirectly.
+This charter defines how the five-agent Cursor system works together to accelerate development of the Amprenta RAG system, including ingestion pipelines, multi-omics reasoning, and biomedical intelligence modeling. You (the human) communicate ONLY with the Architect; all other agents are controlled indirectly.
 
 ## 2. Agents & Responsibilities
 
@@ -36,22 +36,25 @@ Architect switches to Agent Mode ONLY when instructed:
 - Identifies edge cases and architectural issues  
 - Suggests improvements without rewriting code unless asked  
 
-### 4. Tester — The Validator
-**Model:** GPT-5.1 or Claude 4.5 Sonnet  
-**Mode:** Max Mode allowed for deep reasoning  
+### 4. Debugger — The Runtime Investigator
+**Model:** Any (uses Cursor Debug Mode)  
+**Mode:** Debug Mode (mandatory)  
 **Responsibilities:**  
-- Writes unit, integration, scenario tests  
-- Validates ingestion logic, vectorization, multi-omics reasoning  
-- Identifies failure modes and ensures reproducibility  
+- Diagnoses runtime bugs using Debug Mode instrumentation  
+- Generates hypotheses and injects logging to capture runtime behavior  
+- Analyzes variable values, execution paths, and timing  
+- Proposes targeted fixes based on runtime evidence  
+- Best for: stateful bugs, timing issues, heisenbugs, integration failures  
 
 ### 5. Automator — The Workflow Engineer
 **Model:** GPT-5.1  
 **Mode:** Agent Mode ON for workflow tasks  
 **Responsibilities:**  
+- Runs pytest and Playwright E2E tests  
+- Executes git operations (add, commit, push)  
+- Starts/stops servers for testing  
 - Builds automation tools, CLIs, orchestration workflows  
-- Manages ingestion workflows, vector refresh cycles, Notion-Pinecone sync  
-- Implements retry logic, logging, idempotent workflows  
-- Integrates multi-step pipelines for production use  
+- Manages ingestion workflows and multi-step pipelines  
 
 ### 6. Documentor — The Explainer
 **Model:** Claude 4.5 Sonnet  
@@ -80,9 +83,9 @@ Switches to Agent Mode ONLY when explicitly told:
 ### Rule 3 — Strict Separation of Roles
 Architect → planning  
 Implementor → building  
-Reviewer → inspecting  
-Tester → validating  
-Automator → orchestrating  
+Reviewer → inspecting (static analysis)  
+Debugger → investigating (runtime bugs)  
+Automator → orchestrating (tests, git, servers)  
 Documentor → documenting  
 No agent drifts into another role.
 
@@ -100,8 +103,8 @@ Standard sequence:
 1. Implementor writes code  
 2. Reviewer inspects  
 3. Architect approves  
-4. Tester validates  
-5. Automator updates workflows if needed  
+4. Automator runs tests and commits  
+5. Debugger investigates if runtime bugs found  
 6. Documentor updates documentation  
 
 ### Rule 6 — Maintain Technical Standards
@@ -133,8 +136,8 @@ run Implementor for step 2
 Then:  
 - Implementor builds  
 - Reviewer reviews  
-- Tester validates  
-- Automator integrates workflows  
+- Automator tests and commits  
+- Debugger investigates runtime issues  
 - Documentor updates docs  
 
 Architect remains the central controller.
@@ -152,8 +155,8 @@ Only Architect needs initialization.
 - Architect manages migration strategy  
 - Implementor writes migration code  
 - Reviewer checks for safety  
-- Tester validates correctness and edge cases  
-- Automator orchestrates migration execution + rollback workflows  
+- Automator validates and executes migrations  
+- Debugger investigates migration failures  
 - Documentor updates migration docs  
 
 # Deeplink Usage Standard
@@ -173,9 +176,9 @@ All agents must use Cursor Deeplinks wherever possible to ensure deterministic n
 - Must inspect code at the exact deeplinked location.
 - Must reference deeplinks in review comments.
 
-## Tester
-- Must create and update tests in deeplinked files.
-- Must deeplink to test cases when reporting failures.
+## Debugger
+- Must deeplink to instrumented code locations.
+- Must reference deeplinks when reporting runtime evidence.
 
 ## Automator
 - Must deeplink to workflows, CLIs, and orchestration modules when updating pipelines.
