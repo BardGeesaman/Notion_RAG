@@ -1,19 +1,21 @@
 """
-SQLite schema definitions for chemistry and HTS data.
+DEPRECATED: SQLite schema definitions for chemistry and HTS data.
 
-This module defines the database schema for storing:
-- Compounds (SMILES, InChIKeys, internal IDs)
-- Libraries (compound collections)
-- HTS Campaigns (screening campaigns)
-- HTS Results (assay results from screening)
-- Biochemical Results (detailed biochemical assays)
-- Compound-Program relationships
+This module defines legacy SQLite schema structures. Chemistry and screening data
+are now stored in PostgreSQL using amprenta_rag.database.models and db_session.
 """
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Optional
+
+warnings.warn(
+    "amprenta_rag.chemistry.schema is deprecated. Use PostgreSQL via amprenta_rag.database.models and db_session.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 # SQLite schema definitions as CREATE TABLE statements
 

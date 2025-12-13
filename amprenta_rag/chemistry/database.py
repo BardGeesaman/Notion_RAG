@@ -5,6 +5,8 @@ This module is deprecated. Chemistry data is now stored in PostgreSQL.
 See amprenta_rag/database/models.py for the Compound model.
 
 Kept for backward compatibility and potential data migration scripts.
+
+DEPRECATED: Use amprenta_rag.database.models and db_session instead.
 """
 
 from __future__ import annotations
@@ -12,7 +14,7 @@ from __future__ import annotations
 import warnings
 
 warnings.warn(
-    "amprenta_rag.chemistry.database is deprecated. Use PostgreSQL via amprenta_rag.database.models.Compound",
+    "amprenta_rag.chemistry.database is deprecated. Use PostgreSQL via amprenta_rag.database.models and db_session.",
     DeprecationWarning,
     stacklevel=2,
 )

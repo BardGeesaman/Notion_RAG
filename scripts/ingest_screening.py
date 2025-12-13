@@ -2,7 +2,7 @@
 """
 CLI script for ingesting screening data.
 
-Ingests HTS campaign metadata, hit lists, and biochemical results into SQLite,
+Ingests HTS campaign metadata, hit lists, and biochemical results into PostgreSQL,
 and optionally promotes compounds to Notion.
 """
 
@@ -13,7 +13,6 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.chemistry.database import initialize_chemistry_database
 from amprenta_rag.ingestion.screening_ingestion import (
     ingest_biochemical_results,
     ingest_hts_campaign_metadata,
@@ -109,12 +108,6 @@ def main() -> None:
     print("=" * 80)
     
     try:
-        # Initialize database if requested
-        if args.init_db:
-            print("\n📊 Initializing chemistry database...")
-            initialize_chemistry_database()
-            print("✅ Database initialized")
-        
         # Ingest campaign metadata
         if args.campaign_metadata_file:
             print(f"\n📋 Ingesting campaign metadata from {args.campaign_metadata_file}")

@@ -634,13 +634,12 @@ def render_ingestion_page() -> None:
                         try:
                             import pandas as pd
 
-                            from amprenta_rag.chemistry.database import insert_compound
+                            from amprenta_rag.chemistry.registration import register_compound
                             from amprenta_rag.chemistry.normalization import (
                                 compute_molecular_descriptors,
                                 generate_compound_id,
                                 normalize_smiles,
                             )
-                            from amprenta_rag.chemistry.schema import Compound
 
                             # Read compound file
                             df = pd.read_csv(compound_file, sep="\t" if compound_file.name.endswith(".tsv") else ",")
@@ -671,22 +670,14 @@ def render_ingestion_page() -> None:
                                         else:
                                             compound_id = generate_compound_id(smiles)
 
-                                        # Compute descriptors
-                                        descriptors = compute_molecular_descriptors(smiles)
-
-                                        # Create compound object
-                                        compound = Compound(
-                                            compound_id=compound_id,
+                                        # Register compound (handles duplicates/upserts)
+                                        registered_id = register_compound(
+                                            name=compound_id,
                                             smiles=smiles,
-                                            inchi_key=inchi_key,
-                                            canonical_smiles=canonical_smiles,
-                                            molecular_formula=molecular_formula,
-                                            **descriptors,
+                                            salt_form=None if salt_form == "None" else salt_form,
                                         )
-
-                                        # Insert compound (insert_compound handles upserts)
-                                        insert_compound(compound)
-                                        compounds_created += 1
+                                        if registered_id:
+                                            compounds_created += 1
 
                                     except Exception as e:
                                         errors.append(f"Row {idx + 1}: {str(e)}")

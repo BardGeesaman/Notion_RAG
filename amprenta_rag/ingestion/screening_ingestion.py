@@ -1,7 +1,7 @@
 """
 Screening data ingestion pipeline.
 
-Ingests HTS campaign data, hit lists, and biochemical results into SQLite
+Ingests HTS campaign data, hit lists, and biochemical results into PostgreSQL
 and optionally creates/updates Notion pages for promoted compounds.
 """
 
@@ -12,25 +12,35 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from amprenta_rag.chemistry.database import (
-    insert_compound,
-    insert_hts_campaign,
-    insert_hts_results,
-)
+from amprenta_rag.database.session import db_session
 from amprenta_rag.chemistry.normalization import (
     compute_molecular_descriptors,
     generate_compound_id,
     normalize_smiles,
 )
-from amprenta_rag.chemistry.schema import (
-    BiochemicalResult,
-    Compound,
-    HTSCampaign,
-    HTSResult,
-)
+from amprenta_rag.database.models import Compound, HTSCampaign, HTSResult, BiochemicalResult
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.ingestion.screening_ingestion_helpers import (
+    insert_compound_pg,
+    insert_hts_campaign_pg,
+    insert_hts_results_pg,
+    insert_biochemical_results_pg,
+)
 
 logger = get_logger(__name__)
+
+def ingest_hts_campaign(
+    metadata_file: Path | str,
+    campaign_id: Optional[str] = None,
+) -> HTSCampaign:
+    """
+    Backwards-compatible alias for ingesting an HTS campaign.
+
+    Historically, callers imported `ingest_hts_campaign` from this module.
+    The pipeline is now split into explicit steps; this alias delegates to
+    `ingest_hts_campaign_metadata`.
+    """
+    return ingest_hts_campaign_metadata(Path(metadata_file), campaign_id=campaign_id)
 
 
 def ingest_hts_campaign_metadata(
@@ -80,7 +90,7 @@ def ingest_hts_campaign_metadata(
     )
     
     # Insert into database
-    insert_hts_campaign(campaign)
+    insert_hts_campaign_pg(campaign)
     
     logger.info(
         "[INGEST][SCREENING] Ingested HTS campaign %s: %s",
@@ -199,10 +209,10 @@ def ingest_hts_hit_list(
     
     # Batch insert compounds
     for compound in compounds.values():
-        insert_compound(compound)
+        insert_compound_pg(compound)
     
     # Batch insert results
-    insert_hts_results(results)
+    insert_hts_results_pg(results)
     
     logger.info(
         "[INGEST][SCREENING] Ingested %d compounds and %d results for campaign %s",
@@ -326,11 +336,10 @@ def ingest_biochemical_results(
     
     # Batch insert compounds
     for compound in compounds.values():
-        insert_compound(compound)
+        insert_compound_pg(compound)
     
     # Insert biochemical results
-    from amprenta_rag.chemistry.database import insert_biochemical_results
-    insert_biochemical_results(biochemical_results)
+    insert_biochemical_results_pg(biochemical_results)
     
     logger.info(
         "[INGEST][SCREENING] Ingested %d compounds for biochemical assay %s",
