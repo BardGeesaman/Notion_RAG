@@ -55,10 +55,12 @@ class TestPerformPathwayEnrichment:
         assert mock_kegg.called
         # Results may be empty if p-value doesn't meet threshold
 
+    @patch("amprenta_rag.analysis.pathway.enrichment.map_features_to_reactome_pathways")
     @patch("amprenta_rag.analysis.pathway.enrichment.map_features_to_kegg_pathways")
-    def test_empty_input_returns_empty_list(self, mock_kegg):
+    def test_empty_input_returns_empty_list(self, mock_kegg, mock_reactome):
         """Empty input features should return empty results."""
         mock_kegg.return_value = {}
+        mock_reactome.return_value = {}
 
         results = perform_pathway_enrichment(
             input_features=set(),
@@ -67,10 +69,12 @@ class TestPerformPathwayEnrichment:
 
         assert results == []
 
+    @patch("amprenta_rag.analysis.pathway.enrichment.map_features_to_reactome_pathways")
     @patch("amprenta_rag.analysis.pathway.enrichment.map_features_to_kegg_pathways")
-    def test_no_pathways_found_returns_empty_list(self, mock_kegg):
+    def test_no_pathways_found_returns_empty_list(self, mock_kegg, mock_reactome):
         """No pathways found should return empty results."""
         mock_kegg.return_value = {}
+        mock_reactome.return_value = {}
 
         results = perform_pathway_enrichment(
             input_features={"GENE1", "GENE2"},
