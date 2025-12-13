@@ -203,8 +203,8 @@ class MWRepository(RepositoryInterface):
             else:
                 try:
                     summary = resp.json()
-                except:
-                    logger.warning("[REPO][MW] Study summary for %s not in JSON format", study_id)
+                except Exception as e:
+                    logger.warning("[REPO][MW] Study summary for %s not in JSON format: %r", study_id, e)
                     return None
             
             # Extract metadata
@@ -237,8 +237,8 @@ class MWRepository(RepositoryInterface):
                     # mwTab contains structured metadata
                     # Could parse for additional fields if needed
                     pass
-            except:
-                pass  # mwTab fetch is optional
+            except Exception as e:
+                logger.warning("[REPO][MW] mwTab fetch failed for %s: %r", study_id, e)
             
             logger.info(
                 "[REPO][MW] Successfully fetched metadata for study %s: %s",

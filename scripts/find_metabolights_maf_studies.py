@@ -78,7 +78,8 @@ def find_studies_with_maf(limit=20):
         def extract_number(study_id):
             try:
                 return int(study_id.replace('MTBLS', ''))
-            except:
+            except Exception as e:
+                logger.warning("Failed to parse study number from %s: %r", study_id, e)
                 return 0
         
         study_ids.sort(key=extract_number, reverse=True)

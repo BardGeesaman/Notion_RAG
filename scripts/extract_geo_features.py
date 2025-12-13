@@ -333,8 +333,8 @@ def extract_genes_from_supplementary_tsv(
                                     if normalized:
                                         gene_set.add(normalized)
                                 lines_processed += 1
-            except:
-                pass
+            except Exception as e:
+                logger.warning("[GEO-FEATURES] Error flushing remaining buffer: %r", e)
             
             logger.info(
                 "[GEO-FEATURES] Extracted %d unique genes from %d rows using streaming approach",

@@ -305,8 +305,8 @@ class PRIDERepository(RepositoryInterface):
                 try:
                     from datetime import datetime
                     publication_date = datetime.fromisoformat(submission_date.replace("Z", "+00:00"))
-                except:
-                    pass
+                except Exception as e:
+                    logger.warning("[REPO][PRIDE] Error parsing submission date for %s: %r", study_id, e)
             
             # Try to extract disease from title/description (heuristic)
             title_lower = title.lower()

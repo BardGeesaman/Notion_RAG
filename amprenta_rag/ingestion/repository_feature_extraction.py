@@ -547,7 +547,8 @@ def extract_metabolights_metabolites_from_isa_tab(
                 try:
                     decompressed = decompressor.decompress(buffer)
                     buffer = decompressor.unconsumed_tail
-                except:
+                except Exception as e:
+                    logger.warning("[FEATURE-EXTRACT][METABOLIGHTS] Decompression error, continuing: %r", e)
                     continue
             else:
                 decompressed = buffer

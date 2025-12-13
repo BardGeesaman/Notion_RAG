@@ -329,11 +329,12 @@ class MetaboLightsRepository(RepositoryInterface):
                 try:
                     from datetime import datetime
                     publication_date = datetime.fromisoformat(submission_date.replace("Z", "+00:00"))
-                except:
+                except Exception as e:
+                    logger.warning("[REPO][METABOLIGHTS] Failed to parse submission_date with timezone: %r", e)
                     try:
                         publication_date = datetime.fromisoformat(submission_date)
-                    except:
-                        pass
+                    except Exception as e_inner:
+                        logger.warning("[REPO][METABOLIGHTS] Failed to parse submission_date fallback: %r", e_inner)
             
             # Extract technology/platform (may be in assays or study design)
             platform = None
