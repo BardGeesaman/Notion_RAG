@@ -1,247 +1,95 @@
-# Amprenta RAG System – Engineering Roadmap
+# Amprenta Platform – Engineering Roadmap (Postgres-Only)
 
-This file tracks the **current state** and **next steps** for the Amprenta RAG system:
-- Notion + Zotero + Pinecone + OpenAI
-- Ingestion, metadata, query, classification
-- Refactors, tests, logging, and features
+**Last Updated**: 2025-12 (December 2025)
 
-Whenever we update the code and create a new zip, this file should be kept roughly in sync so both humans and AI can see the state at a glance.
+This file tracks the **engineering state** and **next steps** for the Amprenta platform.
 
 ---
 
 ## 1. Goals
 
-- Support Amprenta’s ceramide/sphingolipid neurodegeneration program with a **high-quality, explainable RAG system**.
-- Keep the codebase **modular, testable, and comprehensible** to non-software scientists.
-- Make it easy to add:
-  - New data sources (Experiments, Clinical, etc.)
-  - New metadata fields (lipid signatures, phenotypes, model systems)
-  - New downstream tools (dashboards, analyses)
+- Support Amprenta’s research programs with a **high-quality, explainable platform** for multi-omics + chemistry + RAG.
+- Keep the codebase **modular, testable, and comprehensible**.
+- Maintain a clear separation between:
+  - **System of record**: PostgreSQL
+  - **Semantic retrieval**: Pinecone
+  - **UI**: Streamlit dashboard
+  - **API**: FastAPI
 
 ---
 
-## 2. Current State (High-Level)
+## 2. Current State (December 2025)
 
-### ✅ Ingestion
+### ✅ Data Layer
+- ✅ PostgreSQL is the **sole system of record** (no Notion, no SQLite runtime).
+- ✅ SQLAlchemy models + Alembic migrations.
 
-- **Zotero → Notion → Pinecone → RAG**:
-  - Full PDFs + Zotero notes ingested.
-  - Attachments & notes chunked and embedded.
-  - Idempotent with md5 (attachments) and hash (notes).
-  - Snapshot HTML attachments correctly skipped.
+### ✅ API Layer (FastAPI)
+- ✅ Operational REST API (core CRUD).
+- ✅ Authentication supported.
 
-- **Email → Notion → Pinecone**:
-  - Emails/notes can be ingested and chunked.
-  - Used mainly for free-form insights, meeting notes, etc.
+### ✅ UI Layer (Streamlit)
+- ✅ Production-ready dashboard with **40+ pages**.
+- ✅ Modular page organization (core + chemistry splits).
+- ✅ Auth sessions.
 
-### ✅ Metadata
+### ✅ Chemistry & HTS
+- ✅ Integrated in PostgreSQL (compound registration, screening ingestion, SAR workflows).
 
-- For literature chunks, metadata now includes:
-  - `doc_id`, `doc_source`, `doc_type`
-  - `year`, `journal`, `importance`
-  - `diseases`, `targets` (molecular targets), `modality`, `stage`
-  - `model_systems`, `biomarker_role`
-  - `lipids_raw` (lipid species mentions)
-  - `lipid_signatures`, `phenotype_axes`, `matrix`, `treatment_arms`
-  - `zotero_item_key`, `notion_chunk_page_id`, legacy tags, etc.
+### ✅ Public Repository Ingestion
+- ✅ GEO (transcriptomics)
+- ✅ PRIDE (proteomics)
+- ✅ MetaboLights (metabolomics)
+- ✅ Metabolomics Workbench (metabolomics/lipidomics)
 
-### ✅ Query / RAG
-
-- `rag_query.py`:
-  - Semantic search over Pinecone.
-  - Filters: `--source-type`, `--disease`, `--target`, `--lipid`, `--signature`, `--tag`.
-  - Uses the correct Pinecone namespace.
-  - Synthesizes answers from top-ranked chunks with context display.
-
-### ✅ Classifier
-
-- `classify_literature_metadata.py`:
-  - Uses OpenAI to classify each paper into:
-    - Disease, Targets, Modality, Stage, Model Systems, Biomarker Role.
-    - Lipid species (raw), lipid signatures, phenotype axes, matrix, treatment arms.
-  - **Targets** now restricted to **molecular targets only** (e.g., SPTLC1, DEGS1, CERS2, ORMDL3).
-  - Lipid species (e.g., ceramide, sphingomyelin) live in `Lipid Species (raw)` instead of Targets.
-  - Has a `--force` mode to reclassify even if metadata already exists.
+### ✅ RAG
+- ✅ Pinecone-backed retrieval + LLM synthesis.
+- ✅ RAG UI pages in dashboard.
 
 ---
 
-## 3. Refactor & Cleanup Status
+## 3. DONE (Engineering Milestones)
 
-### ✅ Completed / In-Progress
-
-- [x] Introduced `amprenta_rag` as a package.
-- [x] Split Zotero API into `ingestion/zotero_api.py`.
-- [x] Split text extraction + boilerplate logic into `ingestion/text_extraction.py`.
-- [x] Introduced `ingestion/zotero_ingest.py` as the orchestrator.
-- [x] Added `sanitize_metadata` and centralized Pinecone metadata cleanup.
-- [x] Fixed namespace issues in query code.
-- [x] Fixed classifier outputs and Targets vs Lipids separation.
-- [x] Confirmed ingestion + query still work after initial refactors.
-
-### ✅ Completed Refactoring Phases 1-5 (December 2025)
-
-**Phase 1-2: Ingestion Pipeline Cleanup**
-- [x] Moved Notion-specific helpers to `ingestion/notion_pages.py`:
-  - `ensure_literature_page`, `update_literature_page`, `create_rag_chunk_page`
-  - `fetch_not_embedded_emails`, `extract_page_content`, `update_email_page`
-- [x] Moved semantic metadata helpers to `ingestion/metadata_semantic.py`:
-  - `get_literature_semantic_metadata`, `get_email_semantic_metadata`
-- [x] Consolidated Pinecone idempotency in `ingestion/pinecone_utils.py`:
-  - `attachment_already_ingested`, `note_already_ingested` (already there)
-- [x] Modularized `email_ingestion.py` using shared helpers
-- [x] Removed ~200 lines of duplicate code
-
-**Phase 3: Query Engine Refactoring**
-- [x] Split query engine into:
-  - `query/pinecone_query.py` (embed + raw Pinecone search)
-  - `query/rag_engine.py` (filtering + answer synthesis)
-  - `query/rag_query_engine.py` (compatibility wrapper)
-- [x] Maintained 100% backward compatibility
-
-**Phase 4: Logging & Error Handling**
-- [x] Normalized logging with consistent prefixes ([INGEST][ZOTERO], [NOTION], [PINECONE], [RAG])
-- [x] Replaced all `print()` statements with structured logger calls
-- [x] Added error logging for all external API calls with proper exception handling
-
-**Phase 5: Code Hygiene**
-- [x] Removed unused imports
-- [x] Verified consistent formatting
-- [x] Config now uses environment variables (secure)
-
-### Optional Future Enhancements
-
-- [ ] Remove legacy `zotero_item.py` file (marked as LEGACY, functionality migrated)
-- [ ] Consider splitting classifier module further:
-  - `metadata/notion_utils.py`
-  - `metadata/classifier_base.py`
-  - `metadata/classify_literature.py`
+- ✅ DONE: Postgres-only architecture (Notion removed)
+- ✅ DONE: Streamlit dashboard modularization + production readiness
+- ✅ DONE: Auth system + sessions
+- ✅ DONE: FastAPI operational
+- ✅ DONE: Chemistry & HTS integrated in Postgres
+- ✅ DONE: Public repository ingestion complete (GEO/PRIDE/MetaboLights/MW)
 
 ---
 
-## 4. Testing Plan (Lightweight but Useful)
+## 4. NEXT UP (Engineering Priorities)
 
-### ✅ Already sketched / partially implemented
+### 4.1 Jupyter Integration (Highest Priority)
+- Embed notebook workflows for dataset exploration.
+- Start read-only; add write-back only after safety model is clear.
 
-- `tests/test_sanitize_metadata.py`:
-  - Ensures no `None` or unsupported types are sent to Pinecone.
+### 4.2 Deployment / AWS Hardening
+- ECS/RDS/ElastiCache reference architecture
+- Terraform/Pulumi IaC
+- CI/CD pipeline
 
-- `tests/test_metadata_classifier.py`:
-  - Ensures Targets ≠ Lipids:
-    - Targets do **not** include "ceramide", "sphingomyelin".
-    - Lipid terms end up in `Lipid Species (raw)`.
+### 4.3 Visualization Upgrades
+- Cytoscape.js for relationship graphs
+- IGV.js for variant visualization
+- Ag-Grid for large tables
 
-- `tests/test_build_meta_filter.py`:
-  - Tests `build_meta_filter()` builds correct Pinecone filter structure:
-    - `diseases`, `targets`, `lipid_signatures`
-    - `$or` across `lipids` and `lipids_raw`.
-
-### ⏭️ Planned tests
-
-- [ ] Add tests for:
-  - `_chunk_text` behavior.
-  - Idempotency logic (attachment_already_ingested / note_already_ingested) with mocked Pinecone responses.
-  - Query filtering by `--source-type` (Email vs Literature) with synthetic metadata.
-
-### Manual smoke tests (keep doing these after major changes)
-
-- [ ] Run:
-
-  ```bash
-  python scripts/ingest_collection.py --collection-key 3RGXZTAY --parent-type Literature
-  ```
+### 4.4 Testing Closure
+- Add E2E test for **Concurrent Editing / optimistic locking** flow.
 
 ---
 
-## 5. Repository Ingestion
+## 5. Pending / Future Work
 
-### ✅ Current Status
-
-- **Public Repository Integration:**
-  - ✅ GEO (GSE) - Transcriptomics via NCBI/Biopython
-  - ✅ PRIDE Archive - Proteomics via REST API v2
-  - ✅ MetaboLights - Metabolomics via ISA-Tab
-  - ✅ Metabolomics Workbench (MW) - Metabolomics/Lipidomics via REST API
-  - ✅ ENA (European Nucleotide Archive) - Genomics/RNA-seq
-
-- **Genomics Pipeline:**
-  - ✅ Salmon quantification pipeline implemented
-  - ✅ Transcriptome index built (human GRCh38)
-  - ✅ Full end-to-end pipeline tested (search → download → quantify → extract)
-
-### ⏭️ Future Repository Work
-
-- [ ] **Research additional repositories:**
-  - Query Gemini AI about additional omics data repositories that could be integrated
-  - Identify repositories for:
-    - Additional transcriptomics sources (beyond GEO)
-    - Additional proteomics sources (beyond PRIDE)
-    - Additional metabolomics/lipidomics sources (beyond MW/MetaboLights)
-    - Epigenomics repositories
-    - Single-cell omics repositories
-    - Multi-omics integrated repositories
-  - Evaluate API stability, data quality, and integration complexity
+- Multi-company support (multi-tenancy)
+- Nextflow/Snakemake orchestrator
+- DVC integration
+- Bayesian inference / ML model registry
 
 ---
 
-## 6. Web UI Improvements ⚠️ HIGH PRIORITY
+## Historical Note
 
-### ✅ Current State
+Older iterations referenced Notion and SQLite prototypes. These are **deprecated** and not part of the production architecture.
 
-- **Streamlit Dashboard** (`scripts/run_dashboard.py`):
-  - ✅ Basic data browser (Overview, Datasets, Programs, Experiments, Features, Signatures)
-  - ✅ Filtering and search capabilities
-  - ✅ CSV export functionality
-  - ✅ Direct Postgres connection
-  - Status: Functional but basic
-
-- **FastAPI REST API**:
-  - ✅ Full CRUD operations
-  - ✅ Swagger UI documentation
-  - Status: Production-ready
-
-### ❌ Missing Features (TIER 4)
-
-1. **Multi-Omics Coverage Maps** - NOT IMPLEMENTED (2-3 days)
-2. **Feature Recurrence Visualization** - NOT IMPLEMENTED (3-4 days)
-
-### ⏭️ Immediate Improvements Needed
-
-**Priority 1: Enhanced Visualizations** ⚠️ HIGH PRIORITY
-- [ ] Multi-Omics Coverage Maps visualization
-- [ ] Feature Recurrence Visualization
-- [ ] Network graphs for relationships
-- [ ] Timeline charts for dataset creation
-- [ ] Heatmaps for signature matches
-
-**Priority 2: AI Agent Tools Integration** ⚠️ CRITICAL
-- [ ] **RAG Query Interface** - Natural language search with AI-synthesized answers
-- [ ] **Cross-Omics Reasoning** - AI-powered summaries for programs, signatures, features, datasets
-- [ ] **Signature Matching** - Visual signature similarity scoring
-- [ ] **Interactive AI Chat** - "Ask AI" functionality on entity pages
-- [ ] Real-time semantic search with filters (disease, target, lipid, signature)
-- [ ] Display top matches with relevance scores and citations
-
-**Priority 3: User Experience**
-- [ ] Advanced filtering (date ranges, multiple criteria)
-- [ ] Global search across all entities
-- [ ] Data editing capabilities
-- [ ] Saved filter presets
-- [ ] Better empty states and loading indicators
-
-**Priority 4: Authentication & Security**
-- [ ] User login/logout
-- [ ] Role-based access control
-- [ ] Audit logging
-
-### 🎯 Long-Term Vision
-
-**Next.js/React Frontend** (Future):
-- Modern interactive UI with real-time updates
-- **AI Agent Tools** - Integrated RAG queries, cross-omics reasoning, AI chat
-- Advanced visualizations (D3.js, Recharts)
-- Production-ready deployment
-- Multi-user support with permissions
-
-See `docs/UI_IMPROVEMENT_ROADMAP.md` for detailed plan.
-
-  
