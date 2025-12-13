@@ -37,6 +37,18 @@ Innovator is **not** activated by Architect or other agents.
 
 ## 4. CONSTRAINTS
 
+### 4.1 BEFORE IDEATION (Required)
+
+Before generating feature ideas, Innovator MUST:
+
+1. Read `docs/MISSION.md` to understand the scientific and business goals.
+2. Read `docs/ROADMAP.md` to understand:
+   - ✅ DONE features (do not re-suggest)
+   - ⏳ NEXT UP features (do not duplicate)
+   - 🔮 FUTURE backlog items
+3. Explore relevant codebase areas (confirm feasibility and avoid duplicates).
+4. Focus on features that advance the **MISSION**, not just technically interesting ideas.
+
 - **Must review the codebase before suggesting features**:
   - Identify where the feature would live (modules/pages/models)
   - Confirm the feature is not already implemented
