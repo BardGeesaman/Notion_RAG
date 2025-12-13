@@ -11,7 +11,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import (
     Dataset as DatasetModel,
     Signature as SignatureModel,
@@ -42,73 +42,20 @@ def link_signature_to_dataset_in_postgres(
     Returns:
         True if linking succeeded, False otherwise
     """
-    should_close_db = False
     if db is None:
-        db = next(get_db())
-        should_close_db = True
-    
-    try:
-        # Check if association already exists
-        existing = (
-            db.query(dataset_signature_assoc)
-            .filter(
-                dataset_signature_assoc.c.dataset_id == dataset_id,
-                dataset_signature_assoc.c.signature_id == signature_id,
+        with db_session() as db:
+            return _link_signature_to_dataset_impl(
+                signature_id=signature_id,
+                dataset_id=dataset_id,
+                match_score=match_score,
+                db=db,
             )
-            .first()
-        )
-        
-        if existing:
-            # Update match score if provided
-            if match_score is not None:
-                db.execute(
-                    dataset_signature_assoc.update()
-                    .where(
-                        dataset_signature_assoc.c.dataset_id == dataset_id,
-                        dataset_signature_assoc.c.signature_id == signature_id,
-                    )
-                    .values(match_score=match_score)
-                )
-                db.commit()
-                logger.debug(
-                    "[SIGNATURE-LINK] Updated match score for signature %s -> dataset %s: %.3f",
-                    signature_id,
-                    dataset_id,
-                    match_score,
-                )
-            return True
-        
-        # Create new association
-        insert_stmt = dataset_signature_assoc.insert().values(
-            dataset_id=dataset_id,
-            signature_id=signature_id,
-            match_score=match_score,
-        )
-        db.execute(insert_stmt)
-        db.commit()
-        
-        logger.info(
-            "[SIGNATURE-LINK] Linked signature %s to dataset %s (score: %s)",
-            signature_id,
-            dataset_id,
-            match_score if match_score is not None else "N/A",
-        )
-        
-        return True
-        
-    except Exception as e:
-        logger.error(
-            "[SIGNATURE-LINK] Error linking signature %s to dataset %s: %r",
-            signature_id,
-            dataset_id,
-            e,
-        )
-        if db:
-            db.rollback()
-        return False
-    finally:
-        if should_close_db and db:
-            db.close()
+    return _link_signature_to_dataset_impl(
+        signature_id=signature_id,
+        dataset_id=dataset_id,
+        match_score=match_score,
+        db=db,
+    )
 
 
 def get_dataset_signatures_from_postgres(
@@ -123,42 +70,38 @@ def get_dataset_signatures_from_postgres(
     Returns:
         List of SignatureModel instances linked to the dataset
     """
-    db = next(get_db())
-    
-    try:
-        dataset = (
-            db.query(DatasetModel)
-            .filter(DatasetModel.id == dataset_id)
-            .first()
-        )
-        
-        if not dataset:
-            logger.warning(
-                "[SIGNATURE-LINK] Dataset %s not found in Postgres",
+    with db_session() as db:
+        try:
+            dataset = (
+                db.query(DatasetModel)
+                .filter(DatasetModel.id == dataset_id)
+                .first()
+            )
+            
+            if not dataset:
+                logger.warning(
+                    "[SIGNATURE-LINK] Dataset %s not found in Postgres",
+                    dataset_id,
+                )
+                return []
+            
+            signatures = dataset.signatures or []
+            
+            logger.debug(
+                "[SIGNATURE-LINK] Found %d signature(s) linked to dataset %s",
+                len(signatures),
                 dataset_id,
             )
+            
+            return signatures
+            
+        except Exception as e:
+            logger.error(
+                "[SIGNATURE-LINK] Error getting signatures for dataset %s: %r",
+                dataset_id,
+                e,
+            )
             return []
-        
-        # Get linked signatures via relationship
-        signatures = dataset.signatures or []
-        
-        logger.debug(
-            "[SIGNATURE-LINK] Found %d signature(s) linked to dataset %s",
-            len(signatures),
-            dataset_id,
-        )
-        
-        return signatures
-        
-    except Exception as e:
-        logger.error(
-            "[SIGNATURE-LINK] Error getting signatures for dataset %s: %r",
-            dataset_id,
-            e,
-        )
-        return []
-    finally:
-        db.close()
 
 
 def get_signature_datasets_from_postgres(
@@ -173,42 +116,38 @@ def get_signature_datasets_from_postgres(
     Returns:
         List of DatasetModel instances linked to the signature
     """
-    db = next(get_db())
-    
-    try:
-        signature = (
-            db.query(SignatureModel)
-            .filter(SignatureModel.id == signature_id)
-            .first()
-        )
-        
-        if not signature:
-            logger.warning(
-                "[SIGNATURE-LINK] Signature %s not found in Postgres",
+    with db_session() as db:
+        try:
+            signature = (
+                db.query(SignatureModel)
+                .filter(SignatureModel.id == signature_id)
+                .first()
+            )
+            
+            if not signature:
+                logger.warning(
+                    "[SIGNATURE-LINK] Signature %s not found in Postgres",
+                    signature_id,
+                )
+                return []
+            
+            datasets = signature.datasets or []
+            
+            logger.debug(
+                "[SIGNATURE-LINK] Found %d dataset(s) linked to signature %s",
+                len(datasets),
                 signature_id,
             )
+            
+            return datasets
+            
+        except Exception as e:
+            logger.error(
+                "[SIGNATURE-LINK] Error getting datasets for signature %s: %r",
+                signature_id,
+                e,
+            )
             return []
-        
-        # Get linked datasets via relationship
-        datasets = signature.datasets or []
-        
-        logger.debug(
-            "[SIGNATURE-LINK] Found %d dataset(s) linked to signature %s",
-            len(datasets),
-            signature_id,
-        )
-        
-        return datasets
-        
-    except Exception as e:
-        logger.error(
-            "[SIGNATURE-LINK] Error getting datasets for signature %s: %r",
-            signature_id,
-            e,
-        )
-        return []
-    finally:
-        db.close()
 
 
 def unlink_signature_from_dataset(
@@ -227,11 +166,90 @@ def unlink_signature_from_dataset(
     Returns:
         True if unlinking succeeded, False otherwise
     """
-    should_close_db = False
     if db is None:
-        db = next(get_db())
-        should_close_db = True
-    
+        with db_session() as db:
+            return _unlink_signature_from_dataset_impl(
+                signature_id=signature_id,
+                dataset_id=dataset_id,
+                db=db,
+            )
+    return _unlink_signature_from_dataset_impl(
+        signature_id=signature_id,
+        dataset_id=dataset_id,
+        db=db,
+    )
+
+
+def _link_signature_to_dataset_impl(
+    *,
+    signature_id: UUID,
+    dataset_id: UUID,
+    match_score: Optional[float],
+    db: Session,
+) -> bool:
+    try:
+        existing = (
+            db.query(dataset_signature_assoc)
+            .filter(
+                dataset_signature_assoc.c.dataset_id == dataset_id,
+                dataset_signature_assoc.c.signature_id == signature_id,
+            )
+            .first()
+        )
+
+        if existing:
+            if match_score is not None:
+                db.execute(
+                    dataset_signature_assoc.update()
+                    .where(
+                        dataset_signature_assoc.c.dataset_id == dataset_id,
+                        dataset_signature_assoc.c.signature_id == signature_id,
+                    )
+                    .values(match_score=match_score)
+                )
+                db.commit()
+                logger.debug(
+                    "[SIGNATURE-LINK] Updated match score for signature %s -> dataset %s: %.3f",
+                    signature_id,
+                    dataset_id,
+                    match_score,
+                )
+            return True
+
+        insert_stmt = dataset_signature_assoc.insert().values(
+            dataset_id=dataset_id,
+            signature_id=signature_id,
+            match_score=match_score,
+        )
+        db.execute(insert_stmt)
+        db.commit()
+
+        logger.info(
+            "[SIGNATURE-LINK] Linked signature %s to dataset %s (score: %s)",
+            signature_id,
+            dataset_id,
+            match_score if match_score is not None else "N/A",
+        )
+
+        return True
+
+    except Exception as e:
+        logger.error(
+            "[SIGNATURE-LINK] Error linking signature %s to dataset %s: %r",
+            signature_id,
+            dataset_id,
+            e,
+        )
+        db.rollback()
+        return False
+
+
+def _unlink_signature_from_dataset_impl(
+    *,
+    signature_id: UUID,
+    dataset_id: UUID,
+    db: Session,
+) -> bool:
     try:
         delete_stmt = dataset_signature_assoc.delete().where(
             dataset_signature_assoc.c.dataset_id == dataset_id,
@@ -239,7 +257,7 @@ def unlink_signature_from_dataset(
         )
         result = db.execute(delete_stmt)
         db.commit()
-        
+
         if result.rowcount > 0:
             logger.info(
                 "[SIGNATURE-LINK] Unlinked signature %s from dataset %s",
@@ -247,14 +265,14 @@ def unlink_signature_from_dataset(
                 dataset_id,
             )
             return True
-        else:
-            logger.debug(
-                "[SIGNATURE-LINK] No association found between signature %s and dataset %s",
-                signature_id,
-                dataset_id,
-            )
-            return False
-            
+
+        logger.debug(
+            "[SIGNATURE-LINK] No association found between signature %s and dataset %s",
+            signature_id,
+            dataset_id,
+        )
+        return False
+
     except Exception as e:
         logger.error(
             "[SIGNATURE-LINK] Error unlinking signature %s from dataset %s: %r",
@@ -262,10 +280,6 @@ def unlink_signature_from_dataset(
             dataset_id,
             e,
         )
-        if db:
-            db.rollback()
+        db.rollback()
         return False
-    finally:
-        if should_close_db and db:
-            db.close()
 

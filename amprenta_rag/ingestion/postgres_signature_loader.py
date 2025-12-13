@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import List, Optional
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import (
     Signature as SignatureModel,
     SignatureComponent as SignatureComponentModel,
@@ -34,24 +34,29 @@ def load_signature_from_postgres(signature_model: SignatureModel) -> Optional[Si
         # Load signature components
         components: List[SignatureComponent] = []
         
-        db = next(get_db())
-        try:
-            sig_components = (
-                db.query(SignatureComponentModel)
-                .filter(SignatureComponentModel.signature_id == signature_model.id)
-                .all()
-            )
-            
-            for comp_model in sig_components:
-                component = SignatureComponent(
-                    feature_name=comp_model.feature_name or "",
-                    feature_type=comp_model.feature_type,
-                    direction=comp_model.direction,
-                    weight=comp_model.weight or 1.0,
+        with db_session() as db:
+            try:
+                sig_components = (
+                    db.query(SignatureComponentModel)
+                    .filter(SignatureComponentModel.signature_id == signature_model.id)
+                    .all()
                 )
-                components.append(component)
-        finally:
-            db.close()
+                
+                for comp_model in sig_components:
+                    component = SignatureComponent(
+                        feature_name=comp_model.feature_name or "",
+                        feature_type=comp_model.feature_type,
+                        direction=comp_model.direction,
+                        weight=comp_model.weight or 1.0,
+                    )
+                    components.append(component)
+            except Exception as e:
+                logger.error(
+                    "[POSTGRES-SIGNATURE] Error loading components for signature %s: %r",
+                    signature_model.id,
+                    e,
+                )
+                return None
         
         # Build Signature object
         signature = Signature(
@@ -85,26 +90,23 @@ def fetch_all_signatures_from_postgres() -> List[SignatureModel]:
     Returns:
         List of SignatureModel instances
     """
-    db = next(get_db())
-    
-    try:
-        signatures = db.query(SignatureModel).all()
-        
-        logger.debug(
-            "[POSTGRES-SIGNATURE] Fetched %d signature(s) from Postgres",
-            len(signatures),
-        )
-        
-        return signatures
-        
-    except Exception as e:
-        logger.error(
-            "[POSTGRES-SIGNATURE] Error fetching signatures from Postgres: %r",
-            e,
-        )
-        return []
-    finally:
-        db.close()
+    with db_session() as db:
+        try:
+            signatures = db.query(SignatureModel).all()
+            
+            logger.debug(
+                "[POSTGRES-SIGNATURE] Fetched %d signature(s) from Postgres",
+                len(signatures),
+            )
+            
+            return signatures
+            
+        except Exception as e:
+            logger.error(
+                "[POSTGRES-SIGNATURE] Error fetching signatures from Postgres: %r",
+                e,
+            )
+            return []
 
 
 def find_signature_by_id(signature_id: UUID) -> Optional[SignatureModel]:
@@ -117,17 +119,12 @@ def find_signature_by_id(signature_id: UUID) -> Optional[SignatureModel]:
     Returns:
         SignatureModel instance or None if not found
     """
-    db = next(get_db())
-    
-    try:
-        signature = (
+    with db_session() as db:
+        return (
             db.query(SignatureModel)
             .filter(SignatureModel.id == signature_id)
             .first()
         )
-        return signature
-    finally:
-        db.close()
 
 
 def find_signatures_by_name(name: str) -> List[SignatureModel]:
@@ -140,15 +137,10 @@ def find_signatures_by_name(name: str) -> List[SignatureModel]:
     Returns:
         List of SignatureModel instances matching the name
     """
-    db = next(get_db())
-    
-    try:
-        signatures = (
+    with db_session() as db:
+        return (
             db.query(SignatureModel)
             .filter(SignatureModel.name.ilike(f"%{name}%"))
             .all()
         )
-        return signatures
-    finally:
-        db.close()
 

@@ -12,7 +12,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.crud import (
     get_or_create_dataset,
     link_dataset_to_features,
@@ -61,52 +61,38 @@ def create_or_update_dataset_in_postgres(
     Returns:
         Dataset object
     """
-    # Get or create DB session
     if db is None:
-        db = next(get_db())
-        close_db = True
-    else:
-        close_db = False
-    
-    try:
-        # Convert OmicsType enum to string
-        omics_type_str = omics_type.value if hasattr(omics_type, 'value') else str(omics_type)
-        
-        # Get or create dataset
-        dataset, created = get_or_create_dataset(
-            db,
-            name=name,
-            omics_type=omics_type_str,
-            description=description,
-            file_paths=file_paths or [],
-            organism=organism or [],
-            sample_type=sample_type or [],
-            disease=disease or [],
-            notion_page_id=notion_page_id,
-        )
-        
-        # Set external_ids if provided
-        if external_ids:
-            if dataset.external_ids:
-                dataset.external_ids.update(external_ids)
-            else:
-                dataset.external_ids = external_ids
-            db.commit()
-        
-        action = "Created" if created else "Found existing"
-        logger.info(
-            "[POSTGRES][DATASET] %s dataset: %s (ID: %s, external_ids: %s)",
-            action,
-            dataset.name,
-            dataset.id,
-            external_ids,
-        )
-        
-        return dataset
-        
-    finally:
-        if close_db:
-            db.close()
+        with db_session() as db:
+            return _create_or_update_dataset_in_postgres_impl(
+                name=name,
+                omics_type=omics_type,
+                file_paths=file_paths,
+                description=description,
+                organism=organism,
+                sample_type=sample_type,
+                disease=disease,
+                notion_page_id=notion_page_id,
+                program_ids=program_ids,
+                experiment_ids=experiment_ids,
+                external_ids=external_ids,
+                auto_ingest=auto_ingest,
+                db=db,
+            )
+    return _create_or_update_dataset_in_postgres_impl(
+        name=name,
+        omics_type=omics_type,
+        file_paths=file_paths,
+        description=description,
+        organism=organism,
+        sample_type=sample_type,
+        disease=disease,
+        notion_page_id=notion_page_id,
+        program_ids=program_ids,
+        experiment_ids=experiment_ids,
+        external_ids=external_ids,
+        auto_ingest=auto_ingest,
+        db=db,
+    )
 
 
 def link_features_to_dataset_postgres(
@@ -132,46 +118,26 @@ def link_features_to_dataset_postgres(
         List of Feature objects
     """
     if db is None:
-        db = next(get_db())
-        close_db = True
-    else:
-        close_db = False
-    
-    try:
-        # Prepare feature data for bulk creation
-        features_data = []
-        for i, name in enumerate(feature_names):
-            norm_name = normalized_names[i] if normalized_names and i < len(normalized_names) else name
-            features_data.append({
-                'name': name,
-                'feature_type': feature_type,
-                'normalized_name': norm_name,
-            })
-        
-        # Bulk get or create features
-        features = bulk_get_or_create_features(db, features_data)
-        
-        # Link features to dataset
-        feature_ids = [f.id for f in features]
-        link_dataset_to_features(db, dataset_id, feature_ids)
-        
-        logger.info(
-            "[POSTGRES][FEATURES] Linked %d %s features to dataset %s",
-            len(features),
-            feature_type,
-            dataset_id,
-        )
-        
-        return features
-        
-    finally:
-        if close_db:
-            db.close()
+        with db_session() as db:
+            return _link_features_to_dataset_postgres_impl(
+                dataset_id=dataset_id,
+                feature_names=feature_names,
+                feature_type=feature_type,
+                normalized_names=normalized_names,
+                db=db,
+            )
+    return _link_features_to_dataset_postgres_impl(
+        dataset_id=dataset_id,
+        feature_names=feature_names,
+        feature_type=feature_type,
+        normalized_names=normalized_names,
+        db=db,
+    )
 
 
 def get_postgres_session() -> Session:
     """Get a Postgres database session."""
-    return next(get_db())
+    return db_session().__enter__()
 
 
 def embed_dataset_with_postgres_metadata(
@@ -214,3 +180,86 @@ def embed_dataset_with_postgres_metadata(
         "embed_dataset_with_postgres_metadata is not yet implemented; "
         "ingestion pipelines should catch this and fall back to Notion-based embedding."
     )
+
+
+def _create_or_update_dataset_in_postgres_impl(
+    *,
+    name: str,
+    omics_type: OmicsType,
+    file_paths: Optional[List[str]],
+    description: Optional[str],
+    organism: Optional[List[str]],
+    sample_type: Optional[List[str]],
+    disease: Optional[List[str]],
+    notion_page_id: Optional[str],
+    program_ids: Optional[List[str]],
+    experiment_ids: Optional[List[str]],
+    external_ids: Optional[Dict[str, str]],
+    auto_ingest: bool,
+    db: Session,
+) -> Dataset:
+    omics_type_str = omics_type.value if hasattr(omics_type, "value") else str(omics_type)
+
+    dataset, created = get_or_create_dataset(
+        db,
+        name=name,
+        omics_type=omics_type_str,
+        description=description,
+        file_paths=file_paths or [],
+        organism=organism or [],
+        sample_type=sample_type or [],
+        disease=disease or [],
+        notion_page_id=notion_page_id,
+    )
+
+    if external_ids:
+        if dataset.external_ids:
+            dataset.external_ids.update(external_ids)
+        else:
+            dataset.external_ids = external_ids
+        db.commit()
+
+    action = "Created" if created else "Found existing"
+    logger.info(
+        "[POSTGRES][DATASET] %s dataset: %s (ID: %s, external_ids: %s)",
+        action,
+        dataset.name,
+        dataset.id,
+        external_ids,
+    )
+
+    return dataset
+
+
+def _link_features_to_dataset_postgres_impl(
+    *,
+    dataset_id: UUID,
+    feature_names: List[str],
+    feature_type: str,
+    normalized_names: Optional[List[str]],
+    db: Session,
+) -> List[Feature]:
+    features_data = []
+    for i, name in enumerate(feature_names):
+        norm_name = normalized_names[i] if normalized_names and i < len(normalized_names) else name
+        features_data.append(
+            {
+                "name": name,
+                "feature_type": feature_type,
+                "normalized_name": norm_name,
+            }
+        )
+
+    features = bulk_get_or_create_features(db, features_data)
+
+    feature_ids = [f.id for f in features]
+    link_dataset_to_features(db, dataset_id, feature_ids)
+
+    logger.info(
+        "[POSTGRES][FEATURES] Linked %d %s features to dataset %s",
+        len(features),
+        feature_type,
+        dataset_id,
+    )
+
+    return features
