@@ -12,20 +12,8 @@ from amprenta_rag.chemistry.normalization import (
     generate_compound_id,
     normalize_smiles,
 )
-from amprenta_rag.chemistry.schema import (
-    BiochemicalResult,
-    Compound,
-    HTSCampaign,
-    HTSResult,
-    CompoundSignatureLink,
-)
 
 __all__ = [
-    "Compound",
-    "HTSCampaign",
-    "HTSResult",
-    "BiochemicalResult",
-    "CompoundSignatureLink",
     "normalize_smiles",
     "compute_molecular_descriptors",
     "generate_compound_id",
