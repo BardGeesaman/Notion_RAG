@@ -58,6 +58,7 @@ class Compound(Base):
     hbd_count = Column(Integer, nullable=True)  # Hydrogen bond donor count
     hba_count = Column(Integer, nullable=True)  # Hydrogen bond acceptor count
     rotatable_bonds = Column(Integer, nullable=True)
+    aromatic_rings = Column(Integer, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

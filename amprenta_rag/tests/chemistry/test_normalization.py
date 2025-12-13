@@ -94,6 +94,7 @@ class TestComputeMolecularDescriptors:
             "hbd_count",
             "hba_count",
             "rotatable_bonds",
+            "aromatic_rings",
         }
         assert set(result.keys()) == expected_keys
 

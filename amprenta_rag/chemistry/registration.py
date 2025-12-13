@@ -85,6 +85,7 @@ def register_compound(
             hbd_count=descriptors.get("hbd_count"),
             hba_count=descriptors.get("hba_count"),
             rotatable_bonds=descriptors.get("rotatable_bonds"),
+            aromatic_rings=descriptors.get("aromatic_rings"),
         )
         
         db.add(compound)

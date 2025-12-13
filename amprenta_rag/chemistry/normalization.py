@@ -99,6 +99,7 @@ def compute_molecular_descriptors(smiles: str) -> dict[str, Optional[float | int
         "hbd_count": None,
         "hba_count": None,
         "rotatable_bonds": None,
+        "aromatic_rings": None,
     }
     
     # Early return for empty SMILES
@@ -118,6 +119,7 @@ def compute_molecular_descriptors(smiles: str) -> dict[str, Optional[float | int
         descriptors["hbd_count"] = Descriptors.NumHDonors(mol)
         descriptors["hba_count"] = Descriptors.NumHAcceptors(mol)
         descriptors["rotatable_bonds"] = Descriptors.NumRotatableBonds(mol)
+        descriptors["aromatic_rings"] = Descriptors.NumAromaticRings(mol)
         
     except Exception as e:
         logger.debug(

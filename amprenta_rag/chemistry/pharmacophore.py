@@ -141,10 +141,11 @@ def pharmacophore_search(
         if max_hba is not None:
             query = query.filter(Compound.hba_count <= max_hba)
         
-        # Filter by aromatic rings
-        # Note: We don't have aromatic_rings stored directly, so we'll need to calculate
-        # For now, we'll skip this filter or approximate using other features
-        # TODO: Add aromatic_rings column to Compound model or calculate on-the-fly
+        # Filter by aromatic rings (stored on Compound)
+        if min_aromatic is not None:
+            query = query.filter(Compound.aromatic_rings >= min_aromatic)
+        if max_aromatic is not None:
+            query = query.filter(Compound.aromatic_rings <= max_aromatic)
         
         # Filter by hydrophobicity (using LogP as proxy)
         if min_hydrophobic is not None:
@@ -155,23 +156,6 @@ def pharmacophore_search(
             query = query.filter(Compound.logp <= max_hydrophobic)
         
         compounds = query.limit(limit).all()
-        
-        # Post-filter by aromatic rings if needed (requires RDKit calculation)
-        if min_aromatic is not None or max_aromatic is not None:
-            filtered = []
-            for compound in compounds:
-                if not compound.smiles:
-                    continue
-                features = get_pharmacophore_features(compound.smiles)
-                aromatic_count = features["aromatic_rings"]
-                
-                if min_aromatic is not None and aromatic_count < min_aromatic:
-                    continue
-                if max_aromatic is not None and aromatic_count > max_aromatic:
-                    continue
-                
-                filtered.append(compound)
-            compounds = filtered
         
         logger.info("[PHARMACOPHORE] Found %d compounds matching criteria", len(compounds))
         return compounds
