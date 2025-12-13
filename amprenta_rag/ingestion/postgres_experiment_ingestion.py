@@ -13,7 +13,7 @@ from uuid import UUID
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Experiment as ExperimentModel
 from amprenta_rag.ingestion.feature_extraction import extract_features_from_text
 from amprenta_rag.ingestion.features.postgres_linking import (
@@ -166,16 +166,15 @@ def ingest_experiment_from_postgres(
         experiment_id,
     )
     
-    # Fetch experiment from Postgres
-    db = next(get_db())
-    experiment = (
-        db.query(ExperimentModel)
-        .filter(ExperimentModel.id == experiment_id)
-        .first()
-    )
-    
-    if not experiment:
-        raise ValueError(f"Experiment {experiment_id} not found in Postgres")
+    with db_session() as db:
+        experiment = (
+            db.query(ExperimentModel)
+            .filter(ExperimentModel.id == experiment_id)
+            .first()
+        )
+        
+        if not experiment:
+            raise ValueError(f"Experiment {experiment_id} not found in Postgres")
     
     logger.info(
         "[INGEST][POSTGRES-EXPERIMENT] Found experiment: %s (%s)",

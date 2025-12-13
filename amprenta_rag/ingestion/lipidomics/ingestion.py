@@ -172,15 +172,15 @@ def ingest_lipidomics_file(
                 )
                 # Update Postgres with Notion page ID if Postgres dataset exists
                 if postgres_dataset:
-                    from amprenta_rag.database.base import get_db
-                    db = next(get_db())
-                    postgres_dataset.notion_page_id = page_id
-                    db.commit()
-                    logger.info(
-                        "[INGEST][LIPIDOMICS] Linked Postgres dataset %s to Notion page %s",
-                        postgres_dataset.id,
-                        page_id,
-                    )
+                    from amprenta_rag.database.session import db_session
+                    with db_session() as db:
+                        postgres_dataset.notion_page_id = page_id
+                        db.commit()
+                        logger.info(
+                            "[INGEST][LIPIDOMICS] Linked Postgres dataset %s to Notion page %s",
+                            postgres_dataset.id,
+                            page_id,
+                        )
             elif not cfg.pipeline.use_postgres_as_sot:
                 # Notion-only mode: require page creation
                 raise ValueError(

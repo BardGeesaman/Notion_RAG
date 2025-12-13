@@ -16,7 +16,7 @@ from uuid import UUID
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.ingestion.feature_extraction import extract_features_from_mwtab
 from amprenta_rag.ingestion.features.postgres_linking import (
@@ -200,12 +200,115 @@ def ingest_dataset_from_postgres(
         dataset_id,
     )
     
-    # Fetch dataset from Postgres
-    db = next(get_db())
-    dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
-    
-    if not dataset:
-        raise ValueError(f"Dataset {dataset_id} not found in Postgres")
+    with db_session() as db:
+        dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
+        
+        if not dataset:
+            raise ValueError(f"Dataset {dataset_id} not found in Postgres")
+        
+        logger.info(
+            "[INGEST][POSTGRES] Found dataset: %s (%s)",
+            dataset.name,
+            dataset.omics_type,
+        )
+        
+        full_text = build_dataset_text_content(dataset)
+        
+        if not full_text or len(full_text.strip()) < 50:
+            logger.warning(
+                "[INGEST][POSTGRES] Dataset %s has very little text content; skipping ingestion",
+                dataset_id,
+            )
+            return
+        
+        base_meta = get_dataset_metadata_from_postgres(dataset)
+        
+        try:
+            base_meta = enhance_metadata_with_semantic_extraction(base_meta, full_text)
+        except Exception as e:
+            logger.debug(
+                "[INGEST][POSTGRES] Error enhancing metadata with semantic extraction: %r",
+                e,
+            )
+        
+        mwtab_data: Optional[Dict[str, Any]] = None
+        study_id: Optional[str] = None
+        
+        if dataset.external_ids:
+            for key, value in dataset.external_ids.items():
+                if key == "mw_study_id" or (key.endswith("_study_id") and "mw" in key.lower()):
+                    study_id = value
+                    break
+            
+            if study_id:
+                try:
+                    logger.info(
+                        "[INGEST][POSTGRES] Fetching mwTab data for study %s",
+                        study_id,
+                    )
+                    mwtab_data = fetch_mwtab_from_api(study_id)
+                    
+                    if mwtab_data:
+                        mwtab_text = json.dumps(mwtab_data, indent=2)
+                        full_text = f"{full_text}\n\nmwTab Data:\n{mwtab_text}"
+                        logger.info(
+                            "[INGEST][POSTGRES] Successfully fetched mwTab data for study %s",
+                            study_id,
+                        )
+                        
+                        try:
+                            scientific_metadata = extract_metadata_from_mwtab(mwtab_data)
+                            
+                            if scientific_metadata.get("methods"):
+                                dataset.methods = scientific_metadata["methods"]
+                            if scientific_metadata.get("summary"):
+                                dataset.summary = scientific_metadata["summary"]
+                            if scientific_metadata.get("results"):
+                                dataset.results = scientific_metadata["results"]
+                            if scientific_metadata.get("conclusions"):
+                                dataset.conclusions = scientific_metadata["conclusions"]
+                            if scientific_metadata.get("dataset_source_type"):
+                                dataset.dataset_source_type = scientific_metadata["dataset_source_type"]
+                            if scientific_metadata.get("data_origin"):
+                                dataset.data_origin = scientific_metadata["data_origin"]
+                            
+                            if scientific_metadata.get("model_systems"):
+                                existing_organism = set(dataset.organism or [])
+                                existing_organism.update(scientific_metadata["model_systems"])
+                                dataset.organism = sorted(list(existing_organism))
+                            
+                            if scientific_metadata.get("disease_terms"):
+                                existing_disease = set(dataset.disease or [])
+                                existing_disease.update(scientific_metadata["disease_terms"])
+                                dataset.disease = sorted(list(existing_disease))
+                            
+                            if scientific_metadata.get("matrix_terms"):
+                                existing_sample_type = set(dataset.sample_type or [])
+                                existing_sample_type.update(scientific_metadata["matrix_terms"])
+                                dataset.sample_type = sorted(list(existing_sample_type))
+                            
+                            if scientific_metadata.get("source_url"):
+                                if not dataset.external_ids:
+                                    dataset.external_ids = {}
+                                dataset.external_ids["source_url"] = scientific_metadata["source_url"]
+                            
+                            db.commit()
+                            logger.info(
+                                "[INGEST][POSTGRES] Updated dataset %s with scientific metadata from mwTab",
+                                dataset_id,
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                "[INGEST][POSTGRES] Error extracting/storing scientific metadata for dataset %s: %r",
+                                dataset_id,
+                                e,
+                            )
+                except Exception as e:
+                    logger.warning(
+                        "[INGEST][POSTGRES] Could not fetch mwTab data for study %s: %r",
+                        study_id,
+                        e,
+                    )
     
     logger.info(
         "[INGEST][POSTGRES] Found dataset: %s (%s)",

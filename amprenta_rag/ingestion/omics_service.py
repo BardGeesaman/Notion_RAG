@@ -30,7 +30,7 @@ See: docs/INGESTION_ARCHITECTURE.md for complete data flow documentation
 
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.domain.omics import OmicsDatasetIngestRequest
 from amprenta_rag.config import AUTO_LINK_ENABLED, AUTO_LINK_MIN_CONFIDENCE
@@ -87,98 +87,85 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
         - Notion sync optional (via ENABLE_NOTION_SYNC config)
         - Ingestion status tracked in Dataset.ingestion_status field
     """
-    # Get database session
-    db = next(get_db())
-    
-    # Check if this is a re-ingestion (dataset already exists)
-    dataset = (
-        db.query(DatasetModel).filter(DatasetModel.id == req.dataset_path).first()
-        if hasattr(req, "dataset_path")
-        else None
-    )
-    
-    # Update status to track ingestion progress
-    if dataset:
-        dataset.ingestion_status = "in_progress"
-        db.commit()
-    
-    try:
-        # Route to appropriate omics-specific parser
-        # Each parser handles format-specific normalization
-        if req.omics_type == "lipidomics":
-            parsed = _import_lipidomics(req)  # Normalizes lipid species names
-        elif req.omics_type == "metabolomics":
-            parsed = _import_metabolomics(req)  # Normalizes metabolite names
-        elif req.omics_type == "proteomics":
-            parsed = _import_proteomics(req)  # Normalizes protein identifiers
-        elif req.omics_type == "transcriptomics":
-            parsed = _import_transcriptomics(req)  # Normalizes gene identifiers
-        else:
-            raise ValueError(f"Unknown omics_type: {req.omics_type}")
-
-        # Delegate to Postgres ingestion pipeline
-        # This handles: Dataset creation, Feature linking, Signature matching,
-        # RAGChunk creation, and Pinecone embedding
-        from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
-
-        dataset_uuid = ingest_dataset_from_postgres(parsed)
-
-        if AUTO_LINK_ENABLED:
-            dataset_obj = db.query(DatasetModel).get(dataset_uuid)
-            if dataset_obj:
-                # Auto-link Program
-                if not getattr(parsed, "program_ids", None) and not dataset_obj.programs:
-                    prog_id, prog_conf = infer_program_from_metadata(
-                        diseases=getattr(dataset_obj, "disease", []) or [],
-                        keywords=[dataset_obj.name] if dataset_obj.name else [],
-                        filename=dataset_obj.file_paths[0] if getattr(dataset_obj, "file_paths", None) else None,
-                        min_confidence=AUTO_LINK_MIN_CONFIDENCE,
-                    )
-                    if prog_id:
-                        program = db.query(type(dataset_obj.programs.property.mapper.class_)).get(prog_id)  # type: ignore
-                        if program and program not in dataset_obj.programs:
-                            dataset_obj.programs.append(program)
-                            db.commit()
-                            logger.info(
-                                "[INGEST][AUTO-LINK] Linked dataset %s to program %s (conf=%.2f)",
-                                dataset_uuid,
-                                prog_id,
-                                prog_conf,
-                            )
-
-                # Auto-link Experiment
-                if not getattr(parsed, "experiment_ids", None) and not dataset_obj.experiments:
-                    exp_id, exp_conf = infer_experiment_from_metadata(
-                        diseases=getattr(dataset_obj, "disease", []) or [],
-                        matrix=getattr(dataset_obj, "matrix", []) if hasattr(dataset_obj, "matrix") else [],
-                        model_systems=getattr(dataset_obj, "model_systems", []) if hasattr(dataset_obj, "model_systems") else [],
-                        min_confidence=AUTO_LINK_MIN_CONFIDENCE,
-                    )
-                    if exp_id:
-                        experiment = db.query(type(dataset_obj.experiments.property.mapper.class_)).get(exp_id)  # type: ignore
-                        if experiment and experiment not in dataset_obj.experiments:
-                            dataset_obj.experiments.append(experiment)
-                            db.commit()
-                            logger.info(
-                                "[INGEST][AUTO-LINK] Linked dataset %s to experiment %s (conf=%.2f)",
-                                dataset_uuid,
-                                exp_id,
-                                exp_conf,
-                            )
-
-        # Mark ingestion as complete
+    with db_session() as db:
+        dataset = (
+            db.query(DatasetModel).filter(DatasetModel.id == req.dataset_path).first()
+            if hasattr(req, "dataset_path")
+            else None
+        )
+        
         if dataset:
-            dataset.ingestion_status = "complete"
+            dataset.ingestion_status = "in_progress"
             db.commit()
         
-        return dataset_uuid
-    
-    except Exception:
-        # Mark ingestion as failed for tracking
-        if dataset:
-            dataset.ingestion_status = "failed"
-            db.commit()
-        raise
+        try:
+            if req.omics_type == "lipidomics":
+                parsed = _import_lipidomics(req)
+            elif req.omics_type == "metabolomics":
+                parsed = _import_metabolomics(req)
+            elif req.omics_type == "proteomics":
+                parsed = _import_proteomics(req)
+            elif req.omics_type == "transcriptomics":
+                parsed = _import_transcriptomics(req)
+            else:
+                raise ValueError(f"Unknown omics_type: {req.omics_type}")
+
+            from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
+
+            dataset_uuid = ingest_dataset_from_postgres(parsed)
+
+            if AUTO_LINK_ENABLED:
+                dataset_obj = db.query(DatasetModel).get(dataset_uuid)
+                if dataset_obj:
+                    if not getattr(parsed, "program_ids", None) and not dataset_obj.programs:
+                        prog_id, prog_conf = infer_program_from_metadata(
+                            diseases=getattr(dataset_obj, "disease", []) or [],
+                            keywords=[dataset_obj.name] if dataset_obj.name else [],
+                            filename=dataset_obj.file_paths[0] if getattr(dataset_obj, "file_paths", None) else None,
+                            min_confidence=AUTO_LINK_MIN_CONFIDENCE,
+                        )
+                        if prog_id:
+                            program = db.query(type(dataset_obj.programs.property.mapper.class_)).get(prog_id)  # type: ignore
+                            if program and program not in dataset_obj.programs:
+                                dataset_obj.programs.append(program)
+                                db.commit()
+                                logger.info(
+                                    "[INGEST][AUTO-LINK] Linked dataset %s to program %s (conf=%.2f)",
+                                    dataset_uuid,
+                                    prog_id,
+                                    prog_conf,
+                                )
+
+                    if not getattr(parsed, "experiment_ids", None) and not dataset_obj.experiments:
+                        exp_id, exp_conf = infer_experiment_from_metadata(
+                            diseases=getattr(dataset_obj, "disease", []) or [],
+                            matrix=getattr(dataset_obj, "matrix", []) if hasattr(dataset_obj, "matrix") else [],
+                            model_systems=getattr(dataset_obj, "model_systems", []) if hasattr(dataset_obj, "model_systems") else [],
+                            min_confidence=AUTO_LINK_MIN_CONFIDENCE,
+                        )
+                        if exp_id:
+                            experiment = db.query(type(dataset_obj.experiments.property.mapper.class_)).get(exp_id)  # type: ignore
+                            if experiment and experiment not in dataset_obj.experiments:
+                                dataset_obj.experiments.append(experiment)
+                                db.commit()
+                                logger.info(
+                                    "[INGEST][AUTO-LINK] Linked dataset %s to experiment %s (conf=%.2f)",
+                                    dataset_uuid,
+                                    exp_id,
+                                    exp_conf,
+                                )
+
+            if dataset:
+                dataset.ingestion_status = "complete"
+                db.commit()
+            
+            return dataset_uuid
+        
+        except Exception:
+            if dataset:
+                dataset.ingestion_status = "failed"
+                db.commit()
+            raise
 
 
 def reingest_dataset_from_postgres(dataset_id: UUID, force: bool = False) -> None:

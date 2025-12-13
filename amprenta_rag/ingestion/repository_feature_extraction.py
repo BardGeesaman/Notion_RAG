@@ -26,7 +26,7 @@ import pandas as pd
 import requests
 from Bio import Entrez
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset
 from amprenta_rag.ingestion.features.postgres_linking import (
     batch_link_features_to_dataset_in_postgres,
@@ -797,104 +797,95 @@ def extract_features_from_repository_dataset(
     Returns:
         Number of features linked
     """
-    db = next(get_db())
-    
-    try:
-        # Get dataset
-        dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
-        if not dataset:
-            logger.error("[FEATURE-EXTRACT] Dataset %s not found", dataset_id)
-            return 0
-        
-        # Get study_id from dataset if not provided
-        if not study_id:
-            # Try to extract from dataset metadata or external_ids
-            if hasattr(dataset, "external_ids") and dataset.external_ids:
-                if isinstance(dataset.external_ids, dict):
-                    study_id = dataset.external_ids.get("study_id") or dataset.external_ids.get("accession")
-        
-        if not study_id:
-            logger.warning(
-                "[FEATURE-EXTRACT] No study_id provided and couldn't extract from dataset %s",
+    with db_session() as db:
+        try:
+            dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+            if not dataset:
+                logger.error("[FEATURE-EXTRACT] Dataset %s not found", dataset_id)
+                return 0
+            
+            if not study_id:
+                if hasattr(dataset, "external_ids") and dataset.external_ids:
+                    if isinstance(dataset.external_ids, dict):
+                        study_id = dataset.external_ids.get("study_id") or dataset.external_ids.get("accession")
+            
+            if not study_id:
+                logger.warning(
+                    "[FEATURE-EXTRACT] No study_id provided and couldn't extract from dataset %s",
+                    dataset_id,
+                )
+                return 0
+            
+            logger.info(
+                "[FEATURE-EXTRACT] Extracting features from %s study %s for dataset %s",
+                repository,
+                study_id,
                 dataset_id,
             )
-            return 0
-        
-        logger.info(
-            "[FEATURE-EXTRACT] Extracting features from %s study %s for dataset %s",
-            repository,
-            study_id,
-            dataset_id,
-        )
-        
-        # Extract features based on repository type
-        features: List[Tuple[str, FeatureType]] = []
-        
-        if repository.upper() == "GEO":
-            # Use GEOparse for cleaner extraction
-            gene_set = extract_geo_features_with_geoparse(
-                study_id=study_id,
-                download_dir=download_dir,
-            )
-            features = [(gene, FeatureType.GENE) for gene in gene_set]
             
-        elif repository.upper() == "PRIDE":
-            protein_set = extract_pride_proteins_from_data_files(
-                study_id=study_id,
-                download_dir=download_dir,
-            )
-            features = [(protein, FeatureType.PROTEIN) for protein in protein_set]
+            features: List[Tuple[str, FeatureType]] = []
             
-        elif repository.upper() == "METABOLIGHTS":
-            metabolite_set = extract_metabolights_metabolites_from_isa_tab(
-                study_id=study_id,
-                download_dir=download_dir,
-            )
-            features = [(metabolite, FeatureType.METABOLITE) for metabolite in metabolite_set]
+            if repository.upper() == "GEO":
+                gene_set = extract_geo_features_with_geoparse(
+                    study_id=study_id,
+                    download_dir=download_dir,
+                )
+                features = [(gene, FeatureType.GENE) for gene in gene_set]
+                
+            elif repository.upper() == "PRIDE":
+                protein_set = extract_pride_proteins_from_data_files(
+                    study_id=study_id,
+                    download_dir=download_dir,
+                )
+                features = [(protein, FeatureType.PROTEIN) for protein in protein_set]
+                
+            elif repository.upper() == "METABOLIGHTS":
+                metabolite_set = extract_metabolights_metabolites_from_isa_tab(
+                    study_id=study_id,
+                    download_dir=download_dir,
+                )
+                features = [(metabolite, FeatureType.METABOLITE) for metabolite in metabolite_set]
+                
+            elif repository.upper() in ["MW", "METABOLOMICS WORKBENCH"]:
+                metabolite_set = extract_mw_metabolites_from_data_endpoint(
+                    study_id=study_id,
+                )
+                features = [(metabolite, FeatureType.METABOLITE) for metabolite in metabolite_set]
             
-        elif repository.upper() in ["MW", "METABOLOMICS WORKBENCH"]:
-            metabolite_set = extract_mw_metabolites_from_data_endpoint(
-                study_id=study_id,
+            else:
+                logger.warning("[FEATURE-EXTRACT] Unknown repository: %s", repository)
+                return 0
+            
+            if not features:
+                logger.warning("[FEATURE-EXTRACT] No features extracted from %s study %s", repository, study_id)
+                return 0
+            
+            logger.info(
+                "[FEATURE-EXTRACT] Linking %d features to dataset %s",
+                len(features),
+                dataset_id,
             )
-            features = [(metabolite, FeatureType.METABOLITE) for metabolite in metabolite_set]
-        
-        else:
-            logger.warning("[FEATURE-EXTRACT] Unknown repository: %s", repository)
+            
+            results = batch_link_features_to_dataset_in_postgres(
+                features=features,
+                dataset_id=dataset_id,
+                db=db,
+            )
+            
+            linked_count = sum(1 for v in results.values() if v)
+            logger.info(
+                "[FEATURE-EXTRACT] Successfully linked %d/%d features to dataset %s",
+                linked_count,
+                len(features),
+                dataset_id,
+            )
+            
+            return linked_count
+            
+        except Exception as e:
+            logger.error(
+                "[FEATURE-EXTRACT] Error extracting features for dataset %s: %r",
+                dataset_id,
+                e,
+            )
             return 0
-        
-        if not features:
-            logger.warning("[FEATURE-EXTRACT] No features extracted from %s study %s", repository, study_id)
-            return 0
-        
-        # Link features to dataset
-        logger.info(
-            "[FEATURE-EXTRACT] Linking %d features to dataset %s",
-            len(features),
-            dataset_id,
-        )
-        
-        results = batch_link_features_to_dataset_in_postgres(
-            features=features,
-            dataset_id=dataset_id,
-            db=db,
-        )
-        
-        linked_count = sum(1 for v in results.values() if v)
-        logger.info(
-            "[FEATURE-EXTRACT] Successfully linked %d/%d features to dataset %s",
-            linked_count,
-            len(features),
-            dataset_id,
-        )
-        
-        return linked_count
-        
-    except Exception as e:
-        logger.error(
-            "[FEATURE-EXTRACT] Error extracting features for dataset %s: %r",
-            dataset_id,
-            e,
-        )
-        return 0
-    finally:
-        db.close()

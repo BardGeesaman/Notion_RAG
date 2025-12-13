@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Dict, Optional, Set
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset as DatasetModel, Feature
 from amprenta_rag.logging_utils import get_logger
 
@@ -47,88 +47,80 @@ def extract_dataset_features_by_type_from_postgres(
         "lipid": set(),
     }
     
-    db = next(get_db())
-    
-    try:
-        # Fetch dataset with features
-        dataset = (
-            db.query(DatasetModel)
-            .filter(DatasetModel.id == dataset_id)
-            .first()
-        )
-        
-        if not dataset:
-            logger.warning(
-                "[FEATURE-EXTRACTION] Dataset %s not found in Postgres",
+    with db_session() as db:
+        try:
+            dataset = (
+                db.query(DatasetModel)
+                .filter(DatasetModel.id == dataset_id)
+                .first()
+            )
+            
+            if not dataset:
+                logger.warning(
+                    "[FEATURE-EXTRACTION] Dataset %s not found in Postgres",
+                    dataset_id,
+                )
+                return features_by_type
+            
+            features = dataset.features or []
+            
+            logger.info(
+                "[FEATURE-EXTRACTION] Found %d linked feature(s) for dataset %s",
+                len(features),
                 dataset_id,
             )
+            
+            for feature in features:
+                feature_type = feature.feature_type.lower()
+                feature_name = feature.name
+                
+                type_mapping = {
+                    "gene": "gene",
+                    "g": "gene",
+                    "protein": "protein",
+                    "p": "protein",
+                    "proteomics": "protein",
+                    "metabolite": "metabolite",
+                    "m": "metabolite",
+                    "metabolomics": "metabolite",
+                    "lipid": "lipid",
+                    "l": "lipid",
+                    "lipidomics": "lipid",
+                    "lipid species": "lipid",
+                }
+                
+                mapped_type = type_mapping.get(feature_type, feature_type)
+                
+                if mapped_type in features_by_type:
+                    features_by_type[mapped_type].add(feature_name)
+                else:
+                    logger.debug(
+                        "[FEATURE-EXTRACTION] Unknown feature type '%s' for feature '%s'",
+                        feature_type,
+                        feature_name,
+                    )
+            
+            total_features = sum(len(s) for s in features_by_type.values())
+            logger.info(
+                "[FEATURE-EXTRACTION] Extracted %d total feature(s) from dataset %s: "
+                "genes=%d, proteins=%d, metabolites=%d, lipids=%d",
+                total_features,
+                dataset_id,
+                len(features_by_type["gene"]),
+                len(features_by_type["protein"]),
+                len(features_by_type["metabolite"]),
+                len(features_by_type["lipid"]),
+            )
+            
             return features_by_type
-        
-        # Get linked features
-        features = dataset.features or []
-        
-        logger.info(
-            "[FEATURE-EXTRACTION] Found %d linked feature(s) for dataset %s",
-            len(features),
-            dataset_id,
-        )
-        
-        # Group features by type
-        for feature in features:
-            feature_type = feature.feature_type.lower()
-            feature_name = feature.name
             
-            # Map feature types to our standard types
-            type_mapping = {
-                "gene": "gene",
-                "g": "gene",
-                "protein": "protein",
-                "p": "protein",
-                "proteomics": "protein",
-                "metabolite": "metabolite",
-                "m": "metabolite",
-                "metabolomics": "metabolite",
-                "lipid": "lipid",
-                "l": "lipid",
-                "lipidomics": "lipid",
-                "lipid species": "lipid",
-            }
-            
-            mapped_type = type_mapping.get(feature_type, feature_type)
-            
-            if mapped_type in features_by_type:
-                features_by_type[mapped_type].add(feature_name)
-            else:
-                logger.debug(
-                    "[FEATURE-EXTRACTION] Unknown feature type '%s' for feature '%s'",
-                    feature_type,
-                    feature_name,
-                )
-        
-        # Log summary
-        total_features = sum(len(s) for s in features_by_type.values())
-        logger.info(
-            "[FEATURE-EXTRACTION] Extracted %d total feature(s) from dataset %s: "
-            "genes=%d, proteins=%d, metabolites=%d, lipids=%d",
-            total_features,
-            dataset_id,
-            len(features_by_type["gene"]),
-            len(features_by_type["protein"]),
-            len(features_by_type["metabolite"]),
-            len(features_by_type["lipid"]),
-        )
-        
-        return features_by_type
-        
-    except Exception as e:
-        logger.error(
-            "[FEATURE-EXTRACTION] Error extracting features from dataset %s: %r",
-            dataset_id,
-            e,
-        )
-        return features_by_type
-    finally:
-        db.close()
+        except Exception as e:
+            logger.error(
+                "[FEATURE-EXTRACTION] Error extracting features from dataset %s: %r",
+                dataset_id,
+                e,
+            )
+            return features_by_type
 
 
 def get_dataset_feature_count_by_type(
@@ -147,48 +139,44 @@ def get_dataset_feature_count_by_type(
     """
     from sqlalchemy import func
     
-    db = next(get_db())
-    
-    try:
-        # Query feature counts grouped by type
-        from amprenta_rag.database.models import dataset_feature_assoc
-        
-        counts = (
-            db.query(Feature.feature_type, func.count(Feature.id))
-            .join(dataset_feature_assoc, Feature.id == dataset_feature_assoc.c.feature_id)
-            .filter(dataset_feature_assoc.c.dataset_id == dataset_id)
-            .group_by(Feature.feature_type)
-            .all()
-        )
-        
-        result: Dict[str, int] = {
-            "gene": 0,
-            "protein": 0,
-            "metabolite": 0,
-            "lipid": 0,
-        }
-        
-        for feature_type, count in counts:
-            type_lower = feature_type.lower() if feature_type else ""
-            type_mapping = {
-                "gene": "gene",
-                "protein": "protein",
-                "metabolite": "metabolite",
-                "lipid": "lipid",
+    with db_session() as db:
+        try:
+            from amprenta_rag.database.models import dataset_feature_assoc
+            
+            counts = (
+                db.query(Feature.feature_type, func.count(Feature.id))
+                .join(dataset_feature_assoc, Feature.id == dataset_feature_assoc.c.feature_id)
+                .filter(dataset_feature_assoc.c.dataset_id == dataset_id)
+                .group_by(Feature.feature_type)
+                .all()
+            )
+            
+            result: Dict[str, int] = {
+                "gene": 0,
+                "protein": 0,
+                "metabolite": 0,
+                "lipid": 0,
             }
-            mapped_type = type_mapping.get(type_lower, type_lower)
-            if mapped_type in result:
-                result[mapped_type] = count
-        
-        return result
-        
-    except Exception as e:
-        logger.error(
-            "[FEATURE-EXTRACTION] Error getting feature counts for dataset %s: %r",
-            dataset_id,
-            e,
-        )
-        return {"gene": 0, "protein": 0, "metabolite": 0, "lipid": 0}
-    finally:
-        db.close()
+            
+            for feature_type, count in counts:
+                type_lower = feature_type.lower() if feature_type else ""
+                type_mapping = {
+                    "gene": "gene",
+                    "protein": "protein",
+                    "metabolite": "metabolite",
+                    "lipid": "lipid",
+                }
+                mapped_type = type_mapping.get(type_lower, type_lower)
+                if mapped_type in result:
+                    result[mapped_type] = count
+            
+            return result
+            
+        except Exception as e:
+            logger.error(
+                "[FEATURE-EXTRACTION] Error getting feature counts for dataset %s: %r",
+                dataset_id,
+                e,
+            )
+            return {"gene": 0, "protein": 0, "metabolite": 0, "lipid": 0}
 

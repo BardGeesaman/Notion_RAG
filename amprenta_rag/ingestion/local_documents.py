@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Email, Literature
 from amprenta_rag.ingestion.pinecone_utils import get_pinecone_index, sanitize_metadata
 from amprenta_rag.ingestion.postgres_rag_chunk import create_rag_chunk_in_postgres
@@ -31,33 +31,33 @@ def ingest_local_document(
     # Compose semantic_metadata
     semantic_metadata = dict(metadata)
     # Save to Postgres
-    db = next(get_db())
-    rec = None
-    if doc_type.lower() == "literature":
-        rec = Literature(
-            title=title,
-            source_type="LocalUpload",
-            semantic_metadata=semantic_metadata,
-            created_at=datetime.datetime.utcnow(),
-            updated_at=datetime.datetime.utcnow(),
-            embedding_status="Ingesting",
-        )
-        db.add(rec)
-        db.commit()
-        db.refresh(rec)
-    else:
-        rec = Email(
-            title=title,
-            content=text,
-            item_type=doc_type,
-            semantic_metadata=semantic_metadata,
-            created_at=datetime.datetime.utcnow(),
-            updated_at=datetime.datetime.utcnow(),
-            embedding_status="Ingesting",
-        )
-        db.add(rec)
-        db.commit()
-        db.refresh(rec)
+    with db_session() as db:
+        rec = None
+        if doc_type.lower() == "literature":
+            rec = Literature(
+                title=title,
+                source_type="LocalUpload",
+                semantic_metadata=semantic_metadata,
+                created_at=datetime.datetime.utcnow(),
+                updated_at=datetime.datetime.utcnow(),
+                embedding_status="Ingesting",
+            )
+            db.add(rec)
+            db.commit()
+            db.refresh(rec)
+        else:
+            rec = Email(
+                title=title,
+                content=text,
+                item_type=doc_type,
+                semantic_metadata=semantic_metadata,
+                created_at=datetime.datetime.utcnow(),
+                updated_at=datetime.datetime.utcnow(),
+                embedding_status="Ingesting",
+            )
+            db.add(rec)
+            db.commit()
+            db.refresh(rec)
     # Chunk, embed, and create RAG chunks:
     chunks = chunk_text(text)
     chunks = [c for c in chunks if c.strip()]
@@ -96,8 +96,9 @@ def ingest_local_document(
     pinecone_index = get_pinecone_index()
     pinecone_index.upsert(vectors=vectors)
     # Mark embedding/ingestion as complete
-    rec.embedding_status = "Embedded"
-    rec.last_ingested_at = datetime.datetime.utcnow()
-    db.add(rec)
-    db.commit()
+    with db_session() as db:
+        rec.embedding_status = "Embedded"
+        rec.last_ingested_at = datetime.datetime.utcnow()
+        db.add(rec)
+        db.commit()
     return rec.id

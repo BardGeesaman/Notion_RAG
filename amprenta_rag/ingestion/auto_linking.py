@@ -4,24 +4,14 @@ Automatic linking helpers for datasets → programs/experiments.
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from typing import Iterable, List, Optional, Tuple
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Experiment as ExperimentModel
 from amprenta_rag.database.models import Program as ProgramModel
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
-
-
-@contextmanager
-def db_session():
-    db = next(get_db())
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def _normalize_list(values: Optional[Iterable[str]]) -> List[str]:
