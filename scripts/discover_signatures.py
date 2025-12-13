@@ -14,7 +14,7 @@ from tqdm import tqdm
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.signatures.discovery import (
@@ -27,15 +27,13 @@ logger = get_logger(__name__)
 
 def list_datasets():
     """List all datasets from Postgres."""
-    db = next(get_db())
     try:
-        datasets_query = db.query(DatasetModel).all()
-        return [{"id": str(dataset.id), "name": dataset.name} for dataset in datasets_query]
+        with db_session() as db:
+            datasets_query = db.query(DatasetModel).all()
+            return [{"id": str(dataset.id), "name": dataset.name} for dataset in datasets_query]
     except Exception as e:
         logger.error("[SIG-DISC] Error listing datasets: %r", e)
         return []
-    finally:
-        db.close()
 
 
 def main() -> None:

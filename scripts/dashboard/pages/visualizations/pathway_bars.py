@@ -8,7 +8,6 @@ import plotly.express as px
 import streamlit as st
 
 from amprenta_rag.analysis.pathway.enrichment import perform_pathway_enrichment
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Feature
 from scripts.dashboard.db_session import db_session
 

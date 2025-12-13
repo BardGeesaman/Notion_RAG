@@ -84,7 +84,7 @@ from amprenta_rag.auth.session import (
 )
 from amprenta_rag.auth.audit import log_logout
 from amprenta_rag.auth.feature_permissions import get_visible_pages
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import UserFavorite, Experiment, Compound, Signature
 from scripts.dashboard.help_content import get_help, search_help
 from scripts.dashboard.help_chat import render_help_chat
@@ -223,10 +223,8 @@ user = get_current_user()
 # Get visible pages for user's role
 user_role = user.get("role", "viewer") if user else "viewer"
 try:
-    db_gen = get_db()
-    db = next(db_gen)
-    visible_pages = get_visible_pages(user_role, db)
-    db_gen.close()
+    with db_session() as db:
+        visible_pages = get_visible_pages(user_role, db)
 except Exception:
     visible_pages = ALL_PAGES  # Fallback to all if error
 
@@ -254,9 +252,7 @@ if user:
         user_id = user.get("id")
         if user_id and user_id != "00000000-0000-0000-0000-000000000001":
             try:
-                db_gen = get_db()
-                db = next(db_gen)
-                try:
+                with db_session() as db:
                     unread_count = get_unread_count(user_id, db)
                     notifications = get_unread_notifications(user_id, db, limit=10)
                     
@@ -287,8 +283,6 @@ if user:
                                 st.rerun()
                         else:
                             st.info("No unread notifications")
-                finally:
-                    db_gen.close()
             except Exception as e:
                 st.error(f"Error loading notifications: {e}")
         
@@ -337,15 +331,11 @@ def get_user_favorites(user_id: str) -> list[str]:
     if not user_id or user_id == "00000000-0000-0000-0000-000000000001":
         return []
     try:
-        db_gen = get_db()
-        db = next(db_gen)
-        try:
+        with db_session() as db:
             favorites = db.query(UserFavorite).filter(
                 UserFavorite.user_id == UUID(user_id)
             ).order_by(UserFavorite.created_at.desc()).all()
             return [f.page_name for f in favorites]
-        finally:
-            db_gen.close()
     except Exception:
         return []
 
@@ -354,9 +344,7 @@ def toggle_favorite(user_id: str, page_name: str) -> None:
     if not user_id or user_id == "00000000-0000-0000-0000-000000000001":
         return
     try:
-        db_gen = get_db()
-        db = next(db_gen)
-        try:
+        with db_session() as db:
             existing = db.query(UserFavorite).filter(
                 UserFavorite.user_id == UUID(user_id),
                 UserFavorite.page_name == page_name
@@ -370,8 +358,6 @@ def toggle_favorite(user_id: str, page_name: str) -> None:
                 )
                 db.add(favorite)
             db.commit()
-        finally:
-            db_gen.close()
     except Exception:
         pass
 
@@ -393,9 +379,7 @@ search_query = st.sidebar.text_input("🔍 Search...", key="global_search", plac
 if search_query:
     with st.sidebar.expander("🔍 Search Results", expanded=True):
         try:
-            db_gen = get_db()
-            db = next(db_gen)
-            try:
+            with db_session() as db:
                 results = global_search(search_query, db, limit=5)
                 
                 # Display results grouped by type
@@ -433,8 +417,6 @@ if search_query:
                 
                 if not any([results["experiments"], results["compounds"], results["signatures"], results["datasets"]]):
                     st.info("No results found")
-            finally:
-                db_gen.close()
         except Exception as e:
             st.error(f"Search error: {e}")
 
@@ -457,9 +439,7 @@ if user and user.get("id") != "00000000-0000-0000-0000-000000000001":
 # Bookmarks section
 if user and user.get("id") != "00000000-0000-0000-0000-000000000001":
     try:
-        db_gen = get_db()
-        db = next(db_gen)
-        try:
+        with db_session() as db:
             bookmarks = get_user_bookmarks(user.get("id"), db)
             if bookmarks:
                 with st.sidebar.expander("📌 Bookmarks", expanded=False):
@@ -497,8 +477,6 @@ if user and user.get("id") != "00000000-0000-0000-0000-000000000001":
                                     st.session_state["selected_page"] = "Signatures"
                                     st.session_state["selected_signature_id"] = str(bm.entity_id)
                                     st.rerun()
-        finally:
-            db_gen.close()
     except Exception:
         pass  # Silently fail if bookmarks can't be loaded
 

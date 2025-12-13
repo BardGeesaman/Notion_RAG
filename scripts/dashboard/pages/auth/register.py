@@ -1,7 +1,7 @@
 """User registration page (admin only)."""
 import streamlit as st
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import User
+from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.password import hash_password
 from amprenta_rag.auth.session import get_current_user
 
@@ -36,9 +36,7 @@ def render_register_page():
                 st.error("Password must be at least 8 characters")
                 return
 
-            db_gen = get_db()
-            db = next(db_gen)
-            try:
+            with db_session() as db:
                 # Check for existing user
                 existing = db.query(User).filter(
                     (User.username == username) | (User.email == email)
@@ -57,8 +55,6 @@ def render_register_page():
                 db.add(new_user)
                 db.commit()
                 st.success(f"User '{username}' created successfully!")
-            finally:
-                db_gen.close()
 
 
 if __name__ == "__main__":

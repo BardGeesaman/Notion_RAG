@@ -15,7 +15,7 @@ from uuid import UUID
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset
 from amprenta_rag.ingestion.repository_feature_extraction import (
     extract_features_from_repository_dataset,
@@ -52,8 +52,7 @@ def test_pride_ingestion(project_id: str):
         print(f"   Organism: {', '.join(metadata.organism) if metadata.organism else 'N/A'}")
         
         # Create dataset in Postgres
-        db = next(get_db())
-        try:
+        with db_session() as db:
             dataset = create_or_update_dataset_in_postgres(
                 name=metadata.title,
                 omics_type=OmicsType.PROTEOMICS,
@@ -73,9 +72,6 @@ def test_pride_ingestion(project_id: str):
             print(f"   Omics Type: {dataset.omics_type}")
             
             return dataset.id
-            
-        finally:
-            db.close()
             
     except Exception as e:
         print(f"\n❌ Ingestion failed: {e}")
@@ -110,8 +106,7 @@ def test_pride_feature_extraction(dataset_id: UUID, project_id: str):
             return
         
         # Verify features in database
-        db = next(get_db())
-        try:
+        with db_session() as db:
             dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
             
             if dataset:
@@ -133,9 +128,6 @@ def test_pride_feature_extraction(dataset_id: UUID, project_id: str):
                     print(f"   No proteins found (features: {len(features)})")
             else:
                 print(f"\n⚠️  Dataset not found in database")
-                
-        finally:
-            db.close()
             
     except Exception as e:
         print(f"\n❌ Feature extraction failed: {e}")

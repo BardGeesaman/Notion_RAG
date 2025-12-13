@@ -2,8 +2,8 @@
 import streamlit as st
 import json
 from datetime import datetime
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Protocol, ExperimentProtocol, Experiment
+from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.session import get_current_user
 
 
@@ -25,9 +25,7 @@ def render_protocols_page():
 def render_browse_tab():
     st.subheader("Protocol Library")
 
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         protocols = db.query(Protocol).filter(Protocol.is_active == True).order_by(Protocol.name).all()
 
         if not protocols:
@@ -53,8 +51,6 @@ def render_browse_tab():
                     if st.button("📝 New Version", key=f"version_{p.id}"):
                         st.session_state[f"clone_{p.id}"] = True
                         st.rerun()
-    finally:
-        db_gen.close()
 
 
 def render_create_tab():
@@ -86,9 +82,7 @@ def render_create_tab():
                 st.error(f"Invalid JSON: {e}")
                 return
 
-            db_gen = get_db()
-            db = next(db_gen)
-            try:
+            with db_session() as db:
                 protocol = Protocol(
                     name=name,
                     category=category,
@@ -100,16 +94,12 @@ def render_create_tab():
                 db.add(protocol)
                 db.commit()
                 st.success(f"Protocol '{name}' created successfully!")
-            finally:
-                db_gen.close()
 
 
 def render_link_tab():
     st.subheader("Link Protocol to Experiment")
 
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         protocols = db.query(Protocol).filter(Protocol.is_active == True).all()
         experiments = db.query(Experiment).order_by(Experiment.name).limit(100).all()
 
@@ -139,8 +129,6 @@ def render_link_tab():
                 db.add(link)
                 db.commit()
                 st.success("Protocol linked to experiment!")
-    finally:
-        db_gen.close()
 
 
 if __name__ == "__main__":

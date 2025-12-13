@@ -1,7 +1,7 @@
 """Login page for Amprenta dashboard."""
 import streamlit as st
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import User
+from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.password import verify_password
 from amprenta_rag.auth.session import set_current_user
 from amprenta_rag.auth.audit import log_login
@@ -22,9 +22,7 @@ def render_login_page():
                 st.error("Please enter username and password")
                 return
 
-            db_gen = get_db()
-            db = next(db_gen)
-            try:
+            with db_session() as db:
                 user = db.query(User).filter(User.username == username).first()
                 if user and user.is_active and verify_password(password, user.password_hash):
                     set_current_user({
@@ -40,8 +38,6 @@ def render_login_page():
                     st.rerun()
                 else:
                     st.error("Invalid username or password")
-            finally:
-                db_gen.close()
 
 
 if __name__ == "__main__":

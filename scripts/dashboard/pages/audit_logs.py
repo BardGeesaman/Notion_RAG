@@ -2,8 +2,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import AuditLog
+from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.session import get_current_user
 
 
@@ -28,9 +28,7 @@ def render_audit_logs_page():
         days_back = st.selectbox("Time Range", [1, 7, 30, 90], index=1, format_func=lambda x: f"Last {x} days")
 
     # Query logs
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         query = db.query(AuditLog).order_by(AuditLog.timestamp.desc())
 
         # Apply filters
@@ -68,9 +66,6 @@ def render_audit_logs_page():
         # Download option
         csv = df.to_csv(index=False)
         st.download_button("📥 Download CSV", csv, "audit_logs.csv", "text/csv")
-
-    finally:
-        db_gen.close()
 
 
 if __name__ == "__main__":

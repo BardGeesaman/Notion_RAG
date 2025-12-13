@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import streamlit as st
 import pandas as pd
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import GeneticVariant, Experiment
+from amprenta_rag.database.session import db_session
 
 
 def render_variants_page() -> None:
@@ -34,9 +34,7 @@ def _render_browse_tab() -> None:
         organism_filter = st.text_input("Cell Line/Organism", placeholder="Filter by organism", key="browse_organism_filter")
 
     # Query variants
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         query = db.query(GeneticVariant)
 
         if gene_filter:
@@ -68,8 +66,6 @@ def _render_browse_tab() -> None:
             st.dataframe(df, use_container_width=True, hide_index=True)
         else:
             st.info("No variants found. Add variants using the 'Add Variant' tab.")
-    finally:
-        db_gen.close()
 
 
 def _render_add_tab() -> None:
@@ -106,25 +102,21 @@ def _render_add_tab() -> None:
             # Could add experiment selector here if needed
 
             # Save variant
-            db_gen = get_db()
-            db = next(db_gen)
             try:
-                new_variant = GeneticVariant(
-                    gene=gene.strip(),
-                    variant=variant.strip(),
-                    zygosity=zygosity.strip() if zygosity else None,
-                    organism=organism.strip(),
-                    experiment_id=experiment_id,
-                    notes=notes.strip() if notes else None,
-                )
-                db.add(new_variant)
-                db.commit()
-                st.success(f"Variant {gene} {variant} saved successfully!")
-                st.rerun()
+                with db_session() as db:
+                    new_variant = GeneticVariant(
+                        gene=gene.strip(),
+                        variant=variant.strip(),
+                        zygosity=zygosity.strip() if zygosity else None,
+                        organism=organism.strip(),
+                        experiment_id=experiment_id,
+                        notes=notes.strip() if notes else None,
+                    )
+                    db.add(new_variant)
+                    db.commit()
+                    st.success(f"Variant {gene} {variant} saved successfully!")
+                    st.rerun()
             except Exception as e:
-                db.rollback()
                 st.error(f"Failed to save variant: {e}")
                 st.exception(e)
-            finally:
-                db_gen.close()
 

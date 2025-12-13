@@ -1,8 +1,8 @@
 """Discovery Workflow - Automated repository scanning and import."""
 import streamlit as st
 from datetime import datetime
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import DiscoveryJob, DiscoveredStudy, HarvestSchedule
+from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.session import get_current_user
 from amprenta_rag.ingestion.harvest_scheduler import schedule_harvest
 
@@ -59,9 +59,7 @@ def render_pending_tab():
     st.subheader("Pending Studies")
     st.markdown("Review and import discovered studies")
 
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         pending = db.query(DiscoveredStudy).filter(
             DiscoveredStudy.status == "new"
         ).order_by(DiscoveredStudy.discovered_at.desc()).limit(50).all()
@@ -100,16 +98,12 @@ def render_pending_tab():
                             st.markdown(f"[Open in GEO](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={study.study_id})")
                         elif study.repository == "MetaboLights":
                             st.markdown(f"[Open in MetaboLights](https://www.ebi.ac.uk/metabolights/{study.study_id})")
-    finally:
-        db_gen.close()
 
 
 def render_history_tab():
     st.subheader("Discovery Job History")
 
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         jobs = db.query(DiscoveryJob).order_by(DiscoveryJob.created_at.desc()).limit(20).all()
 
         if not jobs:
@@ -128,8 +122,6 @@ def render_history_tab():
                     st.error(f"Error: {job.error_message}")
 
                 st.caption(f"Created: {job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else 'Unknown'}")
-    finally:
-        db_gen.close()
 
 
 def render_schedules_tab():
@@ -138,9 +130,7 @@ def render_schedules_tab():
     
     user = get_current_user()
     
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         # List active schedules
         st.markdown("### Active Schedules")
         schedules = db.query(HarvestSchedule).order_by(HarvestSchedule.created_at.desc()).all()
@@ -206,8 +196,6 @@ def render_schedules_tab():
                     
                     st.success(f"Schedule '{name}' created and activated!")
                     st.rerun()
-    finally:
-        db_gen.close()
 
 
 if __name__ == "__main__":

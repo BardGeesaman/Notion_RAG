@@ -18,7 +18,7 @@ import requests
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset
 from amprenta_rag.ingestion.features.postgres_linking import (
     batch_link_features_to_dataset_in_postgres,
@@ -285,8 +285,7 @@ def extract_features_from_geo_study_optimized(
     
     features_to_link = [(gene, FeatureType.GENE) for gene in gene_set]
     
-    db = next(get_db())
-    try:
+    with db_session() as db:
         results = batch_link_features_to_dataset_in_postgres(
             features=features_to_link,
             dataset_id=dataset_id,
@@ -302,9 +301,6 @@ def extract_features_from_geo_study_optimized(
         )
         
         return linked_count
-        
-    finally:
-        db.close()
 
 
 def main():
@@ -337,15 +333,12 @@ def main():
         sys.exit(1)
     
     # Verify dataset exists
-    db = next(get_db())
-    try:
+    with db_session() as db:
         dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
         if not dataset:
             logger.error("[GEO-FEATURES] Dataset %s not found", dataset_id)
             sys.exit(1)
         logger.info("[GEO-FEATURES] Found dataset: %s", dataset.name if hasattr(dataset, 'name') else dataset_id)
-    finally:
-        db.close()
     
     # Extract and link features
     linked_count = extract_features_from_geo_study_optimized(

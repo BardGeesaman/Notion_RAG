@@ -10,7 +10,7 @@ import streamlit as st
 # Import models - use direct module import to avoid caching issues
 import amprenta_rag.database.models as db_models
 from amprenta_rag.database.models import Compound as PgCompound
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 
 # Access models directly from module
 Compound = db_models.Compound
@@ -20,15 +20,8 @@ ADMEResult = db_models.ADMEResult
 PKStudy = db_models.PKStudy
 ToxicologyResult = db_models.ToxicologyResult
 
-from scripts.dashboard.db_session import db_session
-from amprenta_rag.chemistry.compound_linking import (
-    link_compound_to_signature,
-    get_compounds_for_signature,
-)
-from amprenta_rag.chemistry.registration import (
-    check_duplicate,
-    register_compound,
-)
+from amprenta_rag.chemistry.compound_linking import link_compound_to_signature
+from amprenta_rag.chemistry.registration import register_compound
 from amprenta_rag.utils.data_export import export_compounds
 from amprenta_rag.chemistry.structure_search import substructure_search, similarity_search
 from amprenta_rag.chemistry.sar_analysis import (
@@ -80,9 +73,7 @@ def render_chemistry_page() -> None:
         st.subheader("Compounds")
         search_term = st.text_input("Search compounds by ID or SMILES", "", key="compound_search")
 
-        db_gen = get_db()
-        db = next(db_gen)
-        try:
+        with db_session() as db:
             query = db.query(PgCompound)
             if search_term:
                 query = query.filter(
@@ -165,8 +156,6 @@ def render_chemistry_page() -> None:
                                 st.write(f"**HBA Count:** {compound.hba_count}")
             else:
                 st.info("No compounds found.")
-        finally:
-            db_gen.close()
 
     with tab_reg:
         st.subheader("Register Compound")
@@ -624,15 +613,12 @@ def render_chemistry_page() -> None:
 
         # Helper: fetch compound IDs from PostgreSQL
         def _load_compound_ids() -> list[str]:
-            db_gen = get_db()
-            db = next(db_gen)
             try:
-                compounds = db.query(PgCompound).order_by(PgCompound.created_at.desc()).limit(500).all()
-                return [c.compound_id for c in compounds]
+                with db_session() as db:
+                    compounds = db.query(PgCompound).order_by(PgCompound.created_at.desc()).limit(500).all()
+                    return [c.compound_id for c in compounds]
             except Exception:
                 return []
-            finally:
-                db_gen.close()
 
         compound_options = _load_compound_ids()
 
@@ -673,16 +659,13 @@ def render_chemistry_page() -> None:
 
     with tab5:
         st.subheader("Lead Optimization")
-        db_gen = get_db()
-        db = next(db_gen)
         try:
-            compound_choices = [
-                c.compound_id for c in db.query(PgCompound).order_by(PgCompound.created_at.desc()).limit(500).all()
-            ]
+            with db_session() as db:
+                compound_choices = [
+                    c.compound_id for c in db.query(PgCompound).order_by(PgCompound.created_at.desc()).limit(500).all()
+                ]
         except Exception:
             compound_choices = []
-        finally:
-            db_gen.close()
 
         col_lo1, col_lo2 = st.columns(2)
 
@@ -694,29 +677,25 @@ def render_chemistry_page() -> None:
             adme_unit = st.text_input("Unit", value="uM", key="lo_adme_unit")
             adme_conditions = st.text_area("Conditions (JSON)", key="lo_adme_conditions")
             if st.button("Save ADME", key="lo_adme_save"):
-                db_gen = get_db()
-                db = next(db_gen)
                 try:
-                    cond = None
-                    if adme_conditions.strip():
-                        import json
-                        cond = json.loads(adme_conditions)
-                    comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == adme_comp).first() if adme_comp else None
-                    rec = ADMEResult(
-                        compound_id=comp_obj.id if comp_obj else None,
-                        assay_type=adme_assay,
-                        value=adme_value,
-                        unit=adme_unit or None,
-                        conditions=cond,
-                    )
-                    db.add(rec)
-                    db.commit()
-                    st.success("ADME entry saved.")
+                    with db_session() as db:
+                        cond = None
+                        if adme_conditions.strip():
+                            import json
+                            cond = json.loads(adme_conditions)
+                        comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == adme_comp).first() if adme_comp else None
+                        rec = ADMEResult(
+                            compound_id=comp_obj.id if comp_obj else None,
+                            assay_type=adme_assay,
+                            value=adme_value,
+                            unit=adme_unit or None,
+                            conditions=cond,
+                        )
+                        db.add(rec)
+                        db.commit()
+                        st.success("ADME entry saved.")
                 except Exception as e:
-                    db.rollback()
                     st.error(f"Failed to save ADME: {e}")
-                finally:
-                    db_gen.close()
 
         with col_lo2:
             st.markdown("### PK Studies")
@@ -733,32 +712,28 @@ def render_chemistry_page() -> None:
             pk_cl = st.number_input("Clearance", value=0.0, step=0.1, key="lo_pk_cl")
             pk_vd = st.number_input("Volume of Distribution", value=0.0, step=0.1, key="lo_pk_vd")
             if st.button("Save PK", key="lo_pk_save"):
-                db_gen = get_db()
-                db = next(db_gen)
                 try:
-                    comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == pk_comp).first() if pk_comp else None
-                    rec = PKStudy(
-                        compound_id=comp_obj.id if comp_obj else None,
-                        species=pk_species or None,
-                        route=pk_route or None,
-                        dose=pk_dose or None,
-                        dose_unit=pk_dose_unit or None,
-                        auc=pk_auc or None,
-                        c_max=pk_cmax or None,
-                        t_max=pk_tmax or None,
-                        half_life=pk_half or None,
-                        bioavailability=pk_f or None,
-                        clearance=pk_cl or None,
-                        vd=pk_vd or None,
-                    )
-                    db.add(rec)
-                    db.commit()
-                    st.success("PK entry saved.")
+                    with db_session() as db:
+                        comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == pk_comp).first() if pk_comp else None
+                        rec = PKStudy(
+                            compound_id=comp_obj.id if comp_obj else None,
+                            species=pk_species or None,
+                            route=pk_route or None,
+                            dose=pk_dose or None,
+                            dose_unit=pk_dose_unit or None,
+                            auc=pk_auc or None,
+                            c_max=pk_cmax or None,
+                            t_max=pk_tmax or None,
+                            half_life=pk_half or None,
+                            bioavailability=pk_f or None,
+                            clearance=pk_cl or None,
+                            vd=pk_vd or None,
+                        )
+                        db.add(rec)
+                        db.commit()
+                        st.success("PK entry saved.")
                 except Exception as e:
-                    db.rollback()
                     st.error(f"Failed to save PK: {e}")
-                finally:
-                    db_gen.close()
 
         st.markdown("---")
         col_tox, col_profile = st.columns(2)
@@ -772,38 +747,32 @@ def render_chemistry_page() -> None:
             tox_result = st.selectbox("Result", ["negative", "positive", "inconclusive"], key="lo_tox_result")
             tox_conditions = st.text_area("Conditions (JSON)", key="lo_tox_conditions")
             if st.button("Save Toxicology", key="lo_tox_save"):
-                db_gen = get_db()
-                db = next(db_gen)
                 try:
-                    cond = None
-                    if tox_conditions.strip():
-                        import json
-                        cond = json.loads(tox_conditions)
-                    comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == tox_comp).first() if tox_comp else None
-                    rec = ToxicologyResult(
-                        compound_id=comp_obj.id if comp_obj else None,
-                        assay_type=tox_assay or None,
-                        value=tox_value or None,
-                        unit=tox_unit or None,
-                        result=tox_result or None,
-                        conditions=cond,
-                    )
-                    db.add(rec)
-                    db.commit()
-                    st.success("Toxicology entry saved.")
+                    with db_session() as db:
+                        cond = None
+                        if tox_conditions.strip():
+                            import json
+                            cond = json.loads(tox_conditions)
+                        comp_obj = db.query(PgCompound).filter(PgCompound.compound_id == tox_comp).first() if tox_comp else None
+                        rec = ToxicologyResult(
+                            compound_id=comp_obj.id if comp_obj else None,
+                            assay_type=tox_assay or None,
+                            value=tox_value or None,
+                            unit=tox_unit or None,
+                            result=tox_result or None,
+                            conditions=cond,
+                        )
+                        db.add(rec)
+                        db.commit()
+                        st.success("Toxicology entry saved.")
                 except Exception as e:
-                    db.rollback()
                     st.error(f"Failed to save Toxicology: {e}")
-                finally:
-                    db_gen.close()
 
         with col_profile:
             st.markdown("### Compound Profile")
             profile_comp = st.selectbox("Compound (Profile)", compound_choices, key="lo_profile_comp")
             if profile_comp:
-                db_gen = get_db()
-                db = next(db_gen)
-                try:
+                with db_session() as db:
                     comp = db.query(PgCompound).filter(PgCompound.compound_id == profile_comp).first()
                     if comp:
                         adme = db.query(ADMEResult).filter(ADMEResult.compound_id == comp.id).all()
@@ -874,8 +843,6 @@ def render_chemistry_page() -> None:
                                 st.error(w)
                         else:
                             st.success("No major liabilities detected.")
-                finally:
-                    db_gen.close()
     
     with tab_proc:
         _render_procurement_tab()

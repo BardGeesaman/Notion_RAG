@@ -24,7 +24,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from amprenta_rag.config import get_config
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset, Program
 from amprenta_rag.ingestion.dataset_feature_cache import get_feature_cache
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
@@ -35,13 +35,10 @@ logger = get_logger(__name__)
 
 def _query_datasets() -> List[str]:
     """Query Postgres datasets and return dataset IDs."""
-    db = next(get_db())
-    try:
+    with db_session() as db:
         query = db.query(Dataset)
         datasets = query.limit(500).all()
         return [str(d.id) for d in datasets]
-    finally:
-        db.close()
 
 
 def fetch_all_dataset_ids() -> List[str]:
@@ -54,8 +51,7 @@ def fetch_all_dataset_ids() -> List[str]:
 
 def fetch_dataset_ids_for_program(program_id: str) -> List[str]:
     """List dataset IDs linked to a Program in Postgres."""
-    db = next(get_db())
-    try:
+    with db_session() as db:
         # Try to parse as UUID
         try:
             prog_uuid = UUID(program_id)
@@ -71,8 +67,6 @@ def fetch_dataset_ids_for_program(program_id: str) -> List[str]:
         # Get datasets linked to this program
         datasets = program.datasets if hasattr(program, 'datasets') else []
         return [str(d.id) for d in datasets]
-    finally:
-        db.close()
 
 
 def warm_cache_for_datasets(dataset_ids: List[str], batch_size: int = 50) -> None:

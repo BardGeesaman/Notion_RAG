@@ -2,8 +2,8 @@
 import streamlit as st
 from datetime import datetime
 from uuid import UUID
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Feedback
+from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.session import get_current_user
 
 
@@ -39,9 +39,7 @@ def render_submit_feedback_tab():
                 st.error("Title is required")
                 return
 
-            db_gen = get_db()
-            db = next(db_gen)
-            try:
+            with db_session() as db:
                 feedback = Feedback(
                     user_id=UUID(user.get("id")) if user and user.get("id") != "test" else None,
                     feedback_type=feedback_type.lower(),
@@ -54,8 +52,6 @@ def render_submit_feedback_tab():
                 db.commit()
                 st.success(f"Feedback submitted! Thank you for your input.")
                 st.rerun()
-            finally:
-                db_gen.close()
 
 
 def render_my_submissions_tab():
@@ -66,9 +62,7 @@ def render_my_submissions_tab():
         st.error("Please log in to view your submissions")
         return
 
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         user_id = user.get("id")
         if user_id == "test":
             st.info("Test user - no submissions to display")
@@ -108,8 +102,6 @@ def render_my_submissions_tab():
                 st.caption(f"Submitted: {fb.created_at.strftime('%Y-%m-%d %H:%M') if fb.created_at else 'Unknown'}")
                 if fb.updated_at and fb.updated_at != fb.created_at:
                     st.caption(f"Updated: {fb.updated_at.strftime('%Y-%m-%d %H:%M')}")
-    finally:
-        db_gen.close()
 
 
 def render_admin_triage_tab():
@@ -120,9 +112,7 @@ def render_admin_triage_tab():
         st.error("Access denied. Only administrators can view this page.")
         return
 
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         feedbacks = db.query(Feedback).order_by(Feedback.created_at.desc()).all()
 
         if not feedbacks:
@@ -181,8 +171,6 @@ def render_admin_triage_tab():
                 if fb.user_id:
                     # Could fetch username if needed
                     st.caption(f"User ID: {str(fb.user_id)[:8]}...")
-    finally:
-        db_gen.close()
 
 
 if __name__ == "__main__":

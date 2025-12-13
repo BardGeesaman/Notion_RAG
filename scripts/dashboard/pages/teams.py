@@ -1,8 +1,7 @@
 """Teams and Projects management page."""
 import streamlit as st
-from uuid import UUID
-from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Team, TeamMember, Project
+from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.session import get_current_user
 from amprenta_rag.auth.permissions import get_user_teams, get_user_projects, get_team_role
 
@@ -34,9 +33,7 @@ def render_my_teams_tab():
         st.error("Please log in")
         return
     
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         teams = get_user_teams(user.get("id"), db)
         
         if not teams:
@@ -57,8 +54,6 @@ def render_my_teams_tab():
                     st.markdown(f"**Projects:** {len(team_projects)}")
                     for proj in team_projects:
                         st.markdown(f"- {proj.name} {'(Public)' if proj.is_public else ''}")
-    finally:
-        db_gen.close()
 
 
 def render_my_projects_tab():
@@ -69,9 +64,7 @@ def render_my_projects_tab():
         st.error("Please log in")
         return
     
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         projects = get_user_projects(user.get("id"), db)
         
         if not projects:
@@ -94,8 +87,6 @@ def render_my_projects_tab():
                 with st.expander(f"{public_badge} **{proj.name}**"):
                     st.markdown(f"**Description:** {proj.description or 'No description'}")
                     st.caption(f"Created: {proj.created_at.strftime('%Y-%m-%d') if proj.created_at else 'Unknown'}")
-    finally:
-        db_gen.close()
 
 
 def render_create_team_tab():
@@ -122,9 +113,7 @@ def render_create_team_tab():
                 st.error("Team name is required")
                 return
             
-            db_gen = get_db()
-            db = next(db_gen)
-            try:
+            with db_session() as db:
                 # Check for duplicate name
                 existing = db.query(Team).filter(Team.name == name).first()
                 if existing:
@@ -149,8 +138,6 @@ def render_create_team_tab():
                 
                 st.success(f"Team '{name}' created! You have been added as owner.")
                 st.rerun()
-            finally:
-                db_gen.close()
 
 
 def render_create_project_tab():
@@ -161,9 +148,7 @@ def render_create_project_tab():
         st.error("Please log in")
         return
     
-    db_gen = get_db()
-    db = next(db_gen)
-    try:
+    with db_session() as db:
         # Get teams user belongs to
         teams = get_user_teams(user.get("id"), db)
         
@@ -199,8 +184,6 @@ def render_create_project_tab():
                 
                 st.success(f"Project '{name}' created!")
                 st.rerun()
-    finally:
-        db_gen.close()
 
 
 if __name__ == "__main__":

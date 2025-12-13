@@ -5,7 +5,7 @@ from typing import Optional, List
 
 import streamlit as st
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import StorageLocation, Sample, SampleTransfer, Experiment
 
 
@@ -29,17 +29,10 @@ def render_sample_inventory_page():
         render_transfer_tab()
 
 
-def _get_db():
-    db_gen = get_db()
-    db = next(db_gen)
-    return db_gen, db
-
-
 def render_locations_tab():
     st.subheader("Storage Locations")
 
-    db_gen, db = _get_db()
-    try:
+    with db_session() as db:
         locations = db.query(StorageLocation).order_by(StorageLocation.name).all()
         parent_options = {loc.name: loc.id for loc in locations}
 
@@ -76,8 +69,6 @@ def render_locations_tab():
                 st.markdown(f"- {label}")
         else:
             st.info("No storage locations yet. Add one above.")
-    finally:
-        db_gen.close()
 
 
 def render_samples_tab():
@@ -86,8 +77,7 @@ def render_samples_tab():
     search = st.text_input("Search", placeholder="Name or barcode")
     status_filter = st.selectbox("Status", ["All", "available", "reserved", "depleted"], index=0)
 
-    db_gen, db = _get_db()
-    try:
+    with db_session() as db:
         query = db.query(Sample)
         if search:
             like = f"%{search}%"
@@ -113,15 +103,12 @@ def render_samples_tab():
                 "Created": s.created_at.strftime("%Y-%m-%d") if s.created_at else "",
             })
         st.dataframe(rows, use_container_width=True, hide_index=True)
-    finally:
-        db_gen.close()
 
 
 def render_register_tab():
     st.subheader("Register Sample")
 
-    db_gen, db = _get_db()
-    try:
+    with db_session() as db:
         locations = db.query(StorageLocation).order_by(StorageLocation.name).all()
         parent_samples = db.query(Sample).order_by(Sample.name).limit(200).all()
         experiments = db.query(Experiment).order_by(Experiment.name).limit(200).all()
@@ -175,15 +162,12 @@ def render_register_tab():
                 db.commit()
                 st.success(f"Sample '{name}' registered with barcode {barcode_val}")
                 st.rerun()
-    finally:
-        db_gen.close()
 
 
 def render_transfer_tab():
     st.subheader("Transfer Sample")
 
-    db_gen, db = _get_db()
-    try:
+    with db_session() as db:
         samples = db.query(Sample).order_by(Sample.created_at.desc()).limit(200).all()
         locations = db.query(StorageLocation).order_by(StorageLocation.name).all()
 
@@ -226,8 +210,6 @@ def render_transfer_tab():
                 
                 st.success("Transfer recorded")
                 st.rerun()
-    finally:
-        db_gen.close()
 
 
 if __name__ == "__main__":
