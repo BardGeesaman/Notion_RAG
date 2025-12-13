@@ -1,8 +1,12 @@
 """Structure search utilities using PostgreSQL."""
 from typing import Optional, List, Dict, Any
 
+from amprenta_rag.logging_utils import get_logger
+
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Compound
+
+logger = get_logger(__name__)
 
 # Check RDKit availability
 try:
@@ -23,7 +27,8 @@ def substructure_search(smarts: str, limit: int = 100) -> List[Dict[str, Any]]:
         pattern = Chem.MolFromSmarts(smarts)
         if pattern is None:
             return []
-    except Exception:
+    except Exception as e:
+        logger.warning("[STRUCTURE_SEARCH] Failed to parse SMARTS '%s': %r", smarts, e)
         return []
     
     db_gen = get_db()
@@ -60,7 +65,8 @@ def similarity_search(smiles: str, threshold: float = 0.7, limit: int = 100) -> 
         if query_mol is None:
             return []
         query_fp = AllChem.GetMorganFingerprintAsBitVect(query_mol, 2, nBits=2048)
-    except Exception:
+    except Exception as e:
+        logger.warning("[STRUCTURE_SEARCH] Failed to compute fingerprint for '%s': %r", smiles, e)
         return []
     
     db_gen = get_db()

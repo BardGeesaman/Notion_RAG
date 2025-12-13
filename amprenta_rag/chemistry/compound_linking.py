@@ -4,6 +4,9 @@ from uuid import UUID
 
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Compound, Signature, Program
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def link_compound_to_signature(compound_id: str, signature_id: str) -> bool:
@@ -24,7 +27,8 @@ def link_compound_to_signature(compound_id: str, signature_id: str) -> bool:
         
         db.commit()
         return True
-    except Exception:
+    except Exception as e:
+        logger.warning("[COMPOUND_LINK] Failed linking compound %s to signature %s: %r", compound_id, signature_id, e)
         db.rollback()
         return False
     finally:
@@ -47,7 +51,8 @@ def link_compound_to_program(compound_id: str, program_id: str) -> bool:
         
         db.commit()
         return True
-    except Exception:
+    except Exception as e:
+        logger.warning("[COMPOUND_LINK] Failed linking compound %s to program %s: %r", compound_id, program_id, e)
         db.rollback()
         return False
     finally:

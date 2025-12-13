@@ -1,6 +1,10 @@
 """Password hashing utilities using bcrypt."""
 import bcrypt
 
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
 
 def hash_password(plain: str) -> str:
     """Hash a password using bcrypt."""
@@ -11,5 +15,6 @@ def verify_password(plain: str, hashed: str) -> bool:
     """Verify a password against its hash."""
     try:
         return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
-    except Exception:
+    except Exception as e:
+        logger.warning("[AUTH][PASSWORD] Verification failed: %r", e)
         return False

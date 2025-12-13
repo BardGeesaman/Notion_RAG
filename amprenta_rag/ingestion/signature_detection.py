@@ -248,7 +248,8 @@ def extract_signature_from_text_table(text: str) -> Optional[Dict[str, Any]]:
                 )
                 return {"components": components}
 
-        except Exception:
+        except Exception as e:
+            logger.warning("[INGEST][SIGNATURES] Failed to extract signature from text table: %r", e)
             continue
 
     return None

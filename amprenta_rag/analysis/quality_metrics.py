@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import Dict, List
 
 from amprenta_rag.database.models import Dataset, Feature
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def _feature_stats(feature: Feature) -> Dict[str, float]:
@@ -58,7 +61,8 @@ def compute_quality_score(dataset: Dataset) -> Dict[str, object]:
             try:
                 if abs(stats["log2FC"]) > 5:
                     outliers += 1
-            except Exception:
+                except Exception as e:
+                    logger.warning("[QUALITY] Skipping outlier check for feature %s: %r", getattr(feat, "id", "unknown"), e)
                 pass
 
     stats_coverage = (with_stats / feature_count * 100) if feature_count else 0

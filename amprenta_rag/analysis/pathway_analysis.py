@@ -330,8 +330,8 @@ def _fetch_kegg_pathway_info(pathway_id: str) -> Optional[Dict[str, str]]:
                 elif line.startswith("DESCRIPTION"):
                     info["description"] = line.split("DESCRIPTION")[1].strip()
             return info
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("[ANALYSIS][PATHWAY] Failed to fetch KEGG pathway %s: %r", pathway_id, e)
     return None
 
 
