@@ -106,7 +106,7 @@ def ingest_proteomics_file(
                 file_paths=[file_path],
                 description=f"Internal proteomics dataset ingested from {file_path}. Contains {raw_rows} raw entries, {len(protein_set)} normalized proteins.",
                 notion_page_id=notion_page_id,
-                program_ids=None,  # TODO: Convert Notion IDs to Postgres UUIDs
+                    program_ids=None,
                 experiment_ids=None,
             )
             logger.info(

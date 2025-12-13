@@ -117,7 +117,7 @@ def ingest_transcriptomics_file(
                 file_paths=[file_path],
                 description=f"Internal transcriptomics dataset ingested from {file_path}. Contains {len(df)} raw entries, {len(gene_set)} normalized genes.",
                 notion_page_id=notion_page_id,
-                program_ids=None,  # TODO: Convert Notion IDs to Postgres UUIDs
+                    program_ids=None,
                 experiment_ids=None,
             )
             logger.info(

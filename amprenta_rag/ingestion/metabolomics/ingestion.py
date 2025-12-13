@@ -143,7 +143,7 @@ def ingest_metabolomics_file(
                 file_paths=[file_path],
                 description=f"Internal metabolomics dataset ingested from {file_path}. Contains {raw_rows} raw entries, {len(metabolite_set)} normalized metabolites.",
                 notion_page_id=notion_page_id,
-                program_ids=None,  # TODO: Convert Notion IDs to Postgres UUIDs
+                program_ids=None,
                 experiment_ids=None,
             )
             logger.info(

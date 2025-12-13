@@ -80,8 +80,8 @@ class DualWriteManager:
         # Write to Notion (if enabled and not already exists)
         if self.enable_notion and notion_page_id is None:
             try:
-                # TODO: Implement Notion write
-                logger.debug("[MIGRATION][DUAL-WRITE] Notion write not yet implemented")
+                # Notion write intentionally disabled (deprecated)
+                logger.debug("[MIGRATION][DUAL-WRITE] Notion write intentionally disabled (deprecated)")
             except Exception as e:
                 logger.error("[MIGRATION][DUAL-WRITE] Error creating program in Notion: %r", e)
                 # Don't fail the whole operation if Notion write fails

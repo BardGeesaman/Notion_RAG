@@ -110,7 +110,7 @@ def ingest_lipidomics_file(
                 file_paths=[file_path],
                 description=f"Internal lipidomics dataset ingested from {file_path}. Contains {raw_rows} raw entries, {len(species_set)} normalized species.",
                 notion_page_id=notion_page_id,  # Link to existing Notion if provided
-                program_ids=None,  # TODO: Convert Notion IDs to Postgres UUIDs
+                program_ids=None,
                 experiment_ids=None,
             )
             logger.info(

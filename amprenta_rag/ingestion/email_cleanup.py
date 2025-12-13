@@ -45,8 +45,6 @@ def cleanup_orphaned_chunks() -> None:
     
     This function previously found and deleted chunks whose parent email/note no longer exists in Notion.
     Postgres is now the source of truth.
-    
-    TODO: Phase 3 - Implement Postgres-based orphaned chunk cleanup if needed.
     """
     logger.warning(
         "[INGEST][EMAIL] cleanup_orphaned_chunks() deprecated - Notion support removed. "
@@ -61,8 +59,6 @@ def delete_email_and_chunks(email_page_id: str) -> None:
     
     This function previously deleted an email and all its associated RAG chunks from Notion and Pinecone.
     Postgres is now the source of truth.
-    
-    TODO: Phase 3 - Implement Postgres-based email/chunk deletion if needed.
     
     Args:
         email_page_id: Notion page ID (ignored)
