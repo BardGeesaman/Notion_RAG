@@ -41,7 +41,12 @@ from amprenta_rag.models.chemistry import (
     biochemical_result_program,
 )
 from amprenta_rag.models.content import Literature, Email, RAGChunk, LiteratureCritique
-from amprenta_rag.models.eln import Protocol, ExperimentProtocol
+from amprenta_rag.models.eln import (
+    LabNotebookEntry,
+    LabNotebookEntryAssociation,
+    Protocol,
+    ExperimentProtocol,
+)
 from amprenta_rag.models.sample import StorageLocation, Sample, SampleTransfer
 from amprenta_rag.models.discovery import DiscoveryJob, DiscoveredStudy, HarvestSchedule
 from amprenta_rag.models.user_prefs import (
