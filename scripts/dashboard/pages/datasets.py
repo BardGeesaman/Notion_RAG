@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import pandas as pd
 import streamlit as st
 
 from amprenta_rag.database.models import Dataset
 from amprenta_rag.export.slide_generator import generate_dataset_slides
+from amprenta_rag.notebooks import generate_dataset_notebook
 from scripts.dashboard.db_session import db_session
 
 
@@ -173,6 +175,20 @@ def render_datasets_page() -> None:
                         )
                     except Exception as e:
                         st.error(f"Failed to generate PowerPoint: {e}")
+
+                    # Export as Jupyter Notebook (.ipynb)
+                    try:
+                        nb = generate_dataset_notebook(str(dataset.id))
+                        dataset_name_safe = (dataset.name or "dataset").replace(" ", "_").replace("/", "_")[:50]
+                        st.download_button(
+                            label="📓 Export to Notebook",
+                            data=json.dumps(nb),
+                            file_name=f"{dataset_name_safe}.ipynb",
+                            mime="application/json",
+                            key=f"export_notebook_{dataset.id}",
+                        )
+                    except Exception as e:
+                        st.error(f"Failed to generate notebook: {e}")
 
                     # Related entities (Postgres relationships - access while session is open)
                     if dataset.programs:
