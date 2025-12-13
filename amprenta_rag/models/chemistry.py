@@ -34,6 +34,13 @@ hts_campaign_program = Table(
     Column("program_id", UUID(as_uuid=True), ForeignKey("programs.id"), primary_key=True),
 )
 
+biochemical_result_program = Table(
+    "biochemical_result_program",
+    Base.metadata,
+    Column("result_id", UUID(as_uuid=True), ForeignKey("biochemical_results.id"), primary_key=True),
+    Column("program_id", UUID(as_uuid=True), ForeignKey("programs.id"), primary_key=True),
+)
+
 
 class Compound(Base):
     """Chemical compound."""
@@ -327,5 +334,6 @@ __all__ = [
     "GenericAssayResult",
     "compound_program",
     "hts_campaign_program",
+    "biochemical_result_program",
 ]
 

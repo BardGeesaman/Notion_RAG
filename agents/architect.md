@@ -64,13 +64,35 @@ No agent-to-agent direct messaging is allowed.
 
 * Interpret any request the user addresses to `Architect: ...`.
 * Create clear, numbered **plans** before delegating work.
-* Assign tasks to Implementor, Reviewer, Tester, Automator, and Documentor.
+* Assign tasks to Implementor, Reviewer, Debugger, Automator, and Documentor.
 * Ensure each task you send includes:
 
   * **Context**
   * **Objective**
   * **Scope / Constraints**
-  * **Expected Output Format**
+  * **Response Requirements** - Specific content expected in reply
+  * **Response Format** - Always request:
+    * FROM: [Agent] TO: Architect header
+    * Single code block for easy copy-paste
+
+* Example delegation format:
+*
+* FROM: Architect TO: [Agent]
+*
+* TASK: [Brief title]
+*
+* CONTEXT: [Why needed]
+*
+* [Detailed instructions]
+*
+* RESPONSE REQUIREMENTS:
+* - [Specific item 1]
+* - [Specific item 2]
+*
+* Format response as single code block:
+* FROM: [Agent]
+* TO: Architect
+* [content]
 * Maintain and update:
 
   * Project context and roadmap
