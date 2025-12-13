@@ -141,5 +141,34 @@ For developers or bioinformaticians preferring command-line tools for batch inge
 
 ---
 
+## 🛠️ Appendix: Integrated Tools & Technologies
+
+This platform integrates several powerful open-source and commercial tools to provide a seamless experience. Here's a brief explanation of the key technologies powering the system:
+
+### Artificial Intelligence (AI) & RAG
+*   **Retrieval-Augmented Generation (RAG)**: A technique that combines the vast knowledge of Large Language Models (LLMs) with your private data. When you ask a question, the system first retrieves relevant documents from your database and then uses the LLM to generate an answer based *only* on those facts.
+*   **Vector Search (Pinecone)**: A specialized database that stores the "meaning" of text as mathematical vectors. This allows the system to find relevant information even if the keywords don't match exactly (e.g., matching "heart attack" with "myocardial infarction").
+*   **Large Language Models (LLMs)**: The "brain" behind the reasoning. We support **GPT-4o** (OpenAI) and **Claude 3.5 Sonnet** (Anthropic) for high-quality scientific reasoning.
+
+### Cheminformatics
+*   **RDKit**: An open-source cheminformatics software. We use it to:
+    *   Parse chemical structures (SMILES).
+    *   Calculate molecular properties (Molecular Weight, LogP, TPSA).
+    *   Perform substructure searches (finding a specific core in a library).
+    *   Generate molecular fingerprints for similarity searching.
+*   **Ketcher**: A web-based chemical structure editor (sketcher) that allows you to draw molecules directly in the browser.
+
+### Bioinformatics & Analysis
+*   **KEGG & Reactome**: Public databases of biological pathways. We query their APIs to perform enrichment analysis (identifying which pathways are overrepresented in your gene/metabolite lists).
+*   **SciPy & NumPy**: Powerful Python libraries used for statistical calculations (PCA, t-tests, Clustering).
+*   **UniProt**: The universal protein resource. We use it to map gene symbols to protein IDs and retrieve functional descriptions.
+
+### Visualization
+*   **Plotly**: An interactive charting library used for most graphs (Volcano plots, Heatmaps, Bar charts). You can zoom, pan, and hover over data points for details.
+*   **Cytoscape.js**: A graph theory library used for visualizing biological networks (Protein-Protein Interactions) and knowledge graphs.
+*   **Ag-Grid**: An advanced data grid component that provides Excel-like filtering, sorting, and pivoting capabilities for large datasets.
+
+---
+
 *Last Updated: December 2025*
 
