@@ -48,9 +48,17 @@ Simple status legend:
 ## ⏳ NEXT UP (Prioritized)
 
 ### 1) Jupyter Notebook Integration (Highest Priority)
-- ⏳ Launch notebooks from datasets for editing/visualization
-- ❌ Two-way sync / write-back (phase 2, after read-only proves safe)
-- ❌ Templates for common workflows (RNA-seq QC, hit calling, etc.)
+
+**Phase 1 — Export to Notebook (Current)**:
+- ⏳ **Export to Notebook** button on dataset pages
+- ⏳ Generate a `.ipynb` pre-loaded with dataset data
+- ⏳ Templates per omics type
+- ⏳ Works with any local Jupyter
+
+**Phase 2 — JupyterHub (Future, requires AWS)**:
+- ❌ Deploy JupyterHub for multi-user support
+- ❌ Persistent workspaces per scientist
+- ❌ Write-back results to Postgres
 
 ### 2) AWS Deployment / Infrastructure Hardening
 - ❌ IaC (Terraform/Pulumi)
