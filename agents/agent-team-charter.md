@@ -64,6 +64,15 @@ Architect switches to Agent Mode ONLY when instructed:
 - Produces Mermaid diagrams  
 - Documents ingestion flows, RAG architecture, schemas, multi-omics reasoning  
 
+### 7. Innovator — Strategic Ideation (On-Demand Only)
+**Model:** GPT-5.1 Pro  
+**Mode:** On-demand only (NOT part of standard workflow)  
+**Responsibilities:**  
+- Generates innovative feature ideas grounded in codebase reality  
+- Provides ROI/effort estimates and prioritization (High/Medium/Low)  
+- Activated only when the Chairman explicitly requests ideation/brainstorming  
+- Reports to Architect; cannot approve its own suggestions  
+
 ## 3. Team Operating Principles
 
 ### Rule 1 — You Only Talk to the Architect
