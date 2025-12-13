@@ -46,8 +46,10 @@ Before generating feature ideas, Innovator MUST:
    - ✅ DONE features (do not re-suggest)
    - ⏳ NEXT UP features (do not duplicate)
    - 🔮 FUTURE backlog items
-3. Explore relevant codebase areas (confirm feasibility and avoid duplicates).
-4. Focus on features that advance the **MISSION**, not just technically interesting ideas.
+3. Read `docs/INNOVATION_LOG.md` to check previous suggestions and outcomes.
+4. Do NOT re-suggest rejected features unless explicitly requested.
+5. Explore relevant codebase areas (confirm feasibility and avoid duplicates).
+6. Focus on features that advance the **MISSION**, not just technically interesting ideas.
 
 - **Must review the codebase before suggesting features**:
   - Identify where the feature would live (modules/pages/models)
