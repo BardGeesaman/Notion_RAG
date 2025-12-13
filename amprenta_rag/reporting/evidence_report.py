@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset, Program, Signature
 from amprenta_rag.domain.analytics import EvidenceReport, EvidenceSection
 from amprenta_rag.logging_utils import get_logger
@@ -51,87 +51,86 @@ class EvidenceReportLegacy:
 
 def generate_program_report(program_id: UUID) -> EvidenceReport:
     """Generate an evidence report for a Program from Postgres."""
-    db = next(get_db())
-    program = db.query(Program).filter(Program.id == program_id).first()
-    datasets = getattr(program, "datasets", [])
-    sigs = getattr(program, "signatures", []) if hasattr(program, "signatures") else []
-    sections = []
-    
-    # Section: Overview
-    overview = EvidenceSection(
-        title="Overview",
-        summary_text=f"Program: {program.name if program else program_id}",
-        supporting_datasets=[d.id for d in datasets],
-        key_features=None,
-        signatures=[s.id for s in sigs],
-        references=None,
-    )
-    sections.append(overview)
-    
-    return EvidenceReport(
-        entity_id=program_id,
-        entity_type="program",
-        generated_at=datetime.utcnow(),
-        sections=sections,
-    )
+    with db_session() as db:
+        program = db.query(Program).filter(Program.id == program_id).first()
+        datasets = getattr(program, "datasets", [])
+        sigs = getattr(program, "signatures", []) if hasattr(program, "signatures") else []
+        sections = []
+        
+        overview = EvidenceSection(
+            title="Overview",
+            summary_text=f"Program: {program.name if program else program_id}",
+            supporting_datasets=[d.id for d in datasets],
+            key_features=None,
+            signatures=[s.id for s in sigs],
+            references=None,
+        )
+        sections.append(overview)
+        
+        return EvidenceReport(
+            entity_id=program_id,
+            entity_type="program",
+            generated_at=datetime.utcnow(),
+            sections=sections,
+        )
 
 
 def generate_dataset_report(dataset_id: UUID) -> EvidenceReport:
     """Generate an evidence report for a Dataset from Postgres."""
-    db = next(get_db())
-    d = db.query(Dataset).filter(Dataset.id == dataset_id).first()
-    
-    sections = [
-        EvidenceSection(
-            title="Overview",
-            summary_text=f"Dataset: {d.name if d else dataset_id}",
-            supporting_datasets=None,
-            key_features=None,
-            signatures=None,
-            references=None,
+    with db_session() as db:
+        d = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+        
+        sections = [
+            EvidenceSection(
+                title="Overview",
+                summary_text=f"Dataset: {d.name if d else dataset_id}",
+                supporting_datasets=None,
+                key_features=None,
+                signatures=None,
+                references=None,
+            )
+        ]
+        return EvidenceReport(
+            entity_id=dataset_id,
+            entity_type="dataset",
+            generated_at=datetime.utcnow(),
+            sections=sections,
         )
-    ]
-    return EvidenceReport(
-        entity_id=dataset_id,
-        entity_type="dataset",
-        generated_at=datetime.utcnow(),
-        sections=sections,
-    )
 
 
 def generate_signature_report(signature_id: UUID) -> EvidenceReport:
     """Generate an evidence report for a Signature from Postgres."""
-    db = next(get_db())
-    s = db.query(Signature).filter(Signature.id == signature_id).first()
-    
-    sections = [
-        EvidenceSection(
-            title="Overview",
-            summary_text=f"Signature: {getattr(s, 'name', signature_id)}",
-            supporting_datasets=None,
-            key_features=None,
-            signatures=None,
-            references=None,
+    with db_session() as db:
+        s = db.query(Signature).filter(Signature.id == signature_id).first()
+        
+        sections = [
+            EvidenceSection(
+                title="Overview",
+                summary_text=f"Signature: {getattr(s, 'name', signature_id)}",
+                supporting_datasets=None,
+                key_features=None,
+                signatures=None,
+                references=None,
+            )
+        ]
+        
+        val = validate_signature_against_all_datasets(signature_id)
+        sections.append(
+            EvidenceSection(
+                title="Validation Metrics",
+                summary_text=val.summary,
+                supporting_datasets=val.matched_dataset_ids,
+                key_features=None,
+                signatures=None,
+                references=None,
+            )
         )
-    ]
-    
-    val = validate_signature_against_all_datasets(signature_id)
-    sections.append(
-        EvidenceSection(
-            title="Validation Metrics",
-            summary_text=val.summary,
-            supporting_datasets=val.matched_dataset_ids,
-            key_features=None,
-            signatures=None,
-            references=None,
+        return EvidenceReport(
+            entity_id=signature_id,
+            entity_type="signature",
+            generated_at=datetime.utcnow(),
+            sections=sections,
         )
-    )
-    return EvidenceReport(
-        entity_id=signature_id,
-        entity_type="signature",
-        generated_at=datetime.utcnow(),
-        sections=sections,
-    )
 
 
 def generate_program_evidence_report(

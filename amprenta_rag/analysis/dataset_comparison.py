@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Set
 
 from uuid import UUID
 
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset as DatasetModel
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.logging_utils import get_logger
@@ -23,23 +23,21 @@ logger = get_logger(__name__)
 
 def _get_dataset_name(dataset_id: str) -> str:
     """Get dataset name from Postgres."""
-    db = next(get_db())
-    try:
-        dataset = None
+    with db_session() as db:
         try:
-            dataset_uuid = UUID(dataset_id)
-            dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_uuid).first()
-        except ValueError:
-            dataset = db.query(DatasetModel).filter(DatasetModel.notion_page_id == dataset_id).first()
-        
-        if dataset and dataset.name:
-            return dataset.name
-        return f"Dataset {dataset_id[:8]}"
-    except Exception as e:
-        logger.debug("[ANALYSIS][DATASET-COMP] Could not fetch dataset name: %r", e)
-        return f"Dataset {dataset_id[:8]}"
-    finally:
-        db.close()
+            dataset = None
+            try:
+                dataset_uuid = UUID(dataset_id)
+                dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_uuid).first()
+            except ValueError:
+                dataset = db.query(DatasetModel).filter(DatasetModel.notion_page_id == dataset_id).first()
+            
+            if dataset and dataset.name:
+                return dataset.name
+            return f"Dataset {dataset_id[:8]}"
+        except Exception as e:
+            logger.debug("[ANALYSIS][DATASET-COMP] Could not fetch dataset name: %r", e)
+            return f"Dataset {dataset_id[:8]}"
 
 
 @dataclass

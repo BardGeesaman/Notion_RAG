@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Set
 from uuid import UUID
 
 from amprenta_rag.analysis.program_maps.models import ProgramSignatureScore
-from amprenta_rag.database.base import get_db
+from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Program as ProgramModel
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.logging_utils import get_logger
@@ -34,49 +34,45 @@ def get_program_datasets(program_page_id: str) -> List[str]:
         >>> len(datasets) >= 0
         True
     """
-    db = next(get_db())
-    try:
-        program = None
+    with db_session() as db:
         try:
-            program_uuid = UUID(program_page_id)
-            program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
-        except ValueError:
-            program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
+            program = None
+            try:
+                program_uuid = UUID(program_page_id)
+                program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
+            except ValueError:
+                program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
 
-        if not program:
+            if not program:
+                return []
+
+            return [str(dataset.id) for dataset in program.datasets]
+        except Exception as e:
+            logger.warning(
+                "[ANALYSIS][PROGRAM-MAPS] Error getting datasets for program %s: %r",
+                program_page_id,
+                e,
+            )
             return []
-
-        return [str(dataset.id) for dataset in program.datasets]
-    except Exception as e:
-        logger.warning(
-            "[ANALYSIS][PROGRAM-MAPS] Error getting datasets for program %s: %r",
-            program_page_id,
-            e,
-        )
-        return []
-    finally:
-        db.close()
 
 
 def _get_program_name(program_page_id: str) -> str:
     """Get program name from Postgres."""
-    db = next(get_db())
-    try:
-        program = None
+    with db_session() as db:
         try:
-            program_uuid = UUID(program_page_id)
-            program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
-        except ValueError:
-            program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
-        
-        if program and program.name:
-            return program.name
-        return f"Program {program_page_id[:8]}"
-    except Exception as e:
-        logger.debug("[ANALYSIS][PROGRAM-MAPS] Could not fetch program name: %r", e)
-        return f"Program {program_page_id[:8]}"
-    finally:
-        db.close()
+            program = None
+            try:
+                program_uuid = UUID(program_page_id)
+                program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
+            except ValueError:
+                program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
+            
+            if program and program.name:
+                return program.name
+            return f"Program {program_page_id[:8]}"
+        except Exception as e:
+            logger.debug("[ANALYSIS][PROGRAM-MAPS] Could not fetch program name: %r", e)
+            return f"Program {program_page_id[:8]}"
 
 
 def compute_program_signature_scores(

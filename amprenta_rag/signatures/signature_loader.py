@@ -244,16 +244,14 @@ def load_signatures_from_postgres() -> List[Signature]:
     Returns:
         List of Signature objects
     """
-    from amprenta_rag.database.base import get_db
+    from amprenta_rag.database.session import db_session
     from amprenta_rag.database.models import Signature as SignatureModel
     
-    db = next(get_db())
-    try:
+    with db_session() as db:
         db_signatures = db.query(SignatureModel).all()
         signatures = []
         
         for db_sig in db_signatures:
-            # Convert components if stored
             components = []
             if hasattr(db_sig, 'components') and db_sig.components:
                 for comp_data in db_sig.components:
@@ -270,10 +268,7 @@ def load_signatures_from_postgres() -> List[Signature]:
                 components=components,
                 description=db_sig.description if hasattr(db_sig, 'description') else None,
             )
-            # Store the database ID for reference
             sig.id = db_sig.id
             signatures.append(sig)
         
         return signatures
-    finally:
-        db.close()
