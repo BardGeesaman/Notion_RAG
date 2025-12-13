@@ -1,7 +1,7 @@
 # AMPrenta Multi-Agent Team Charter (Cursor)
 
 ## 1. Purpose
-This charter defines how the five-agent Cursor system works together to accelerate development of the Amprenta RAG system, including ingestion pipelines, multi-omics reasoning, and biomedical intelligence modeling. You (the human) communicate ONLY with the Architect; all other agents are controlled indirectly.
+This charter defines how the multi-agent Cursor system works together to accelerate development of the Amprenta platform. **Default rule**: you (the human) communicate ONLY with the Architect; all other agents are controlled indirectly. **Exception**: the Innovator may be contacted directly by the Chairman for on-demand ideation/brainstorming only.
 
 ## 2. Agents & Responsibilities
 
@@ -71,7 +71,7 @@ Architect switches to Agent Mode ONLY when instructed:
 - Generates innovative feature ideas grounded in codebase reality  
 - Provides ROI/effort estimates and prioritization (High/Medium/Low)  
 - Activated only when the Chairman explicitly requests ideation/brainstorming  
-- Reports to Architect; cannot approve its own suggestions  
+- Reports directly to Chairman; does not direct Architect or other agents; cannot approve its own suggestions  
 
 ## 3. Team Operating Principles
 
@@ -82,7 +82,7 @@ All requests begin with:
 Architect:
 <your request>
 
-You never interact directly with other agents.
+You never interact directly with other agents **except** Innovator, which the Chairman may contact **directly** for on-demand ideation only.
 
 ### Rule 2 — Architect Must Stay in Planning Mode
 Architect plans; other agents execute.  
