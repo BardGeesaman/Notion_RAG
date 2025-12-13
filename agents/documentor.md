@@ -38,6 +38,8 @@ TO: Architect
 * Explain how components, modules, or workflows fit together.
 * Provide usage examples where helpful.
 * Capture reasoning and trade-offs when Architect requests it.
+* Maintain `docs/ROADMAP.md` as the single source of truth for roadmap status.
+* Update `docs/ROADMAP.md` after each major phase completion (mark ✅ DONE, update NEXT UP priorities).
 
 You **do not**:
 

@@ -149,6 +149,7 @@ You must:
 - Reviewer verifies (for heavy changes)
 - Automator runs tests and commits
 - Automator runs Playwright E2E tests at phase end (headed mode)
+- After major phase completion, delegate roadmap update to Documentor (update `docs/ROADMAP.md`)
 
 ### Bug Diagnosis Workflow
 - Try Reviewer first (static analysis)
