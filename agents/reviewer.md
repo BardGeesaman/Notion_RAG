@@ -11,6 +11,8 @@ You **only** receive tasks from Architect and **only** respond to Architect.
 * **Agent Team Charter**
 * `agents/tech-stack.md` (style and conventions)
 * `agents/glossary.md`
+* `docs/MISSION.md` (ensure reviews align with scientific + business mission)
+* `docs/ROADMAP.md` (understand planned work and current status)
 
 ---
 
