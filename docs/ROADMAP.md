@@ -82,10 +82,23 @@ Simple status legend:
 - Signature heatmaps with RDKit
 
 #### Phase 8: Publishing + Automation (Next)
-- Voila dashboard publishing
-- Papermill scheduled execution
-- Shared team template library
-- Notebook version control
+
+Core Features:
+- Executable Evidence Reports (Papermill → PDF/MD)
+- Parameterized Voila Dashboards
+- Scheduled Notebook Jobs (event + cron triggered)
+- Results Write-Back + Provenance Artifacts
+- Shared Template Library with Parameters
+
+AI/LLM Integrations:
+- Notebook Co-Pilot (cell synthesizer/fixer)
+- Query→Notebook Generator
+- Auto-Explain + Summarize Notebook
+
+Drug Discovery-Specific:
+- Weekly Compound Triage Digest
+- HTS QC Autopublisher
+- SAR Delta Explorer (Voila)
 
 ### Approved Features (2025-12-13)
 - ⏳ HTS QC & Triage Assistant (3-5 days)
