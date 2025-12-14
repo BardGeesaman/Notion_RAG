@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 from amprenta_rag.database.session import db_session
-from amprenta_rag.database.models import HTSCampaign, HTSResult
+from amprenta_rag.models.chemistry import HTSCampaign, HTSResult
 
 
 def list_campaigns() -> List[Dict]:
@@ -56,7 +56,7 @@ def _result_to_dict(r: HTSResult) -> Dict:
     return {
         "id": str(getattr(r, "id", "")) if getattr(r, "id", None) else None,
         "result_id": getattr(r, "result_id", None),
-        "compound_id": getattr(r, "compound_id", None),
+        "compound_id": str(getattr(r, "compound_id", "")) if getattr(r, "compound_id", None) else None,
         "well_position": getattr(r, "well_position", None),
         "raw_value": getattr(r, "raw_value", None),
         "normalized_value": getattr(r, "normalized_value", None),

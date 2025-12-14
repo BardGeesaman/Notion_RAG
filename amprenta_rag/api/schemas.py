@@ -254,7 +254,7 @@ class HTSHitResponse(BaseSchema):
     raw_value: Optional[float] = None
     normalized_value: Optional[float] = None
     z_score: Optional[float] = None
-    hit_flag: int
+    hit_flag: bool
     hit_category: Optional[str] = None
 
 
