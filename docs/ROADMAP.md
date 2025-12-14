@@ -174,6 +174,22 @@ Drug Discovery-Specific:
 - 3D Molecules: py3Dmol, mol*
 - Charts: Plotly, Altair
 
+## Collaboration (Future)
+
+### Tier 1 - High Impact
+- Entity-Scoped Sharing & Roles (per-entity ACLs)
+- Comments, Mentions, Inline Annotations
+- Review & Approval Workflows (datasets, signatures, protocols)
+- Activity Feed + Notifications
+- Shared Notebooks & Project Library
+- Project/Team Workspaces Hub
+
+### Tier 2 - Strategic
+- Collaborative Notebook Editing (RTC)
+- Notebook Review Threads + Diffs
+- Voila Share Links with Expiring Tokens
+- Scheduled Review Cycles & SLAs
+
 ### Approved Features (2025-12-13)
 - ⏳ HTS QC & Triage Assistant (3-5 days)
 - ⏳ Signature Match Explainability (2-4 days)
