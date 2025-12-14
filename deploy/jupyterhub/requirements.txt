@@ -15,4 +15,7 @@ notebook
 # JupyterHub Docker-based spawner (production-style user isolation)
 dockerspawner
 
+# JWT validation for token-based auth
+PyJWT>=2.8.0
+
 

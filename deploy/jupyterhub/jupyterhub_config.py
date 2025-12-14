@@ -7,6 +7,10 @@ Notes:
 """
 
 import os
+import sys
+
+sys.path.insert(0, "/etc/jupyterhub")
+from token_authenticator import TokenAuthenticator
 
 
 # Bind JupyterHub to the external port requested by the roadmap/deploy plan.
@@ -16,9 +20,11 @@ c.JupyterHub.hub_connect_ip = "amprenta-jupyterhub"
 # Persist hub state/database
 c.JupyterHub.db_url = "sqlite:////srv/jupyterhub/jupyterhub.sqlite"
 
-# Authentication: DummyAuthenticator (dev)
-c.JupyterHub.authenticator_class = "dummy"
-c.DummyAuthenticator.password = os.environ.get("JUPYTERHUB_PASSWORD", "dev")
+# Authentication: TokenAuthenticator (JWT from Streamlit)
+c.JupyterHub.authenticator_class = TokenAuthenticator
+
+# JWT config
+c.TokenAuthenticator.jwt_secret = os.environ.get("JWT_SECRET_KEY", "dev-secret-change-me")
 
 # Spawner: DockerSpawner (production-style user isolation)
 c.JupyterHub.spawner_class = "dockerspawner.DockerSpawner"

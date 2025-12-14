@@ -38,6 +38,7 @@ ENV PYTHONPATH=/opt/amprenta_rag:${PYTHONPATH}
 
 # JupyterHub configuration (kept out of the /srv/jupyterhub volume)
 COPY deploy/jupyterhub/jupyterhub_config.py /etc/jupyterhub/jupyterhub_config.py
+COPY deploy/jupyterhub/token_authenticator.py /etc/jupyterhub/token_authenticator.py
 
 EXPOSE 8888
 
