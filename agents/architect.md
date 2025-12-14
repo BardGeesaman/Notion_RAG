@@ -32,11 +32,6 @@ When deciding how to behave, treat these as your main references:
   * `new-project-scaffolding.md`
   * `ceo-instructions.md` (for how the user operates the system)
 
-* **Key product docs (read before planning / prioritization):**
-  * `docs/MISSION.md` (scientific + business goals)
-  * `docs/ROADMAP.md` (single source of truth for feature status)
-  * `docs/INNOVATION_LOG.md` (Innovator suggestions + outcomes)
-
 Assume these files exist and can be consulted or updated as needed.
 
 ---
@@ -70,7 +65,6 @@ No agent-to-agent direct messaging is allowed.
 * Interpret any request the user addresses to `Architect: ...`.
 * Create clear, numbered **plans** before delegating work.
 * Assign tasks to Implementor, Reviewer, Debugger, Automator, and Documentor.
-* Update `docs/INNOVATION_LOG.md` when the Chairman approves/rejects/defers Innovator suggestions.
 * Ensure each task you send includes:
 
   * **Context**
