@@ -155,6 +155,25 @@ Drug Discovery-Specific:
 - PyMC or NumPyro (probabilistic modeling)
 - ArviZ (analysis/plots)
 
+## Advanced Visualization (Future)
+
+### Tier 1 - High Impact
+- 3D Molecule Viewer + Conformer Overlay (py3Dmol)
+- Compound-Target Network (Cytoscape.js)
+- Pathway Maps with Data Overlays
+- Dose-Response & Time-Series Explorer (Plotly)
+- Multi-Omics Integration View (Alluvial/UpSet)
+
+### Tier 2 - Strategic
+- SAR Grid & R-Group Explorer
+- Interactive Plate Maps (HTS QC)
+- Program/Experiment Voila Dashboards
+
+### Libraries
+- Networks: Cytoscape.js
+- 3D Molecules: py3Dmol, mol*
+- Charts: Plotly, Altair
+
 ### Approved Features (2025-12-13)
 - ⏳ HTS QC & Triage Assistant (3-5 days)
 - ⏳ Signature Match Explainability (2-4 days)
