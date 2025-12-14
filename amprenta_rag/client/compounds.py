@@ -12,7 +12,7 @@ will raise APIError if the server does not implement those routes yet.
 
 from __future__ import annotations
 
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from amprenta_rag.api.schemas import CompoundResponse, ProgramLinkResponse
 from amprenta_rag.client.base import BaseHTTPClient
@@ -52,5 +52,13 @@ class CompoundsClient:
 
     def delete(self, compound_id: str) -> None:
         self._http._request("DELETE", f"/api/v1/compounds/{compound_id}")
+
+    def annotate(self, compound_id: str, text: str, annotation_type: Optional[str] = None) -> Dict[str, Any]:
+        payload = self._http._request(
+            "POST",
+            f"/api/v1/compounds/{compound_id}/annotations",
+            json={"text": text, "annotation_type": annotation_type},
+        )
+        return payload or {}
 
 

@@ -4,7 +4,7 @@ Signatures resource client.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from amprenta_rag.api.schemas import Signature, SignatureCreate, SignatureUpdate
@@ -58,5 +58,13 @@ class SignaturesClient:
 
     def delete(self, signature_id: UUID) -> None:
         self._http._request("DELETE", f"/api/v1/signatures/{signature_id}")
+
+    def annotate(self, signature_id: UUID, text: str, annotation_type: Optional[str] = None) -> Dict[str, Any]:
+        payload = self._http._request(
+            "POST",
+            f"/api/v1/signatures/{signature_id}/annotations",
+            json={"text": text, "annotation_type": annotation_type},
+        )
+        return payload or {}
 
 
