@@ -325,6 +325,9 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
             use_container_width=True
         )
         st.sidebar.caption("Launch notebooks with API access")
+        
+        if st.sidebar.button("Generate Report", use_container_width=True):
+            st.info("Report generation coming soon")
 
         return page
 

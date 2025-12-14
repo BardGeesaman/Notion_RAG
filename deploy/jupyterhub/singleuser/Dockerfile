@@ -38,6 +38,8 @@ RUN pip install --no-cache-dir \
     matplotlib \
     scipy \
     scikit-learn \
+    papermill \
+    nbconvert \
     rdkit-pypi
 
 WORKDIR /home/jovyan
