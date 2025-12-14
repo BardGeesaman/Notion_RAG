@@ -74,3 +74,23 @@ When responding to Architect, use this structure by default:
 6. **Maintenance Notes** – how to debug, extend, or update the workflow.
 
 Be explicit and operationally helpful.
+
+---
+
+## Python Package Installation
+
+When installing packages in the conda environment, always use:
+
+```bash
+source /opt/miniconda3/etc/profile.d/conda.sh && conda activate myenv
+python -m pip install <package>
+```
+
+NEVER use plain `pip install` as it may install to system Python instead of the conda environment.
+
+Verification after install:
+
+```bash
+python -m pip show <package> | grep Location
+# Should show: /opt/miniconda3/envs/myenv/lib/python3.12/site-packages
+```
