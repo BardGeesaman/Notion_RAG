@@ -69,13 +69,13 @@ Simple status legend:
 - Starter templates: getting_started, molecule_analysis, signature_explorer
 - Context parameter passing (entity IDs)
 
-#### Phase 6: Write-Back + Context (Next)
+#### Phase 6: Write-Back + Context ✓
 - Pre-load notebooks with current entity context
 - Save cell outputs as annotations
 - Notebook attachments to entities
 - "Save to RAG" magic command
 
-#### Phase 7: Advanced Templates (Future)
+#### Phase 7: Advanced Templates (Next)
 - Pathway enrichment analysis
 - Dose-response curve fitting
 - Compound similarity clustering
