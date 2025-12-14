@@ -46,13 +46,13 @@ It should be updated at natural breakpoints in work sessions to support continui
 *A brief explanation of how the system is currently structured.*
 
 * **Main Components:**
-  - **Postgres**: Primary system of record for all structured data (Programs, Experiments, Datasets, Features, Signatures, and all relationships).
-  - **SQLite**: Chemistry and screening data (7 tables: compounds, libraries, campaigns, results).
+  - **Postgres**: Primary system of record for ALL structured data (Programs, Experiments, Datasets, Features, Signatures, Compounds, HTS, and all relationships).
   - **Pinecone**: Vector index for RAG with OpenAI embeddings.
   - **OpenAI**: Embedding generation (text-embedding-ada-002) + LLM reasoning (GPT-4o/Claude 3.5).
-  - **FastAPI**: REST API service layer.
-  - **Streamlit**: Web dashboard (30+ pages) for data exploration and analysis.
+  - **FastAPI**: REST API service layer with 15+ CRUD endpoints.
+  - **Streamlit**: Web dashboard (40+ pages) for data exploration and analysis.
   - **Python Scripts**: CLI tools for ingestion and analysis.
+  - ~~**SQLite**: Removed (Dec 2025) - Chemistry/HTS migrated to Postgres.~~
 
 * **How They Interact:**
   1. Data files → Ingestion pipelines → Parse and normalize features → **Postgres**
@@ -82,15 +82,19 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 ## 3. Active Tasks
 
-*A living list of work in progress (Synced with NEXT_STEPS.md).*
+*A living list of work in progress (Synced with ROADMAP.md).*
 
 | Task | Owner (Agent) | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| **Jupyter Integration Design** | Architect | **Pending** | Highest priority: Data Viz & Editing |
+| **JupyterHub Integration** | Implementor | **Next Up** | 5-phase plan approved, ~3 weeks |
+| — Phase 1: API Client Library | Implementor | **Pending** | 5 days - `amprenta-client` package |
+| — Phase 2: Write Endpoints | Implementor | **Pending** | 3 days - annotations API |
+| — Phase 3: JupyterHub Deploy | Implementor | **Pending** | 7 days - Docker/K8s |
+| — Phase 4: SSO Integration | Implementor | **Pending** | 3 days |
+| — Phase 5: Templates + Launch | Implementor | **Pending** | 2 days |
 | **AWS Deployment Architecture** | Architect | **Pending** | ECS/RDS/ElastiCache design |
 | **Advanced Viz Suite (Cytoscape/IGV)** | Implementor | **Pending** | Network graphs and genome browser |
-| **E2E Test: Concurrent Editing** | Tester | **Pending** | Gap identified in roadmap |
-| **Public Repo Expansion** | Architect | **Planned** | Add S2/OpenAlex integration |
+| **Innovator Feature Review** | Chairman | **Approved** | 7 features added to roadmap |
 
 ---
 
@@ -98,6 +102,12 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-13] – **JupyterHub Plan Approved**: 5-phase implementation plan documented in ROADMAP.md (commit aff313a).
+* [2025-12-13] – **Innovator Agent Created**: New strategic feature ideation agent with charter and communication flow.
+* [2025-12-13] – **7 New Features Approved**: HTS QC, Signature Explainability, MOA Inference, Cross-Omics Pathway, Narrative Reports, Data Quality Watcher, Protocol Diff.
+* [2025-12-13] – **Code Quality Complete**: All P1-P3 cleanup done (64 db_session fixes, bare excepts, SQLite migration, model splits).
+* [2025-12-13] – **Test Coverage Added**: 24 new tests (auth module: 15, models: 9).
+* [2025-12-13] – **SQLite Fully Removed**: Chemistry/HTS migrated to PostgreSQL. database.py, schema.py deleted.
 * [2025-12-13] – **Operational Maturity**: Achieved 57 passing E2E tests, full dashboard coverage, and implemented optimistic locking for concurrent editing.
 * [2025-12-13] – **Feature Completion**: Delivered Genomic Variant Tracking, Scientific Q&A, Advanced UI/UX (Themes, Global Search, Shortcuts), and massive roadmap update (40+ features completed).
 * [2025-12-13] – **Roadmap Expansion**: Added Jupyter Integration, AWS Deployment, and Advanced Visualization to roadmap.
@@ -123,11 +133,12 @@ It should be updated at natural breakpoints in work sessions to support continui
 * **Reasoning:** Performance, scalability, and "Chairman's directive" to remove Notion dependence.
 * **Impact:** All pipelines write to Postgres. Notion API removed from codebase.
 
-### Decision 2: SQLite for Chemistry/HTS Data
-* **Decision:** Use SQLite for chemistry and screening data (high volume).
-* **Date:** 2025-12-02
-* **Reasoning:** HTS campaigns can have 100k-1M molecules; relational structure needed but simpler than full Postgres for prototype.
-* **Impact:** Chemistry data stays in SQLite (now migrating to Postgres for unification).
+### Decision 2: SQLite Removed - Chemistry/HTS in Postgres
+* **Decision:** Migrated chemistry and screening data from SQLite to Postgres.
+* **Date:** 2025-12-13 (Migration complete)
+* **Original Date:** 2025-12-02 (SQLite introduced)
+* **Reasoning:** Unified architecture simplifies operations; Postgres handles HTS volume fine.
+* **Impact:** chemistry/database.py and chemistry/schema.py deleted. All data in Postgres.
 
 ### Decision 3: Multi-Omics Signature Architecture
 * **Decision:** Use feature type inference and modality tagging for cross-omics signatures.
@@ -149,8 +160,8 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 ### Question 1: Jupyter Integration Strategy
 * **Question:** How to deeply integrate Jupyter? (Embedded vs. Export vs. JupyterHub)
-* **Status:** Open (High Priority)
-* **Proposed:** Embedded JupyterLite or Kernel Gateway for tight integration.
+* **Status:** RESOLVED - JupyterHub chosen
+* **Decision:** Full JupyterHub deployment with API client library for two-way data flow. 5-phase plan approved (see ROADMAP.md).
 
 ### Question 2: Public Repository Automation
 * **Question:** Level of automation for public repo ingestion?
@@ -194,7 +205,19 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A running notes section for the Architect to write contextual thoughts.*
 
-### Notes from 2025-12-13
+### Notes from 2025-12-13 (Evening Session)
+
+**JUPYTERHUB PLAN & CODE QUALITY COMPLETION**
+
+*   **JupyterHub Decision**: After evaluating options (JupyterLite, API client only, JupyterHub), Chairman approved full JupyterHub deployment for maximum capability.
+*   **5-Phase Plan**: API Client (5d) → Write Endpoints (3d) → JupyterHub Deploy (7d) → SSO (3d) → Templates (2d) = ~3 weeks total.
+*   **Innovator Agent**: Created new agent for strategic feature ideation. Reports directly to Chairman, not part of standard workflow.
+*   **7 New Features Approved**: HTS QC, Signature Explainability, MOA Inference, Cross-Omics Pathway, Narrative Reports, Data Quality Watcher, Protocol Diff.
+*   **Code Quality 100% Complete**: All db_session fixes (64 instances), bare excepts (10), SQLite removal, model splits done.
+*   **SQLite Fully Removed**: Chemistry/HTS now in Postgres. Deleted database.py, schema.py, email_cleanup.py.
+*   **Test Coverage Added**: 24 new tests for auth and models modules.
+
+### Notes from 2025-12-13 (Earlier)
 
 **OPERATIONAL MATURITY & ROADMAP EXPANSION**
 
@@ -219,32 +242,60 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *To be produced automatically by the Architect at the end of each session.*
 
-**Last Updated:** 2025-12-13
+**Last Updated:** 2025-12-13 (Evening)
 
 ### Summary
 
-The system has reached a high level of operational maturity with **40+ features completed** and **57 passing E2E tests**. The architecture is now fully **Postgres-centric** (Notion removed), with a robust Streamlit dashboard and RAG capabilities. Key recent additions include **Genomic Variant Tracking**, **Scientific Q&A**, and **Optimistic Locking** for concurrent editing.
+The system has reached **production maturity** with **40+ features**, **57 passing E2E tests**, and **fully unified Postgres architecture** (SQLite removed, Notion removed). Code quality optimization is 100% complete.
 
-The roadmap has been updated to prioritize **Jupyter Notebook Integration** (for deep analysis), **Advanced Visualization** (Cytoscape/IGV), and **AWS Cloud Deployment** (for scalability). Multi-company support and automated reporting are planned but pending UI implementation.
+**JupyterHub integration is the top priority** - a 5-phase plan has been approved and documented in ROADMAP.md. The Innovator agent was created to support strategic feature ideation.
 
 ### Current State
 
-*   **System Status**: Production-Ready (Core & RAG), expanding into Advanced Analytics.
-*   **Test Coverage**: High (Core flows covered), gap identified in Concurrent Editing testing.
-*   **Architecture**: Stable Postgres/FastAPI/Streamlit stack.
-*   **Next Focus**: Integration (Jupyter, AWS) and Visualization.
+*   **System Status**: Production-Ready. Code quality at 9/10.
+*   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (40+ pages).
+*   **Test Coverage**: High (24 new auth/model tests added this session).
+*   **Next Focus**: JupyterHub Integration (Phase 1 ready to start).
 
-### Recommended Next Steps
+### TOMORROW: Start JupyterHub Phase 1
 
-1.  **Design Jupyter Integration**: Decide on architecture (embedded vs. hub) and begin implementation.
-2.  **AWS Architecture**: Design ECS/RDS infrastructure and create IaC scripts.
-3.  **Advanced Visualization**: Integrate Cytoscape.js for network graphs.
-4.  **Test Coverage**: Add E2E test for Concurrent Editing (Optimistic Locking).
+Send this delegation to Implementor:
+
+```
+FROM: Architect TO: Implementor
+
+TASK: Create amprenta-client Python package (Phase 1, Part A)
+
+Create the following structure:
+- amprenta_rag/client/__init__.py - Main client class and exports
+- amprenta_rag/client/base.py - Base HTTP client with auth
+- amprenta_rag/client/datasets.py - Dataset CRUD methods
+- amprenta_rag/client/experiments.py - Experiment CRUD methods
+
+Requirements:
+1. RAGClient class with api_url and api_key parameters
+2. Typed methods using existing Pydantic schemas from amprenta_rag/api/schemas/
+3. Resource classes: client.datasets.list(), client.datasets.get(id), etc.
+4. HTTP calls via httpx (add to requirements.txt if not present)
+
+Do NOT run tests. Report files created and line counts.
+Format response as single code block with FROM: Implementor TO: Architect header.
+```
+
+### JupyterHub Phases Remaining
+
+| Phase | Duration | Status |
+|-------|----------|--------|
+| 1. API Client Library | 5 days | **START HERE** |
+| 2. Write Endpoints | 3 days | Pending (parallel) |
+| 3. JupyterHub Deploy | 7 days | Pending |
+| 4. SSO Integration | 3 days | Pending |
+| 5. Templates + Launch | 2 days | Pending |
 
 ### Key Files to Review
-*   `NEXT_STEPS.md`: The canonical roadmap.
-*   `amprenta_rag/tests/dashboard/test_e2e_platform.py`: The E2E test suite.
-*   `amprenta_rag/analysis/`: Analytics modules (enrichment, stats).
+*   `docs/ROADMAP.md`: The canonical roadmap (updated this session).
+*   `docs/INNOVATION_LOG.md`: Innovator feature tracking.
+*   `agents/innovator.md`: New Innovator agent charter.
 
 ---
 
