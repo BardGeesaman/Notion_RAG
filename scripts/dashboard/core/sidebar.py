@@ -21,6 +21,7 @@ from scripts.dashboard.core.favorites import (
     get_user_favorites,
     update_recent_pages,
 )
+from scripts.dashboard.core.jupyter_auth import get_jupyterhub_url
 
 
 def render_user_info(user: dict | None):
@@ -300,5 +301,20 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
 
         render_help(page)
         update_recent_pages(page)
+
+        st.sidebar.divider()
+        st.sidebar.subheader("Jupyter Notebooks")
+
+        # Get username from user object or default
+        username = user.get("username", "scientist") if user else "scientist"
+
+        jupyter_url = get_jupyterhub_url(username)
+        st.sidebar.link_button(
+            "Open in JupyterLab",
+            jupyter_url,
+            use_container_width=True
+        )
+        st.sidebar.caption("Launch notebooks with API access")
+
         return page
 

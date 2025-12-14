@@ -21,6 +21,9 @@ COPY amprenta_rag/client/features.py /opt/amprenta/amprenta_rag/client/features.
 COPY amprenta_rag/client/programs.py /opt/amprenta/amprenta_rag/client/programs.py
 COPY amprenta_rag/client/signatures.py /opt/amprenta/amprenta_rag/client/signatures.py
 
+COPY deploy/jupyterhub/templates/ /home/jovyan/templates/
+RUN chown -R ${NB_UID}:${NB_GID} /home/jovyan/templates
+
 ENV PYTHONPATH="/opt/amprenta:${PYTHONPATH}"
 
 USER ${NB_UID}
