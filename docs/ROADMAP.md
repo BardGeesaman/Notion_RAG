@@ -84,6 +84,7 @@ Simple status legend:
 
 - ❌ Bioinformatics pipeline orchestrator (Nextflow/Snakemake)
 - ❌ Data Version Control (DVC)
+- ❌ **Pinecone → pgvector migration** - Self-host vector search in Postgres for reduced costs and latency
 - ❌ Bayesian inference & optimization workflows
 - ❌ ML/AI model registry + predictive ADMET
 
