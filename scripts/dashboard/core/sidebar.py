@@ -331,12 +331,13 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
         
         # Extract base URL for Voila
         jupyter_base_url = jupyter_url.split("/hub/login")[0] if "/hub/login" in jupyter_url else "http://localhost:8888"
-        voila_url = f"{jupyter_base_url}/voila/render/templates/experiment_dashboard.ipynb"
+        voila_url = f"{jupyter_base_url}/user/{username}/voila/render/templates/experiment_dashboard.ipynb"
         st.sidebar.link_button(
             "View as Dashboard",
             voila_url,
             use_container_width=True
         )
+        st.sidebar.caption("Login to JupyterHub first")
 
         return page
 

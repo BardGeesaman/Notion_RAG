@@ -1,0 +1,13 @@
+{
+  "ServerApp": {
+    "jpserver_extensions": {
+      "voila": true,
+      "voila.server_extension": true
+    }
+  },
+  "VoilaConfiguration": {
+    "root_dir": "/home/jovyan",
+    "file_whitelist": [".*"]
+  }
+}
+

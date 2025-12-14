@@ -25,6 +25,10 @@ COPY amprenta_rag/client/helpers.py /opt/amprenta/amprenta_rag/client/helpers.py
 COPY deploy/jupyterhub/templates/ /home/jovyan/templates/
 RUN chown -R ${NB_UID}:${NB_GID} /home/jovyan/templates
 
+RUN mkdir -p /etc/jupyter/jupyter_server_config.d
+COPY deploy/jupyterhub/singleuser/voila.json /etc/jupyter/jupyter_server_config.d/voila.json
+RUN chown -R ${NB_UID}:${NB_GID} /etc/jupyter
+
 ENV PYTHONPATH="/opt/amprenta:${PYTHONPATH}"
 
 USER ${NB_UID}
