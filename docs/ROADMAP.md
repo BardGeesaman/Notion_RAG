@@ -118,6 +118,25 @@ Drug Discovery-Specific:
 - Metadata Enrichment from Abstracts (LLM extraction)
 - AI Relevance & Novelty Scoring
 
+## Machine Learning (Future)
+
+### Tier 1 - High Impact
+- ADMET Baselines (QSAR with SHAP explainability)
+- Structural/Toxicity Alerts (PAINS/Lilly + ML)
+- Target-Activity QSAR (per-target classifiers)
+- Signature→MOA Inference (mechanism of action)
+- Biomarker Discovery (stable feature selection)
+
+### Tier 2 - Strategic
+- Potency & Liability Multi-objective Ranking
+- Assay Outcome Predictors (program-specific)
+- Active Learning for Screening
+
+### Tier 3 - Platform
+- Lightweight Model Registry + Reproducibility
+- AutoML Notebook Templates
+- Drift & Calibration Monitoring
+
 ### Approved Features (2025-12-13)
 - ⏳ HTS QC & Triage Assistant (3-5 days)
 - ⏳ Signature Match Explainability (2-4 days)
