@@ -102,6 +102,7 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-14] – **JupyterHub Phase 3 Complete**: DockerSpawner working locally with RDKit + amprenta-client.
 * [2025-12-13] – **JupyterHub Plan Approved**: 5-phase implementation plan documented in ROADMAP.md (commit aff313a).
 * [2025-12-13] – **Innovator Agent Created**: New strategic feature ideation agent with charter and communication flow.
 * [2025-12-13] – **7 New Features Approved**: HTS QC, Signature Explainability, MOA Inference, Cross-Omics Pathway, Narrative Reports, Data Quality Watcher, Protocol Diff.
@@ -151,6 +152,18 @@ It should be updated at natural breakpoints in work sessions to support continui
 * **Date:** 2025-12-13
 * **Reasoning:** Prevents data overwrites in multi-user environment without complex locking servers.
 * **Impact:** Added `version_id` to models and conflict resolution UI in dashboard.
+
+### Decision 5: DockerSpawner for JupyterHub
+* **Decision:** Use DockerSpawner with per-user containers instead of LocalProcessSpawner
+* **Date:** 2025-12-14
+* **Reasoning:** Proper user isolation, no system user requirements, works with DummyAuthenticator
+* **Key Learnings:**
+  - hub_connect_ip required for container-to-hub connectivity
+  - rdkit-pypi (pip) installs in 30 seconds vs conda (60+ minutes on ARM)
+  - jupyter/* base images need JUPYTERHUB_SINGLEUSER_APP env var
+  - Empty __init__.py files avoid importing entire module trees
+  - numpy<2.0 required for rdkit-pypi compatibility
+  - External network with external: true for pre-created networks
 
 ---
 

@@ -73,9 +73,9 @@ Simple status legend:
 - POST /compounds/{id}/annotations
 
 **Phase 3 — JupyterHub Deployment (7 days)**:
-- Docker/K8s deployment
-- Persistent user workspaces
-- Pre-installed packages (pandas, seaborn, rdkit, amprenta-client)
+- ✅ Docker/K8s deployment (local DockerSpawner validated)
+- ✅ Persistent user workspaces
+- ✅ Pre-installed packages (pandas, seaborn, rdkit, amprenta-client)
 
 **Phase 4 — SSO Integration (3 days)**:
 - Shared auth with Streamlit
@@ -112,6 +112,7 @@ Simple status legend:
 - ❌ **Pinecone → pgvector migration** - Self-host vector search in Postgres for reduced costs and latency
 - ❌ Bayesian inference & optimization workflows
 - ❌ ML/AI model registry + predictive ADMET
+- ❌ OOP Refactoring Review
 
 ---
 
