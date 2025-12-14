@@ -36,6 +36,8 @@ RUN pip install --no-cache-dir \
     pandas \
     seaborn \
     matplotlib \
+    scipy \
+    scikit-learn \
     rdkit-pypi
 
 WORKDIR /home/jovyan
