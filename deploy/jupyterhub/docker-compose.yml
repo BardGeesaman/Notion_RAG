@@ -15,14 +15,14 @@ services:
 
     volumes:
       # Persist hub db/config and runtime files
-      - jupyterhub-state:/srv/jupyterhub
+      - jupyterhub-db:/srv/jupyterhub
       # Persist user notebooks/home directories
       - jupyterhub-users:/home
 
     restart: unless-stopped
 
 volumes:
-  jupyterhub-state:
+  jupyterhub-db:
   jupyterhub-users:
 
 

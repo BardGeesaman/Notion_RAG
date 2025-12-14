@@ -36,11 +36,11 @@ ENV PATH="/opt/conda/bin:$PATH"
 COPY amprenta_rag /opt/amprenta_rag/amprenta_rag
 ENV PYTHONPATH=/opt/amprenta_rag:${PYTHONPATH}
 
-# JupyterHub configuration
-COPY deploy/jupyterhub/jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py
+# JupyterHub configuration (kept out of the /srv/jupyterhub volume)
+COPY deploy/jupyterhub/jupyterhub_config.py /etc/jupyterhub/jupyterhub_config.py
 
 EXPOSE 8888
 
-CMD ["jupyterhub", "-f", "/srv/jupyterhub/jupyterhub_config.py"]
+CMD ["jupyterhub", "-f", "/etc/jupyterhub/jupyterhub_config.py"]
 
 
