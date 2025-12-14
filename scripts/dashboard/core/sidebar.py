@@ -21,7 +21,7 @@ from scripts.dashboard.core.favorites import (
     get_user_favorites,
     update_recent_pages,
 )
-from scripts.dashboard.core.jupyter_auth import get_jupyterhub_url
+from scripts.dashboard.core.jupyter_auth import get_jupyterhub_url, get_voila_url
 
 
 def render_user_info(user: dict | None):
@@ -329,9 +329,23 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
         if st.sidebar.button("Generate Report", use_container_width=True):
             st.info("Report generation coming soon")
         
+        # Determine dashboard based on context
+        current_page = st.session_state.get("selected_page", "")
+        campaign_id = st.session_state.get("current_campaign_id")
+        
+        if "HTS" in current_page or "Screening" in current_page or campaign_id:
+            dashboard = "hts_plate_viewer.ipynb"
+            context = {"campaign_id": campaign_id} if campaign_id else {}
+        elif experiment_id:
+            dashboard = "experiment_dashboard.ipynb"
+            context = {"experiment_id": str(experiment_id)} if experiment_id else {}
+        else:
+            dashboard = "experiment_dashboard.ipynb"
+            context = {}
+        
         # Extract base URL for Voila
         jupyter_base_url = jupyter_url.split("/hub/login")[0] if "/hub/login" in jupyter_url else "http://localhost:8888"
-        voila_url = f"{jupyter_base_url}/user/{username}/voila/render/templates/experiment_dashboard.ipynb"
+        voila_url = get_voila_url(username, dashboard, context if context else None, jupyter_base_url)
         st.sidebar.link_button(
             "View as Dashboard",
             voila_url,

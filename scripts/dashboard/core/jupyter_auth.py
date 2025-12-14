@@ -36,3 +36,19 @@ def get_jupyterhub_url(
     return url
 
 
+def get_voila_url(
+    username: str,
+    dashboard: str = "experiment_dashboard.ipynb",
+    context: dict = None,
+    base_url: str = "http://localhost:8888"
+) -> str:
+    """Generate Voila URL with optional context parameters."""
+    url = f"{base_url}/user/{username}/voila/render/templates/{dashboard}"
+    if context:
+        import base64
+        import json
+        ctx_json = json.dumps(context)
+        ctx_b64 = base64.urlsafe_b64encode(ctx_json.encode()).decode()
+        url += f"?ctx={ctx_b64}"
+    return url
+
