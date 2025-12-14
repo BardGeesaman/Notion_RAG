@@ -20,6 +20,7 @@ COPY amprenta_rag/client/experiments.py /opt/amprenta/amprenta_rag/client/experi
 COPY amprenta_rag/client/features.py /opt/amprenta/amprenta_rag/client/features.py
 COPY amprenta_rag/client/programs.py /opt/amprenta/amprenta_rag/client/programs.py
 COPY amprenta_rag/client/signatures.py /opt/amprenta/amprenta_rag/client/signatures.py
+COPY amprenta_rag/client/helpers.py /opt/amprenta/amprenta_rag/client/helpers.py
 
 COPY deploy/jupyterhub/templates/ /home/jovyan/templates/
 RUN chown -R ${NB_UID}:${NB_GID} /home/jovyan/templates

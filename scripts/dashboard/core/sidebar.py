@@ -308,7 +308,17 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
         # Get username from user object or default
         username = user.get("username", "scientist") if user else "scientist"
 
-        jupyter_url = get_jupyterhub_url(username)
+        # Get current page context from session state
+        experiment_id = st.session_state.get("current_experiment_id")
+        dataset_id = st.session_state.get("current_dataset_id")
+        compound_id = st.session_state.get("current_compound_id")
+
+        jupyter_url = get_jupyterhub_url(
+            username,
+            experiment_id=experiment_id,
+            dataset_id=dataset_id,
+            compound_id=compound_id
+        )
         st.sidebar.link_button(
             "Open in JupyterLab",
             jupyter_url,
