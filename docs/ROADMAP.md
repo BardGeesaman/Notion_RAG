@@ -100,6 +100,30 @@ Drug Discovery-Specific:
 - HTS QC Autopublisher
 - SAR Delta Explorer (Voila)
 
+##### Phase 8B: Voila foundation ✅ DONE
+
+### Voila Dashboards (Priority Order)
+1. HTS Plate Viewer (2-4 days) - plate heatmaps, Z' factor, QC at a glance
+2. Compound Triage Dashboard (3-5 days) - traffic-light scoring, Pareto trade-offs
+3. SAR Delta Explorer (3-5 days) - matched molecular pairs, R-group grids, py3Dmol
+4. Signature Validation Console (2-4 days) - per-feature contributions, approve/reject workflow
+5. Pathway Impact Explorer (3-5 days) - Cytoscape graph overlays, cross-omics toggles
+
+### Papermill + Voila Integration
+- Parameterized notebooks with JSON schema
+- Event triggers (new dataset/signature) + cron scheduling
+- Artifact registry (HTML/JSON/PNGs) with provenance
+- Cache by (notebook_path, param_hash, code_hash)
+
+### Quick Wins
+- "Open as Dashboard" button (Voila read-only view)
+- Notebook Co-Pilot MVP (cell synthesizer)
+
+### Advanced
+- "Pin to Program" - dashboard instance locked to Program
+- Weekly Executive Digests (scheduled Papermill → Voila)
+- Approval gates with signed review cards
+
 ## External Repository Integration (Future)
 
 ### Tier 1 - High Impact
