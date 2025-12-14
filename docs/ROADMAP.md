@@ -56,18 +56,34 @@ Simple status legend:
 - ⏳ Data Quality Watcher (2-3 days)
 - ⏳ Protocol Version Diff & Deviations Audit (2-4 days)
 
-### 1) Jupyter Notebook Integration (Highest Priority)
+### 1) JupyterHub Integration (TOP PRIORITY - ~3 weeks)
 
-**Phase 1 — Export to Notebook (Current)**:
-- ⏳ **Export to Notebook** button on dataset pages
-- ⏳ Generate a `.ipynb` pre-loaded with dataset data
-- ⏳ Templates per omics type
-- ⏳ Works with any local Jupyter
+*Note: Requires AWS infrastructure (see Section 2).*
 
-**Phase 2 — JupyterHub (Future, requires AWS)**:
-- ❌ Deploy JupyterHub for multi-user support
-- ❌ Persistent workspaces per scientist
-- ❌ Write-back results to Postgres
+**Phase 1 — API Client Library (5 days)**:
+- Create `amprenta-client` Python package
+- Typed wrappers for all CRUD endpoints
+- Auth handling (API keys/JWT)
+- pip-installable
+
+**Phase 2 — Write Endpoints (3 days, parallel with Phase 1)**:
+- POST /datasets/{id}/annotations
+- POST /experiments/{id}/analysis_results
+- POST /signatures/{id}/annotations
+- POST /compounds/{id}/annotations
+
+**Phase 3 — JupyterHub Deployment (7 days)**:
+- Docker/K8s deployment
+- Persistent user workspaces
+- Pre-installed packages (pandas, seaborn, rdkit, amprenta-client)
+
+**Phase 4 — SSO Integration (3 days)**:
+- Shared auth with Streamlit
+- Token/key management
+
+**Phase 5 — Templates + Launch (2 days)**:
+- "Open in Jupyter" button on Dataset/Experiment pages
+- Notebook templates per omics type
 
 ### 2) AWS Deployment / Infrastructure Hardening
 - ❌ IaC (Terraform/Pulumi)
