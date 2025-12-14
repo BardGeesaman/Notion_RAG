@@ -47,6 +47,15 @@ Simple status legend:
 
 ## ⏳ NEXT UP (Prioritized)
 
+### Approved Features (2025-12-13)
+- ⏳ HTS QC & Triage Assistant (3-5 days)
+- ⏳ Signature Match Explainability (2-4 days)
+- ⏳ MOA Inference from HTS + Multi-Omics (5-8 days)
+- ⏳ Cross-Omics Pathway Analysis (5-8 days)
+- ⏳ One-Click Narrative Reports (2-3 days)
+- ⏳ Data Quality Watcher (2-3 days)
+- ⏳ Protocol Version Diff & Deviations Audit (2-4 days)
+
 ### 1) Jupyter Notebook Integration (Highest Priority)
 
 **Phase 1 — Export to Notebook (Current)**:

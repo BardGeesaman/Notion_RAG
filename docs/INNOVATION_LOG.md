@@ -10,7 +10,15 @@ Tracks feature suggestions from Innovator and their outcomes.
 
 ## Suggestions
 
-(Empty initially - populated as Innovator makes suggestions)
+| Date | Feature | Priority | Outcome | Notes |
+|------|---------|----------|---------|-------|
+| 2025-12-13 | HTS QC & Triage Assistant | High | Approved | Approved for NEXT UP |
+| 2025-12-13 | Signature Match Explainability | High | Approved | Approved for NEXT UP |
+| 2025-12-13 | MOA Inference from HTS + Multi-Omics | High | Approved | Approved for NEXT UP |
+| 2025-12-13 | Cross-Omics Pathway Analysis | High | Approved | Approved for NEXT UP |
+| 2025-12-13 | One-Click Narrative Reports | High | Approved | Approved for NEXT UP |
+| 2025-12-13 | Data Quality Watcher | High | Approved | Approved for NEXT UP |
+| 2025-12-13 | Protocol Version Diff & Deviations Audit | High | Approved | Approved for NEXT UP |
 
 ## Guidelines
 - Innovator MUST check this log before suggesting features
