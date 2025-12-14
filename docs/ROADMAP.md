@@ -261,6 +261,49 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - ⏳ Data Quality Watcher (2-3 days)
 - ⏳ Protocol Version Diff & Deviations Audit (2-4 days)
 
+#### Feature Specs (Approved)
+
+##### MOA Inference (5-8 days MVP)
+Data Inputs:
+- HTS: HTSResult, BiochemicalResult (IC50/EC50/Ki/Kd)
+- Omics: Dataset features, Signature library
+- Mappings: Feature↔Target↔Pathway, gene↔protein
+- Literature: RAG chunks with target/signature co-mentions
+
+Approach:
+- Candidate generation: targets, pathways, signatures
+- Evidence features: omics concordance, bioactivity support, pathway enrichment, network proximity, literature score, chemotype similarity
+- Fusion: Calibrated logistic regression (MVP) → P(MOA)
+- v1: Bayesian logistic (PyMC) with posteriors and CIs
+
+Output JSON:
+- candidate_id, type, probability, ci_low/high, rank
+- contributions: {feature_name, value, weight}
+- evidence_links: plots, tables, citations
+
+Reuses: `signature_scoring.py`, `pathway/enrichment.py`, `query/rag/match_processing.py`
+
+##### Signature Match Explainability (2-4 days)
+- Per-feature contribution: sign × weight × presence × direction_match
+- Visuals: lollipop chart (top ± contributors), direction concordance bar
+- Extend `signature_scoring.py` to emit contributions
+- UI expander on signature/dataset pages
+
+##### One-Click Narrative Reports (2-3 days)
+Sections:
+- Executive summary (go/no-go bullets)
+- Data provenance (tables, checksums)
+- Key findings (signatures, pathways, MOA hypotheses)
+- Visuals (auto-insert plots)
+- Methods (dataset, stats)
+- Next steps
+
+Implementation:
+- Papermill-parameterized template
+- nbconvert → HTML/PDF
+- Store artifact + run metadata
+- "Publish to Program" button
+
 ### 2) AWS Deployment / Infrastructure Hardening
 - ❌ IaC (Terraform/Pulumi)
 - ❌ ECS/RDS/ElastiCache deployment architecture
