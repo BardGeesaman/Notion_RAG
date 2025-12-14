@@ -64,12 +64,12 @@ Simple status legend:
 - JWT-based authentication from Streamlit
 - TokenAuthenticator with /hub/token-login endpoint
 
-#### Phase 5: Templates + Launch (Next)
+#### Phase 5: Templates + Launch ✓
 - "Open in Jupyter" button in dashboard
 - Starter templates: getting_started, molecule_analysis, signature_explorer
 - Context parameter passing (entity IDs)
 
-#### Phase 6: Write-Back + Context (Planned)
+#### Phase 6: Write-Back + Context (Next)
 - Pre-load notebooks with current entity context
 - Save cell outputs as annotations
 - Notebook attachments to entities
