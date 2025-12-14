@@ -100,6 +100,24 @@ Drug Discovery-Specific:
 - HTS QC Autopublisher
 - SAR Delta Explorer (Voila)
 
+## External Repository Integration (Future)
+
+### Tier 1 - High Impact
+- External Sync Orchestrator (GEO, ChEMBL, PubChem, UniProt, KEGG adapters)
+- Provenance Ledger + Checksums (audit trail, diffs)
+- GEO Incremental Harvester + Metadata Normalization
+- ChEMBL/PubChem Bioactivity Sync (compound-centric)
+
+### Tier 2 - Strategic
+- UniProt/KEGG Mapping Refresh
+- Repository Subscriptions & Alerts (saved queries)
+- External Data Catalog Page (health, freshness dashboard)
+
+### Tier 3 - AI-Assisted
+- AI Dataset Finder (NL → cross-repo query)
+- Metadata Enrichment from Abstracts (LLM extraction)
+- AI Relevance & Novelty Scoring
+
 ### Approved Features (2025-12-13)
 - ⏳ HTS QC & Triage Assistant (3-5 days)
 - ⏳ Signature Match Explainability (2-4 days)
