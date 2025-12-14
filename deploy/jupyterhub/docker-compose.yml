@@ -7,12 +7,11 @@ services:
       dockerfile: deploy/jupyterhub/Dockerfile
     container_name: amprenta-jupyterhub
 
-    # Requirement: JupyterHub exposed on :8888 and able to reach FastAPI at localhost:8000.
-    # Using host networking makes "localhost:8000" resolve to the host's FastAPI.
-    network_mode: "host"
+    ports:
+      - "8888:8888"
 
     environment:
-      - API_URL=${API_URL:-http://localhost:8000}
+      - API_URL=${API_URL:-http://host.docker.internal:8000}
 
     volumes:
       # Persist hub db/config and runtime files
