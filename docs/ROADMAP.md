@@ -75,13 +75,13 @@ Simple status legend:
 - Notebook attachments to entities
 - "Save to RAG" magic command
 
-#### Phase 7: Advanced Templates (Next)
+#### Phase 7: Advanced Templates ✓
 - Pathway enrichment analysis
 - Dose-response curve fitting
 - Compound similarity clustering
 - Signature heatmaps with RDKit
 
-#### Phase 8: Publishing + Automation (Future)
+#### Phase 8: Publishing + Automation (Next)
 - Voila dashboard publishing
 - Papermill scheduled execution
 - Shared team template library
