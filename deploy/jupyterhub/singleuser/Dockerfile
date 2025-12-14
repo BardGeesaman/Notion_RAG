@@ -40,6 +40,8 @@ RUN pip install --no-cache-dir \
     scikit-learn \
     papermill \
     nbconvert \
+    voila \
+    ipywidgets \
     rdkit-pypi
 
 WORKDIR /home/jovyan
