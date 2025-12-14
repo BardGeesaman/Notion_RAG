@@ -14,6 +14,7 @@ from amprenta_rag.client.datasets import DatasetsClient
 from amprenta_rag.client.experiments import ExperimentsClient
 from amprenta_rag.client.features import FeaturesClient
 from amprenta_rag.client.programs import ProgramsClient
+from amprenta_rag.client.screening import ScreeningClient
 from amprenta_rag.client.signatures import SignaturesClient
 
 
@@ -34,6 +35,7 @@ class RAGClient:
         self.features = FeaturesClient(self.http)
         self.signatures = SignaturesClient(self.http)
         self.compounds = CompoundsClient(self.http)
+        self.screening = ScreeningClient(self.http)
 
     def close(self) -> None:
         self.http.close()
@@ -53,6 +55,7 @@ __all__ = [
     "ExperimentsClient",
     "FeaturesClient",
     "ProgramsClient",
+    "ScreeningClient",
     "SignaturesClient",
 ]
 
