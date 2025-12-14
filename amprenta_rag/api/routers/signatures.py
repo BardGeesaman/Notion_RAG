@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_database_session
-from amprenta_rag.api.schemas import Signature, SignatureCreate, SignatureUpdate
+from amprenta_rag.api.schemas import AnnotationCreate, Signature, SignatureCreate, SignatureUpdate
 from amprenta_rag.api.services import signatures as signature_service
+from amprenta_rag.database.models import Note
 
 router = APIRouter()
 
@@ -52,6 +53,37 @@ async def get_signature(
     if not signature:
         raise HTTPException(status_code=404, detail="Signature not found")
     return signature
+
+
+@router.post("/{signature_id}/annotations", summary="Add annotation to signature")
+async def add_signature_annotation(
+    signature_id: UUID,
+    annotation: AnnotationCreate,
+    db: Session = Depends(get_database_session),
+):
+    """Add a note/annotation to a signature."""
+    signature = signature_service.get_signature(db, signature_id)
+    if not signature:
+        raise HTTPException(status_code=404, detail="Signature not found")
+
+    note = Note(
+        entity_type="signature",
+        entity_id=signature_id,
+        annotation_type=annotation.annotation_type,
+        content=annotation.text,
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+
+    return {
+        "id": str(note.id),
+        "entity_type": note.entity_type,
+        "entity_id": str(note.entity_id),
+        "text": note.content,
+        "annotation_type": note.annotation_type,
+        "created_at": note.created_at.isoformat() if getattr(note, "created_at", None) else None,
+    }
 
 
 @router.patch("/{signature_id}", response_model=Signature)

@@ -32,6 +32,13 @@ class BaseSchema(BaseModel):
         }
 
 
+class AnnotationCreate(BaseSchema):
+    """Schema for creating an annotation/note on an entity."""
+
+    text: str
+    annotation_type: Optional[str] = None
+
+
 # ============================================================================
 # Program schemas
 # ============================================================================

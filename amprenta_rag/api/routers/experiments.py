@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_database_session
-from amprenta_rag.api.schemas import Experiment, ExperimentCreate, ExperimentUpdate
+from amprenta_rag.api.schemas import AnnotationCreate, Experiment, ExperimentCreate, ExperimentUpdate
 from amprenta_rag.api.services import experiments as experiment_service
+from amprenta_rag.database.models import Note
 
 router = APIRouter()
 
@@ -48,6 +49,37 @@ async def get_experiment(
     if not experiment:
         raise HTTPException(status_code=404, detail="Experiment not found")
     return experiment
+
+
+@router.post("/{experiment_id}/annotations", summary="Add annotation to experiment")
+async def add_experiment_annotation(
+    experiment_id: UUID,
+    annotation: AnnotationCreate,
+    db: Session = Depends(get_database_session),
+):
+    """Add a note/annotation to an experiment."""
+    experiment = experiment_service.get_experiment(db, experiment_id)
+    if not experiment:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    note = Note(
+        entity_type="experiment",
+        entity_id=experiment_id,
+        annotation_type=annotation.annotation_type,
+        content=annotation.text,
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+
+    return {
+        "id": str(note.id),
+        "entity_type": note.entity_type,
+        "entity_id": str(note.entity_id),
+        "text": note.content,
+        "annotation_type": note.annotation_type,
+        "created_at": note.created_at.isoformat() if getattr(note, "created_at", None) else None,
+    }
 
 
 @router.patch("/{experiment_id}", response_model=Experiment)

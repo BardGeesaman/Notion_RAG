@@ -11,8 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_database_session
-from amprenta_rag.api.schemas import Dataset, DatasetCreate, DatasetUpdate
+from amprenta_rag.api.schemas import AnnotationCreate, Dataset, DatasetCreate, DatasetUpdate
 from amprenta_rag.api.services import datasets as dataset_service
+from amprenta_rag.database.models import Note
 from amprenta_rag.models.domain import OmicsType
 from amprenta_rag.notebooks import generate_dataset_notebook
 
@@ -61,6 +62,37 @@ async def get_dataset(
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
     return dataset
+
+
+@router.post("/{dataset_id}/annotations", summary="Add annotation to dataset")
+async def add_dataset_annotation(
+    dataset_id: UUID,
+    annotation: AnnotationCreate,
+    db: Session = Depends(get_database_session),
+):
+    """Add a note/annotation to a dataset."""
+    dataset = dataset_service.get_dataset(db, dataset_id)
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+
+    note = Note(
+        entity_type="dataset",
+        entity_id=dataset_id,
+        annotation_type=annotation.annotation_type,
+        content=annotation.text,
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+
+    return {
+        "id": str(note.id),
+        "entity_type": note.entity_type,
+        "entity_id": str(note.entity_id),
+        "text": note.content,
+        "annotation_type": note.annotation_type,
+        "created_at": note.created_at.isoformat() if getattr(note, "created_at", None) else None,
+    }
 
 
 @router.get("/{dataset_id}/notebook")
