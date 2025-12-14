@@ -1,0 +1,12 @@
+# Base notebook data stack
+pandas
+seaborn
+matplotlib
+
+# API client dependency
+httpx
+
+# Chemistry (pip-distributed build of RDKit)
+rdkit-pypi
+
+
