@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from amprenta_rag.models.domain import FeatureType, OmicsType, SignatureDirection
 
@@ -84,9 +84,15 @@ class ExperimentBase(BaseSchema):
     name: str
     type: Optional[str] = None
     description: Optional[str] = None
-    disease: List[str] = Field(default_factory=list)
-    matrix: List[str] = Field(default_factory=list)
-    model_systems: List[str] = Field(default_factory=list)
+    disease: Optional[List[str]] = None
+    matrix: Optional[List[str]] = None
+    model_systems: Optional[List[str]] = None
+
+    @field_validator("disease", "matrix", "model_systems", mode="before")
+    @classmethod
+    def ensure_list(cls, v):
+        """Convert None to empty list for nullable array fields."""
+        return v if v is not None else []
 
 
 class ExperimentCreate(ExperimentBase):
