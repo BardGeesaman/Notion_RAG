@@ -6,6 +6,10 @@ matplotlib
 # API client dependency
 httpx
 
-# rdkit-pypi - install separately if needed (e.g., via conda in a user environment)
+# Jupyter single-user server bits (needed by JupyterHub spawner)
+jupyterlab
+notebook
+
+# RDKit is installed via conda in the Dockerfile (not pip)
 
 

@@ -9,7 +9,8 @@ WORKDIR /srv/jupyterhub
 # Install Python deps (kernel libs + http client)
 COPY deploy/jupyterhub/requirements.txt /tmp/requirements.txt
 RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir -r /tmp/requirements.txt
+    && python -m pip install --no-cache-dir -r /tmp/requirements.txt \
+    && python -m pip install --no-cache-dir jupyterlab notebook
 
 # Install Miniconda (architecture-aware) + RDKit
 RUN apt-get update && apt-get install -y wget && \
