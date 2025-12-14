@@ -137,6 +137,24 @@ Drug Discovery-Specific:
 - AutoML Notebook Templates
 - Drift & Calibration Monitoring
 
+## Bayesian Framework (Future)
+
+### Tier 1 - High Impact
+- Batch Bayesian Optimization for Screening (BoTorch/Ax)
+- Hierarchical Bayesian Dose-Response (PyMC, credible intervals)
+- Bayesian ADMET with Uncertainty Quantification
+- Signature→MOA Bayesian Evidence Fusion
+
+### Tier 2 - Strategic
+- Prior Builder (expert/literature priors)
+- Posterior Inclusion Probabilities for Biomarkers
+- Multi-Objective BO (Pareto front visualization)
+
+### Libraries
+- BoTorch + Ax + GPyTorch (optimization)
+- PyMC or NumPyro (probabilistic modeling)
+- ArviZ (analysis/plots)
+
 ### Approved Features (2025-12-13)
 - ⏳ HTS QC & Triage Assistant (3-5 days)
 - ⏳ Signature Match Explainability (2-4 days)
