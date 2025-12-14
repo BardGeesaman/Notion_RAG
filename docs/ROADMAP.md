@@ -124,6 +124,44 @@ Drug Discovery-Specific:
 - Weekly Executive Digests (scheduled Papermill → Voila)
 - Approval gates with signed review cards
 
+### HTS Plate Viewer (MVP - 3-4 days)
+Data requirements:
+- Required: campaign_id, well_position, normalized_value|raw_value, hit_flag
+- Optional: plate_id, control_type, replicate_group
+
+MVP features:
+- Single plate heatmap (color scale with clipping)
+- Z' factor badge (\(Z' = 1 - 3(\sigma_{pos} + \sigma_{neg})/|\mu_{pos} - \mu_{neg}|\))
+- Control tagging fallback (toggle mode when controls undefined)
+- Tooltips (well, value, hit), Export PNG/CSV
+
+v0.2: Multi-plate grid, replicate correlation, edge-effects map
+
+### Cross-Platform Context Pattern
+URL: `?ctx=<base64url(JSON)>&sig=<HMAC>`
+
+JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
+- DashboardRun provenance table (params_hash, code_hash, artifacts)
+- Round-trip: publish writes run_id + artifacts back to source entity
+
+### Notebook Co-Pilot (MVP - 4-5 days)
+- Sidebar actions: buttons that insert cells (Load dataset, HTS QC, Dose-response, Publish)
+- Magic commands: `%%copilot` with YAML block
+- AnalysisContext JSON in first cell for context
+- Vetted helpers (`amprenta_rag.notebook.*`) for guardrails
+
+### SAR What-If Designer (WOW feature - prototype)
+- Sketch R-group substitutions live
+- Predicted potency + ADMET traffic lights with uncertainty
+- 3D conformer overlay (py3Dmol)
+- One-click "save candidate" to Compounds
+
+### Dashboard Discovery
+- Streamlit entity pages: "Open as Dashboard" button
+- JupyterHub launcher: pinned icons
+- Global Catalog page: searchable with tags
+- Program/Team Library: curated per workspace
+
 ## External Repository Integration (Future)
 
 ### Tier 1 - High Impact
