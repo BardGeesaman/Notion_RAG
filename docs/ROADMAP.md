@@ -47,6 +47,46 @@ Simple status legend:
 
 ## ⏳ NEXT UP (Prioritized)
 
+### 1) Jupyter Notebook Integration
+
+#### Phase 1: API Client Library ✓
+- amprenta-client package with 6 resource clients
+
+#### Phase 2: Write Endpoints ✓
+- Annotation endpoints for datasets, experiments, signatures, compounds
+
+#### Phase 3: JupyterHub Deployment ✓
+- DockerSpawner with user isolation
+- RDKit + data science stack
+- Local development working
+
+#### Phase 4: SSO Integration (In Progress)
+- JWT-based authentication from Streamlit
+- TokenAuthenticator with /hub/token-login endpoint
+
+#### Phase 5: Templates + Launch (Next)
+- "Open in Jupyter" button in dashboard
+- Starter templates: getting_started, molecule_analysis, signature_explorer
+- Context parameter passing (entity IDs)
+
+#### Phase 6: Write-Back + Context (Planned)
+- Pre-load notebooks with current entity context
+- Save cell outputs as annotations
+- Notebook attachments to entities
+- "Save to RAG" magic command
+
+#### Phase 7: Advanced Templates (Future)
+- Pathway enrichment analysis
+- Dose-response curve fitting
+- Compound similarity clustering
+- Signature heatmaps with RDKit
+
+#### Phase 8: Publishing + Automation (Future)
+- Voila dashboard publishing
+- Papermill scheduled execution
+- Shared team template library
+- Notebook version control
+
 ### Approved Features (2025-12-13)
 - ⏳ HTS QC & Triage Assistant (3-5 days)
 - ⏳ Signature Match Explainability (2-4 days)
@@ -55,35 +95,6 @@ Simple status legend:
 - ⏳ One-Click Narrative Reports (2-3 days)
 - ⏳ Data Quality Watcher (2-3 days)
 - ⏳ Protocol Version Diff & Deviations Audit (2-4 days)
-
-### 1) JupyterHub Integration (TOP PRIORITY - ~3 weeks)
-
-*Note: Requires AWS infrastructure (see Section 2).*
-
-**Phase 1 — API Client Library (5 days)**:
-- Create `amprenta-client` Python package
-- Typed wrappers for all CRUD endpoints
-- Auth handling (API keys/JWT)
-- pip-installable
-
-**Phase 2 — Write Endpoints (3 days, parallel with Phase 1)**:
-- POST /datasets/{id}/annotations
-- POST /experiments/{id}/analysis_results
-- POST /signatures/{id}/annotations
-- POST /compounds/{id}/annotations
-
-**Phase 3 — JupyterHub Deployment (7 days)**:
-- ✅ Docker/K8s deployment (local DockerSpawner validated)
-- ✅ Persistent user workspaces
-- ✅ Pre-installed packages (pandas, seaborn, rdkit, amprenta-client)
-
-**Phase 4 — SSO Integration (3 days)**:
-- Shared auth with Streamlit
-- Token/key management
-
-**Phase 5 — Templates + Launch (2 days)**:
-- "Open in Jupyter" button on Dataset/Experiment pages
-- Notebook templates per omics type
 
 ### 2) AWS Deployment / Infrastructure Hardening
 - ❌ IaC (Terraform/Pulumi)
