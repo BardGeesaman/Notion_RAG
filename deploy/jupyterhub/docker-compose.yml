@@ -14,15 +14,33 @@ services:
       - API_URL=${API_URL:-http://host.docker.internal:8000}
 
     volumes:
-      # Persist hub db/config and runtime files
+      # DockerSpawner needs access to the host Docker daemon
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Persist hub db and runtime files
       - jupyterhub-db:/srv/jupyterhub
-      # Persist user notebooks/home directories
-      - jupyterhub-users:/home
+    networks:
+      - jupyterhub-network
 
     restart: unless-stopped
 
+  # Build-only service to produce the single-user image expected by DockerSpawner.
+  # Run: docker compose build singleuser
+  singleuser:
+    profiles: ["build"]
+    build:
+      context: ../..
+      dockerfile: deploy/jupyterhub/singleuser/Dockerfile
+    image: amprenta-singleuser:latest
+    command: ["bash", "-lc", "echo singleuser image built"]
+    restart: "no"
+    networks:
+      - jupyterhub-network
+
 volumes:
   jupyterhub-db:
-  jupyterhub-users:
+
+networks:
+  jupyterhub-network:
+    name: jupyterhub-network
 
 

@@ -12,4 +12,7 @@ notebook
 
 # RDKit is installed via conda in the Dockerfile (not pip)
 
+# JupyterHub Docker-based spawner (production-style user isolation)
+dockerspawner
+
 

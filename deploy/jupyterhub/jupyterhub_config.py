@@ -7,7 +7,6 @@ Notes:
 """
 
 import os
-from pathlib import Path
 
 
 # Bind JupyterHub to the external port requested by the roadmap/deploy plan.
@@ -20,25 +19,19 @@ c.JupyterHub.db_url = "sqlite:////srv/jupyterhub/jupyterhub.sqlite"
 c.JupyterHub.authenticator_class = "dummy"
 c.DummyAuthenticator.password = os.environ.get("JUPYTERHUB_PASSWORD", "dev")
 
-# Spawner: local single-server per user
-c.JupyterHub.spawner_class = "jupyterhub.spawner.SimpleLocalProcessSpawner"
-c.Spawner.default_url = "/lab"
-
-# Store user notebooks in a persistent volume-backed path (no system users required).
-c.Spawner.notebook_dir = "/srv/jupyterhub/users/{username}"
-
-
-def _ensure_user_dir(spawner):
-    username = getattr(spawner.user, "name", "user")
-    user_dir = Path("/srv/jupyterhub/users") / username
-    user_dir.mkdir(parents=True, exist_ok=True)
-
-
-c.Spawner.pre_spawn_hook = _ensure_user_dir
-
-# Ensure user servers can see API_URL inside notebooks if needed
-c.Spawner.environment = {
-    "API_URL": os.environ.get("API_URL", "http://localhost:8000"),
+# Spawner: DockerSpawner (production-style user isolation)
+c.JupyterHub.spawner_class = "dockerspawner.DockerSpawner"
+c.DockerSpawner.image = "amprenta-singleuser:latest"
+c.DockerSpawner.network_name = "jupyterhub-network"
+c.DockerSpawner.remove = True  # Remove containers when stopped
+c.DockerSpawner.volumes = {
+    "jupyterhub-user-{username}": "/home/jovyan/work",
 }
+c.DockerSpawner.environment = {
+    "API_URL": os.environ.get("API_URL", "http://host.docker.internal:8000"),
+}
+
+# Default landing page for user servers
+c.Spawner.default_url = "/lab"
 
 
