@@ -484,3 +484,37 @@ class HitCompound(BaseModel):
     well_position: Optional[str] = None
     normalized_value: Optional[float] = None
     z_score: Optional[float] = None
+
+
+# ============================================================================
+# Cross-omics pathway schemas
+# ============================================================================
+
+
+class OmicsFeatureSet(BaseModel):
+    transcriptomics: List[str] = Field(default_factory=list)
+    proteomics: List[str] = Field(default_factory=list)
+    metabolomics: List[str] = Field(default_factory=list)
+    lipidomics: List[str] = Field(default_factory=list)
+
+
+class ConvergentPathway(BaseModel):
+    pathway_id: str
+    name: str
+    source: str
+    adjusted_p_value: float
+    enrichment_ratio: float
+    matched_by_omics: Dict[str, List[str]]
+
+
+class CrossOmicsEnrichmentResult(BaseModel):
+    program_id: UUID
+    pathways: List[ConvergentPathway]
+    features: OmicsFeatureSet
+
+
+class PathwayFeatures(BaseModel):
+    pathway_id: str
+    pathway_name: str
+    source: str
+    features_by_omics: Dict[str, List[str]]
