@@ -8,7 +8,7 @@ mapping between domain models and API representations.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List, Optional, Literal, Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -421,3 +421,34 @@ class QualitySummary(BaseModel):
     high: int
     medium: int
     low: int
+
+
+# ============================================================================
+# Protocol diff/deviation schemas
+# ============================================================================
+
+
+class ProtocolDiff(BaseModel):
+    protocol_id: UUID
+    other_id: UUID
+    added_steps: List[Dict[str, Any]]
+    removed_steps: List[Dict[str, Any]]
+    changed_steps: List[Dict[str, Any]]
+    materials_added: List[Dict[str, Any]]
+    materials_removed: List[Dict[str, Any]]
+    parameters_changed: List[Dict[str, Any]]
+
+
+class ProtocolHistoryItem(BaseModel):
+    protocol_id: UUID
+    version: int
+    parent_id: Optional[UUID] = None
+    name: str
+
+
+class DeviationReport(BaseModel):
+    experiment_id: UUID
+    protocol_id: UUID
+    protocol_name: str
+    protocol_version: int
+    deviations: List[Any]

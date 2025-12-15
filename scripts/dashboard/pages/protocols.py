@@ -2,15 +2,19 @@
 import streamlit as st
 import json
 from datetime import datetime
-from amprenta_rag.database.models import Protocol, ExperimentProtocol, Experiment
-from amprenta_rag.database.session import db_session
+
 from amprenta_rag.auth.session import get_current_user
+from amprenta_rag.database.models import Experiment, ExperimentProtocol, Protocol
+from amprenta_rag.database.session import db_session
+from amprenta_rag.analysis.protocol_diff import diff_protocols, audit_deviations
 
 
 def render_protocols_page():
     st.title("📋 Protocol Management")
 
-    tab1, tab2, tab3 = st.tabs(["Browse Protocols", "Create Protocol", "Link to Experiment"])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["Browse Protocols", "Create Protocol", "Link to Experiment", "Diff & Deviations"]
+    )
 
     with tab1:
         render_browse_tab()
@@ -20,6 +24,9 @@ def render_protocols_page():
 
     with tab3:
         render_link_tab()
+
+    with tab4:
+        render_diff_and_deviations_tab()
 
 
 def render_browse_tab():
@@ -33,7 +40,7 @@ def render_browse_tab():
             return
 
         for p in protocols:
-            with st.expander(f"**{p.name}** (v{p.version}) - {p.category or 'Uncategorized'}"):
+            with st.expander(f"**{p.name}**  \u2022 v{p.version}  \u2022 {p.category or 'Uncategorized'}"):
                 st.markdown(p.description or "_No description_")
 
                 if p.steps:
@@ -129,6 +136,56 @@ def render_link_tab():
                 db.add(link)
                 db.commit()
                 st.success("Protocol linked to experiment!")
+
+
+def render_diff_and_deviations_tab():
+    st.subheader("Protocol Diff & Deviations")
+
+    with db_session() as db:
+        protocols = db.query(Protocol).order_by(Protocol.name, Protocol.version).all()
+        experiments = db.query(Experiment).order_by(Experiment.name).limit(100).all()
+
+    if not protocols:
+        st.info("No protocols available.")
+        return
+
+    st.markdown("### Diff Protocol Versions")
+    col1, col2 = st.columns(2)
+    proto_map = {f"{p.name} (v{p.version})": p for p in protocols}
+    with col1:
+        p1_label = st.selectbox("Protocol A", list(proto_map.keys()), key="diff_p1")
+    with col2:
+        p2_label = st.selectbox("Protocol B", list(proto_map.keys()), key="diff_p2")
+
+    if p1_label and p2_label and p1_label != p2_label:
+        p1 = proto_map[p1_label]
+        p2 = proto_map[p2_label]
+        diff = diff_protocols(p1, p2)
+        st.write(f"Comparing **{p1.name} v{p1.version}** ↔ **{p2.name} v{p2.version}**")
+        st.json(diff.asdict(), expanded=False)
+
+    st.markdown("---")
+    st.markdown("### Deviation Audit by Experiment")
+    if not experiments:
+        st.info("No experiments available.")
+        return
+    exp_map = {e.name: e for e in experiments}
+    selected_exp = st.selectbox("Select Experiment", list(exp_map.keys()), key="dev_exp")
+    if selected_exp:
+        exp = exp_map[selected_exp]
+        reports = audit_deviations(exp.id)
+        if reports:
+            data = []
+            for r in reports:
+                data.append(
+                    {
+                        "Protocol": f"{r.protocol_name} (v{r.protocol_version})",
+                        "Deviations": "; ".join(str(d) for d in r.deviations) if r.deviations else "",
+                    }
+                )
+            st.table(data)
+        else:
+            st.success("No deviations recorded for this experiment.")
 
 
 if __name__ == "__main__":
