@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-import papermill as pm
 from nbconvert import HTMLExporter, PDFExporter
 from nbformat import read
 
@@ -26,7 +25,14 @@ def execute_notebook(
     """
     if parameters is None:
         parameters = {}
-    
+
+    try:
+        import papermill as pm  # type: ignore
+    except ModuleNotFoundError as exc:
+        raise ImportError(
+            "papermill is required for report generation. Install papermill."
+        ) from exc
+
     pm.execute_notebook(
         template_path,
         output_path,

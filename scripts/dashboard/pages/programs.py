@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import requests
 import streamlit as st
 
 from amprenta_rag.database.models import Program
@@ -47,5 +48,36 @@ def render_programs_page() -> None:
                     dataset_count = len(program.datasets)
                     if dataset_count > 0:
                         st.write(f"**Related Datasets:** {dataset_count}")
+
+                    api_base = st.secrets.get("api_base_url", "http://localhost:8000")
+                    if st.button("📄 Generate Report", key=f"report_{program.id}"):
+                        payload = {
+                            "entity_type": "program",
+                            "entity_id": str(program.id),
+                            "format": "html",
+                        }
+                        try:
+                            resp = requests.post(
+                                f"{api_base}/api/v1/reports/generate",
+                                json=payload,
+                                timeout=60,
+                            )
+                            if resp.ok:
+                                data = resp.json()
+                                link = data.get("download_url") or data.get("file_path")
+                                if link:
+                                    st.success("Report generated.")
+                                    if isinstance(link, str) and link.startswith("http"):
+                                        st.markdown(f"[Download report]({link})")
+                                    else:
+                                        st.code(link, language="text")
+                                else:
+                                    st.warning("Report generated but no link returned.")
+                            else:
+                                st.error(
+                                    f"Failed to generate report ({resp.status_code}): {resp.text}"
+                                )
+                        except Exception as exc:  # pragma: no cover - UI fallback
+                            st.error(f"Error generating report: {exc}")
         else:
             st.info("No programs found.")

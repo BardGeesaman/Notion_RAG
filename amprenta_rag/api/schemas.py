@@ -8,7 +8,7 @@ mapping between domain models and API representations.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -376,3 +376,23 @@ class SignatureExplanationResponse(BaseModel):
     top_positive: List[FeatureContribution]
     top_negative: List[FeatureContribution]
     all_contributions: List[FeatureContribution]
+
+
+# ============================================================================
+# Reports schemas
+# ============================================================================
+
+
+class ReportRequest(BaseModel):
+    """Request to generate a narrative report."""
+
+    entity_type: str
+    entity_id: str
+    format: Literal["html", "pdf"] = "html"
+
+
+class ReportResponse(BaseModel):
+    """Response containing report location."""
+
+    file_path: str
+    download_url: Optional[str] = None
