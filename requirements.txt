@@ -43,7 +43,6 @@ mypy_extensions==1.1.0
 nest-asyncio
 networkx==3.4.2
 numexpr
-numpy
 openai==2.8.1
 openpyxl
 orjson==3.11.4
@@ -131,3 +130,10 @@ PyJWT>=2.8.0
 papermill>=2.4.0
 nbconvert>=7.0.0
 nbformat>=5.7.0
+
+# Chemistry / SAR
+rdkit-pypi
+numpy<2.0  # rdkit compatibility
+
+# Notebooks / Voila (local dev)
+ipywidgets>=8.0.0
