@@ -86,21 +86,31 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 | Task | Owner (Agent) | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| **JupyterHub Integration** | Implementor | **Next Up** | 5-phase plan approved, ~3 weeks |
-| — Phase 1: API Client Library | Implementor | **Pending** | 5 days - `amprenta-client` package |
-| — Phase 2: Write Endpoints | Implementor | **Pending** | 3 days - annotations API |
-| — Phase 3: JupyterHub Deploy | Implementor | **Pending** | 7 days - Docker/K8s |
-| — Phase 4: SSO Integration | Implementor | **Pending** | 3 days |
-| — Phase 5: Templates + Launch | Implementor | **Pending** | 2 days |
+| **JupyterHub Integration** | Implementor | **✓ Complete** | All 5 phases done (2025-12-15) |
+| — Phase 1: API Client Library | Implementor | **✓ Complete** | amprenta-client with 6 resource clients |
+| — Phase 2: Write Endpoints | Implementor | **✓ Complete** | Annotation endpoints operational |
+| — Phase 3: JupyterHub Deploy | Implementor | **✓ Complete** | DockerSpawner + RDKit stack |
+| — Phase 4: SSO Integration | Implementor | **✓ Complete** | JWT TokenAuthenticator |
+| — Phase 5: Templates + Launch | Implementor | **✓ Complete** | Templates + context passing |
+| **Innovator-Approved Features** | Implementor | **Next Up** | 7 features from INNOVATION_LOG (HTS QC, MOA, Reports, etc.) |
 | **AWS Deployment Architecture** | Architect | **Pending** | ECS/RDS/ElastiCache design |
 | **Advanced Viz Suite (Cytoscape/IGV)** | Implementor | **Pending** | Network graphs and genome browser |
-| **Innovator Feature Review** | Chairman | **Approved** | 7 features added to roadmap |
 
 ---
 
 ## 4. Completed Tasks (Recent)
 
 *A reverse-chronological log of what has been done recently.*
+
+* [2025-12-15] – **JupyterHub Integration Complete - All 5 Phases Done**:
+  - Phase 1: API Client Library (amprenta-client with 6 resource clients) ✓
+  - Phase 2: Write Endpoints (annotation endpoints operational) ✓
+  - Phase 3: JupyterHub Deployment (DockerSpawner + RDKit stack) ✓
+  - Phase 4: SSO Integration (JWT TokenAuthenticator) ✓
+  - Phase 5: Templates + Launch (5 templates with context passing) ✓
+  - SAR Delta Explorer fully working with best-effort RDKit parsing and Voila rendering
+  - Notebook content recovery from Docker container after debugging session
+  - Created idempotent seed script (`scripts/seed_sar_data.py`) for reproducibility
 
 * [2025-12-15] – **SAR Delta Explorer + JupyterHub/Voila Debugging (Partial)**:
   - JupyterHub “User not allowed” (403) was resolved by ensuring the running hub container loads `/etc/jupyterhub/jupyterhub_config.py` and rebuilding/recreating the `jupyterhub` service so `c.Authenticator.allowed_users={"scientist"}` takes effect.
@@ -245,13 +255,14 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 ### Notes from 2025-12-15
 
-**SAR DELTA EXPLORER + VOILA UNDER JUPYTERHUB BLOCKER**
+**JUPYTERHUB INTEGRATION COMPLETE - ALL 5 PHASES DONE**
 
-* **Hub allowlist fix**: The live hub process uses `-f /etc/jupyterhub/jupyterhub_config.py`; changes only took effect after rebuilding/recreating the `jupyterhub` service. Symptom was 403 with logs “Token auth successful” + “User 'scientist' not allowed.”
-* **Singleuser content fixes**: Added missing `amprenta_rag/logging_utils.py` to prevent `amprenta_rag.chemistry.rgroup` import failure; ensured chemistry helpers exist in image; ensured `voila` is installed.
-* **Persistent UI blocker**: Voila pages remain blank due to JupyterLab shared-module mismatches reported from `_JUPYTERLAB.CORE_OUTPUT` (e.g., @jupyterlab/docregistry/coreutils/translation unsatisfied). This appears to be stale/mixed frontend assets or an extension/plugin stack mismatch that is not resolving with simple pip/mamba version changes.
-* **Workaround direction**: Consider running Voila as a **separate service/container** (bypassing JupyterLab/federated extension stack), and route Streamlit “View as Dashboard” links to that service for demos.
-* **Cliffs behavior**: Defaults can yield empty cliffs unless the seeded “guaranteed pair” is (a) truly high similarity under Morgan FP and (b) not “washed out” by other lower IC50 values when the API selects best_activity (min IC50). Requires deterministic/isolated seed pair and/or query logic changes.
+* **Phase 1-5 Complete**: API client library, write endpoints, JupyterHub deployment, SSO, and templates all delivered and working.
+* **SAR Delta Explorer Working**: Fixed RDKit SMILES parsing with best-effort sanitization (fallback `sanitize=False` + selective sanitization without kekulization).
+* **Voila Rendering Fixed**: Pinned working stack (`voila==0.4.6`, `nbclient==0.7.4`) resolved JupyterLab federated-extension version mismatches.
+* **Debugging Session Recovery**: Notebook content was lost during debugging, recovered from Docker container (`jupyter-scientist`), applied RDKit warning suppression.
+* **Reproducibility**: Created idempotent seed script (`scripts/seed_sar_data.py`) with `--reset` option for clean data setup.
+* **Key Learning**: When debugging complex integrations (JupyterHub + Voila + RDKit), change ONE variable at a time (see memory 12221705).
 
 ### Notes from 2025-12-13 (Evening Session)
 
@@ -296,53 +307,25 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 The system has reached **production maturity** with **40+ features**, **57 passing E2E tests**, and **fully unified Postgres architecture** (SQLite removed, Notion removed). Code quality optimization is 100% complete.
 
-**JupyterHub integration is the top priority** - a 5-phase plan has been approved and documented in ROADMAP.md. The Innovator agent was created to support strategic feature ideation.
-
-On 2025-12-15 we pushed on **Voila dashboards under JupyterHub** and the **SAR Delta Explorer**. Hub allowlist issues were fixed, and the singleuser image now includes the missing Python pieces for SAR notebooks. The remaining blocker is a persistent **JupyterLab federated-extension CORE_OUTPUT version mismatch** that causes Voila pages to render blank in the browser even when kernels start successfully.
+**JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). The SAR Delta Explorer is fully working with Voila dashboards operational.
 
 ### Current State
 
 *   **System Status**: Production-Ready. Code quality at 9/10.
-*   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (40+ pages).
-*   **Test Coverage**: High (24 new auth/model tests added this session).
-*   **Next Focus**:
-    - Unblock Voila UI rendering (likely by bypassing JupyterLab via a standalone Voila service, or by fully aligning frontend assets/extensions in the JupyterHub singleuser image).
-    - Ensure SAR cliffs defaults return data by making seeded “guaranteed pair” deterministic and isolated.
+*   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (40+ pages), JupyterHub operational.
+*   **Test Coverage**: High (24 new auth/model tests, 57 passing E2E tests).
+*   **JupyterHub**: All 5 phases complete (API client, write endpoints, deployment, SSO, templates).
+*   **Next Focus**: 7 Innovator-approved features from INNOVATION_LOG (HTS QC, MOA Inference, Signature Explainability, Narrative Reports, etc.)
 
-### TOMORROW: Start JupyterHub Phase 1
-
-Send this delegation to Implementor:
-
-```
-FROM: Architect TO: Implementor
-
-TASK: Create amprenta-client Python package (Phase 1, Part A)
-
-Create the following structure:
-- amprenta_rag/client/__init__.py - Main client class and exports
-- amprenta_rag/client/base.py - Base HTTP client with auth
-- amprenta_rag/client/datasets.py - Dataset CRUD methods
-- amprenta_rag/client/experiments.py - Experiment CRUD methods
-
-Requirements:
-1. RAGClient class with api_url and api_key parameters
-2. Typed methods using existing Pydantic schemas from amprenta_rag/api/schemas/
-3. Resource classes: client.datasets.list(), client.datasets.get(id), etc.
-4. HTTP calls via httpx (add to requirements.txt if not present)
-
-Do NOT run tests. Report files created and line counts.
-Format response as single code block with FROM: Implementor TO: Architect header.
-```
-
-### JupyterHub Phases Remaining
+### JupyterHub Status (COMPLETE)
 
 | Phase | Duration | Status |
 |-------|----------|--------|
-| 1. API Client Library | 5 days | **START HERE** |
-| 2. Write Endpoints | 3 days | Pending (parallel) |
-| 3. JupyterHub Deploy | 7 days | Pending |
-| 4. SSO Integration | 3 days | Pending |
-| 5. Templates + Launch | 2 days | Pending |
+| 1. API Client Library | 5 days | ✓ Complete |
+| 2. Write Endpoints | 3 days | ✓ Complete |
+| 3. JupyterHub Deploy | 7 days | ✓ Complete |
+| 4. SSO Integration | 3 days | ✓ Complete |
+| 5. Templates + Launch | 2 days | ✓ Complete |
 
 ### Key Files to Review
 *   `docs/ROADMAP.md`: The canonical roadmap (updated this session).
