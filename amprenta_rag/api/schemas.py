@@ -452,3 +452,35 @@ class DeviationReport(BaseModel):
     protocol_name: str
     protocol_version: int
     deviations: List[Any]
+
+
+# ============================================================================
+# HTS QC schemas
+# ============================================================================
+
+
+class PlateQCSummary(BaseModel):
+    campaign_id: UUID
+    total_wells: int
+    hit_rate: float
+    z_prime: Optional[float]
+    hits: int
+    pos_controls: int
+    neg_controls: int
+
+
+class WellData(BaseModel):
+    well_position: Optional[str] = None
+    normalized_value: Optional[float] = None
+    z_score: Optional[float] = None
+    hit_flag: Optional[bool] = None
+    compound_id: Optional[UUID] = None
+    result_id: Optional[str] = None
+
+
+class HitCompound(BaseModel):
+    result_id: str
+    compound_id: UUID
+    well_position: Optional[str] = None
+    normalized_value: Optional[float] = None
+    z_score: Optional[float] = None

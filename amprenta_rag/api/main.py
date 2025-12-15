@@ -21,6 +21,7 @@ from amprenta_rag.api.routers import (
     explainability,
     quality,
     protocols,
+    hts,
 )
 from amprenta_rag.config import get_config
 
@@ -58,6 +59,7 @@ app.include_router(
 app.include_router(reports.router, prefix="/api/v1", tags=["Reports"])
 app.include_router(quality.router, prefix="/api/v1", tags=["Quality"])
 app.include_router(protocols.router, prefix="/api/v1", tags=["Protocols"])
+app.include_router(hts.router, prefix="/api/v1", tags=["HTS"])
 
 
 @app.get("/")
