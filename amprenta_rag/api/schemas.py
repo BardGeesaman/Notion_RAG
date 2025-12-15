@@ -518,3 +518,32 @@ class PathwayFeatures(BaseModel):
     pathway_name: str
     source: str
     features_by_omics: Dict[str, List[str]]
+
+
+# ============================================================================
+# MOA inference schemas
+# ============================================================================
+
+
+class EvidenceContribution(BaseModel):
+    feature_name: str
+    value: float
+    weight: float
+
+
+class MOACandidate(BaseModel):
+    candidate_id: str
+    type: str
+    probability: float
+    rank: int
+    contributions: List[EvidenceContribution]
+
+
+class MOAInferenceRequest(BaseModel):
+    compound_id: UUID
+    dataset_ids: List[UUID] = Field(default_factory=list)
+
+
+class MOAInferenceResult(BaseModel):
+    compound_id: UUID
+    candidates: List[MOACandidate]

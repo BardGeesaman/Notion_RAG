@@ -7,7 +7,7 @@ import os
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow", "Variant Tracking"]
-ANALYSIS_PAGES = ["Analysis Tools", "Chemistry", "Visualizations", "Literature Analysis", "Candidate Selection", "HTS QC"]
+ANALYSIS_PAGES = ["Analysis Tools", "Chemistry", "Visualizations", "Literature Analysis", "Candidate Selection", "HTS QC", "MOA Inference", "Cross-Omics Pathways"]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
     "Audit Logs",
@@ -58,6 +58,7 @@ ALL_PAGES = [
     "RAG Chunks",
     "Chemistry",
     "HTS QC",
+    "MOA Inference",
     "RAG Query",
     "Cross-Omics",
     "Cross-Omics Pathways",
@@ -117,6 +118,7 @@ PAGE_REGISTRY = {
     "RAG Chunks": ("scripts.dashboard.pages.rag_chunks", "render_rag_chunks_page"),
     "Chemistry": ("scripts.dashboard.pages.chemistry", "render_chemistry_page"),
     "HTS QC": ("scripts.dashboard.pages.hts_qc", "render_hts_qc_page"),
+    "MOA Inference": ("scripts.dashboard.pages.moa_inference", "render_moa_inference_page"),
     "Cross-Omics Pathways": ("scripts.dashboard.pages.cross_omics_pathways", "render_cross_omics_pathways_page"),
     "RAG Query": ("scripts.dashboard.pages.rag_query", "render_rag_query_page"),
     "Generic Assays": ("scripts.dashboard.pages.generic_assays", "render_generic_assays_page"),

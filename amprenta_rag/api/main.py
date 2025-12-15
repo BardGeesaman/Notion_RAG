@@ -23,6 +23,7 @@ from amprenta_rag.api.routers import (
     protocols,
     hts,
     pathways,
+    moa,
 )
 from amprenta_rag.config import get_config
 
@@ -62,6 +63,7 @@ app.include_router(quality.router, prefix="/api/v1", tags=["Quality"])
 app.include_router(protocols.router, prefix="/api/v1", tags=["Protocols"])
 app.include_router(hts.router, prefix="/api/v1", tags=["HTS"])
 app.include_router(pathways.router, prefix="/api/v1", tags=["Pathways"])
+app.include_router(moa.router, prefix="/api/v1", tags=["MOA"])
 
 
 @app.get("/")
