@@ -8,8 +8,9 @@ from amprenta_rag.logging_utils import get_logger
 logger = get_logger(__name__)
 
 try:
-    from rdkit import Chem
+    from rdkit import Chem, RDLogger
     from rdkit.Chem import rdFMCS
+    RDLogger.DisableLog("rdApp.*")
     RDKIT_AVAILABLE = True
 except ImportError:
     RDKIT_AVAILABLE = False
