@@ -345,3 +345,34 @@ class Signature(SignatureBase):
     updated_at: datetime
     notion_page_id: Optional[str] = None
 
+
+# ============================================================================
+# Signature explainability schemas
+# ============================================================================
+
+
+class FeatureContribution(BaseModel):
+    """Per-feature contribution to signature match score."""
+
+    feature_name: str
+    matched_to: Optional[str] = None
+    direction_expected: Optional[str] = None
+    direction_actual: Optional[str] = None
+    weight: float
+    contribution: float
+    match_type: str
+    direction_match: str
+
+
+class SignatureExplanationResponse(BaseModel):
+    """Explanation of why a signature matches a dataset."""
+
+    signature_id: UUID
+    signature_name: str
+    dataset_id: UUID
+    dataset_name: str
+    total_score: float
+    direction_concordance: float
+    top_positive: List[FeatureContribution]
+    top_negative: List[FeatureContribution]
+    all_contributions: List[FeatureContribution]

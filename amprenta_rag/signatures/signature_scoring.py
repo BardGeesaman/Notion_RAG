@@ -25,6 +25,7 @@ class ComponentMatch:
         match_type: Type of match (exact, class_fallback, none)
         direction_match: Direction match status (match, conflict, neutral, unknown)
         weight: Component weight
+        contribution: Weighted contribution of this component to the total score
     """
 
     signature_species: str
@@ -32,6 +33,7 @@ class ComponentMatch:
     match_type: str = "none"  # exact, class_fallback, none
     direction_match: str = "unknown"  # match, conflict, neutral, unknown
     weight: float = 1.0
+    contribution: float = 0.0
 
 
 @dataclass
@@ -52,6 +54,27 @@ class SignatureScoreResult:
     missing_species: List[str] = field(default_factory=list)
     conflicting_species: List[str] = field(default_factory=list)
     matched_species: List[str] = field(default_factory=list)
+
+    def get_top_contributors(self, n: int = 10) -> dict:
+        """Return top positive and negative contributors sorted by contribution."""
+        sorted_positive = sorted(
+            [m for m in self.component_matches if m.contribution > 0],
+            key=lambda x: x.contribution,
+            reverse=True,
+        )[:n]
+        sorted_negative = sorted(
+            [m for m in self.component_matches if m.contribution < 0],
+            key=lambda x: x.contribution,
+        )[:n]
+        return {"positive": sorted_positive, "negative": sorted_negative}
+
+    def get_direction_concordance(self) -> float:
+        """Calculate % of matched features with matching direction."""
+        matched = [m for m in self.component_matches if m.matched_dataset_species]
+        if not matched:
+            return 0.0
+        concordant = len([m for m in matched if m.direction_match == "match"])
+        return concordant / len(matched)
 
 
 def _get_direction_from_dataset(
@@ -180,6 +203,7 @@ def score_signature(
                 match_type=match_type,
                 direction_match=direction_match,
                 weight=weight,
+                contribution=weighted_score,
             )
         )
 

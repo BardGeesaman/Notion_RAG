@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from amprenta_rag.database.models import Signature
+from amprenta_rag.database.models import Dataset, Feature, Signature
 from amprenta_rag.signatures.signature_validation import validate_signature_against_all_datasets
 from scripts.dashboard.db_session import db_session
 
@@ -107,5 +107,123 @@ def render_signatures_page() -> None:
                     st.markdown(
                         f"**Validation:** Coverage {m.num_matched_datasets}/{m.num_total_datasets} ({m.coverage:.1%}); Mean Score = {m.mean_score:.2f if m.mean_score else 0.0}\n\n{validated.summary}"
                     )
+
+                    # Match Explanation section
+                    st.markdown("---")
+                    st.subheader("🔍 Match Explanation")
+
+                    # Get datasets for dropdown
+                    datasets = db.query(Dataset).limit(100).all()
+                    dataset_options = {
+                        f"{d.name} ({str(d.id)[:8]})": d.id for d in datasets
+                    }
+
+                    if dataset_options:
+                        selected_dataset = st.selectbox(
+                            "Select dataset to explain match",
+                            options=list(dataset_options.keys()),
+                            key=f"explain_{signature.id}",
+                        )
+
+                        if st.button("Explain Match", key=f"explain_btn_{signature.id}"):
+                            dataset_id = dataset_options[selected_dataset]
+                            # Call API or direct function
+                            from amprenta_rag.signatures.signature_loader import (
+                                Signature as SigDef,
+                                SignatureComponent,
+                            )
+                            from amprenta_rag.signatures.signature_scoring import (
+                                score_signature,
+                            )
+                            import plotly.express as px
+
+                            # Get features
+                            dataset = (
+                                db.query(Dataset)
+                                .filter(Dataset.id == dataset_id)
+                                .first()
+                            )
+                            features = dataset.features if dataset else []
+                            dataset_species = {f.name for f in features if f.name}
+
+                            # Build signature
+                            components = [
+                                SignatureComponent(
+                                    feature_name=c.get("feature_name", ""),
+                                    feature_type=c.get("feature_type"),
+                                    direction=c.get("direction"),
+                                    weight=c.get("weight"),
+                                )
+                                for c in (signature.components or [])
+                                if isinstance(c, dict)
+                            ]
+                            sig_def = SigDef(name=signature.name, components=components)
+
+                            # Score
+                            result = score_signature(sig_def, dataset_species)
+
+                            # Display results
+                            col1, col2, col3 = st.columns(3)
+                            col1.metric("Total Score", f"{result.total_score:.2f}")
+                            col2.metric("Matched", len(result.matched_species))
+                            col3.metric(
+                                "Direction Concordance",
+                                f"{result.get_direction_concordance():.0%}",
+                            )
+
+                            # Lollipop chart
+                            contrib_data = [
+                                {
+                                    "Feature": m.signature_species,
+                                    "Contribution": m.contribution,
+                                }
+                                for m in sorted(
+                                    result.component_matches,
+                                    key=lambda x: x.contribution,
+                                    reverse=True,
+                                )
+                            ]
+                            if contrib_data:
+                                df = pd.DataFrame(contrib_data)
+                                df["Color"] = df["Contribution"].apply(
+                                    lambda x: "Positive"
+                                    if x > 0
+                                    else "Negative"
+                                    if x < 0
+                                    else "Neutral"
+                                )
+                                fig = px.bar(
+                                    df.head(20),
+                                    x="Contribution",
+                                    y="Feature",
+                                    orientation="h",
+                                    color="Color",
+                                    color_discrete_map={
+                                        "Positive": "#28a745",
+                                        "Negative": "#dc3545",
+                                        "Neutral": "#6c757d",
+                                    },
+                                    title="Feature Contributions (Top 20)",
+                                )
+                                fig.update_layout(
+                                    yaxis={"categoryorder": "total ascending"},
+                                    showlegend=False,
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+
+                            # Detailed table
+                            with st.expander("All Feature Contributions"):
+                                details = [
+                                    {
+                                        "Feature": m.signature_species,
+                                        "Matched To": m.matched_dataset_species or "—",
+                                        "Match Type": m.match_type,
+                                        "Direction": m.direction_match,
+                                        "Weight": m.weight,
+                                        "Contribution": round(m.contribution, 3),
+                                    }
+                                    for m in result.component_matches
+                                ]
+                                st.dataframe(pd.DataFrame(details), hide_index=True)
         else:
             st.info("No signatures found.")
