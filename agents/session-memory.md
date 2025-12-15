@@ -92,7 +92,8 @@ It should be updated at natural breakpoints in work sessions to support continui
 | — Phase 3: JupyterHub Deploy | Implementor | **✓ Complete** | DockerSpawner + RDKit stack |
 | — Phase 4: SSO Integration | Implementor | **✓ Complete** | JWT TokenAuthenticator |
 | — Phase 5: Templates + Launch | Implementor | **✓ Complete** | Templates + context passing |
-| **Innovator-Approved Features** | Implementor | **Next Up** | 7 features from INNOVATION_LOG (HTS QC, MOA, Reports, etc.) |
+| **SAR/Voila Test Coverage** | Implementor | **Next Up** | Unit tests for sar_data.py, rgroup.py, notebook_utils.py + API tests for /api/v1/sar/* (3-4 hours) |
+| **Innovator-Approved Features** | Implementor | **Pending** | 7 features from INNOVATION_LOG (HTS QC, MOA, Reports, etc.) |
 | **AWS Deployment Architecture** | Architect | **Pending** | ECS/RDS/ElastiCache design |
 | **Advanced Viz Suite (Cytoscape/IGV)** | Implementor | **Pending** | Network graphs and genome browser |
 
@@ -111,6 +112,18 @@ It should be updated at natural breakpoints in work sessions to support continui
   - SAR Delta Explorer fully working with best-effort RDKit parsing and Voila rendering
   - Notebook content recovery from Docker container after debugging session
   - Created idempotent seed script (`scripts/seed_sar_data.py`) for reproducibility
+  
+* [2025-12-15] – **Voila Notebook Suite Audit & Standardization (Complete)**:
+  - Audited all 10 Voila notebooks for consistency and robustness
+  - Created shared `deploy/jupyterhub/templates/notebook_utils.py` with:
+    - RDKit warning suppression (best-effort parsing + log filtering)
+    - API client initialization with fallback
+    - Demo mode banner for offline/fallback scenarios
+    - Safe SMILES parsing utilities
+  - Updated all notebooks to use shared utilities (API fallback + demo mode)
+  - Updated singleuser Dockerfile to copy all required modules: client/, chemistry/, analysis/pathway/
+  - Updated requirements.txt: rdkit-pypi, numpy<2.0, ipywidgets
+  - Commits: defa2f8, 0e85518
 
 * [2025-12-15] – **SAR Delta Explorer + JupyterHub/Voila Debugging (Partial)**:
   - JupyterHub “User not allowed” (403) was resolved by ensuring the running hub container loads `/etc/jupyterhub/jupyterhub_config.py` and rebuilding/recreating the `jupyterhub` service so `c.Authenticator.allowed_users={"scientist"}` takes effect.
@@ -264,6 +277,13 @@ It should be updated at natural breakpoints in work sessions to support continui
 * **Reproducibility**: Created idempotent seed script (`scripts/seed_sar_data.py`) with `--reset` option for clean data setup.
 * **Key Learning**: When debugging complex integrations (JupyterHub + Voila + RDKit), change ONE variable at a time (see memory 12221705).
 
+**VOILA NOTEBOOK AUDIT & STANDARDIZATION**
+
+* **Shared Utilities Created**: `notebook_utils.py` centralizes RDKit suppression, API client initialization, demo mode banner, and safe SMILES parsing.
+* **Consistent API Fallback**: All 10 Voila notebooks now gracefully handle API unavailability with demo mode and offline data.
+* **Demo Mode Banner**: Visual indicator when notebooks run without API connectivity (useful for demos/testing).
+* **Test Coverage Gap Identified**: New SAR functionality (sar_data.py, rgroup.py, notebook_utils.py) and API endpoints (/api/v1/sar/*) need unit tests and API tests.
+
 ### Notes from 2025-12-13 (Evening Session)
 
 **JUPYTERHUB PLAN & CODE QUALITY COMPLETION**
@@ -307,17 +327,18 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 The system has reached **production maturity** with **40+ features**, **57 passing E2E tests**, and **fully unified Postgres architecture** (SQLite removed, Notion removed). Code quality optimization is 100% complete.
 
-**JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). The SAR Delta Explorer is fully working with Voila dashboards operational.
+**JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). The SAR Delta Explorer is fully working with Voila dashboards operational. All 10 Voila notebooks have been audited and standardized with shared utilities, API fallback, and demo mode.
 
 ### Current State
 
 *   **System Status**: Production-Ready. Code quality at 9/10.
 *   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (40+ pages), JupyterHub operational.
-*   **Test Coverage**: High (24 new auth/model tests, 57 passing E2E tests).
+*   **Test Coverage**: High (24 new auth/model tests, 57 passing E2E tests). Gap identified for new SAR/Voila functionality.
 *   **JupyterHub**: All 5 phases complete (API client, write endpoints, deployment, SSO, templates).
-*   **Next Focus**: 7 Innovator-approved features from INNOVATION_LOG (HTS QC, MOA Inference, Signature Explainability, Narrative Reports, etc.)
+*   **Notebook Suite**: 10 Voila notebooks standardized with shared utilities (notebook_utils.py).
+*   **Next Focus**: SAR/Voila test coverage (3-4 hours) - Option B for next session.
 
-### JupyterHub Status (COMPLETE)
+### JupyterHub Status (ALL COMPLETE)
 
 | Phase | Duration | Status |
 |-------|----------|--------|
@@ -326,6 +347,32 @@ The system has reached **production maturity** with **40+ features**, **57 passi
 | 3. JupyterHub Deploy | 7 days | ✓ Complete |
 | 4. SSO Integration | 3 days | ✓ Complete |
 | 5. Templates + Launch | 2 days | ✓ Complete |
+
+### Notebook Audit (COMPLETE)
+
+| Task | Status |
+|------|--------|
+| 10 Voila notebooks audited | ✓ Complete |
+| Shared notebook_utils.py created | ✓ Complete |
+| API fallback + demo mode | ✓ Complete |
+| Dockerfile updated (modules) | ✓ Complete |
+| requirements.txt updated | ✓ Complete |
+
+### Next Session Recommendation
+
+**Option B: Write Tests for SAR + notebook_utils (3-4 hours)**
+
+Unit tests needed:
+- `amprenta_rag/api/services/sar_data.py` (cliffs detection, activity grouping)
+- `amprenta_rag/chemistry/rgroup.py` (MCS, R-group decomposition)
+- `deploy/jupyterhub/templates/notebook_utils.py` (RDKit suppression, safe parsing)
+
+API tests needed:
+- `/api/v1/sar/targets` (list targets with activity counts)
+- `/api/v1/sar/cliffs` (activity cliffs detection)
+- `/api/v1/sar/series` (compound series identification)
+
+Commits this session: defa2f8, 0e85518
 
 ### Key Files to Review
 *   `docs/ROADMAP.md`: The canonical roadmap (updated this session).
