@@ -18,6 +18,26 @@ except ImportError:
     rdFMCS = None  # type: ignore
 
 
+def _mol_from_smiles_best_effort(smiles: str):
+    """Parse SMILES with fallback for kekulization issues."""
+    if not smiles:
+        return None
+    m = Chem.MolFromSmiles(smiles)
+    if m is not None:
+        return m
+    try:
+        m = Chem.MolFromSmiles(smiles, sanitize=False)
+        if m is None:
+            return None
+        Chem.SanitizeMol(
+            m,
+            sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE,
+        )
+        return m
+    except Exception:
+        return None
+
+
 def find_common_core(smiles_list: List[str]) -> Optional[str]:
     """
     Find maximum common substructure (MCS) from a list of SMILES.
@@ -40,9 +60,9 @@ def find_common_core(smiles_list: List[str]) -> Optional[str]:
         # Convert SMILES to molecules
         mols = []
         for smi in smiles_list:
-            mol = Chem.MolFromSmiles(smi)
+            mol = _mol_from_smiles_best_effort(smi)
             if mol is None:
-                logger.warning("[RGROUP] Invalid SMILES: %s", smi)
+                logger.debug("[RGROUP] Invalid SMILES: %s", smi)
                 continue
             mols.append(mol)
         
@@ -96,9 +116,9 @@ def decompose_rgroups(smiles_list: List[str], core_smarts: str) -> List[Dict[str
         results = []
         
         for smi in smiles_list:
-            mol = Chem.MolFromSmiles(smi)
+            mol = _mol_from_smiles_best_effort(smi)
             if mol is None:
-                logger.warning("[RGROUP] Invalid SMILES: %s", smi)
+                logger.debug("[RGROUP] Invalid SMILES: %s", smi)
                 continue
             
             # Check if molecule matches core
