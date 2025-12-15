@@ -5,10 +5,8 @@ USER root
 COPY amprenta_rag/__init__.py /opt/amprenta/amprenta_rag/__init__.py
 COPY amprenta_rag/logging_utils.py /opt/amprenta/amprenta_rag/logging_utils.py
 
-RUN mkdir -p /opt/amprenta/amprenta_rag/chemistry && \
-    echo "" > /opt/amprenta/amprenta_rag/chemistry/__init__.py
-COPY amprenta_rag/chemistry/rgroup.py /opt/amprenta/amprenta_rag/chemistry/rgroup.py
-COPY amprenta_rag/chemistry/sar_analysis.py /opt/amprenta/amprenta_rag/chemistry/sar_analysis.py
+# Copy full chemistry module tree for RDKit/Voila notebooks (includes __init__.py)
+COPY amprenta_rag/chemistry/ /opt/amprenta/amprenta_rag/chemistry/
 
 COPY amprenta_rag/models/domain.py /opt/amprenta/amprenta_rag/models/domain.py
 RUN mkdir -p /opt/amprenta/amprenta_rag/models && \
@@ -18,14 +16,13 @@ COPY amprenta_rag/api/schemas.py /opt/amprenta/amprenta_rag/api/schemas.py
 RUN mkdir -p /opt/amprenta/amprenta_rag/api && \
     echo "" > /opt/amprenta/amprenta_rag/api/__init__.py
 
-COPY amprenta_rag/client/__init__.py /opt/amprenta/amprenta_rag/client/__init__.py
-COPY amprenta_rag/client/base.py /opt/amprenta/amprenta_rag/client/base.py
-COPY amprenta_rag/client/compounds.py /opt/amprenta/amprenta_rag/client/compounds.py
-COPY amprenta_rag/client/datasets.py /opt/amprenta/amprenta_rag/client/datasets.py
-COPY amprenta_rag/client/experiments.py /opt/amprenta/amprenta_rag/client/experiments.py
-COPY amprenta_rag/client/features.py /opt/amprenta/amprenta_rag/client/features.py
-COPY amprenta_rag/client/programs.py /opt/amprenta/amprenta_rag/client/programs.py
-COPY amprenta_rag/client/signatures.py /opt/amprenta/amprenta_rag/client/signatures.py
+# Copy full client module tree (notebooks use multiple resource clients)
+COPY amprenta_rag/client/ /opt/amprenta/amprenta_rag/client/
+
+# Copy pathway analysis utilities for pathway_enrichment notebook (includes __init__.py)
+RUN mkdir -p /opt/amprenta/amprenta_rag/analysis
+COPY amprenta_rag/analysis/__init__.py /opt/amprenta/amprenta_rag/analysis/__init__.py
+COPY amprenta_rag/analysis/pathway/ /opt/amprenta/amprenta_rag/analysis/pathway/
 
 COPY deploy/jupyterhub/templates/ /home/jovyan/templates/
 RUN chown -R ${NB_UID}:${NB_GID} /home/jovyan/templates
