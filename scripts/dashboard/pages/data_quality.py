@@ -1,76 +1,96 @@
-"""Data Quality page for validation and quality checks."""
+"""Data Quality Watcher page."""
 from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
 
-from amprenta_rag.utils.validation import run_all_validations, ValidationIssue
-from scripts.dashboard.db_session import db_session
+from amprenta_rag.analysis.quality_watcher import (
+    get_low_quality_datasets,
+    get_quality_summary,
+    scan_all_datasets,
+)
 
 
 def render_data_quality_page() -> None:
-    """Render the Data Quality page."""
-    st.header("✅ Data Quality")
-    st.markdown("Run validation checks on experiments and compounds to identify data quality issues.")
-    
-    if st.button("🔍 Run Validation", type="primary"):
-        with st.spinner("Running validation checks..."):
-            with db_session() as db:
-                issues = run_all_validations(db)
-        
-        # Store in session state
-        st.session_state["validation_issues"] = issues
-    
-    # Display results if available
-    if "validation_issues" in st.session_state:
-        issues = st.session_state["validation_issues"]
-        
-        # Summary stats
-        error_count = sum(1 for i in issues if i.severity == "error")
-        warning_count = sum(1 for i in issues if i.severity == "warning")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Errors", error_count, delta=None, delta_color="inverse")
-        with col2:
-            st.metric("Warnings", warning_count, delta=None)
-        
-        st.markdown("---")
-        
-        if issues:
-            # Convert to DataFrame for display
-            issues_data = []
-            for issue in issues:
-                issues_data.append({
-                    "Entity Type": issue.entity_type,
-                    "Entity ID": issue.entity_id[:8] + "..." if len(issue.entity_id) > 8 else issue.entity_id,
-                    "Field": issue.field,
-                    "Issue": issue.issue,
-                    "Severity": issue.severity,
-                })
-            
-            df = pd.DataFrame(issues_data)
-            
-            # Color code by severity
-            def color_severity(val):
-                if val == "error":
-                    return "background-color: #ffcccc"
-                elif val == "warning":
-                    return "background-color: #fff4cc"
-                return ""
-            
-            styled_df = df.style.map(color_severity, subset=["Severity"])
-            st.dataframe(styled_df, use_container_width=True, hide_index=True)
-            
-            # Download option
-            csv = df.to_csv(index=False)
-            st.download_button(
-                label="📥 Download Issues (CSV)",
-                data=csv,
-                file_name="validation_issues.csv",
-                mime="text/csv",
+    """Render the Data Quality Watcher page."""
+    st.header("✅ Data Quality Watcher")
+    st.caption("Monitor dataset quality scores, distribution, and low-quality alerts.")
+
+    try:
+        summary = get_quality_summary()
+    except Exception as exc:  # pragma: no cover - UI fallback
+        st.error(f"Failed to load quality summary: {exc}")
+        return
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Datasets", summary.get("total", 0))
+    col2.metric("High", summary.get("high", 0))
+    col3.metric("Medium", summary.get("medium", 0))
+    col4.metric("Low", summary.get("low", 0), delta_color="inverse")
+
+    st.markdown("---")
+
+    dist_df = pd.DataFrame(
+        {
+            "Status": ["high", "medium", "low"],
+            "Count": [
+                summary.get("high", 0),
+                summary.get("medium", 0),
+                summary.get("low", 0),
+            ],
+        }
+    )
+    st.subheader("Quality Distribution")
+    st.bar_chart(dist_df.set_index("Status"))
+
+    st.markdown("---")
+    st.subheader("Low-Quality Alerts")
+    threshold = st.slider("Alert threshold", min_value=0, max_value=100, value=50, step=5)
+    try:
+        low_quality = get_low_quality_datasets(threshold=threshold)
+    except Exception as exc:  # pragma: no cover - UI fallback
+        st.error(f"Failed to load low-quality datasets: {exc}")
+        return
+
+    if low_quality:
+        alerts = []
+        for r in low_quality:
+            alerts.append(
+                {
+                    "Dataset": r.dataset_name,
+                    "Score": r.score,
+                    "Status": r.status,
+                    "Issues": "; ".join(r.issues) if r.issues else "",
+                    "Feature Count": r.metrics.get("feature_count"),
+                    "Stats Coverage (%)": r.metrics.get("stats_coverage_pct"),
+                }
             )
-        else:
-            st.success("✅ No validation issues found! All data passes validation checks.")
+        alerts_df = pd.DataFrame(alerts)
+        st.dataframe(alerts_df, use_container_width=True, hide_index=True)
     else:
-        st.info("👆 Click 'Run Validation' to check data quality.")
+        st.success("No low-quality datasets under the current threshold.")
+
+    st.markdown("---")
+    st.subheader("All Datasets")
+    try:
+        reports = scan_all_datasets()
+    except Exception as exc:  # pragma: no cover - UI fallback
+        st.error(f"Failed to load dataset quality reports: {exc}")
+        return
+    if reports:
+        rows = []
+        for r in reports:
+            rows.append(
+                {
+                    "Dataset": r.dataset_name,
+                    "Score": r.score,
+                    "Status": r.status,
+                    "Issues": "; ".join(r.issues) if r.issues else "",
+                    "Feature Count": r.metrics.get("feature_count"),
+                    "Stats Coverage (%)": r.metrics.get("stats_coverage_pct"),
+                }
+            )
+        all_df = pd.DataFrame(rows)
+        st.dataframe(all_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No datasets available to score.")

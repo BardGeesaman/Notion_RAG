@@ -61,9 +61,12 @@ def compute_quality_score(dataset: Dataset) -> Dict[str, object]:
             try:
                 if abs(stats["log2FC"]) > 5:
                     outliers += 1
-                except Exception as e:
-                    logger.warning("[QUALITY] Skipping outlier check for feature %s: %r", getattr(feat, "id", "unknown"), e)
-                pass
+            except Exception as e:
+                logger.warning(
+                    "[QUALITY] Skipping outlier check for feature %s: %r",
+                    getattr(feat, "id", "unknown"),
+                    e,
+                )
 
     stats_coverage = (with_stats / feature_count * 100) if feature_count else 0
     if stats_coverage < 30:

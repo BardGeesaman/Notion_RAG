@@ -8,7 +8,7 @@ mapping between domain models and API representations.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional, Literal
+from typing import Dict, List, Optional, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -396,3 +396,28 @@ class ReportResponse(BaseModel):
 
     file_path: str
     download_url: Optional[str] = None
+
+
+# ============================================================================
+# Data Quality schemas
+# ============================================================================
+
+
+class DatasetQualityReport(BaseModel):
+    """Quality report for a dataset."""
+
+    dataset_id: UUID
+    dataset_name: str
+    score: float
+    status: str
+    issues: List[str]
+    metrics: Dict[str, float]
+
+
+class QualitySummary(BaseModel):
+    """Summary of dataset quality distribution."""
+
+    total: int
+    high: int
+    medium: int
+    low: int
