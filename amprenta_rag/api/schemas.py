@@ -259,6 +259,37 @@ class HTSHitResponse(BaseSchema):
 
 
 # ============================================================================
+# SAR schemas
+# ============================================================================
+
+
+class TargetResponse(BaseSchema):
+    target: str
+    compound_count: int = 0
+
+
+class CompoundActivityResponse(BaseSchema):
+    compound_id: str
+    smiles: str
+    ic50: Optional[float] = None
+    units: Optional[str] = None
+    assay_name: Optional[str] = None
+    result_id: Optional[str] = None
+
+
+class ActivityCliffResponse(BaseSchema):
+    compound_1: str
+    smiles_1: str
+    activity_1: float
+    compound_2: str
+    smiles_2: str
+    activity_2: float
+    similarity: float
+    fold_change: float
+    assay_id: Optional[str] = None
+
+
+# ============================================================================
 # Signature schemas
 # ============================================================================
 

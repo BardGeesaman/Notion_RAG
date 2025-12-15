@@ -156,6 +156,17 @@ You must:
 - Escalate to Debugger only if runtime investigation needed
 - Debugger uses Cursor Debug Mode for runtime behavior
 
+### Change Isolation Protocol (avoid combinatorial debugging)
+When debugging cross-system features (API + notebooks + containers + frontend), **do not stack changes**.
+
+- Change **one axis at a time** (API routes, seed data, notebook code, container networking, dependency versions).
+- After each change, run the **smallest deterministic smoke test** before proceeding.
+- If symptoms are ambiguous, prove **API/data first**, then prove **UI/rendering** (browser console is the source of truth).
+
+References:
+- `docs/DEBUG_PROTOCOL.md`
+- `docs/VOILA_SAR_QUICKSTART.md`
+
 ### E2E Testing Guidelines
 - Run at end of major phases, not during routine changes
 - Use headed flag so Chairman can observe

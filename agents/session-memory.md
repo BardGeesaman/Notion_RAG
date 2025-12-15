@@ -102,6 +102,31 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-15] – **SAR Delta Explorer + JupyterHub/Voila Debugging (Partial)**:
+  - JupyterHub “User not allowed” (403) was resolved by ensuring the running hub container loads `/etc/jupyterhub/jupyterhub_config.py` and rebuilding/recreating the `jupyterhub` service so `c.Authenticator.allowed_users={"scientist"}` takes effect.
+  - Singleuser image was iterated to include missing runtime pieces for SAR notebooks: `voila`, `ipywidgets`, `amprenta_rag/logging_utils.py`, and chemistry helpers (`amprenta_rag/chemistry/rgroup.py`, `sar_analysis.py`), plus Voila server extension config.
+  - **Remaining blocker**: Voila-under-Hub still renders a blank page due to persistent JupyterLab federated-extension `CORE_OUTPUT` shared-module version mismatch (browser console shows unsatisfied @jupyterlab/* versions). Multiple rebuilds/pins did not change CORE_OUTPUT behavior yet.
+  - SAR cliffs endpoint still returns empty at defaults (similarity threshold too strict relative to available/selected pair; needs deterministic/unique high-similarity pair in seeded data and/or API behavior adjustment).
+
+* [2025-12-15] – **SAR Delta Explorer + SAR API restored (Complete, portable)**:
+  - **Root causes of “hard” debugging**:
+    - **Voila rendering** failures were due to **JupyterLab federated-extension shared-module version mismatches** (`_JUPYTERLAB.CORE_OUTPUT` errors in browser console). Symptoms: blank page / widgets never appear even though kernels start.
+    - **Cliffs returning empty** was due to **RDKit SMILES parsing/kekulization failures** in seeded aromatics → **0 valid fingerprints** → no pairs, independent of thresholds.
+  - **Fixes shipped**:
+    - Restored missing SAR API endpoints by adding:
+      - `amprenta_rag/api/routers/sar.py`
+      - `amprenta_rag/api/services/sar_data.py`
+      - and wiring into `amprenta_rag/api/main.py` with prefix `/api/v1/sar`
+    - Fixed SAR targets query to use SQLAlchemy `func/distinct/desc` (don’t use `db.func` / `db.text` from a session).
+    - Implemented best-effort RDKit parsing in SAR cliffs detection (fallback `sanitize=False` + sanitize minus kekulize) so demo SMILES still fingerprint.
+    - Hardened `deploy/jupyterhub/templates/sar_delta_explorer.ipynb` with the same best-effort parsing for grids/MCS inputs.
+    - Pinned a known-good Voila stack in `deploy/jupyterhub/singleuser/Dockerfile`: `voila==0.4.6` + `nbclient==0.7.4` to avoid Lab shared-module regressions.
+  - **Portable next-session quickstart**:
+    - Restored an idempotent SAR seed script: `scripts/seed_sar_data.py` (supports `--reset`, auto-adds repo root to `sys.path` so it runs as `python scripts/seed_sar_data.py` from any workstation).
+    - See `docs/VOILA_SAR_QUICKSTART.md` for exact commands to start API, seed SAR data, build singleuser image, and smoke-test Voila on any workstation.
+  - **Debugging discipline (memorialized)**:
+    - When debugging multi-system issues (Voila/JupyterHub/API/seed data), change **one axis at a time** and run a deterministic smoke test after each change.
+    - See `docs/DEBUG_PROTOCOL.md` for the reusable “avoid combinatorial failures” checklist.
 * [2025-12-14] – **JupyterHub Phase 3 Complete**: DockerSpawner working locally with RDKit + amprenta-client.
 * [2025-12-13] – **JupyterHub Plan Approved**: 5-phase implementation plan documented in ROADMAP.md (commit aff313a).
 * [2025-12-13] – **Innovator Agent Created**: New strategic feature ideation agent with charter and communication flow.
@@ -218,6 +243,16 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A running notes section for the Architect to write contextual thoughts.*
 
+### Notes from 2025-12-15
+
+**SAR DELTA EXPLORER + VOILA UNDER JUPYTERHUB BLOCKER**
+
+* **Hub allowlist fix**: The live hub process uses `-f /etc/jupyterhub/jupyterhub_config.py`; changes only took effect after rebuilding/recreating the `jupyterhub` service. Symptom was 403 with logs “Token auth successful” + “User 'scientist' not allowed.”
+* **Singleuser content fixes**: Added missing `amprenta_rag/logging_utils.py` to prevent `amprenta_rag.chemistry.rgroup` import failure; ensured chemistry helpers exist in image; ensured `voila` is installed.
+* **Persistent UI blocker**: Voila pages remain blank due to JupyterLab shared-module mismatches reported from `_JUPYTERLAB.CORE_OUTPUT` (e.g., @jupyterlab/docregistry/coreutils/translation unsatisfied). This appears to be stale/mixed frontend assets or an extension/plugin stack mismatch that is not resolving with simple pip/mamba version changes.
+* **Workaround direction**: Consider running Voila as a **separate service/container** (bypassing JupyterLab/federated extension stack), and route Streamlit “View as Dashboard” links to that service for demos.
+* **Cliffs behavior**: Defaults can yield empty cliffs unless the seeded “guaranteed pair” is (a) truly high similarity under Morgan FP and (b) not “washed out” by other lower IC50 values when the API selects best_activity (min IC50). Requires deterministic/isolated seed pair and/or query logic changes.
+
 ### Notes from 2025-12-13 (Evening Session)
 
 **JUPYTERHUB PLAN & CODE QUALITY COMPLETION**
@@ -255,7 +290,7 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *To be produced automatically by the Architect at the end of each session.*
 
-**Last Updated:** 2025-12-13 (Evening)
+**Last Updated:** 2025-12-15
 
 ### Summary
 
@@ -263,12 +298,16 @@ The system has reached **production maturity** with **40+ features**, **57 passi
 
 **JupyterHub integration is the top priority** - a 5-phase plan has been approved and documented in ROADMAP.md. The Innovator agent was created to support strategic feature ideation.
 
+On 2025-12-15 we pushed on **Voila dashboards under JupyterHub** and the **SAR Delta Explorer**. Hub allowlist issues were fixed, and the singleuser image now includes the missing Python pieces for SAR notebooks. The remaining blocker is a persistent **JupyterLab federated-extension CORE_OUTPUT version mismatch** that causes Voila pages to render blank in the browser even when kernels start successfully.
+
 ### Current State
 
 *   **System Status**: Production-Ready. Code quality at 9/10.
 *   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (40+ pages).
 *   **Test Coverage**: High (24 new auth/model tests added this session).
-*   **Next Focus**: JupyterHub Integration (Phase 1 ready to start).
+*   **Next Focus**:
+    - Unblock Voila UI rendering (likely by bypassing JupyterLab via a standalone Voila service, or by fully aligning frontend assets/extensions in the JupyterHub singleuser image).
+    - Ensure SAR cliffs defaults return data by making seeded “guaranteed pair” deterministic and isolated.
 
 ### TOMORROW: Start JupyterHub Phase 1
 
