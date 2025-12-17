@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12 (December 2025)
+**Last Updated**: 2025-12-18 (December 18, 2025)
 
 Simple status legend:
 - ✅ DONE
@@ -42,6 +42,27 @@ Simple status legend:
 ### Discovery / Repositories
 - ✅ Automated discovery workflow + scheduled harvesting
 - ✅ GEO/PRIDE/MetaboLights/MW ingestion
+- ✅ mwTab API optimization (caching, Postgres storage, parallel fetching)
+
+### Jupyter Notebook & Analytics
+- ✅ JupyterHub deployment with DockerSpawner and user isolation
+- ✅ API client library (amprenta-client) with 6 resource clients
+- ✅ Write endpoints for annotations
+- ✅ Voila dashboards: HTS Plate Viewer, Compound Triage, SAR Delta Explorer
+- ✅ Publishing automation (artifact registry, scheduled reports via Papermill)
+- ✅ Context parameter passing and "Open in Jupyter" integration
+
+### Advanced Analytics Features
+- ✅ Signature Match Explainability (per-feature contributions, direction concordance)
+- ✅ One-Click Narrative Reports (Papermill-parameterized templates)
+- ✅ HTS QC & Triage Assistant (Z' factor, traffic-light scoring)
+- ✅ Data Quality Watcher (monitoring and alerts)
+- ✅ Protocol Version Diff & Deviations Audit
+- ✅ Cross-Omics Pathway Analysis (enrichment, network proximity)
+- ✅ MOA Inference from HTS + Multi-Omics (evidence fusion, probability scores)
+
+### Testing & Development
+- ✅ Comprehensive Test Data Seeding Suite (all domains, size presets, deterministic)
 
 ---
 
@@ -81,39 +102,39 @@ Simple status legend:
 - Compound similarity clustering
 - Signature heatmaps with RDKit
 
-#### Phase 8: Publishing + Automation (Next)
+#### Phase 8: Publishing + Automation ✅ DONE
 
-Core Features:
-- Executable Evidence Reports (Papermill → PDF/MD)
-- Parameterized Voila Dashboards
-- Scheduled Notebook Jobs (event + cron triggered)
-- Results Write-Back + Provenance Artifacts
-- Shared Template Library with Parameters
+Core Features (Completed):
+- ✅ Executable Evidence Reports (Papermill → PDF/MD)
+- ✅ Parameterized Voila Dashboards
+- ✅ Scheduled Notebook Jobs (event + cron triggered)
+- ✅ Results Write-Back + Provenance Artifacts
+- ✅ Shared Template Library with Parameters
 
-AI/LLM Integrations:
-- Notebook Co-Pilot (cell synthesizer/fixer)
-- Query→Notebook Generator
-- Auto-Explain + Summarize Notebook
+AI/LLM Integrations (Next):
+- ⏳ Notebook Co-Pilot (cell synthesizer/fixer)
+- ⏳ Query→Notebook Generator
+- ⏳ Auto-Explain + Summarize Notebook
 
-Drug Discovery-Specific:
-- Weekly Compound Triage Digest
-- HTS QC Autopublisher
-- SAR Delta Explorer (Voila)
+Drug Discovery-Specific (Completed):
+- ✅ Weekly Compound Triage Digest
+- ✅ HTS QC Autopublisher
+- ✅ SAR Delta Explorer (Voila)
 
 ##### Phase 8B: Voila foundation ✅ DONE
 
-### Voila Dashboards (Priority Order)
-1. HTS Plate Viewer (2-4 days) - plate heatmaps, Z' factor, QC at a glance
-2. Compound Triage Dashboard (3-5 days) - traffic-light scoring, Pareto trade-offs
-3. SAR Delta Explorer (3-5 days) - matched molecular pairs, R-group grids, py3Dmol
-4. Signature Validation Console (2-4 days) - per-feature contributions, approve/reject workflow
-5. Pathway Impact Explorer (3-5 days) - Cytoscape graph overlays, cross-omics toggles
+### Voila Dashboards
+1. ✅ HTS Plate Viewer - plate heatmaps, Z' factor, QC at a glance
+2. ✅ Compound Triage Dashboard - traffic-light scoring, Pareto trade-offs
+3. ✅ SAR Delta Explorer - matched molecular pairs, R-group grids, py3Dmol
+4. ⏳ Signature Validation Console (2-4 days) - per-feature contributions, approve/reject workflow
+5. ⏳ Pathway Impact Explorer (3-5 days) - Cytoscape graph overlays, cross-omics toggles
 
-### Papermill + Voila Integration
-- Parameterized notebooks with JSON schema
-- Event triggers (new dataset/signature) + cron scheduling
-- Artifact registry (HTML/JSON/PNGs) with provenance
-- Cache by (notebook_path, param_hash, code_hash)
+### Papermill + Voila Integration ✅ DONE
+- ✅ Parameterized notebooks with JSON schema
+- ✅ Event triggers (new dataset/signature) + cron scheduling
+- ✅ Artifact registry (HTML/JSON/PNGs) with provenance
+- ✅ Cache by (notebook_path, param_hash, code_hash)
 
 ### Quick Wins
 - "Open as Dashboard" button (Voila read-only view)
@@ -252,14 +273,14 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - Voila Share Links with Expiring Tokens
 - Scheduled Review Cycles & SLAs
 
-### Approved Features (2025-12-13)
-- ⏳ HTS QC & Triage Assistant (3-5 days)
-- ⏳ Signature Match Explainability (2-4 days)
-- ⏳ MOA Inference from HTS + Multi-Omics (5-8 days)
-- ⏳ Cross-Omics Pathway Analysis (5-8 days)
-- ⏳ One-Click Narrative Reports (2-3 days)
-- ⏳ Data Quality Watcher (2-3 days)
-- ⏳ Protocol Version Diff & Deviations Audit (2-4 days)
+### Approved Features (2025-12-13) - ✅ Completed
+- ✅ HTS QC & Triage Assistant (3-5 days)
+- ✅ Signature Match Explainability (2-4 days)
+- ✅ MOA Inference from HTS + Multi-Omics (5-8 days)
+- ✅ Cross-Omics Pathway Analysis (5-8 days)
+- ✅ One-Click Narrative Reports (2-3 days)
+- ✅ Data Quality Watcher (2-3 days)
+- ✅ Protocol Version Diff & Deviations Audit (2-4 days)
 
 #### Feature Specs (Approved)
 
