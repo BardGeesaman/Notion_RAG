@@ -19,6 +19,10 @@ ADMIN_PAGES = [
     "Data Retention",
     "Ontology Management",
     "Report History",
+    "Cytoscape Demo",
+    "Entity Explorer",
+    "Data Grid",
+    "Genome Browser",
 ]
 
 ALL_PAGES = [
@@ -79,6 +83,11 @@ ALL_PAGES = [
     "Data Retention",
     "Ontology Management",
     "Report History",
+    # Advanced visualization pages (admin tools)
+    "Cytoscape Demo",
+    "Entity Explorer",
+    "Data Grid",
+    "Genome Browser",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -96,6 +105,10 @@ PAGE_REGISTRY = {
     "Variant Tracking": ("scripts.dashboard.pages.variants", "render_variants_page"),
     "Analysis Tools": ("scripts.dashboard.pages.analysis", "render_analysis_page"),
     "Visualizations": ("scripts.dashboard.pages.visualizations", "render_visualizations_page"),
+    "Cytoscape Demo": ("scripts.dashboard.pages.visualizations.cytoscape_network", "render"),
+    "Entity Explorer": ("scripts.dashboard.pages.visualizations.entity_explorer", "render"),
+    "Data Grid": ("scripts.dashboard.pages.visualizations.data_grid", "render"),
+    "Genome Browser": ("scripts.dashboard.pages.visualizations.genome_browser", "render"),
     "Quality Checks": ("scripts.dashboard.pages.quality_checks", "render_quality_checks_page"),
     "Statistical Analysis": ("scripts.dashboard.pages.statistical_analysis", "render_statistical_analysis_page"),
     "Discovery": ("scripts.dashboard.pages.discovery", "render_discovery_page"),
