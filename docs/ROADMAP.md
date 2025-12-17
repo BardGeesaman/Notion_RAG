@@ -310,9 +310,9 @@ Implementation:
 - ❌ CI/CD pipeline (GitHub Actions → deploy)
 
 ### 3) Advanced Visualization Suite
-- ❌ Cytoscape.js networks (relationships/lineage)
-- ❌ IGV.js genome/variant browser
-- ❌ Ag-Grid for large-table browsing/editing
+- ✅ Cytoscape.js networks (relationships/lineage)
+- ✅ IGV.js genome/variant browser
+- ✅ Ag-Grid for large-table browsing/editing
 
 ### 4) Testing Closure (Implemented-but-Untested)
 - ⏳ Playwright E2E: **Concurrent Editing / optimistic locking** flow
@@ -340,6 +340,14 @@ Implementation:
 - Index to Postgres + Pinecone for RAG
 - Estimated effort: 2-3 weeks
 - Reference: .cursor/plans/universal_unstructured_ai_extraction_for_rag_172e0713.plan.md
+
+### Comprehensive Test Data Seeding Suite
+- Idempotent seed scripts for all domains: transcriptomics, proteomics, metabolomics, lipidomics, HTS/SAR, signatures
+- Standard CLI: --size {small,medium,large} --reset --seed <int> --dry-run
+- Orchestrator (seed_all.py) for full environment setup
+- Deterministic, realistic distributions per domain
+- Estimated effort: 1-2 weeks
+- Reference: .cursor/plans/comprehensive_test_data_seeding_suite_87ab8efa.plan.md
 
 ---
 
