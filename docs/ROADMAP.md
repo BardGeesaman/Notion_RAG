@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-18 (December 18, 2025)
+**Last Updated**: 2025-12-19 (December 19, 2025)
 
 Simple status legend:
 - ✅ DONE
@@ -326,9 +326,9 @@ Implementation:
 - "Publish to Program" button
 
 ### 2) AWS Deployment / Infrastructure Hardening
-- ❌ IaC (Terraform/Pulumi)
-- ❌ ECS/RDS/ElastiCache deployment architecture
-- ❌ CI/CD pipeline (GitHub Actions → deploy)
+- ✅ IaC (Terraform) — Lightsail + RDS configuration
+- ✅ CI/CD pipeline (GitHub Actions → deploy)
+- ❌ ECS/RDS/ElastiCache deployment architecture (containerized alternative)
 
 ### 3) Advanced Visualization Suite
 - ✅ Cytoscape.js networks (relationships/lineage)
