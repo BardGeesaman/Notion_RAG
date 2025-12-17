@@ -1,5 +1,43 @@
 # Session Memory - December 2025
 
+## 2025-12-17
+
+### Accomplishments
+- Signature Validation Console (Voila dashboard) complete
+- Database schema: Added validation_status column to signatures table (enum: draft, validated, rejected)
+- Alembic migration: Created migration for validation_status column
+- API endpoint: PATCH /signatures/{id}/status with audit trail (records who validated/rejected when)
+- Voila notebook features:
+  - Lollipop chart showing per-feature contributions (positive/negative)
+  - Direction concordance bar chart
+  - Approve/reject workflow with validation notes
+  - Integration with signature scoring API
+
+### Status: Signature Validation Console Complete
+
+**Dashboard features:**
+- Interactive signature validation workflow
+- Visual explainability (feature contributions, direction concordance)
+- Approval workflow with audit trail
+- Real-time scoring against test datasets
+
+### Next Session Priorities (from ROADMAP.md)
+
+1. **Pathway Impact Explorer** — Last remaining Voila dashboard
+2. **Multi-tenancy Architecture** — Company model, data segregation design
+3. **Advanced Jupyter Features** — Notebook Co-Pilot, Query→Notebook Generator
+
+### Key Files Added/Updated This Session
+
+- deploy/jupyterhub/templates/signature_validation.ipynb
+- alembic/versions/[timestamp]_add_validation_status.py
+- amprenta_rag/models/database.py (validation_status column)
+- amprenta_rag/api/routers/signatures.py (PATCH /signatures/{id}/status)
+- docs/ROADMAP.md (marked Signature Validation Console complete)
+- docs/USER_GUIDE.md (comprehensive user documentation created)
+
+---
+
 ## 2025-12-19
 
 ### Accomplishments

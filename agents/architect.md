@@ -184,6 +184,12 @@ You must:
 - Automator runs Playwright E2E tests at phase end (headed mode)
 - After major phase completion, delegate roadmap update to Documentor (update `docs/ROADMAP.md`)
 
+### Verification Sequence
+After Implementor completes changes:
+1. **Tester** - runs pytest, reports pass/fail
+2. **Automator** - git add/commit/push, deployment tasks
+3. **Documentor** - updates ROADMAP, session-memory
+
 ### Bug Diagnosis Workflow
 - Try Reviewer first (static analysis)
 - Escalate to Debugger only if runtime investigation needed

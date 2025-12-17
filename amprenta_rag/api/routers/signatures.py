@@ -9,7 +9,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_database_session
-from amprenta_rag.api.schemas import AnnotationCreate, Signature, SignatureCreate, SignatureUpdate
+from amprenta_rag.api.schemas import (
+    AnnotationCreate,
+    Signature,
+    SignatureCreate,
+    SignatureStatusUpdate,
+    SignatureUpdate,
+)
 from amprenta_rag.api.services import signatures as signature_service
 from amprenta_rag.database.models import Note
 
@@ -108,4 +114,32 @@ async def delete_signature(
     success = signature_service.delete_signature(db, signature_id)
     if not success:
         raise HTTPException(status_code=404, detail="Signature not found")
+
+
+@router.patch("/{signature_id}/status", response_model=Signature)
+async def update_signature_status(
+    signature_id: UUID,
+    status_update: SignatureStatusUpdate,
+    db: Session = Depends(get_database_session),
+):
+    """Update signature validation status and record an audit note."""
+    signature = signature_service.get_signature(db, signature_id)
+    if not signature:
+        raise HTTPException(status_code=404, detail="Signature not found")
+
+    signature.validation_status = status_update.status
+
+    note_content = status_update.reviewer_notes or f"Status changed to {status_update.status}"
+    note = Note(
+        entity_type="signature",
+        entity_id=signature_id,
+        annotation_type="validation",
+        content=note_content,
+    )
+    db.add(note)
+    db.add(signature)
+    db.commit()
+    db.refresh(signature)
+
+    return signature
 

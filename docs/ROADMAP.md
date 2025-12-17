@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-19 (December 19, 2025)
+**Last Updated**: 2025-12-17 (December 17, 2025)
 
 Simple status legend:
 - ✅ DONE
@@ -127,7 +127,7 @@ Drug Discovery-Specific (Completed):
 1. ✅ HTS Plate Viewer - plate heatmaps, Z' factor, QC at a glance
 2. ✅ Compound Triage Dashboard - traffic-light scoring, Pareto trade-offs
 3. ✅ SAR Delta Explorer - matched molecular pairs, R-group grids, py3Dmol
-4. ⏳ Signature Validation Console (2-4 days) - per-feature contributions, approve/reject workflow
+4. ✅ Signature Validation Console - per-feature contributions, approve/reject workflow
 5. ⏳ Pathway Impact Explorer (3-5 days) - Cytoscape graph overlays, cross-omics toggles
 
 ### Papermill + Voila Integration ✅ DONE

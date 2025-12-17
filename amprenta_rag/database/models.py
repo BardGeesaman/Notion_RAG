@@ -351,6 +351,9 @@ class Signature(Base):
     phenotype_axes = Column(ARRAY(String), nullable=True)  # Phenotype axes
     data_ownership = Column(String(100), nullable=True)  # Data ownership classification
 
+    # Validation workflow
+    validation_status = Column(String(20), nullable=True, index=True)  # pending, approved, rejected
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

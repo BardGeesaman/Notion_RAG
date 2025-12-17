@@ -334,6 +334,13 @@ class SignatureUpdate(BaseSchema):
     program_ids: Optional[List[UUID]] = None
 
 
+class SignatureStatusUpdate(BaseSchema):
+    """Schema for updating signature validation status."""
+
+    status: Literal["pending", "approved", "rejected"]
+    reviewer_notes: Optional[str] = None
+
+
 class Signature(SignatureBase):
     """Signature response schema."""
     id: UUID
@@ -344,6 +351,7 @@ class Signature(SignatureBase):
     created_at: datetime
     updated_at: datetime
     notion_page_id: Optional[str] = None
+    validation_status: Optional[str] = None
 
 
 # ============================================================================
