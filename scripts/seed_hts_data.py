@@ -1,170 +1,243 @@
-#!/usr/bin/env python3
-"""
-Seed HTS test data for development/testing.
+"""Seed synthetic HTS data (campaigns, plates, dose-response, hits)."""
 
-Creates:
-- 1 HTSCampaign (TEST-HTS-001)
-- 96 HTSResult records (A01-H12)
-- Test compounds if they don't exist
+from __future__ import annotations
 
-Idempotent: skips if campaign already exists.
-"""
-
+import argparse
+import math
 import random
-from datetime import datetime, timezone
-from uuid import uuid4
+from datetime import datetime, timedelta
+from typing import Dict, List, Tuple
+
+import numpy as np
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.models.chemistry import HTSCampaign, HTSResult, Compound
-from amprenta_rag.chemistry.normalization import normalize_smiles, compute_molecular_descriptors
 
 
-def generate_well_positions():
-    """Generate all 96 well positions (A01-H12)."""
-    wells = []
-    for row in range(8):  # A-H
-        row_letter = chr(ord('A') + row)
-        for col in range(1, 13):  # 1-12
-            wells.append(f"{row_letter}{col:02d}")
-    return wells
+SIZE_PRESETS: Dict[str, Tuple[int, int]] = {
+    "small": (1, 2),    # campaigns, plates
+    "medium": (3, 10),
+    "large": (10, 50),
+}
+
+WELLS_96 = [f"{chr(ord('A') + r)}{c:02d}" for r in range(8) for c in range(1, 13)]
 
 
-def get_or_create_compound(db, compound_id: str, smiles: str) -> Compound:
-    """Get existing compound or create new one."""
-    # Check by compound_id first
-    existing = db.query(Compound).filter(Compound.compound_id == compound_id).first()
-    if existing:
-        return existing
-    
-    # Normalize SMILES and compute descriptors
-    canonical, inchi_key, formula = normalize_smiles(smiles)
-    
-    # Check by inchi_key (structure-based lookup)
-    if inchi_key:
-        existing_by_structure = db.query(Compound).filter(Compound.inchi_key == inchi_key).first()
-        if existing_by_structure:
-            return existing_by_structure
-    
-    # Only create if not found by either compound_id or inchi_key
-    descriptors = compute_molecular_descriptors(canonical or smiles)
-    
-    compound = Compound(
-        id=uuid4(),
-        compound_id=compound_id,
-        smiles=canonical or smiles,
-        inchi_key=inchi_key,
-        canonical_smiles=canonical,
-        molecular_formula=formula,
-        molecular_weight=descriptors.get("molecular_weight"),
-        logp=descriptors.get("logp"),
-        hbd_count=descriptors.get("hbd_count"),
-        hba_count=descriptors.get("hba_count"),
-        rotatable_bonds=descriptors.get("rotatable_bonds"),
-        aromatic_rings=descriptors.get("aromatic_rings"),
-    )
-    db.add(compound)
-    return compound
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Seed HTS demo data.")
+    parser.add_argument("--size", choices=SIZE_PRESETS.keys(), default="small")
+    parser.add_argument("--reset", action="store_true", help="Delete existing demo HTS data first.")
+    parser.add_argument("--seed", type=int, default=2025)
+    parser.add_argument("--dry-run", action="store_true", help="Simulate without committing changes.")
+    return parser.parse_args()
 
 
-def seed_hts_data():
-    """Seed HTS test data."""
-    try:
-        with db_session() as db:
-            # Check if campaign already exists (idempotent)
-            existing_campaign = db.query(HTSCampaign).filter(
-                HTSCampaign.campaign_id == "TEST-HTS-001"
-            ).first()
-            
-            if existing_campaign:
-                print("Campaign TEST-HTS-001 already exists. Skipping seed.")
-                return
-            
-            print("Creating HTS campaign TEST-HTS-001...")
-            
-            # Create campaign
-            campaign = HTSCampaign(
-                id=uuid4(),
-                campaign_id="TEST-HTS-001",
-                campaign_name="Test Kinase Inhibitor Screen",
-                assay_type="Biochemical",
-                target="CDK2",
-                total_wells=96,
-                hit_count=0,  # Will be updated after results
-                run_date=datetime.now(timezone.utc),
-            )
-            db.add(campaign)
-            db.flush()  # Get campaign.id
-            
-            # Generate well positions
-            well_positions = generate_well_positions()
-            
-            # Create results with random values
-            results = []
-            normalized_values = []
-            
-            for i, well_pos in enumerate(well_positions):
-                # Generate random normalized value (0-100, higher for potential hits)
-                normalized_value = random.uniform(0, 100)
-                normalized_values.append((i, normalized_value))
-                
-                # Correlated raw value (slightly different)
-                raw_value = normalized_value * random.uniform(0.9, 1.1)
-                
-                # Random z-score (-2 to +3)
-                z_score = random.uniform(-2, 3)
-                
-                # Create compound ID for this well
-                compound_id = f"TEST-CMP-{i+1:03d}"
-                smiles = "C" * (i % 10 + 4)  # Simple SMILES: CCCC, CCCCC, etc.
-                
-                # Get or create compound
-                compound = get_or_create_compound(db, compound_id, smiles)
-                db.flush()  # Ensure compound is persisted
-                
-                result = HTSResult(
-                    id=uuid4(),
-                    result_id=f"TEST-HTS-001-{well_pos}",
-                    campaign_id=campaign.id,
-                    compound_id=compound.id,
-                    well_position=well_pos,
-                    raw_value=round(raw_value, 2),
-                    normalized_value=round(normalized_value, 2),
-                    z_score=round(z_score, 2),
-                    hit_flag=False,  # Will set top ~10 as hits
-                    hit_category=None,
+def _reset_demo() -> Tuple[int, int, int]:
+    with db_session() as db:
+        res_deleted = db.query(HTSResult).filter(HTSResult.result_id.like("DEMO_HTSRES_%")).delete(synchronize_session=False)
+        camp_deleted = db.query(HTSCampaign).filter(HTSCampaign.campaign_id.like("DEMO_HTS_%")).delete(synchronize_session=False)
+        cmp_deleted = db.query(Compound).filter(Compound.compound_id.like("DEMO_HTS_CMP_%")).delete(synchronize_session=False)
+        db.commit()
+    return camp_deleted, res_deleted, cmp_deleted
+
+
+def _ensure_compounds(db, count: int, rng: random.Random) -> List[Compound]:
+    needed = count
+    created: List[Compound] = []
+    existing = db.query(Compound).filter(Compound.compound_id.like("DEMO_HTS_CMP_%")).all()
+    created.extend(existing)
+    next_idx = len(existing) + 1
+    while len(created) < needed:
+        cid = f"DEMO_HTS_CMP_{next_idx:04d}"
+        # Compound.smiles is non-nullable; use a tiny valid placeholder SMILES.
+        c = Compound(compound_id=cid, smiles="C")
+        db.add(c)
+        created.append(c)
+        next_idx += 1
+    # Ensure PK defaults are populated (uuid) for any newly-added rows.
+    db.flush()
+    rng.shuffle(created)
+    return created[:needed]
+
+
+def _simulate_plate(compounds: List[Compound], plate_idx: int, rng: random.Random) -> List[Dict]:
+    # Controls
+    pos_wells = set(WELLS_96[:8])   # first 8 wells as positive
+    neg_wells = set(WELLS_96[8:16]) # next 8 as negative
+
+    results = []
+
+    # precompute potencies for compounds (IC50 in uM)
+    ic50_map = {c.compound_id: 10 ** rng.uniform(-2, 1) for c in compounds}  # between 0.01 and 10 uM
+
+    # assign compounds to remaining wells
+    sample_wells = [w for w in WELLS_96 if w not in pos_wells and w not in neg_wells]
+    rng.shuffle(sample_wells)
+    assignments = []
+    for i, well in enumerate(sample_wells):
+        compound = compounds[i % len(compounds)]
+        # concentration range 0.01 - 30 uM
+        conc = 10 ** rng.uniform(-2, 1.5)
+        ic50 = ic50_map[compound.compound_id]
+        hill = 1.0
+        bottom = 0.05
+        top = 1.0
+        resp = bottom + (top - bottom) / (1 + (conc / ic50) ** hill)
+        resp += rng.gauss(0, 0.05)
+        resp = max(0.0, min(1.2, resp))
+        assignments.append((well, compound, resp, conc, ic50))
+
+    # compute plate stats for z-score
+    raw_values = []
+    for well in WELLS_96:
+        if well in pos_wells:
+            raw_values.append(0.05 + rng.gauss(0, 0.01))
+        elif well in neg_wells:
+            raw_values.append(1.0 + rng.gauss(0, 0.02))
+        else:
+            # placeholder; fill later
+            raw_values.append(None)
+    # replace placeholders with sample responses
+    for idx, well in enumerate(WELLS_96):
+        if raw_values[idx] is None:
+            for a in assignments:
+                if a[0] == well:
+                    raw_values[idx] = a[2]
+                    break
+
+    mean = float(np.mean(raw_values))
+    std = float(np.std(raw_values)) or 1.0
+
+    # build results
+    for well in WELLS_96:
+        if well in pos_wells:
+            raw = 0.05 + rng.gauss(0, 0.01)
+            norm = raw
+            z = (raw - mean) / std
+            hit = True
+            hit_cat = "control_positive"
+            compound = None
+        elif well in neg_wells:
+            raw = 1.0 + rng.gauss(0, 0.02)
+            norm = raw
+            z = (raw - mean) / std
+            hit = False
+            hit_cat = "control_negative"
+            compound = None
+        else:
+            assignment = next(a for a in assignments if a[0] == well)
+            _, compound, raw, conc, ic50 = assignment
+            norm = raw
+            z = (raw - mean) / std
+            hit = norm <= 0.3
+            hit_cat = "hit" if hit else "non-hit"
+        result = {
+            "well": well,
+            "raw": raw,
+            "norm": norm,
+            "z": z,
+            "hit": hit,
+            "hit_cat": hit_cat,
+            "compound": compound,
+        }
+        results.append(result)
+    return results
+
+
+def _seed_hts(size: str, seed_value: int, dry_run: bool) -> Tuple[int, int]:
+    campaigns_count, plates_total = SIZE_PRESETS[size]
+    rng = random.Random(seed_value)
+
+    campaigns_created = results_created = 0
+
+    with db_session() as db:
+        # create campaigns
+        campaigns: List[HTSCampaign] = []
+        for idx in range(1, campaigns_count + 1):
+            cid = f"DEMO_HTS_{idx:03d}"
+            camp = db.query(HTSCampaign).filter(HTSCampaign.campaign_id == cid).first()
+            if not camp:
+                camp = HTSCampaign(
+                    campaign_id=cid,
+                    campaign_name=f"Demo HTS Campaign {idx}",
+                    description="Synthetic HTS campaign",
+                    assay_type="biochemical",
+                    target="DEMO",
+                    total_wells=96,
+                    run_date=datetime.utcnow() - timedelta(days=idx),
                 )
-                results.append(result)
-                db.add(result)
-            
-            db.flush()
-            
-            # Mark top ~10 wells as hits (highest normalized_value)
-            normalized_values.sort(key=lambda x: x[1], reverse=True)
-            hit_count = min(10, len(normalized_values))
-            
-            hit_indices = {normalized_values[i][0] for i in range(hit_count)}
-            
-            for i, result in enumerate(results):
-                if i in hit_indices:
-                    result.hit_flag = True
-                    result.hit_category = "Primary Hit"
-            
-            # Update campaign hit_count
-            campaign.hit_count = hit_count
-            
+                db.add(camp)
+                campaigns_created += 1
+            campaigns.append(camp)
+
+        # compounds pool
+        compounds = _ensure_compounds(db, 200, rng)
+
+        if not dry_run:
             db.commit()
-            
-            print(f"✓ Created campaign: {campaign.campaign_id}")
-            print(f"✓ Created {len(results)} HTS results")
-            print(f"✓ Marked {hit_count} wells as hits")
-            print(f"✓ Created/verified {len(set(r.compound_id for r in results))} compounds")
-    except Exception as e:
-        print(f"Error seeding HTS data: {e}")
-        import traceback
-        traceback.print_exc()
-        raise
+            for c in campaigns:
+                db.refresh(c)
+        else:
+            db.rollback()
+
+    # assign plates across campaigns
+    plates_per_camp = max(1, plates_total // campaigns_count)
+    plate_counter = 1
+
+    with db_session() as db:
+        for camp in campaigns:
+            for _ in range(plates_per_camp):
+                if plate_counter > plates_total:
+                    break
+                # simulate plate
+                plate_compounds = rng.sample(compounds, k=min(len(compounds), 60))
+                plate_results = _simulate_plate(plate_compounds, plate_counter, rng)
+                # create HTSResults
+                for res_idx, res in enumerate(plate_results, start=1):
+                    rid = f"DEMO_HTSRES_{plate_counter:03d}_{res_idx:03d}"
+                    existing = db.query(HTSResult).filter(HTSResult.result_id == rid).first()
+                    if existing:
+                        continue
+                    htsr = HTSResult(
+                        result_id=rid,
+                        campaign_id=camp.id,
+                        compound_id=res["compound"].id if res["compound"] else compounds[0].id,
+                        well_position=res["well"],
+                        raw_value=res["raw"],
+                        normalized_value=res["norm"],
+                        z_score=res["z"],
+                        hit_flag=res["hit"],
+                        hit_category=res["hit_cat"],
+                    )
+                    db.add(htsr)
+                    results_created += 1
+
+                plate_counter += 1
+
+            # update hit_count
+            camp_results = db.query(HTSResult).filter(HTSResult.campaign_id == camp.id).all()
+            camp.hit_count = sum(1 for r in camp_results if r.hit_flag)
+
+        if not dry_run:
+            db.commit()
+        else:
+            db.rollback()
+
+    return campaigns_created, results_created
+
+
+def main() -> None:
+    args = _parse_args()
+    if args.reset:
+        camps, res, cmp = _reset_demo()
+        print(f"Reset: campaigns={camps}, results={res}, compounds={cmp}")
+
+    camps_created, res_created = _seed_hts(args.size, args.seed, args.dry_run)
+    print(f"Seed complete (size={args.size}, dry_run={args.dry_run})")
+    print(f"Campaigns created: {camps_created}")
+    print(f"Results created: {res_created}")
 
 
 if __name__ == "__main__":
-    seed_hts_data()
+    main()
 

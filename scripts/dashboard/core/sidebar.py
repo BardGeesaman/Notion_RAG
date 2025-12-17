@@ -252,6 +252,27 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
         if "selected_page" not in st.session_state:
             st.session_state["selected_page"] = "Overview"
 
+        # Allow deep-linking via URL query param, e.g. /?page=Cytoscape%20Demo
+        # This is especially useful for smoke tests and bookmarking.
+        page_param: str | None = None
+        try:
+            # Streamlit >= 1.30
+            raw = st.query_params.get("page")
+            page_param = raw[0] if isinstance(raw, list) else raw
+        except Exception:
+            try:
+                # Older Streamlit
+                raw = st.experimental_get_query_params().get("page")
+                page_param = raw[0] if isinstance(raw, list) and raw else None
+            except Exception:
+                page_param = None
+
+        if page_param and page_param in set(visible_pages):
+            if st.session_state.get("selected_page") != page_param:
+                st.session_state["selected_page"] = page_param
+                update_recent_pages(page_param)
+                st.rerun()
+
         inject_shortcuts_js()
         shortcut_actions = [
             "navigate_home",

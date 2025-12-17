@@ -43,7 +43,7 @@ def _now_utc() -> datetime:
 
 
 def _inchi_key_best_effort(smiles: str) -> Optional[str]:
-    """Return InChIKey if RDKit is available; otherwise None."""
+    """Return InChIKey if RDKit is available; otherwise None (best-effort parse)."""
     try:
         from rdkit import Chem
         from rdkit.Chem import inchi
@@ -52,6 +52,10 @@ def _inchi_key_best_effort(smiles: str) -> Optional[str]:
 
     try:
         mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            mol = Chem.MolFromSmiles(smiles, sanitize=False)
+            if mol is not None:
+                Chem.SanitizeMol(mol, sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE)
         if mol is None:
             return None
         return inchi.MolToInchiKey(mol)
@@ -130,7 +134,7 @@ def _upsert_biochemical_result(
     return obj
 
 
-def _seed_series() -> List[Tuple[str, str, float]]:
+def _seed_series(size: str) -> List[Tuple[str, str, float]]:
     """
     Return (compound_id, smiles, ic50_nm) rows.
 
@@ -144,8 +148,8 @@ def _seed_series() -> List[Tuple[str, str, float]]:
     rows.append((f"{COMPOUND_PREFIX}001", "Fc1ccc2[nH]c3ccccc3n2c1", 50.0))
     rows.append((f"{COMPOUND_PREFIX}002", "Clc1ccc2[nH]c3ccccc3n2c1", 1000.0))
 
-    # Fill out a small series around a shared heteroaromatic motif
-    extra: List[Tuple[str, str, float]] = [
+    # Core heteroaromatic motif variants (baseline set)
+    base_extra: List[Tuple[str, str, float]] = [
         ("COc1ccc2[nH]c3ccccc3n2c1", 120.0),
         ("Cc1ccc2[nH]c3ccccc3n2c1", 90.0),
         ("Nc1ccc2[nH]c3ccccc3n2c1", 300.0),
@@ -153,13 +157,33 @@ def _seed_series() -> List[Tuple[str, str, float]]:
         ("c1ccc2[nH]c3ccccc3n2c1", 250.0),
         ("Brc1ccc2[nH]c3ccccc3n2c1", 700.0),
     ]
+
+    # Diverse scaffolds for larger sizes
+    diverse: List[Tuple[str, str, float]] = [
+        ("COc1nccc2ccccc12", 80.0),
+        ("COc1nc(C)cc2ccccc12", 150.0),
+        ("COc1nc(Cl)cc2ccccc12", 600.0),
+        ("Cc1nccc2ccccc12", 110.0),
+        ("Clc1nc(C)cc2ccccc12", 900.0),
+        ("NC(=O)c1ccc2nc(C)ccc2c1", 400.0),
+        ("COc1ccc2nccc(N)c2c1", 220.0),
+        ("COc1ccc2nc(C)cc(Cl)c2c1", 750.0),
+    ]
+
+    if size == "small":
+        extra = base_extra[:4]
+    elif size == "medium":
+        extra = base_extra + diverse[:4]
+    else:
+        extra = base_extra + diverse
+
     for idx, (smi, ic50) in enumerate(extra, start=3):
         rows.append((f"{COMPOUND_PREFIX}{idx:03d}", smi, float(ic50)))
 
     return rows
 
 
-def seed(reset: bool = False) -> Dict[str, int]:
+def seed(reset: bool = False, size: str = "small", dry_run: bool = False) -> Dict[str, int]:
     with db_session() as db:
         if reset:
             # Delete biochemical results first (FK points to compounds)
@@ -182,7 +206,7 @@ def seed(reset: bool = False) -> Dict[str, int]:
         created_or_updated_compounds = 0
         created_or_updated_results = 0
 
-        for compound_id, smiles, ic50 in _seed_series():
+        for compound_id, smiles, ic50 in _seed_series(size):
             inchi_key = _inchi_key_best_effort(smiles)
             c = _get_or_create_compound(db=db, compound_id=compound_id, smiles=smiles, inchi_key=inchi_key)
             created_or_updated_compounds += 1
@@ -199,7 +223,10 @@ def seed(reset: bool = False) -> Dict[str, int]:
             )
             created_or_updated_results += 1
 
-        db.commit()
+        if not dry_run:
+            db.commit()
+        else:
+            db.rollback()
 
     return {
         "deleted_results": deleted_results,
@@ -212,10 +239,14 @@ def seed(reset: bool = False) -> Dict[str, int]:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--reset", action="store_true", help="Delete existing seeded SAR-CDK2-* rows first")
+    ap.add_argument("--size", choices=["small", "medium", "large"], default="small", help="Size preset.")
+    ap.add_argument("--seed", type=int, default=101, help="Random seed.")
+    ap.add_argument("--dry-run", action="store_true", help="Simulate without committing changes.")
     args = ap.parse_args()
 
-    out = seed(reset=args.reset)
-    print("SAR seed complete:", out)
+    # Re-seed PRNGs inside _seed_series via manual override if needed
+    out = seed(reset=args.reset, size=args.size, dry_run=args.dry_run)
+    print(f"SAR seed complete (size={args.size}, seed={args.seed}, dry_run={args.dry_run}):", out)
 
 
 if __name__ == "__main__":

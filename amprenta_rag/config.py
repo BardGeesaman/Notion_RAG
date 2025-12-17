@@ -57,8 +57,9 @@ def _parse_cors_origins() -> List[str]:
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")  # Full connection string (optional)
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-POSTGRES_DB = os.getenv("POSTGRES_DB", "amprenta_rag")
-POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+# Standard workstation defaults (override via .env as needed)
+POSTGRES_DB = os.getenv("POSTGRES_DB", "amprenta")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "bard")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
 POSTGRES_ECHO = os.getenv("POSTGRES_ECHO", "false").lower() == "true"
 

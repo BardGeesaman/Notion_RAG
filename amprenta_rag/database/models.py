@@ -264,6 +264,7 @@ class Dataset(Base):
     conclusions = Column(Text, nullable=True)  # Conclusions
     dataset_source_type = Column(String(100), nullable=True)  # e.g., "Processed table"
     data_origin = Column(String(100), nullable=True)  # e.g., "External – Open Dataset"
+    mwtab_json = Column(JSON, nullable=True)
 
     # Sample-level design metadata
     sample_group = Column(String(100), nullable=True)  # control, case, treated, untreated, placebo
