@@ -333,6 +333,14 @@ Implementation:
 - ❌ ML/AI model registry + predictive ADMET
 - ❌ OOP Refactoring Review
 
+### Universal Unstructured AI Extraction (AI ETL)
+- Ingest web pages, PDFs, DOCX, PPTX, CSV, images (OCR)
+- Parse, chunk, extract entities via LLM (JSON schema)
+- Normalize to PubChem/HGNC/UniProt/MeSH
+- Index to Postgres + Pinecone for RAG
+- Estimated effort: 2-3 weeks
+- Reference: .cursor/plans/universal_unstructured_ai_extraction_for_rag_172e0713.plan.md
+
 ---
 
 ## Notes
