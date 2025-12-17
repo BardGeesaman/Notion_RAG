@@ -18,6 +18,7 @@ ADMIN_PAGES = [
     "Feature Permissions",
     "Data Retention",
     "Ontology Management",
+    "Report History",
 ]
 
 ALL_PAGES = [
@@ -77,6 +78,7 @@ ALL_PAGES = [
     "Cost Tracking",
     "Data Retention",
     "Ontology Management",
+    "Report History",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -137,5 +139,6 @@ PAGE_REGISTRY = {
     "Cost Tracking": ("scripts.dashboard.pages.cost_tracking", "render_cost_tracking_page"),
     "Data Retention": ("scripts.dashboard.pages.retention", "render_retention_page"),
     "Ontology Management": ("scripts.dashboard.pages.ontology", "render_ontology_page"),
+    "Report History": ("scripts.dashboard.pages.report_history", "render_report_history_page"),
 }
 

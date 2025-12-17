@@ -368,6 +368,43 @@ class Signature(Base):
     programs = relationship("Program", secondary=program_signature_assoc, back_populates="signatures")
 
 
+class ReportArtifact(Base):
+    """Generated report artifact metadata."""
+
+    __tablename__ = "report_artifacts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    entity_type = Column(String(50), nullable=False, index=True)  # program/dataset/signature/feature
+    entity_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    format = Column(String(10), nullable=False)  # html/pdf
+    file_path = Column(String, nullable=False)
+    params_hash = Column(String(128), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Audit
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class ReportSchedule(Base):
+    """Scheduled generation of report artifacts."""
+
+    __tablename__ = "report_schedules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    entity_type = Column(String(50), nullable=False, index=True)  # program/dataset/signature
+    entity_id = Column(UUID(as_uuid=True), nullable=True, index=True)  # allow null for "all of type"
+    format = Column(String(10), nullable=False)  # html/pdf
+    cron_expression = Column(String(100), nullable=False)
+    enabled = Column(Boolean, default=True, nullable=False)
+    last_run_at = Column(DateTime, nullable=True)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+
 # Add relationships to Program model after all models are defined
 # This avoids forward reference issues
 Program.compounds = relationship("Compound", secondary=compound_program, back_populates="programs", viewonly=False)
