@@ -81,9 +81,9 @@ Simple status legend:
 - RDKit + data science stack
 - Local development working
 
-#### Phase 4: SSO Integration (In Progress)
-- JWT-based authentication from Streamlit
-- TokenAuthenticator with /hub/token-login endpoint
+#### Phase 4: SSO Integration ✓
+- ✓ JWT-based authentication from Streamlit
+- ✓ TokenAuthenticator with /hub/token-login endpoint
 
 #### Phase 5: Templates + Launch ✓
 - "Open in Jupyter" button in dashboard
