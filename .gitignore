@@ -76,3 +76,4 @@ quants/
 # Documentation archive - NOW TRACKED (see note above)
 # md_archive/  # REMOVED - now tracked
 
+deploy/aws/terraform/.terraform/

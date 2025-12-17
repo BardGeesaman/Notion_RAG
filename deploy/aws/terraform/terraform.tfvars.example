@@ -1,0 +1,13 @@
+# Example Terraform variables (do not use real secrets here)
+aws_region          = "us-east-1"
+project_name        = "amprenta"
+db_name             = "amprenta"
+db_username         = "amprenta_user"
+db_password         = "example-password"
+db_instance_class   = "db.t3.micro"
+db_allowed_cidrs    = ["10.0.0.0/16"]
+lightsail_blueprint_id = "ubuntu_22_04"
+lightsail_bundle_id    = "nano_2_0"
+allowed_ssh_cidrs      = ["0.0.0.0/0"]
+environment            = "dev"
+
