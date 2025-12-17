@@ -4,14 +4,20 @@
 
 ### Accomplishments
 - Signature Validation Console (Voila dashboard) complete
+- Pathway Impact Explorer (Voila dashboard) complete
+- ipycytoscape dependency added to requirements
 - Database schema: Added validation_status column to signatures table (enum: draft, validated, rejected)
 - Alembic migration: Created migration for validation_status column
 - API endpoint: PATCH /signatures/{id}/status with audit trail (records who validated/rejected when)
-- Voila notebook features:
+- Voila notebook features (Signature Validation):
   - Lollipop chart showing per-feature contributions (positive/negative)
   - Direction concordance bar chart
   - Approve/reject workflow with validation notes
   - Integration with signature scoring API
+- Voila notebook features (Pathway Impact Explorer):
+  - Cytoscape network visualization with pathway-pathway edges (shared features)
+  - Cross-omics toggles for multi-layer pathway analysis
+- CD workflow created (pending secrets configuration: LIGHTSAIL_HOST, LIGHTSAIL_SSH_KEY)
 
 ### Status: Signature Validation Console Complete
 

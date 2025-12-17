@@ -128,7 +128,7 @@ Drug Discovery-Specific (Completed):
 2. ✅ Compound Triage Dashboard - traffic-light scoring, Pareto trade-offs
 3. ✅ SAR Delta Explorer - matched molecular pairs, R-group grids, py3Dmol
 4. ✅ Signature Validation Console - per-feature contributions, approve/reject workflow
-5. ⏳ Pathway Impact Explorer (3-5 days) - Cytoscape graph overlays, cross-omics toggles
+5. ✅ Pathway Impact Explorer - Cytoscape graph overlays, cross-omics toggles
 
 ### Papermill + Voila Integration ✅ DONE
 - ✅ Parameterized notebooks with JSON schema
@@ -328,6 +328,7 @@ Implementation:
 ### 2) AWS Deployment / Infrastructure Hardening
 - ✅ IaC (Terraform) — Lightsail + RDS configuration
 - ✅ CI/CD pipeline (GitHub Actions → deploy)
+  - **Note**: CD workflow requires GitHub secrets (LIGHTSAIL_HOST, LIGHTSAIL_SSH_KEY) - pending infrastructure setup
 - ❌ ECS/RDS/ElastiCache deployment architecture (containerized alternative)
 
 ### 3) Advanced Visualization Suite
