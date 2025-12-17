@@ -1,6 +1,46 @@
 # Session Memory - December 2025
 
-## Last Session: December 15, 2025
+## 2025-12-19
+
+### Accomplishments
+- mwTab API Optimization (Phases 2-4): local caching, Postgres mwtab_json column, parallel fetching with rate limiting
+- Terraform IaC: deploy/aws/terraform/ (Lightsail + RDS, validated and pushed)
+- GitHub Actions CI/CD: .github/workflows/ci.yml (lint/test/tf-validate on PR), cd.yml (deploy on push)
+- ROADMAP updates: Marked Phase 4 SSO, AWS IaC, CI/CD as complete
+- Architect guidelines: Added session wrap-up checklist
+
+### Commits
+- 90ae2b9: mwTab caching/storage/parallel
+- 0b256a7: ROADMAP feature updates
+- 7b970c6: Phase 4 SSO complete
+- cb625ea: Terraform IaC
+- f96e5e6: GitHub Actions CI/CD
+- 928033c: ROADMAP AWS updates
+
+### Status: AWS Infrastructure & Deployment Complete
+
+**Infrastructure deployed:**
+- Terraform configuration for Lightsail compute + RDS PostgreSQL
+- GitHub Actions workflows for automated CI/CD
+- mwTab optimization complete (3 phases: caching, storage, parallelization)
+
+### Next Session Priorities (from ROADMAP.md)
+
+1. **Remaining Voila Dashboards** — Signature Validation Console, Pathway Impact Explorer
+2. **Multi-tenancy Architecture** — Company model, data segregation design
+3. **Advanced Jupyter Features** — Notebook Co-Pilot, Query→Notebook Generator
+
+### Key Files Added/Updated This Session
+
+- deploy/aws/terraform/ (main.tf, variables.tf, outputs.tf, rds.tf, lightsail.tf, README.md)
+- .github/workflows/ci.yml, cd.yml
+- docs/ROADMAP.md (multiple updates)
+- docs/TEST_DATA_SEEDING.md
+- agents/session-memory.md
+
+---
+
+## Previous Session: December 15, 2025
 
 ### Completed This Session (8 commits, 78 tests)
 

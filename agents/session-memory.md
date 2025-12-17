@@ -103,6 +103,15 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-19] – **AWS Infrastructure & Deployment Complete**:
+  - **mwTab API Optimization** (Phases 2-4): Caching layer with Redis-style in-memory storage, Postgres-backed persistent storage for study metadata and feature data, parallel fetching with asyncio for batch operations
+  - **Terraform IaC**: Complete infrastructure-as-code in `deploy/aws/terraform/` with Lightsail compute instances and RDS PostgreSQL database, variable configuration with security best practices
+  - **GitHub Actions CI/CD**: Automated workflows in `.github/workflows/ci.yml` (linting, testing) and `cd.yml` (deployment pipeline)
+  - **ROADMAP Documentation**: Updated `docs/ROADMAP.md` to mark completed features (JupyterHub Phase 4 SSO, Advanced Visualization Suite, AWS Infrastructure, Approved Analytics Features)
+  - **Test Data Seeding Suite**: Comprehensive documentation in `docs/TEST_DATA_SEEDING.md` covering all domain seeders with CLI reference, size presets, and developer guide
+  - **Terraform README**: Production-ready documentation at `deploy/aws/terraform/README.md` with prerequisites, quick start, variable reference, security notes, and troubleshooting
+  - **Cursor IDE Extensions**: Updated memory with installed extensions for Python development, GitHub integration, and code quality tools
+
 * [2025-12-15] – **JupyterHub Integration Complete - All 5 Phases Done**:
   - Phase 1: API Client Library (amprenta-client with 6 resource clients) ✓
   - Phase 2: Write Endpoints (annotation endpoints operational) ✓
@@ -338,23 +347,25 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *To be produced automatically by the Architect at the end of each session.*
 
-**Last Updated:** 2025-12-15
+**Last Updated:** 2025-12-19
 
 ### Summary
 
-The system has reached **production maturity** with **47+ features**, **84+ passing tests** (57 E2E + 27 SAR/Voila), and **fully unified Postgres architecture** (SQLite removed, Notion removed). Code quality optimization is 100% complete.
+The system has reached **production maturity** with **50+ features**, **84+ passing tests** (57 E2E + 27 SAR/Voila), **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. Code quality optimization is 100% complete.
 
-**JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17).
+**JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17). **AWS deployment infrastructure COMPLETE** (2025-12-19).
 
 ### Current State
 
-*   **System Status**: Production-Ready. Code quality at 9/10.
-*   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (47+ pages), JupyterHub operational.
+*   **System Status**: Production-Ready with Cloud Deployment Capability. Code quality at 9/10.
+*   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (47+ pages), JupyterHub operational, AWS Terraform infrastructure.
 *   **Test Coverage**: High (57 E2E tests + 27 SAR/Voila unit/API tests + 24 auth/model tests).
 *   **JupyterHub**: All 5 phases complete (API client, write endpoints, deployment, SSO, templates).
 *   **Notebook Suite**: 10 Voila notebooks standardized with shared utilities (notebook_utils.py).
 *   **Innovator Features**: All 7 approved features complete (Signature Explainability, Narrative Reports, QC Watcher, Protocol Diff, HTS QC, Cross-Omics Pathway, MOA Inference).
-*   **Next Focus**: AWS Deployment Architecture (ECS/RDS/ElastiCache design).
+*   **AWS Infrastructure**: Terraform IaC (Lightsail + RDS), GitHub Actions CI/CD pipelines operational.
+*   **Data Seeding**: Comprehensive test data seeding suite with documentation for all omics domains.
+*   **Next Focus**: Advanced Visualization (remaining Voila dashboards), Multi-tenancy architecture.
 
 ### JupyterHub Status (ALL COMPLETE)
 

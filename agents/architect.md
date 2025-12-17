@@ -144,6 +144,16 @@ Always act so that the user can resume work on any machine by:
 * Opening `agents/session-memory.md`, and
 * Asking you to rehydrate your context from it and propose next steps.
 
+### Session Wrap-Up Checklist
+
+Before delegating final git commit to Automator, ensure:
+
+1. **session-memory.md** — Delegate to Documentor to add session accomplishments
+2. **ROADMAP.md** — Verify completed features are marked done
+3. **Final commit** — Then delegate to Automator: git add -A, commit, push
+
+This prevents forgetting to document session work before pushing.
+
 ---
 
 ## 6. Drift & Health Checks
