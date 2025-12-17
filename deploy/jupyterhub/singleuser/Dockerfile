@@ -23,9 +23,12 @@ COPY amprenta_rag/client/ /opt/amprenta/amprenta_rag/client/
 RUN mkdir -p /opt/amprenta/amprenta_rag/analysis
 COPY amprenta_rag/analysis/__init__.py /opt/amprenta/amprenta_rag/analysis/__init__.py
 COPY amprenta_rag/analysis/pathway/ /opt/amprenta/amprenta_rag/analysis/pathway/
+COPY amprenta_rag/analysis/hts_qc.py /opt/amprenta/amprenta_rag/analysis/hts_qc.py
 
 COPY deploy/jupyterhub/templates/ /home/jovyan/templates/
 RUN chown -R ${NB_UID}:${NB_GID} /home/jovyan/templates
+
+RUN chmod -R a+rX /opt/amprenta
 
 ENV PYTHONPATH="/opt/amprenta:${PYTHONPATH}"
 
@@ -48,6 +51,8 @@ RUN pip install --no-cache-dir \
     pydantic \
     httpx \
     pandas \
+    plotly \
+    py3Dmol \
     seaborn \
     matplotlib \
     rdkit-pypi \

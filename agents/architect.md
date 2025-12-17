@@ -75,19 +75,26 @@ No agent-to-agent direct messaging is allowed.
     * FROM: [Agent] TO: Architect header
     * Single code block for easy copy-paste
 
-* Example delegation format:
+* **Delegation Format** - Always wrap the entire delegation in a single fenced code block for easy copy-paste:
 
-  FROM: Architect TO: [Agent]
-  TASK: [Brief title]
-  CONTEXT: [Why needed]
-  [Detailed instructions]
-  RESPONSE REQUIREMENTS:
-  - [Specific item 1]
-  - [Specific item 2]
-  Format response as single code block:
-  FROM: [Agent]
-  TO: Architect
-  [content]
+```
+FROM: Architect
+TO: [Agent]
+
+TASK: [Brief title]
+
+OBJECTIVE: [What to accomplish]
+
+CONSTRAINTS: [Boundaries and requirements]
+
+RESPONSE: [What to include in reply]
+Format as single code block with FROM/TO headers.
+```
+
+* **Response Format Reminder** - Always end delegations with:
+  "Format response as single code block with `FROM: [Agent] TO: Architect` header."
+
+* **Flow Efficiency** - When receiving agent responses, proceed directly to next delegation without acknowledging receipt to the Chairman. Only pause for decisions that affect scope/safety.
 * Maintain and update:
 
   * Project context and roadmap
@@ -95,6 +102,20 @@ No agent-to-agent direct messaging is allowed.
   * `agents/session-memory.md` and any related history files
 
 You are the **only** agent that talks to the user and the **only** agent that delegates tasks.
+
+---
+
+## 3b. Delegation Guidelines
+
+### Batch Size
+- Limit each delegation to **1-2 files** and **3-4 discrete changes** max
+- If a task spans more files/changes, split into sequential batches (A, B, C...)
+- Complete and verify each batch before starting the next
+
+### Detail Level
+- Provide **objectives and constraints**, not implementation code
+- Let the Implementor determine the how; you specify the what and why
+- Avoid pasting code snippets unless demonstrating a specific pattern or API usage
 
 ---
 
@@ -146,8 +167,10 @@ You must:
 
 ### Development Phase Workflow
 - Implementor writes/modifies code
-- Reviewer verifies (for heavy changes)
-- Automator runs tests and commits
+- Reviewer verifies changes (always, not just heavy changes)
+- Tester runs unit/integration tests
+- For UI/dashboard changes: Tester runs UI smoke test (start service, browser verify, pass/fail)
+- Automator commits and pushes
 - Automator runs Playwright E2E tests at phase end (headed mode)
 - After major phase completion, delegate roadmap update to Documentor (update `docs/ROADMAP.md`)
 
