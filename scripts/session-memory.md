@@ -18,8 +18,11 @@
   - Cytoscape network visualization with pathway-pathway edges (shared features)
   - Cross-omics toggles for multi-layer pathway analysis
 - CD workflow created (pending secrets configuration: LIGHTSAIL_HOST, LIGHTSAIL_SSH_KEY)
+- architect.md strengthened: UI smoke test now required in Pre-Delegation Checklist
+- UI smoke tests incomplete (blocked by API not running) - pickup next session
+- Voila installed locally (v0.5.11)
 
-### Status: Signature Validation Console Complete
+### Status: Both Voila Dashboards Complete (Testing Pending)
 
 **Dashboard features:**
 - Interactive signature validation workflow
@@ -27,11 +30,16 @@
 - Approval workflow with audit trail
 - Real-time scoring against test datasets
 
-### Next Session Priorities (from ROADMAP.md)
+### Next Session Priorities
 
-1. **Pathway Impact Explorer** — Last remaining Voila dashboard
-2. **Multi-tenancy Architecture** — Company model, data segregation design
-3. **Advanced Jupyter Features** — Notebook Co-Pilot, Query→Notebook Generator
+**PICKUP ITEMS (HIGH PRIORITY):**
+1. Start API on localhost:8000
+2. Complete UI smoke tests on signature_validation.ipynb
+3. Complete UI smoke tests on pathway_impact_explorer.ipynb
+
+**FROM ROADMAP:**
+1. Multi-tenancy Architecture — Company model, data segregation design
+2. Advanced Jupyter Features — Notebook Co-Pilot, Query→Notebook Generator
 
 ### Key Files Added/Updated This Session
 

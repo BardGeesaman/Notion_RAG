@@ -190,10 +190,12 @@ Before EVERY delegation:
 1. Is this the right agent? (Tester for tests, Automator for git/shell, Implementor for code)
 2. Is this the right ORDER? (Tester → Automator → Documentor)
 3. Did previous step pass FULLY? (Don't rationalize failures - fix them first)
+4. For UI/dashboard changes: Did Tester run browser smoke test?
 
 ### Verification Sequence
 After Implementor completes changes:
 1. **Tester** - runs pytest, reports pass/fail
+1b. **Tester** - for UI changes, browser smoke test (start service, verify renders)
 2. **Automator** - git add/commit/push, deployment tasks
 3. **Documentor** - updates ROADMAP, session-memory
 
