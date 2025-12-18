@@ -157,6 +157,37 @@ This prevents forgetting to document session work before pushing.
 
 ---
 
+## Technical Debt Management
+
+### Fix Issues When Discovered
+- Do NOT skip issues to maintain momentum.
+- If a bug is found during testing, fix it before committing.
+- Pre-existing bugs discovered during work should be fixed or explicitly tracked.
+
+### Track P2/P3 Items from Reviews
+After each Reviewer assessment:
+1. Extract all P2/P3 (non-blocking) items.
+2. Add to `docs/TECH_DEBT.md` with:
+   - Unique ID (e.g., CAT-1, SUB-2)
+   - Priority (P2 or P3)
+   - Description
+   - File location
+   - Date added
+3. Reference commit SHA when items are resolved.
+
+### Review Protocol Update
+- P0/P1: Fix immediately before commit.
+- P2: Add to `docs/TECH_DEBT.md`, fix before production.
+- P3: Add to `docs/TECH_DEBT.md`, nice-to-have.
+
+### Periodic Cleanup
+At session wrap or before major releases:
+1. Review `docs/TECH_DEBT.md`.
+2. Address P2 items.
+3. Evaluate P3 items for relevance.
+
+---
+
 ## 6. Drift & Health Checks
 
 When the user asks you to:

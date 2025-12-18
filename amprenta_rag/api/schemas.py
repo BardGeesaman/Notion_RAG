@@ -171,6 +171,14 @@ class Dataset(DatasetBase):
     updated_at: datetime
     notion_page_id: Optional[str] = None
     external_ids: Optional[dict] = None
+    file_paths: List[str] = Field(default_factory=list)
+    file_urls: List[str] = Field(default_factory=list)
+    organism: List[str] = Field(default_factory=list)
+
+    @field_validator("file_paths", "file_urls", "organism", mode="before")
+    @classmethod
+    def none_to_empty_list(cls, v):
+        return v if v is not None else []
 
 
 # ============================================================================
