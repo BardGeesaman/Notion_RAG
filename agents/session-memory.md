@@ -94,7 +94,9 @@ It should be updated at natural breakpoints in work sessions to support continui
 | — Phase 5: Templates + Launch | Implementor | **✓ Complete** | Templates + context passing |
 | **SAR/Voila Test Coverage** | Implementor | **✓ Complete** | 27 tests, 605 lines (commit f9464c8) |
 | **Innovator-Approved Features** | Implementor | **✓ Complete** | All 7 features implemented (commits f620522-0d32166) |
-| **AWS Deployment Architecture** | Architect | **Next Up** | ECS/RDS/ElastiCache design |
+| **Voila Dashboard UI Testing** | Implementor | **✓ Complete** | signature_validation + pathway_impact_explorer smoke tests (commit 000de0a) |
+| **Testing Closure** | Implementor | **In Progress** | Playwright E2E for concurrent editing still pending |
+| **AWS Deployment Architecture** | Architect | **Pending** | ECS/RDS/ElastiCache design |
 | **Advanced Viz Suite (Cytoscape/IGV)** | Implementor | **Pending** | Network graphs and genome browser |
 
 ---
@@ -102,6 +104,19 @@ It should be updated at natural breakpoints in work sessions to support continui
 ## 4. Completed Tasks (Recent)
 
 *A reverse-chronological log of what has been done recently.*
+
+* [2025-12-18] – **Voila Dashboard UI Smoke Tests Complete**:
+  - **signature_validation.ipynb**: PASS (no changes needed)
+  - **pathway_impact_explorer.ipynb**: PASS (7 fixes applied)
+    - ipycytoscape JSON schema fix (node/edge data structure)
+    - export_graph_png graceful fallback when Cytoscape.js not available
+    - API integration with schema adapter for cross-omics pathway endpoint
+    - Program name→UUID mapping for API calls
+    - p-value filtering for demo mode (hardcoded fallback data)
+    - Dynamic program dropdown populated from API
+  - **Backend fix**: DetachedInstanceError in `cross_omics_pathways.py` (SQLAlchemy session issue)
+  - **Database migration**: mwtab_json, validation_status columns added
+  - Commit: 000de0a
 
 * [2025-12-19] – **AWS Infrastructure & Deployment Complete**:
   - **mwTab API Optimization** (Phases 2-4): Caching layer with Redis-style in-memory storage, Postgres-backed persistent storage for study metadata and feature data, parallel fetching with asyncio for batch operations
@@ -309,6 +324,22 @@ It should be updated at natural breakpoints in work sessions to support continui
 * **Consistent API Fallback**: All 10 Voila notebooks now gracefully handle API unavailability with demo mode and offline data.
 * **Demo Mode Banner**: Visual indicator when notebooks run without API connectivity (useful for demos/testing).
 * **Test Coverage Gap Identified**: New SAR functionality (sar_data.py, rgroup.py, notebook_utils.py) and API endpoints (/api/v1/sar/*) need unit tests and API tests.
+
+### Notes from 2025-12-18
+
+**VOILA DASHBOARD UI SMOKE TESTS**
+
+* **signature_validation.ipynb**: Smoke test PASS - no issues found, notebook already robust.
+* **pathway_impact_explorer.ipynb**: 7 fixes applied for production readiness:
+  - **ipycytoscape schema**: Fixed node/edge data structure (cytoscape expects `{data: {...}}` format).
+  - **export_graph_png fallback**: Graceful handling when Cytoscape.js export unavailable.
+  - **API integration**: Added schema adapter for cross-omics pathway endpoint (API returns different structure than notebook expected).
+  - **Program mapping**: Implemented name→UUID lookup for API calls (API expects UUID, not program name).
+  - **Demo mode p-value filtering**: Hardcoded fallback pathway data with realistic p-values for offline testing.
+  - **Dynamic program dropdown**: Populated from `/api/v1/programs` instead of hardcoded list.
+* **Backend bug uncovered**: `DetachedInstanceError` in `cross_omics_pathways.py` - SQLAlchemy session issue where pathway objects accessed outside session scope.
+* **Database migration**: Added `mwtab_json` and `validation_status` columns via Alembic migration.
+* **Key Learning**: UI smoke tests often reveal backend integration issues (API endpoint mismatches, schema mismatches, session management bugs) beyond simple rendering problems.
 
 ### Notes from 2025-12-13 (Evening Session)
 
