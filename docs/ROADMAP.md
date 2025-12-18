@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-17 (December 17, 2025)
+**Last Updated**: 2024-12-18 (December 18, 2024)
 
 Simple status legend:
 - ✅ DONE
@@ -43,6 +43,7 @@ Simple status legend:
 - ✅ Automated discovery workflow + scheduled harvesting
 - ✅ GEO/PRIDE/MetaboLights/MW ingestion
 - ✅ mwTab API optimization (caching, Postgres storage, parallel fetching)
+- ✅ Repository Interface (External Data Catalog, Subscriptions, Alerts, Health Monitoring) - 2024-12-18
 
 ### Jupyter Notebook & Analytics
 - ✅ JupyterHub deployment with DockerSpawner and user isolation
@@ -193,8 +194,8 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 
 ### Tier 2 - Strategic
 - UniProt/KEGG Mapping Refresh
-- Repository Subscriptions & Alerts (saved queries)
-- External Data Catalog Page (health, freshness dashboard)
+- ✅ Repository Subscriptions & Alerts (saved queries) - 2024-12-18
+- ✅ External Data Catalog Page (health, freshness dashboard) - 2024-12-18
 
 ### Tier 3 - AI-Assisted
 - AI Dataset Finder (NL → cross-repo query)
