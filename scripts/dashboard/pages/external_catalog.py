@@ -47,10 +47,12 @@ def fetch_summary():
 
 
 @st.cache_data(ttl=60)
-def fetch_datasets(source: str | None, limit: int, offset: int):
+def fetch_datasets(source: str | None, search: str | None, limit: int, offset: int):
     params = {"limit": limit, "offset": offset}
     if source and source != "All":
         params["source"] = source
+    if search:
+        params["search"] = search
     try:
         with httpx.Client(timeout=15) as client:
             resp = client.get(DATASETS_ENDPOINT, params=params)
@@ -89,18 +91,7 @@ def render_filters(sources: list[str]) -> dict:
     return {"source": src, "search": search, "refresh": refresh}
 
 
-def apply_search(df: pd.DataFrame, term: str) -> pd.DataFrame:
-    if not term:
-        return df
-    term_lower = term.lower()
-    mask = (
-        df["Accession"].fillna("").str.lower().str.contains(term_lower)
-        | df["Title"].fillna("").str.lower().str.contains(term_lower)
-    )
-    return df[mask]
-
-
-def render_table(datasets: list[dict], total: int, page: int, search: str):
+def render_table(datasets: list[dict], total: int, page: int):
     if not datasets:
         st.warning("No datasets found.")
         return
@@ -117,8 +108,6 @@ def render_table(datasets: list[dict], total: int, page: int, search: str):
             for d in datasets
         ]
     )
-
-    df = apply_search(df, search)
 
     st.dataframe(df, use_container_width=True, hide_index=True)
 
@@ -158,9 +147,9 @@ page = st.number_input("Page", min_value=1, value=page + 1, step=1) - 1
 st.session_state["catalog_page"] = page
 
 with st.spinner("Loading datasets..."):
-    data = fetch_datasets(filters["source"], PAGE_SIZE, page * PAGE_SIZE)
+    data = fetch_datasets(filters["source"], filters["search"], PAGE_SIZE, page * PAGE_SIZE)
 datasets = data.get("datasets", []) if isinstance(data, dict) else []
 total = data.get("total", len(datasets)) if isinstance(data, dict) else len(datasets)
 
-render_table(datasets, total, page, filters["search"])
+render_table(datasets, total, page)
 

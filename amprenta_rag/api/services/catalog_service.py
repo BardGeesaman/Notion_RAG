@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
 from amprenta_rag.database.models import Dataset
@@ -61,19 +61,33 @@ def get_repository_summary() -> List[Dict[str, object]]:
     return summaries
 
 
-def get_catalog_datasets(source: Optional[str], limit: int, offset: int) -> Dict[str, object]:
-    """List datasets with optional source filter and pagination."""
+def get_catalog_datasets(
+    source: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[List[dict], int]:
+    """List datasets with optional source/search filter and pagination."""
     with db_session() as db:
         query = db.query(Dataset).options(selectinload(Dataset.features))
         if source:
             query = query.filter(Dataset.data_origin == source)
+        if search:
+            term = f"%{search}%"
+            # Dataset model lacks explicit title/accession columns; use name and external_ids text
+            query = query.filter(
+                or_(
+                    Dataset.name.ilike(term),
+                    Dataset.description.ilike(term),
+                )
+            )
 
         total = query.count()
         results: List[Dataset] = (
             query.order_by(Dataset.created_at.desc()).offset(offset).limit(limit).all()
         )
 
-        datasets = []
+        datasets: List[dict] = []
         for d in results:
             ext = getattr(d, "external_ids", {}) or {}
             accession = ext.get("accession") or ext.get("study_id") or ext.get("id")
@@ -89,5 +103,5 @@ def get_catalog_datasets(source: Optional[str], limit: int, offset: int) -> Dict
                 }
             )
 
-    return {"datasets": datasets, "total": total}
+    return datasets, total
 

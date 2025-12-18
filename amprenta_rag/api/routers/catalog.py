@@ -18,11 +18,12 @@ def get_catalog_summary():
 @router.get("/catalog/datasets", response_model=dict)
 def list_catalog_datasets(
     source: str | None = Query(default=None),
+    search: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
-    """List catalog datasets with optional source filter and pagination."""
-    result = catalog_service.get_catalog_datasets(source, limit, offset)
-    datasets = [CatalogDataset(**d) for d in result.get("datasets", [])]
-    return {"datasets": datasets, "total": result.get("total", 0)}
+    """List catalog datasets with optional source/search filters and pagination."""
+    datasets_raw, total = catalog_service.get_catalog_datasets(source, search, limit, offset)
+    datasets = [CatalogDataset(**d) for d in datasets_raw]
+    return {"datasets": datasets, "total": total}
 
