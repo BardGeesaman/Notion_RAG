@@ -174,6 +174,32 @@ class Dataset(DatasetBase):
 
 
 # ============================================================================
+# Catalog / Repository schemas
+# ============================================================================
+
+
+class RepositorySummary(BaseSchema):
+    """Summary of datasets available per external repository."""
+
+    name: str
+    dataset_count: int
+    last_sync_date: Optional[datetime] = None
+    health_status: str
+
+
+class CatalogDataset(BaseSchema):
+    """Dataset entry for the external catalog."""
+
+    id: UUID
+    accession: Optional[str] = None
+    title: Optional[str] = None
+    source: Optional[str] = None
+    created_at: datetime
+    status: Optional[str] = None
+    feature_count: int = 0
+
+
+# ============================================================================
 # Feature schemas
 # ============================================================================
 
