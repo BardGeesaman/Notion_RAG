@@ -372,6 +372,12 @@ Implementation:
 - Estimated effort: 1-2 weeks
 - Reference: .cursor/plans/comprehensive_test_data_seeding_suite_87ab8efa.plan.md
 
+### Environment Management
+- ❌ Reconcile conda environments across workstations (myenv)
+  - Create `environment.yml` for reproducible conda setup
+  - Document RDKit installation via conda-forge (not pip)
+  - Standardize Python version across environments
+
 ---
 
 ## Notes
