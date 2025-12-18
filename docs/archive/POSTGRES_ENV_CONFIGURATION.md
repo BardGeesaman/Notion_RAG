@@ -18,7 +18,7 @@ Add these variables to your `.env` file:
 # Postgres Database Configuration
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password_here
 POSTGRES_ECHO=false
@@ -27,7 +27,7 @@ POSTGRES_ECHO=false
 **Variables Explained**:
 - `POSTGRES_HOST` - Database server hostname (default: `localhost`)
 - `POSTGRES_PORT` - Database server port (default: `5432`)
-- `POSTGRES_DB` - Database name (default: `amprenta_rag`)
+- `POSTGRES_DB` - Database name (default: `amprenta`)
 - `POSTGRES_USER` - Database username (default: `postgres`)
 - `POSTGRES_PASSWORD` - Database password (**required**)
 - `POSTGRES_ECHO` - Enable SQL query logging (default: `false`, set to `true` for debugging)
@@ -41,7 +41,7 @@ Alternatively, you can use a single connection URL:
 POSTGRES_URL=postgresql://username:password@hostname:port/database_name
 
 # Example:
-POSTGRES_URL=postgresql://postgres:mypassword@localhost:5432/amprenta_rag
+POSTGRES_URL=postgresql://postgres:mypassword@localhost:5432/amprenta
 ```
 
 **Note**: If `POSTGRES_URL` is set, individual component variables are ignored.
@@ -69,7 +69,7 @@ Add the following to your `.env` file (replace with your actual values):
 # Option 1: Individual components (recommended)
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_actual_password_here
 
@@ -79,7 +79,7 @@ POSTGRES_PASSWORD=your_actual_password_here
 # OR
 
 # Option 2: Full connection URL (alternative)
-# POSTGRES_URL=postgresql://postgres:password@localhost:5432/amprenta_rag
+# POSTGRES_URL=postgresql://postgres:password@localhost:5432/amprenta
 ```
 
 ### 3. Example Configurations
@@ -88,7 +88,7 @@ POSTGRES_PASSWORD=your_actual_password_here
 ```bash
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 ```
@@ -97,21 +97,21 @@ POSTGRES_PASSWORD=postgres
 ```bash
 POSTGRES_HOST=db.example.com
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=myuser
 POSTGRES_PASSWORD=secure_password
 ```
 
 #### Using Full URL
 ```bash
-POSTGRES_URL=postgresql://myuser:secure_password@db.example.com:5432/amprenta_rag
+POSTGRES_URL=postgresql://myuser:secure_password@db.example.com:5432/amprenta
 ```
 
 #### Docker Compose
 ```bash
 POSTGRES_HOST=postgres  # Service name in docker-compose.yml
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 ```
@@ -150,7 +150,7 @@ POSTGRES_URL=postgresql://user:pass@host.amazonaws.com:5432/dbname?sslmode=requi
 ### 1. Test Configuration Loading
 
 ```bash
-python -c "from amprenta_rag.config import get_config; cfg = get_config().postgres; print(f'Host: {cfg.host}, DB: {cfg.db}, User: {cfg.user}')"
+python -c "from amprenta.config import get_config; cfg = get_config().postgres; print(f'Host: {cfg.host}, DB: {cfg.db}, User: {cfg.user}')"
 ```
 
 ### 2. Test Database Connection
@@ -186,7 +186,7 @@ python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('POST
 ### Issue: "Database does not exist"
 
 **Solution**:
-- Create the database: `createdb amprenta_rag`
+- Create the database: `createdb amprenta`
 - Or use an existing database name
 
 ### Issue: Environment variables not loading
@@ -215,13 +215,13 @@ ZOTERO_API_KEY=your-key-here
 # ============================================
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password_here
 POSTGRES_ECHO=false
 
 # Alternative: Full URL (uncomment to use instead)
-# POSTGRES_URL=postgresql://postgres:password@localhost:5432/amprenta_rag
+# POSTGRES_URL=postgresql://postgres:password@localhost:5432/amprenta
 
 # ============================================
 # Notion Database IDs (Required)
@@ -269,7 +269,7 @@ After configuring the `.env` file:
 |----------|----------|---------|-------------|
 | `POSTGRES_HOST` | No | `localhost` | Database hostname |
 | `POSTGRES_PORT` | No | `5432` | Database port |
-| `POSTGRES_DB` | No | `amprenta_rag` | Database name |
+| `POSTGRES_DB` | No | `amprenta` | Database name |
 | `POSTGRES_USER` | No | `postgres` | Database username |
 | `POSTGRES_PASSWORD` | **Yes** | - | Database password |
 | `POSTGRES_ECHO` | No | `false` | Enable SQL logging |

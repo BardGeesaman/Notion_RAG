@@ -5,7 +5,7 @@ services:
     image: postgres:15-alpine
     container_name: amprenta-postgres
     environment:
-      POSTGRES_DB: amprenta_rag
+      POSTGRES_DB: amprenta
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:

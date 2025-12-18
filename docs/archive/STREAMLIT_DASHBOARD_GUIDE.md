@@ -103,12 +103,12 @@ Use the sidebar to navigate between pages:
 
 ## Configuration
 
-The dashboard connects directly to Postgres using the configuration from `amprenta_rag/config.py`. Make sure your `.env` file has:
+The dashboard connects directly to Postgres using the configuration from `amprenta/config.py`. Make sure your `.env` file has:
 
 ```bash
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=your_user
 POSTGRES_PASSWORD=your_password
 ```
@@ -176,7 +176,7 @@ st.area_chart(df)
 
 1. Verify Postgres has data:
    ```bash
-   psql amprenta_rag -c "SELECT COUNT(*) FROM datasets;"
+   psql amprenta -c "SELECT COUNT(*) FROM datasets;"
    ```
 
 2. Check database connection in dashboard logs

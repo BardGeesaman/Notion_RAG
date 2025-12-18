@@ -112,7 +112,7 @@ POSTGRES_URL=postgresql://user:password@localhost:5432/amprenta_rag
 # OR individual components:
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
 ```

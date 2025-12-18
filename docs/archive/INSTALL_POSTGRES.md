@@ -27,7 +27,7 @@ brew install postgresql@15
 brew services start postgresql@15
 
 # Create a database
-createdb amprenta_rag
+createdb amprenta
 
 # Set a password for the postgres user (optional, but recommended)
 psql postgres -c "ALTER USER postgres WITH PASSWORD 'your_password';"
@@ -57,7 +57,7 @@ If you have Docker installed, you can run Postgres in a container:
 # Run Postgres in Docker
 docker run --name amprenta-postgres \
   -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=amprenta_rag \
+  -e POSTGRES_DB=amprenta \
   -p 5432:5432 \
   -d postgres:15
 
@@ -123,7 +123,7 @@ psql postgres
 ### Step 4: Create Database
 
 ```bash
-createdb amprenta_rag
+createdb amprenta
 ```
 
 ### Step 5: Configure `.env` File
@@ -134,7 +134,7 @@ Add to your `.env` file:
 # If using default (no password)
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=
 
@@ -176,7 +176,7 @@ brew services start postgresql@15
 
 **Solution**: Create the database:
 ```bash
-createdb amprenta_rag
+createdb amprenta
 ```
 
 ## Recommended Setup for Development
@@ -191,12 +191,12 @@ brew install postgresql@15
 brew services start postgresql@15
 
 # 3. Create database
-createdb amprenta_rag
+createdb amprenta
 
 # 4. Configure .env (use no password for local dev)
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=
 ```
@@ -207,14 +207,14 @@ POSTGRES_PASSWORD=
 # 1. Start Postgres container
 docker run --name amprenta-postgres \
   -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=amprenta_rag \
+  -e POSTGRES_DB=amprenta \
   -p 5432:5432 \
   -d postgres:15
 
 # 2. Configure .env
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 

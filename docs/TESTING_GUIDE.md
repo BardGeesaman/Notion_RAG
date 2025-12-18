@@ -271,7 +271,7 @@ Create `.env.test`:
 # Test database (separate from production)
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag_test
+POSTGRES_DB=amprenta_test
 POSTGRES_USER=test_user
 POSTGRES_PASSWORD=test_password
 
@@ -324,7 +324,7 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_DB: amprenta_rag_test
+          POSTGRES_DB: amprenta_test
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
         options: >-

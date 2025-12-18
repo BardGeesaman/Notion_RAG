@@ -157,7 +157,7 @@ Open `.env` in your editor and configure:
 # Postgres Database (Local Docker)
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=amprenta_rag
+POSTGRES_DB=amprenta
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_ECHO=false
