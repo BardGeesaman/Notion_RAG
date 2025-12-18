@@ -200,6 +200,47 @@ class CatalogDataset(BaseSchema):
 
 
 # ============================================================================
+# Subscription schemas
+# ============================================================================
+
+
+class SubscriptionCreate(BaseSchema):
+    """Create a repository subscription."""
+
+    name: str
+    repository_source: Literal["GEO", "PRIDE", "MetaboLights", "MW", "all"]
+    query_params: Optional[dict] = None
+    notify_email: bool = False
+    notify_in_app: bool = True
+
+
+class SubscriptionUpdate(BaseSchema):
+    """Update an existing subscription."""
+
+    name: Optional[str] = None
+    notify_email: Optional[bool] = None
+    notify_in_app: Optional[bool] = None
+    is_active: Optional[bool] = None
+    query_params: Optional[dict] = None
+
+
+class SubscriptionResponse(BaseSchema):
+    """Subscription response."""
+
+    id: UUID
+    user_id: Optional[UUID] = None
+    name: str
+    repository_source: str
+    query_params: Optional[dict] = None
+    notify_email: bool
+    notify_in_app: bool
+    is_active: bool
+    last_checked: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+# ============================================================================
 # Feature schemas
 # ============================================================================
 

@@ -8,7 +8,7 @@ with Notion IDs during migration by storing notion_page_id for dual-write suppor
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
@@ -146,8 +146,13 @@ class Program(Base):
     disease = Column(ARRAY(String), nullable=True)  # List of disease terms
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
 
     # Migration support: Notion page ID
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)
@@ -407,6 +412,26 @@ class ReportSchedule(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     created_by = relationship("User", foreign_keys=[created_by_id])
+
+
+class RepositorySubscription(Base):
+    """Stored subscriptions for external repository searches."""
+
+    __tablename__ = "repository_subscriptions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    name = Column(String(255), nullable=False)
+    repository_source = Column(String(50), nullable=False, index=True)  # GEO, PRIDE, MetaboLights, MW, all
+    query_params = Column(JSON, nullable=True)
+    notify_email = Column(Boolean, default=False, nullable=False)
+    notify_in_app = Column(Boolean, default=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    last_checked = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User", foreign_keys=[user_id])
 
 
 # Add relationships to Program model after all models are defined

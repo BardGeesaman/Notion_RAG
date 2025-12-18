@@ -4,7 +4,8 @@ FastAPI dependencies for database sessions and authentication.
 Provides reusable dependencies for API routes.
 """
 
-from typing import Generator
+from typing import Generator, Optional
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
@@ -19,4 +20,13 @@ def get_database_session() -> Generator[Session, None, None]:
         Database session
     """
     yield from get_db()
+
+
+def get_optional_user_id() -> Optional[UUID]:
+    """Return user_id from auth context if available, else None.
+
+    MVP implementation: returns None (allows anonymous subscriptions).
+    When auth is implemented, extract user_id from request headers/session.
+    """
+    return None
 
