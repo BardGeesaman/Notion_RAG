@@ -434,6 +434,21 @@ class RepositorySubscription(Base):
     user = relationship("User", foreign_keys=[user_id])
 
 
+class Alert(Base):
+    """Alert generated from repository subscription matches."""
+
+    __tablename__ = "alerts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    subscription_id = Column(UUID(as_uuid=True), ForeignKey("repository_subscriptions.id"), nullable=False)
+    dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=False)
+    is_read = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    subscription = relationship("RepositorySubscription")
+    dataset = relationship("Dataset")
+
+
 # Add relationships to Program model after all models are defined
 # This avoids forward reference issues
 Program.compounds = relationship("Compound", secondary=compound_program, back_populates="programs", viewonly=False)
