@@ -15,7 +15,6 @@ Items identified during code reviews that are non-blocking but should be address
 |----|----------|-------------|------|-------|
 | CAT-1 | P3 | Optimize double query (count + all) | catalog_service.py | 2024-12-18 |
 | CAT-2 | P3 | Add prev/next pagination buttons | external_catalog.py | 2024-12-18 |
-| CAT-3 | P3 | Format dates (e.g., "2 days ago") | external_catalog.py | 2024-12-18 |
 | CAT-4 | P3 | Create proper response schemas | catalog.py | 2024-12-18 |
 
 ### Subscriptions (09cb143)
@@ -31,7 +30,6 @@ Items identified during code reviews that are non-blocking but should be address
 ### Alerts Bell (5e5ddea)
 | ID | Priority | Description | File | Added |
 |----|----------|-------------|------|-------|
-| BELL-1 | P3 | Show dataset title instead of UUID | alerts_bell.py | 2024-12-18 |
 | BELL-2 | P3 | Add confirmation for "mark all read" | alerts_bell.py | 2024-12-18 |
 | BELL-3 | P3 | Add navigation link to dataset from alert | alerts_bell.py | 2024-12-18 |
 
@@ -40,7 +38,6 @@ Items identified during code reviews that are non-blocking but should be address
 |----|----------|-------------|------|-------|
 | DS-1 | P3 | Add "Show more" pagination for features | dataset_details.py | 2024-12-18 |
 | DS-2 | P3 | Validate UUID format client-side | dataset_details.py | 2024-12-18 |
-| DS-3 | P3 | Distinguish 404 vs 500 errors in UI | dataset_details.py | 2024-12-18 |
 
 ### Repository Health (pending commit)
 | ID | Priority | Description | File | Added |
@@ -54,7 +51,6 @@ Items identified during code reviews that are non-blocking but should be address
 | ID | Priority | Description | File | Added |
 |----|----------|-------------|------|-------|
 | NAV-1 | P3 | Add breadcrumb trail for navigation history | dataset_details.py | 2024-12-18 |
-| NAV-2 | P3 | Auto-mark alert read on View navigation | alerts_bell.py | 2024-12-18 |
 
 ---
 
@@ -65,4 +61,8 @@ Items identified during code reviews that are non-blocking but should be address
 | API-1 | Fixed datasets 500 error (None→[] validator) | pending | 2024-12-18 |
 | JOB-1 | Keyword filtering implemented | pending | 2024-12-18 |
 | JOB-2 | Notification delivery (MVP logging) | pending | 2024-12-18 |
+| CAT-3 | Format dates (e.g., "2 days ago") | pending | 2024-12-18 |
+| NAV-2 | Auto-mark alert read on View navigation | pending | 2024-12-18 |
+| BELL-1 | Show dataset title instead of UUID | pending | 2024-12-18 |
+| DS-3 | Distinguish 404 vs 500 errors in UI | pending | 2024-12-18 |
 
