@@ -105,6 +105,24 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2024-12-18] – **Repository Interface Features Complete**:
+  - **External Data Catalog** (997e198): Browse and search public datasets with server-side filtering (3f5576e)
+  - **Repository Subscriptions** (09cb143): CRUD API and UI for saved searches with keyword alerts
+  - **Background Job Checker** (8a78a11): Automated subscription monitoring and notification delivery
+  - **Alerts System** (5e5ddea): Alert model, API endpoints, and bell icon UI with unread count
+  - **Dataset Details/Preview** (f46f47b): Preview external datasets before import, with navigation from catalog
+  - **Repository Health Monitoring** (0ad2f02): Dashboard showing sync status and data freshness per repository
+  - **Navigation Links** (0f44f2d): Interconnected pages with cross-navigation (catalog→details, alerts→datasets)
+  - **Bug Fix**: Datasets API 500 error (None→[] validator) (f46f47b)
+  - **Tech Debt Resolution**:
+    - P2 items: JOB-1 keyword filtering, JOB-2 notification delivery (6ac4e28)
+    - P3 quick wins: CAT-3 date formatting, NAV-2 auto-mark read, BELL-1 dataset titles, DS-3 error distinction (9411c6a)
+  - **Process Improvements**:
+    - Created `docs/TECH_DEBT.md` for tracking code review items
+    - Updated `agents/architect.md` with tech debt management protocol (fix issues when discovered, don't defer for momentum)
+    - Clarified role boundaries: Documentor handles docs, Implementor handles code
+  - **Next Priorities**: Remaining P3 tech debt (8 items), one-click dataset import, search by accession
+
 * [2025-12-18] – **Voila Dashboard UI Smoke Tests Complete**:
   - **signature_validation.ipynb**: PASS (no changes needed)
   - **pathway_impact_explorer.ipynb**: PASS (7 fixes applied)
