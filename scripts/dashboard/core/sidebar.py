@@ -22,6 +22,7 @@ from scripts.dashboard.core.favorites import (
     update_recent_pages,
 )
 from scripts.dashboard.core.jupyter_auth import get_jupyterhub_url, get_voila_url
+from scripts.dashboard.components.alerts_bell import render_alerts_bell
 
 
 def render_user_info(user: dict | None):
@@ -232,6 +233,7 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
         st.title("Navigation")
 
         render_user_info(user)
+        render_alerts_bell()
         render_notifications(user)
         render_theme_selector()
 
