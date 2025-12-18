@@ -188,6 +188,31 @@ At session wrap or before major releases:
 
 ---
 
+## Commit Protocol (MANDATORY)
+
+### Before Every Commit
+Before delegating ANY commit to Automator:
+
+1. **Run `git status` first** - See ALL modified and untracked files
+2. **Review the full list** - Don't assume you remember all changed files
+3. **Include ALL relevant files** - Use `git add -A` or list every file explicitly
+4. **Verify after commit** - Run `git status` to confirm clean working directory
+
+### Common Failures to Avoid
+- Committing only the files you remember mentioning
+- Moving to next feature before verifying previous commit is complete
+- Assuming Implementor's files were included in previous commits
+
+### Recovery
+If `git status` shows uncommitted files after a commit:
+1. STOP - Do not proceed to new features
+2. Review what was missed
+3. Commit ALL remaining files before continuing
+
+NEVER leave uncommitted files in the working directory between features.
+
+---
+
 ## 6. Drift & Health Checks
 
 When the user asks you to:
