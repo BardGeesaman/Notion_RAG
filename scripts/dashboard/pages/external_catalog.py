@@ -1,10 +1,11 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
 """
 External Data Catalog dashboard page.
 
 Displays repository summaries and a paginated table of external datasets.
 """
-
-from __future__ import annotations
 
 import os
 import math
@@ -97,6 +98,28 @@ def render_table(datasets: list[dict], total: int, page: int):
         return
 
     # Build table with actions
+    def format_relative_date(dt):
+        if not dt:
+            return "Never"
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt)
+            except ValueError:
+                return dt
+        now = datetime.now(timezone.utc)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        delta = now - dt
+        if delta.days == 0:
+            return "Today"
+        if delta.days == 1:
+            return "Yesterday"
+        if delta.days < 7:
+            return f"{delta.days} days ago"
+        if delta.days < 30:
+            return f"{delta.days // 7} weeks ago"
+        return dt.strftime("%b %d, %Y")
+
     rows = []
     for d in datasets:
         rows.append(
@@ -104,7 +127,7 @@ def render_table(datasets: list[dict], total: int, page: int):
                 "Accession": d.get("accession"),
                 "Title": d.get("title"),
                 "Source": d.get("source"),
-                "Import Date": d.get("created_at"),
+                "Import Date": format_relative_date(d.get("created_at")),
                 "Feature Count": d.get("feature_count", 0),
                 "ID": d.get("id"),
             }

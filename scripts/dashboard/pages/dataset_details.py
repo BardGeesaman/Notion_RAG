@@ -21,6 +21,12 @@ def fetch_dataset(dataset_id: str) -> Optional[dict]:
     try:
         with httpx.Client(timeout=10) as client:
             resp = client.get(f"{DATASET_ENDPOINT}/{dataset_id}")
+            if resp.status_code == 404:
+                st.error("Dataset not found.")
+                return None
+            if resp.status_code >= 500:
+                st.error("Server error - please try again.")
+                return None
             resp.raise_for_status()
             return resp.json()
     except httpx.HTTPError as e:  # noqa: BLE001

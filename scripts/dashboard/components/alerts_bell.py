@@ -69,9 +69,11 @@ def render_alerts_bell():
             for alert in alerts:
                 col1, col2, col3 = st.columns([4, 1, 1])
                 with col1:
-                    ds_label = alert.get("dataset_title") or alert.get("dataset_id")
+                    ds_label = alert.get("dataset_title") or alert.get("dataset_id") or "Dataset"
                     if st.button(f"View {ds_label}", key=f"view_{alert['id']}", use_container_width=True):
                         if alert.get("dataset_id"):
+                            # Auto-mark as read on navigation
+                            mark_alert_read(alert["id"])
                             st.query_params["dataset_id"] = alert["dataset_id"]
                             st.switch_page("pages/dataset_details.py")
                 with col2:
