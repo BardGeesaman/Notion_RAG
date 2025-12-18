@@ -25,7 +25,7 @@ from amprenta_rag.ingestion.postgres_signature_creation import (
     link_signature_to_postgres_source,
 )
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.signatures.signature_loader import load_signature_from_tsv
+from amprenta_rag.signatures.signature_loader import Signature, load_signature_from_tsv
 
 logger = get_logger(__name__)
 

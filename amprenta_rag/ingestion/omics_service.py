@@ -38,6 +38,9 @@ from amprenta_rag.ingestion.auto_linking import (
     infer_experiment_from_metadata,
     infer_program_from_metadata,
 )
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:

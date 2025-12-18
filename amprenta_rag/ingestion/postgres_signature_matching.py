@@ -19,6 +19,9 @@ from amprenta_rag.ingestion.postgres_signature_loader import (
     fetch_all_signatures_from_postgres,
     load_signature_from_postgres,
 )
+from amprenta_rag.ingestion.signature_matching.matching import (
+    score_signature_against_dataset,
+)
 from amprenta_rag.ingestion.signature_matching.models import SignatureMatchResult
 from amprenta_rag.logging_utils import get_logger
 

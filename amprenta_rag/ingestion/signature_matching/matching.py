@@ -154,15 +154,9 @@ def find_matching_signatures_for_dataset(
 
             # Check if above threshold
             if overlap_fraction >= overlap_threshold:
-                props = sig_page.get("properties", {}) or {}
-                name_prop = props.get("Name", {}).get("title", []) or []
-                signature_name = (
-                    name_prop[0].get("plain_text", "") if name_prop else "Unknown"
-                )
-
                 match_result = SignatureMatchResult(
-                    signature_page_id=sig_page.get("id", ""),
-                    signature_name=signature_name,
+                    signature_page_id=str(getattr(signature, "postgres_id", "")),
+                    signature_name=signature.name,
                     score=score_result.total_score,
                     overlap_fraction=overlap_fraction,
                     matched_components=score_result.matched_species,
@@ -174,7 +168,7 @@ def find_matching_signatures_for_dataset(
 
                 logger.info(
                     "[INGEST][SIGNATURE-MATCH] Found match: %s (overlap: %.2f, score: %.3f)",
-                    signature_name,
+                    signature.name,
                     overlap_fraction,
                     score_result.total_score,
                 )
@@ -182,7 +176,7 @@ def find_matching_signatures_for_dataset(
         except Exception as e:
             logger.warning(
                 "[INGEST][SIGNATURE-MATCH] Error processing signature %s: %r",
-                sig_page.get("id", ""),
+                signature.name,
                 e,
             )
             continue

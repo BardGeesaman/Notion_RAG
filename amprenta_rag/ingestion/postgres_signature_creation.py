@@ -60,7 +60,7 @@ def create_signature_in_postgres(
                 data_ownership=data_ownership,
                 version=version,
                 description=description,
-                biomarker_roles=bio_maker_roles if False else biomarker_roles,  # placeholder to preserve signature
+                biomarker_roles=biomarker_roles,
                 phenotype_axes=phenotype_axes,
             )
     else:
@@ -70,7 +70,7 @@ def create_signature_in_postgres(
             data_ownership=data_ownership,
             version=version,
             description=description,
-            biomarker_roles=bio_maker_roles if False else biomarker_roles,  # placeholder to preserve signature
+            biomarker_roles=biomarker_roles,
             phenotype_axes=phenotype_axes,
             db=db,
         )

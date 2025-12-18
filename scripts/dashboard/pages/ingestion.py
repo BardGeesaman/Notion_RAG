@@ -671,11 +671,11 @@ def render_ingestion_page() -> None:
                                             compound_id = generate_compound_id(smiles)
 
                                         # Register compound (handles duplicates/upserts)
-                                        registered_id = register_compound(
-                                            name=compound_id,
-                                            smiles=smiles,
-                                            salt_form=None if salt_form == "None" else salt_form,
-                                        )
+                                            registered_id = register_compound(
+                                                name=compound_id,
+                                                smiles=smiles,
+                                                salt_form=None,
+                                            )
                                         if registered_id:
                                             compounds_created += 1
 

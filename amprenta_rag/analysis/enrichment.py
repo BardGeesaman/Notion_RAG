@@ -76,28 +76,6 @@ def enrich_dataset_pathways(
         dataset_page_id,
     )
     
-    # Optionally integrate with Notion
-    try:
-        from amprenta_rag.config import get_config
-        cfg = get_config()
-        if hasattr(cfg.notion, "pathways_db_id") and cfg.notion.pathways_db_id:
-            # Create/update pathway pages
-            for result in results:
-                pathway_page_id = create_or_update_pathway_page(
-                    pathway=result.pathway,
-                    enrichment_result=result,
-                )
-                if pathway_page_id:
-                    link_pathway_to_dataset(pathway_page_id, dataset_page_id)
-            
-            # Update dataset with summary
-            update_dataset_with_pathway_summary(dataset_page_id, results)
-    except Exception as e:
-        logger.debug(
-            "[ANALYSIS][ENRICHMENT] Error integrating pathways with Notion: %r",
-            e,
-        )
-    
     return results
 
 
