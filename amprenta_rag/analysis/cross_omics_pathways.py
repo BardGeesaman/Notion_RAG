@@ -69,6 +69,12 @@ class CrossOmicsEnrichmentResult:
 
 
 def _collect_features_for_datasets(dataset_ids: List[UUID]) -> OmicsFeatureSet:
+    by_type: Dict[str, List[str]] = {
+        "gene": [],
+        "protein": [],
+        "metabolite": [],
+        "lipid": [],
+    }
     with db_session() as db:
         feats: List[Feature] = (
             db.query(Feature)
@@ -76,19 +82,14 @@ def _collect_features_for_datasets(dataset_ids: List[UUID]) -> OmicsFeatureSet:
             .filter(dataset_feature_assoc.c.dataset_id.in_(dataset_ids))
             .all()
         )
-    by_type: Dict[str, List[str]] = {
-        "gene": [],
-        "protein": [],
-        "metabolite": [],
-        "lipid": [],
-    }
-    for f in feats:
-        ftype = getattr(f, "feature_type", None) or getattr(f, "type", None)
-        name = getattr(f, "name", None)
-        if not name:
-            continue
-        if ftype in by_type:
-            by_type[ftype].append(name)
+        # Extract attributes INSIDE session
+        for f in feats:
+            ftype = getattr(f, "feature_type", None) or getattr(f, "type", None)
+            name = getattr(f, "name", None)
+            if not name:
+                continue
+            if ftype in by_type:
+                by_type[ftype].append(name)
     return OmicsFeatureSet(
         transcriptomics=by_type["gene"],
         proteomics=by_type["protein"],
