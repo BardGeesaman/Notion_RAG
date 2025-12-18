@@ -43,6 +43,14 @@ Items identified during code reviews that are non-blocking but should be address
 | DS-2 | P3 | Validate UUID format client-side | dataset_details.py | 2024-12-18 |
 | DS-3 | P3 | Distinguish 404 vs 500 errors in UI | dataset_details.py | 2024-12-18 |
 
+### Repository Health (pending commit)
+| ID | Priority | Description | File | Added |
+|----|----------|-------------|------|-------|
+| HEALTH-1 | P3 | Add sync event tracking API for history chart | repository_health.py | 2024-12-18 |
+| HEALTH-2 | P3 | Make health score configurable/formula-based | repository_health.py | 2024-12-18 |
+| HEALTH-3 | P3 | Add auto-refresh timer for live updates | repository_health.py | 2024-12-18 |
+| HEALTH-4 | P3 | Add sync frequency and success rate metrics | repository_health.py | 2024-12-18 |
+
 ---
 
 ## Resolved Items
