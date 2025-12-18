@@ -51,6 +51,12 @@ Items identified during code reviews that are non-blocking but should be address
 | HEALTH-3 | P3 | Add auto-refresh timer for live updates | repository_health.py | 2024-12-18 |
 | HEALTH-4 | P3 | Add sync frequency and success rate metrics | repository_health.py | 2024-12-18 |
 
+### Navigation Links (pending commit)
+| ID | Priority | Description | File | Added |
+|----|----------|-------------|------|-------|
+| NAV-1 | P3 | Add breadcrumb trail for navigation history | dataset_details.py | 2024-12-18 |
+| NAV-2 | P3 | Auto-mark alert read on View navigation | alerts_bell.py | 2024-12-18 |
+
 ---
 
 ## Resolved Items

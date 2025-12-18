@@ -96,20 +96,32 @@ def render_table(datasets: list[dict], total: int, page: int):
         st.warning("No datasets found.")
         return
 
-    df = pd.DataFrame(
-        [
+    # Build table with actions
+    rows = []
+    for d in datasets:
+        rows.append(
             {
                 "Accession": d.get("accession"),
                 "Title": d.get("title"),
                 "Source": d.get("source"),
                 "Import Date": d.get("created_at"),
                 "Feature Count": d.get("feature_count", 0),
+                "ID": d.get("id"),
             }
-            for d in datasets
-        ]
-    )
+        )
+    df = pd.DataFrame(rows)
 
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.dataframe(df[["Accession", "Title", "Source", "Import Date", "Feature Count"]], use_container_width=True, hide_index=True)
+
+    # Action buttons per row
+    for _, row in df.iterrows():
+        col1, col2 = st.columns([1, 9])
+        with col1:
+            if st.button("View", key=f"view_{row['ID']}"):
+                st.query_params["dataset_id"] = str(row["ID"])
+                st.switch_page("pages/dataset_details.py")
+        with col2:
+            st.caption(f"{row['Title']} ({row['Source']})")
 
     # Export
     csv_buf = io.StringIO()

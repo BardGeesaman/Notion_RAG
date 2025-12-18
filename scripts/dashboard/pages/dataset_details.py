@@ -105,6 +105,9 @@ def render_selection():
 def render_page():
     st.set_page_config(page_title="Dataset Details", layout="wide")
     st.title("Dataset Details")
+    # Back link to catalog
+    if st.button("← Back to Catalog"):
+        st.switch_page("pages/external_catalog.py")
 
     dataset_id, should_load = render_selection()
     if not should_load or not dataset_id:

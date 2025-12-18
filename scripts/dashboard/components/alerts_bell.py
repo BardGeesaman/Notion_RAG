@@ -67,13 +67,19 @@ def render_alerts_bell():
             st.info("No unread alerts")
         else:
             for alert in alerts:
-                col1, col2 = st.columns([4, 1])
+                col1, col2, col3 = st.columns([4, 1, 1])
                 with col1:
-                    st.write(f"New dataset: {alert.get('dataset_title') or alert.get('dataset_id')}")
+                    ds_label = alert.get("dataset_title") or alert.get("dataset_id")
+                    if st.button(f"View {ds_label}", key=f"view_{alert['id']}", use_container_width=True):
+                        if alert.get("dataset_id"):
+                            st.query_params["dataset_id"] = alert["dataset_id"]
+                            st.switch_page("pages/dataset_details.py")
                 with col2:
                     if st.button("✓", key=f"read_{alert['id']}"):
                         if mark_alert_read(alert["id"]):
                             st.rerun()
+                with col3:
+                    st.caption("")
 
             if st.button("Mark all read"):
                 if mark_all_read():
