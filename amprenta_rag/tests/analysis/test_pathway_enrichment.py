@@ -381,6 +381,8 @@ class TestEdgeCases:
             results = perform_pathway_enrichment(
                 input_features=large_features,
                 input_feature_types={"gene"},
+                # Avoid unintended network calls to Reactome during unit tests.
+                pathway_sources=["KEGG"],
             )
 
             assert results == []
