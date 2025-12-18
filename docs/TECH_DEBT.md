@@ -26,8 +26,7 @@ Items identified during code reviews that are non-blocking but should be address
 ### Background Job (8a78a11)
 | ID | Priority | Description | File | Added |
 |----|----------|-------------|------|-------|
-| JOB-1 | P2 | Implement keyword filtering from query_params | check_subscriptions.py | 2024-12-18 |
-| JOB-2 | P2 | Implement email/in-app notification sending | check_subscriptions.py | 2024-12-18 |
+| — | — | — | — | — |
 
 ### Alerts Bell (5e5ddea)
 | ID | Priority | Description | File | Added |
@@ -64,4 +63,6 @@ Items identified during code reviews that are non-blocking but should be address
 | ID | Resolution | Commit | Date |
 |----|------------|--------|------|
 | API-1 | Fixed datasets 500 error (None→[] validator) | pending | 2024-12-18 |
+| JOB-1 | Keyword filtering implemented | pending | 2024-12-18 |
+| JOB-2 | Notification delivery (MVP logging) | pending | 2024-12-18 |
 
