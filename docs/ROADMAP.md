@@ -67,6 +67,7 @@ Simple status legend:
 - ✅ Phase 2 Code Quality (2025-12-19): ruff.toml config, 6,252 whitespace fixes, 213 F401 fixes, 22 E712 fixes, model re-exports restored
 - ✅ Test Suite: 355 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker)
 - ✅ Playwright E2E Separation (2025-12-19): chromium installed, server-dependent tests marked and deselected from default runs
+- ✅ Mypy Type Checking Setup (2025-12-19): gradual typing with strict API layer, 54% error reduction (597→273), type stubs installed
 
 ---
 

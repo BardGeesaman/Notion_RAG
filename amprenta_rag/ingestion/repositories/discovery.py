@@ -8,7 +8,7 @@ Provides functions to search for studies across multiple repositories
 from __future__ import annotations
 
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable, Any
 
 from amprenta_rag.ingestion.repositories.base import RepositoryInterface
 from amprenta_rag.ingestion.repositories.ena import ENARepository
@@ -22,7 +22,7 @@ from amprenta_rag.models.repository import StudyMetadata
 logger = get_logger(__name__)
 
 # Repository registry - will be populated as implementations are added
-_REPOSITORY_REGISTRY: Dict[str, type[RepositoryInterface] | callable] = {
+_REPOSITORY_REGISTRY: Dict[str, type[RepositoryInterface] | Callable[[], RepositoryInterface]] = {
     "MW": MWRepository,
     "MW_LIPIDOMICS": lambda: MWRepository(omics_type="lipidomics"),
     "MW_METABOLOMICS": lambda: MWRepository(omics_type="metabolomics"),
@@ -97,7 +97,7 @@ def discover_studies(
     keywords: List[str],
     omics_type: Optional[str] = None,
     repository: Optional[str] = None,
-    filters: Optional[Dict[str, any]] = None,
+    filters: Optional[Dict[str, Any]] = None,
     max_results: int = 100,
 ) -> Dict[str, List[str]]:
     """

@@ -1,7 +1,7 @@
 """R-group decomposition utilities for SAR analysis."""
 from __future__ import annotations
 
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional
 
 from amprenta_rag.logging_utils import get_logger
 
@@ -87,7 +87,7 @@ def find_common_core(smiles_list: List[str]) -> Optional[str]:
         return None
 
 
-def decompose_rgroups(smiles_list: List[str], core_smarts: str) -> List[Dict[str, any]]:
+def decompose_rgroups(smiles_list: List[str], core_smarts: str) -> List[Dict[str, Any]]:
     """
     Decompose compounds into R-groups based on a common core.
 
@@ -174,7 +174,7 @@ def decompose_rgroups(smiles_list: List[str], core_smarts: str) -> List[Dict[str
         return []
 
 
-def get_rgroup_statistics(decomposition: List[Dict[str, any]]) -> Dict[str, Dict[str, int]]:
+def get_rgroup_statistics(decomposition: List[Dict[str, Any]]) -> Dict[str, Dict[str, int]]:
     """
     Calculate frequency statistics for R-groups at each position.
 

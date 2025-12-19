@@ -1,7 +1,7 @@
 """Pattern detection utilities for cross-dataset analysis."""
 from __future__ import annotations
 
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Any
 from uuid import UUID
 
 from amprenta_rag.database.models import Dataset, Signature, SignatureComponent, Feature
@@ -148,7 +148,7 @@ def calculate_overlap(dataset_ids: List[str], db) -> Dict[str, Set[str]]:
         return {}
 
 
-def get_cross_dataset_summary(dataset_ids: List[str], db) -> Dict[str, any]:
+def get_cross_dataset_summary(dataset_ids: List[str], db) -> Dict[str, Any]:
     """
     Get summary statistics for features across datasets.
 

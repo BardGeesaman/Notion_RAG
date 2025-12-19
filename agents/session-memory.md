@@ -105,6 +105,14 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-19] – **Mypy Type Checking Setup**:
+  - Created mypy.ini with gradual typing config
+  - Lenient global, strict for API layer (amprenta_rag.api.*)
+  - Installed type stubs (types-requests, types-PyYAML, etc.)
+  - Fixed any→Any issues in 8 files
+  - Results: 597→273 errors (-54%), 136→40 files (-71%)
+  - Next: Fix API layer errors, add to CI
+
 * [2025-12-19] – **Playwright E2E Test Separation**:
   - Installed Playwright browser binaries (chromium)
   - Added requires_server marker to pytest.ini

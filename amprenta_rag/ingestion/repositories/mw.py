@@ -85,7 +85,7 @@ class MWRepository(RepositoryInterface):
     def search_studies(
         self,
         keywords: List[str],
-        filters: Optional[Dict[str, any]] = None,
+        filters: Optional[Dict[str, Any]] = None,
         max_results: int = 100,
     ) -> List[str]:
         """

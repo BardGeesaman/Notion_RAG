@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Any
 
 import numpy as np
 import pandas as pd
@@ -109,7 +109,7 @@ def run_design_aware_analysis(
     features_df: pd.DataFrame,
     sample_groups: Dict[str, List[str]],
     design_type: str,
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Run statistical analysis tailored to experimental design.
 
