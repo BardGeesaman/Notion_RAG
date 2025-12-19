@@ -33,3 +33,4 @@ def downgrade():
     op.drop_index("ix_alerts_subscription_id", table_name="alerts")
     op.drop_table("alerts")
 
+

@@ -1,188 +1,255 @@
 # Workstation Setup Guide
 
-Quick setup guide for running the Amprenta RAG Platform on any workstation.
+Complete guide for setting up the Amprenta RAG development environment on a new workstation.
+
+## Prerequisites
+
+### macOS (Homebrew)
+
+```bash
+# Install Homebrew if not present
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install required tools
+brew install git
+brew install --cask docker
+brew install --cask miniconda
+
+# Start Docker Desktop
+open -a Docker
+```
+
+### Cursor IDE
+
+1. Download from https://cursor.sh
+2. Install and open
+3. Sign in to sync settings (optional)
 
 ---
 
-## Quick Setup (Recommended)
+## 1. Install Cursor Extensions
 
-From your cloned repository:
+Install these extensions via Command Palette (`Cmd+Shift+P` → "Install Extension"):
 
+| Extension | Extension ID |
+|-----------|--------------|
+| Python | ms-python.python |
+| Python Debugger | ms-python.debugpy |
+| Pylance (Type Checking) | ms-python.vscode-pylance |
+| Jupyter Notebook | ms-toolsai.jupyter |
+| Docker | ms-azuretools.vscode-docker |
+| Dev Containers | ms-vscode-remote.remote-containers |
+| GitLens | eamodio.gitlens |
+| GitHub Pull Requests | github.vscode-pull-request-github |
+| GitHub Actions | github.vscode-github-actions |
+| Git History | donjayamanne.githistory |
+| markdownlint | davidanson.vscode-markdownlint |
+| Terraform | hashicorp.terraform |
+| Kubernetes | ms-kubernetes-tools.vscode-kubernetes-tools |
+| Vim | vscodevim.vim |
+
+Or install via terminal:
 ```bash
-cd /path/to/RAG
-bash scripts/setup_workstation.sh
+cursor --install-extension ms-python.python
+cursor --install-extension ms-python.debugpy
+cursor --install-extension ms-python.vscode-pylance
+cursor --install-extension ms-toolsai.jupyter
+cursor --install-extension ms-azuretools.vscode-docker
+cursor --install-extension ms-vscode-remote.remote-containers
+cursor --install-extension eamodio.gitlens
+cursor --install-extension github.vscode-pull-request-github
+cursor --install-extension github.vscode-github-actions
+cursor --install-extension donjayamanne.githistory
+cursor --install-extension davidanson.vscode-markdownlint
+cursor --install-extension hashicorp.terraform
+cursor --install-extension ms-kubernetes-tools.vscode-kubernetes-tools
+cursor --install-extension vscodevim.vim
 ```
-
-This script:
-
-- Detects your username (`whoami`)
-- Creates `.env` from `.env.template` (if it does not exist)
-- Replaces `YOUR_USERNAME_HERE` with your actual username
-- Installs Python dependencies via `pip install -r requirements.txt`
-- Installs Playwright Chromium browser via `playwright install chromium`
-- Clears Python caches (`__pycache__`, `*.pyc`)
-- Creates the `logs/` directory
-
-> Note: The script **runs real install commands** (`pip`, `playwright`). Review it before running and ensure you are in the correct virtual environment.
 
 ---
 
-## Manual Setup
-
-If you prefer manual control or need to debug issues, follow these steps.
-
-### 1. Install Python Dependencies
-
-From the repo root:
+## 2. Clone Repository
 
 ```bash
-pip install -r requirements.txt
-playwright install chromium
+cd ~/Documents
+git clone https://github.com/BardGeesaman/Notion_RAG.git RAG
+cd RAG
 ```
 
-### 2. Configure Environment
+---
 
-Create your `.env` from the template:
+## 3. Create Conda Environment
 
 ```bash
-cp .env.template .env
-# Then edit .env and set:
-#   POSTGRES_USER=$(whoami)
-#   POSTGRES_PASSWORD=your_database_password
-#   OPENAI_API_KEY=...
-#   PINECONE_API_KEY=...
+# Initialize conda for your shell (one-time)
+conda init zsh
+source ~/.zshrc
+
+# Create and activate environment
+conda create -n myenv python=3.10 -y
+conda activate myenv
+
+# Install Python dependencies
+python -m pip install -r requirements.txt
+
+# Install Playwright browsers (for E2E tests)
+python -m playwright install
 ```
 
-### 3. Initialize Database
+**Note:** Always use `python -m pip install` instead of `pip install` to ensure packages install in the conda environment.
 
-Run Postgres migrations:
+---
+
+## 4. Configure Environment Variables
 
 ```bash
+# Copy template
+cp .env.example .env
+
+# Edit with your API keys
+# Required: OPENAI_API_KEY, PINECONE_API_KEY, ZOTERO_API_KEY
+```
+
+Minimum required `.env` contents:
+```bash
+OPENAI_API_KEY=sk-...
+PINECONE_API_KEY=...
+ZOTERO_API_KEY=...
+
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=amprenta
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+```
+
+---
+
+## 5. Start Docker Services
+
+```bash
+# Start Postgres and pgAdmin
+docker compose up -d
+
+# Verify containers are running
+docker ps
+# Expected: amprenta-postgres, amprenta-pgadmin
+```
+
+**Access pgAdmin:** http://localhost:5050
+- Email: admin@amprenta.local
+- Password: admin
+
+---
+
+## 6. Initialize Database
+
+```bash
+# Activate conda environment
+conda activate myenv
+
+# Run database migrations
 alembic upgrade head
-```
 
-### 4. Verify Setup
-
-Basic checks:
-
-```bash
-# Test core dashboard imports
-pytest amprenta_rag/tests/dashboard/test_pages_import.py
-
-# Start dashboard
-streamlit run scripts/run_dashboard.py
-
-# Start API
-uvicorn amprenta_rag.api.main:app --reload
+# (Optional) Seed test data
+python scripts/seed_sar_data.py
+python scripts/seed_hts_data.py
 ```
 
 ---
 
-## Troubleshooting & Workstation-Specific Issues
-
-### Username Mismatch (Postgres Role Errors)
-
-Symptom:
-- Errors like `FATAL: role "bard" does not exist` or similar.
-
-Fix:
-
-- Check your OS username:
+## 7. Verify Setup
 
 ```bash
-whoami
-```
+# Validate configuration
+python scripts/validate_configuration.py
 
-- Update `.env`:
+# Run unit tests
+pytest tests/ -v --ignore=tests/e2e
 
-```env
-POSTGRES_USER=your_actual_username
-```
+# Start API server (terminal 1)
+uvicorn amprenta_rag.api.main:app --reload --port 8000
 
-### Missing Packages
-
-Symptom:
-- `ModuleNotFoundError` for libraries like `streamlit`, `playwright`, `psycopg2`, `fastapi`, etc.
-
-Fix:
-
-```bash
-pip install streamlit playwright psycopg2-binary scikit-learn fastapi uvicorn
-```
-
-If you are using a virtual environment, ensure it is activated before running `pip install`.
-
-### Python Cache Issues
-
-Symptom:
-- Tests or imports behave inconsistently after code changes.
-
-Fix:
-
-```bash
-find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null
-find . -name "*.pyc" -delete
+# Start dashboard (terminal 2)
+cd scripts/dashboard && streamlit run app.py
 ```
 
 ---
 
-## Switching Between Workstations
+## 8. (Optional) Start JupyterHub
 
-Typical flow for moving from Workstation A to Workstation B:
-
-### 1. On Workstation A
-
-Commit and push your latest changes:
+For Voila dashboards and Jupyter notebooks:
 
 ```bash
-cd /path/to/RAG
-git add -A
-git commit -m "Your changes"
-git push origin main
+cd deploy/jupyterhub
+docker compose up -d
 ```
 
-### 2. On Workstation B
+Access at: http://localhost:8000
 
-Pull and run setup:
+---
 
+## Quick Reference
+
+| Service | URL | Notes |
+|---------|-----|-------|
+| FastAPI | http://localhost:8000 | API server |
+| API Docs | http://localhost:8000/docs | Swagger UI |
+| Streamlit | http://localhost:8501 | Dashboard |
+| pgAdmin | http://localhost:5050 | Database admin |
+| JupyterHub | http://localhost:8000 | When running |
+
+---
+
+## Troubleshooting
+
+### conda: command not found
 ```bash
-cd /path/to/RAG
-git pull origin main
-bash scripts/setup_workstation.sh
+source ~/.zshrc
+# or restart terminal
 ```
 
-### 3. Verify
+### Docker permission denied
+- Ensure Docker Desktop is running
+- Check Docker Desktop → Settings → General → "Start Docker Desktop when you log in"
 
+### Database connection failed
 ```bash
-pytest amprenta_rag/tests/dashboard/test_pages_import.py
-streamlit run scripts/run_dashboard.py
+# Check if Postgres is running
+docker ps | grep postgres
+
+# Restart if needed
+docker compose down && docker compose up -d
+```
+
+### Missing API keys error
+- Verify `.env` file exists in project root
+- Check all required keys are set (OPENAI_API_KEY, PINECONE_API_KEY, ZOTERO_API_KEY)
+
+### pip installing to wrong Python
+Always use:
+```bash
+python -m pip install <package>
+```
+Not:
+```bash
+pip install <package>  # May use system Python!
 ```
 
 ---
 
-## Environment Variables Checklist
+## Daily Workflow
 
-For full functionality, ensure these are set (typically via `.env`):
+```bash
+# Start of day
+cd ~/Documents/RAG
+conda activate myenv
+docker compose up -d
 
-- **POSTGRES_HOST**: e.g., `localhost`
-- **POSTGRES_PORT**: e.g., `5432`
-- **POSTGRES_DB**: `amprenta` (canonical local database name)
-- **POSTGRES_USER**: your OS username (or DB role)
-- **POSTGRES_PASSWORD**: password for the Postgres user
+# Start services
+uvicorn amprenta_rag.api.main:app --reload --port 8000 &
+cd scripts/dashboard && streamlit run app.py &
 
-- **OPENAI_API_KEY**: OpenAI API key
-- **PINECONE_API_KEY**: Pinecone API key
-- **PINECONE_INDEX_NAME**: e.g., `amprenta-rag`
-- **PINECONE_ENVIRONMENT**: Pinecone environment/region
-
-Optional (have defaults in code, but can be overridden):
-
-- **FEATURE_CACHE_ENABLED**
-- **FEATURE_CACHE_TTL**
-- **FEATURE_CACHE_MAX_SIZE**
-- **AUTO_LINK_ENABLED**
-- **AUTO_LINK_MIN_CONFIDENCE**
-
-Keep `.env.template` under version control and `.env` out of version control so each workstation can safely customize credentials without leaking secrets.
-
-
+# End of day
+docker compose down
+```

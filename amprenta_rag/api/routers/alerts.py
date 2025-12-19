@@ -32,3 +32,4 @@ def mark_all_alerts_read(user_id: Optional[UUID] = Depends(get_optional_user_id)
     count = alert_service.mark_all_read(user_id)
     return {"updated": count}
 
+
