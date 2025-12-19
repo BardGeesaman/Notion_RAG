@@ -80,13 +80,34 @@ cd RAG
 
 ## 3. Create Conda Environment
 
+### Option A: Exact Replication (Recommended)
+
+Use the exported environment file for exact package versions:
+
+```bash
+# Initialize conda for your shell (one-time)
+conda init zsh
+source ~/.zshrc
+
+# Create environment from export (exact versions)
+conda env create -f environment.yml
+conda activate myenv
+
+# Install Playwright browsers (for E2E tests)
+python -m playwright install
+```
+
+### Option B: Fresh Install
+
+Create a new environment and install from requirements:
+
 ```bash
 # Initialize conda for your shell (one-time)
 conda init zsh
 source ~/.zshrc
 
 # Create and activate environment
-conda create -n myenv python=3.10 -y
+conda create -n myenv python=3.12 -y
 conda activate myenv
 
 # Install Python dependencies
