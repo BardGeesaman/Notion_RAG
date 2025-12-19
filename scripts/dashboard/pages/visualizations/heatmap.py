@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import Dict, List
 
 import pandas as pd
-import plotly.express as px
 import streamlit as st
 from scipy.cluster import hierarchy as sch
 from sqlalchemy.orm import Session
 
-from amprenta_rag.database.models import Dataset, Feature
+from amprenta_rag.database.models import Dataset
 from scripts.dashboard.db_session import db_session
 from scripts.dashboard.utils.viz_helpers import (
     create_heatmap,

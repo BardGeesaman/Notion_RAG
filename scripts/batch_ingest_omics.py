@@ -23,7 +23,6 @@ from amprenta_rag.ingestion.omics_type_detection import detect_omics_type
 from amprenta_rag.ingestion.proteomics_ingestion import ingest_proteomics_file
 from amprenta_rag.ingestion.transcriptomics_ingestion import ingest_transcriptomics_file
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.utils.errors import format_error, render_cli_error
 
 logger = get_logger(__name__)
 
@@ -208,6 +207,10 @@ def main() -> None:
             len(results) - len(failures),
             len(failures),
         )
+
+    except Exception:
+        logger.exception("[BATCH-INGEST] Batch ingest failed")
+        raise
 
 
 if __name__ == "__main__":

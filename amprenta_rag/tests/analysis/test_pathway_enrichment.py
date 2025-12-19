@@ -10,10 +10,8 @@ Tests the enrichment analysis functions:
 
 from __future__ import annotations
 
-from typing import List, Set
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 
 
 from amprenta_rag.analysis.pathway.enrichment import (
@@ -247,7 +245,7 @@ class TestMultipleTestingCorrection:
 
     def test_correction_with_empty_list(self):
         """Empty results are handled by caller, not by _apply_multiple_testing_correction.
-        
+
         The main perform_pathway_enrichment function guards against empty lists
         with `if enrichment_results:` before calling the correction function.
         """

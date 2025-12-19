@@ -32,7 +32,7 @@ def upgrade():
         sa.Column('created_at', sa.DateTime(), default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), default=sa.func.now()),
     )
-    
+
     op.create_table(
         'experiment_protocols',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),

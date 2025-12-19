@@ -94,24 +94,24 @@ QUICK_ACTIONS = [
 def search_actions(query: str) -> List[Dict[str, Any]]:
     """
     Search quick actions by name or description (fuzzy match).
-    
+
     Args:
         query: Search query string
-        
+
     Returns:
         Filtered list of actions matching the query
     """
     if not query or not query.strip():
         return QUICK_ACTIONS
-    
+
     query_lower = query.lower().strip()
     results = []
-    
+
     for action in QUICK_ACTIONS:
         name_match = query_lower in action["name"].lower()
         desc_match = query_lower in action["description"].lower()
-        
+
         if name_match or desc_match:
             results.append(action)
-    
+
     return results

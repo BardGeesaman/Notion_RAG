@@ -200,7 +200,7 @@ def ingest_signature_from_file(
     # Create component pages and link to feature pages (multi-omics support)
     component_count = 0
     features_created: Set[tuple] = set()  # (feature_type, feature_name) tuples
-    
+
     # Import normalization functions
     from amprenta_rag.ingestion.transcriptomics_ingestion import normalize_gene_identifier
     from amprenta_rag.ingestion.proteomics_ingestion import normalize_protein_identifier
@@ -212,7 +212,7 @@ def ingest_signature_from_file(
             # Get feature type and name
             feature_type = getattr(component, "feature_type", "lipid")  # Default to lipid for backward compat
             feature_name_raw = getattr(component, "feature_name", component.species)
-            
+
             # Normalize feature name based on type
             feature_name_normalized = feature_name_raw
             if feature_type == "gene":
@@ -227,7 +227,7 @@ def ingest_signature_from_file(
                     feature_name_normalized = normalized
                 else:
                     feature_name_normalized = feature_name_raw
-            
+
             # Create or find component page
             component_page_id = _find_or_create_component_page(
                 component=component,
@@ -251,11 +251,11 @@ def ingest_signature_from_file(
                     feature_type=feature_type,
                     feature_name=feature_name_normalized,
                 )
-                
+
                 feature_key = (feature_type, feature_name_normalized)
                 if feature_key not in features_created:
                     features_created.add(feature_key)
-                    
+
                 logger.debug(
                     "[INGEST][SIGNATURES] Linked component %s to %s feature '%s'",
                     component_page_id,

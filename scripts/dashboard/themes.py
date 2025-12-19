@@ -38,15 +38,15 @@ THEMES = {
 def apply_theme(theme_name: str) -> None:
     """
     Apply a theme by injecting CSS into the Streamlit app.
-    
+
     Args:
         theme_name: Name of the theme ("dark" or "light")
     """
     if theme_name not in THEMES:
         theme_name = "light"  # Default to light
-    
+
     theme = THEMES[theme_name]
-    
+
     css = f"""
     <style>
     :root {{
@@ -58,68 +58,68 @@ def apply_theme(theme_name: str) -> None:
         --secondary-color: {theme['secondary']};
         --accent-color: {theme['accent']};
     }}
-    
+
     /* Override Streamlit default styles */
     .stApp {{
         background-color: {theme['background']};
         color: {theme['text']};
     }}
-    
+
     /* Main content area */
     .main .block-container {{
         background-color: {theme['background']};
         color: {theme['text']};
     }}
-    
+
     /* Sidebar */
     [data-testid="stSidebar"] {{
         background-color: {theme['sidebar_background']} !important;
     }}
-    
+
     [data-testid="stSidebar"] * {{
         color: {theme['sidebar_text']} !important;
     }}
-    
+
     /* Text elements */
     h1, h2, h3, h4, h5, h6, p, div, span, label {{
         color: {theme['text']} !important;
     }}
-    
+
     /* Buttons */
     .stButton > button {{
         background-color: {theme['primary']};
         color: white;
         border-radius: 0.25rem;
     }}
-    
+
     .stButton > button:hover {{
         background-color: {theme['accent']};
     }}
-    
+
     /* Input fields */
     .stTextInput > div > div > input {{
         background-color: {theme['background']};
         color: {theme['text']};
         border-color: {theme['secondary']};
     }}
-    
+
     .stSelectbox > div > div > select {{
         background-color: {theme['background']};
         color: {theme['text']};
     }}
-    
+
     /* Dataframes */
     .stDataFrame {{
         background-color: {theme['background']};
         color: {theme['text']};
     }}
-    
+
     /* Expanders */
     .streamlit-expanderHeader {{
         background-color: {theme['secondary']};
         color: {theme['text']};
     }}
-    
+
     /* Code blocks */
     .stCodeBlock {{
         background-color: {theme['secondary']};
@@ -127,14 +127,14 @@ def apply_theme(theme_name: str) -> None:
     }}
     </style>
     """
-    
+
     st.markdown(css, unsafe_allow_html=True)
 
 
 def get_theme_names() -> List[str]:
     """
     Get list of available theme names.
-    
+
     Returns:
         List of theme names
     """

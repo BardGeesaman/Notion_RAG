@@ -261,17 +261,17 @@ def main() -> None:
                 "(e.g., 'gene:TP53', 'lipid:Cer(d18:1/16:0)')"
             )
             return
-        
+
         feature_type, feature_name = args.cross_omics_feature.split(":", 1)
         feature_type = feature_type.lower().strip()
         feature_name = feature_name.strip()
-        
+
         if feature_type not in ["gene", "protein", "metabolite", "lipid"]:
             print(
                 f"Error: Invalid feature_type '{feature_type}'. Must be one of: gene, protein, metabolite, lipid"
             )
             return
-        
+
         summary = cross_omics_feature_summary(
             feature_name=feature_name,
             feature_type=feature_type,

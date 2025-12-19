@@ -15,11 +15,10 @@ SQLAlchemy model instances and lightweight dummy Session/Query objects.
 """
 
 from typing import Dict, Iterable, List
-import pytest
 from uuid import uuid4
 
 
-from amprenta_rag.database.models import Dataset, Feature, Program, Signature
+from amprenta_rag.database.models import Dataset, Feature, Signature
 from scripts.dashboard.pages.visualizations.heatmap import _build_matrix as build_heatmap_matrix
 from scripts.dashboard.pages.visualizations.heatmap import _cluster_matrix
 from scripts.dashboard.pages.visualizations.network import _build_network
@@ -42,7 +41,7 @@ class DummyQuery:
 
     def first(self):
         if isinstance(self._result, list):
-       	    return self._result[0] if self._result else None
+            return self._result[0] if self._result else None
         return self._result
 
 
@@ -134,13 +133,13 @@ def test_pca_matrix_with_program_datasets():
     """
     PCA feature matrix should be constructed correctly from program-linked datasets.
     We only test the data matrix construction; PCA fitting is covered indirectly.
-    
+
     Note: _build_matrix expects dicts from _load_dataset_info, not ORM objects.
     """
     # Create dataset dicts as _load_dataset_info would produce
     ds1_id = str(uuid4())
     ds2_id = str(uuid4())
-    
+
     datasets = [
         {
             "id": ds1_id,

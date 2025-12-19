@@ -29,14 +29,14 @@ def check_credentials():
     """Check if credentials file exists."""
     creds_path = project_root / "credentials" / "gmail_credentials.json"
     token_path = project_root / "credentials" / "gmail_token.json"
-    
+
     has_creds = creds_path.exists()
     has_token = token_path.exists()
-    
+
     print("\n" + "=" * 60)
     print("Gmail API Setup Status")
     print("=" * 60)
-    
+
     if has_creds:
         print("✅ Credentials file found: credentials/gmail_credentials.json")
     else:
@@ -47,16 +47,16 @@ def check_credentials():
         print("   3. Enable Gmail API")
         print("   4. Create OAuth 2.0 Desktop app credentials")
         print("   5. Download and save as: credentials/gmail_credentials.json")
-    
+
     if has_token:
         print("✅ Token file found: credentials/gmail_token.json")
         print("   (Already authenticated)")
     else:
         print("❌ Token file NOT found: credentials/gmail_token.json")
         print("   (Need to authenticate on first run)")
-    
+
     print("=" * 60)
-    
+
     return has_creds, has_token
 
 def test_connection():
@@ -64,27 +64,27 @@ def test_connection():
     print("\n" + "=" * 60)
     print("Testing Gmail API Connection")
     print("=" * 60)
-    
+
     try:
         from amprenta_rag.clients.gmail_client import GmailClient
-        
+
         print("\nInitializing Gmail client...")
         client = GmailClient()
-        
+
         print("Fetching inbox emails (limit 5)...")
         emails = client.fetch_emails(query="in:inbox", max_results=5)
-        
+
         print(f"✅ Success! Found {len(emails)} email(s)")
-        
+
         if emails:
             print("\nSample emails:")
             for i, email in enumerate(emails[:3], 1):
                 subject = email.get("subject", "(no subject)")[:50]
                 from_sender = email.get("from", "unknown")[:30]
                 print(f"  {i}. {subject} (from: {from_sender})")
-        
+
         return True
-        
+
     except FileNotFoundError as e:
         print(f"\n❌ Error: {e}")
         print("\nPlease download OAuth2 credentials from Google Cloud Console")
@@ -100,25 +100,25 @@ def test_connection():
 def main():
     print("Gmail API Setup and Test")
     print("=" * 60)
-    
+
     # Check dependencies
     if not check_dependencies():
         sys.exit(1)
-    
+
     # Check credentials
     has_creds, has_token = check_credentials()
-    
+
     if not has_creds:
         print("\n⚠️  Please set up credentials first (see instructions above)")
         sys.exit(1)
-    
+
     # Test connection
     if not has_token:
         print("\n🔐 First-time authentication will happen during connection test...")
         input("Press Enter to continue (will open browser for OAuth)...")
-    
+
     success = test_connection()
-    
+
     if success:
         print("\n" + "=" * 60)
         print("✅ Setup Complete!")

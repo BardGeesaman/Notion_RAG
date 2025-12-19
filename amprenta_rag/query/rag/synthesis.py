@@ -6,9 +6,8 @@ This module provides functions for synthesizing answers using OpenAI.
 
 from __future__ import annotations
 
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Tuple, Dict, Any
 
-from amprenta_rag.clients.openai_client import get_default_models, get_openai_client
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.query.rag.models import Citation
 from amprenta_rag.llm.model_registry import get_model_client, AVAILABLE_MODELS

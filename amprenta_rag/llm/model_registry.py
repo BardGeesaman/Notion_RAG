@@ -41,7 +41,7 @@ AVAILABLE_MODELS = {
 def get_available_models() -> List[Dict[str, Any]]:
     """
     Get list of available models.
-    
+
     Returns:
         List of model info dictionaries
     """
@@ -51,22 +51,22 @@ def get_available_models() -> List[Dict[str, Any]]:
 def get_model_client(model_name: str):
     """
     Get client for a specific model.
-    
+
     Args:
         model_name: Name of the model (e.g., "gpt-4o")
-        
+
     Returns:
         Model client (OpenAI, Anthropic, or Google client)
-        
+
     Raises:
         ValueError: If model not found or API key missing
     """
     if model_name not in AVAILABLE_MODELS:
         raise ValueError(f"Model '{model_name}' not found. Available models: {list(AVAILABLE_MODELS.keys())}")
-    
+
     model_info = AVAILABLE_MODELS[model_name]
     provider = model_info["provider"]
-    
+
     if provider == "openai":
         return get_openai_client()
     elif provider == "anthropic":
@@ -95,26 +95,26 @@ def get_model_client(model_name: str):
 def call_model(model_name: str, messages: List[Dict[str, str]], temperature: float = 0.2) -> str:
     """
     Call a model with messages and return response text.
-    
+
     Args:
         model_name: Name of the model to use
         messages: List of message dicts with "role" and "content"
         temperature: Temperature for generation (default: 0.2)
-        
+
     Returns:
         Response text from the model
-        
+
     Raises:
         ValueError: If model not found or API key missing
         Exception: If API call fails
     """
     if model_name not in AVAILABLE_MODELS:
         raise ValueError(f"Model '{model_name}' not found. Available models: {list(AVAILABLE_MODELS.keys())}")
-    
+
     model_info = AVAILABLE_MODELS[model_name]
     provider = model_info["provider"]
     actual_model_name = model_info["name"]
-    
+
     if provider == "openai":
         client = get_openai_client()
         try:
@@ -131,12 +131,12 @@ def call_model(model_name: str, messages: List[Dict[str, str]], temperature: flo
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable not set. Please set it to use Claude models.")
-        
+
         try:
             import anthropic
         except ImportError:
             raise ValueError("anthropic package not installed. Install with: pip install anthropic")
-        
+
         client = anthropic.Anthropic(api_key=api_key)
         try:
             # Convert messages format for Anthropic (they use similar format)
@@ -151,7 +151,7 @@ def call_model(model_name: str, messages: List[Dict[str, str]], temperature: flo
                     # Anthropic uses "user" and "assistant" roles
                     anthropic_role = "user" if role == "user" else "assistant"
                     anthropic_messages.append({"role": anthropic_role, "content": content})
-            
+
             response = client.messages.create(
                 model=actual_model_name,
                 messages=anthropic_messages,
@@ -168,15 +168,15 @@ def call_model(model_name: str, messages: List[Dict[str, str]], temperature: flo
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable not set. Please set it to use Gemini models.")
-        
+
         try:
             import google.generativeai as genai
         except ImportError:
             raise ValueError("google-generativeai package not installed. Install with: pip install google-generativeai")
-        
+
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(actual_model_name)
-        
+
         try:
             # Convert messages to a single prompt for Gemini
             # Gemini uses a simpler prompt format, so we'll combine messages
@@ -190,14 +190,14 @@ def call_model(model_name: str, messages: List[Dict[str, str]], temperature: flo
                     prompt_parts.append(f"User: {content}")
                 elif role == "assistant":
                     prompt_parts.append(f"Assistant: {content}")
-            
+
             prompt = "\n\n".join(prompt_parts)
-            
+
             # Configure generation parameters
             generation_config = genai.types.GenerationConfig(
                 temperature=temperature,
             )
-            
+
             response = model.generate_content(
                 prompt,
                 generation_config=generation_config,

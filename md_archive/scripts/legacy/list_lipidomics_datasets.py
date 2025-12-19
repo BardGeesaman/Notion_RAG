@@ -72,7 +72,7 @@ def list_lipidomics_datasets():
         print(f"   Page ID: {page_id}")
         print(f"   Data Origin: {origin_text or 'N/A'}")
         print(f"   Omics Type: {omics_value or 'N/A'}")
-        
+
         if is_lipidomics:
             lipidomics_datasets.append({"name": page_name, "page_id": page_id, "origin": origin_text})
         print()

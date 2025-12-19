@@ -22,22 +22,22 @@ def test_mw_metabolite_extraction(study_id: str = "ST000001"):
     print("\n" + "="*70)
     print("TEST: Metabolomics Workbench Metabolite Extraction")
     print("="*70 + "\n")
-    
+
     print(f"Extracting metabolites from study: {study_id}")
     print(f"Using cleaner REST API /data endpoint\n")
-    
+
     try:
         metabolite_set = extract_mw_metabolites_from_data_endpoint(
             study_id=study_id,
         )
-        
+
         if metabolite_set:
             print(f"\n✅ Extraction successful!")
             print(f"   Found {len(metabolite_set)} unique metabolites")
             print(f"\n   Sample metabolites (first 20):")
             for i, metabolite in enumerate(sorted(metabolite_set)[:20], 1):
                 print(f"      {i}. {metabolite}")
-            
+
             if len(metabolite_set) > 20:
                 print(f"   ... and {len(metabolite_set) - 20} more metabolites")
         else:
@@ -45,9 +45,9 @@ def test_mw_metabolite_extraction(study_id: str = "ST000001"):
             print("   This may be expected if:")
             print("   - The study doesn't have metabolite identification data")
             print("   - The study structure is different than expected")
-        
+
         return metabolite_set
-        
+
     except Exception as e:
         print(f"\n❌ Extraction failed: {e}")
         import traceback
@@ -58,20 +58,20 @@ def test_mw_metabolite_extraction(study_id: str = "ST000001"):
 def main():
     """Run test."""
     import sys
-    
+
     print("\n" + "="*70)
     print("METABOLOMICS WORKBENCH METABOLITE EXTRACTION TEST")
     print("="*70)
-    
+
     # Get study ID from command line argument or use default
     study_id = sys.argv[1] if len(sys.argv) > 1 else "ST000001"
-    
+
     metabolite_set = test_mw_metabolite_extraction(study_id)
-    
+
     print("\n" + "="*70)
     print("TEST COMPLETE")
     print("="*70 + "\n")
-    
+
     if metabolite_set:
         print(f"✅ Successfully extracted {len(metabolite_set)} metabolites using REST API!")
         print(f"\n   Advantages over MetaboLights:")

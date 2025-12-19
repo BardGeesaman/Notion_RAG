@@ -36,9 +36,9 @@ def main() -> None:
         action="store_true",
         help="Enable auto-reload for development",
     )
-    
+
     args = parser.parse_args()
-    
+
     print("=" * 80)
     print("Starting FastAPI Server")
     print("=" * 80)
@@ -52,7 +52,7 @@ def main() -> None:
     print()
     print("=" * 80)
     print()
-    
+
     uvicorn.run(
         "amprenta_rag.api.main:app",
         host=args.host,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import random
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Signature, SignatureComponent, Feature

@@ -4,7 +4,6 @@ Reporting and Notion integration for program-signature mapping.
 Functions for generating reports and updating Notion with program maps.
 """
 
-from typing import Any, Dict
 
 from amprenta_rag.analysis.program_maps.convergence import compute_convergence_indicators
 from amprenta_rag.analysis.program_maps.coverage import compute_program_omics_coverage
@@ -149,7 +148,7 @@ def generate_program_map_report(
 def update_notion_with_program_map(program_map: ProgramSignatureMap) -> None:
     """
     Stub: Notion support removed. No-op.
-    
+
     Previously updated Notion program page with program-signature map summary.
     """
     logger.debug(

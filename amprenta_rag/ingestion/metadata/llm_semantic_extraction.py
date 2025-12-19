@@ -50,15 +50,15 @@ def extract_semantic_metadata_with_llm(
 ) -> Dict[str, Any]:
     """
     Extract semantic metadata from text using OpenAI LLM.
-    
+
     Uses GPT to extract structured metadata (diseases, targets, signatures, etc.)
     from unstructured text content. More accurate than pattern matching.
-    
+
     Args:
         text: Text content to extract metadata from
         source_type: Type of source (dataset, experiment, email, literature) - for logging
         max_length: Maximum text length to send to LLM (will truncate if longer)
-        
+
     Returns:
         Dictionary with extracted metadata:
         - diseases: List[str]
@@ -76,9 +76,9 @@ def extract_semantic_metadata_with_llm(
             "phenotype_axes": [],
             "biomarker_roles": [],
         }
-    
+
     cfg = get_config()
-    
+
     # Check if LLM extraction is enabled
     if not cfg.pipeline.enable_llm_semantic_extraction:
         logger.debug("[LLM-SEMANTIC] LLM semantic extraction is disabled")
@@ -89,7 +89,7 @@ def extract_semantic_metadata_with_llm(
             "phenotype_axes": [],
             "biomarker_roles": [],
         }
-    
+
     # Truncate text if too long
     if len(text) > max_length:
         text = text[:max_length] + "... [truncated]"
@@ -97,18 +97,18 @@ def extract_semantic_metadata_with_llm(
             "[LLM-SEMANTIC] Truncated text to %d characters for LLM extraction",
             max_length,
         )
-    
+
     try:
         client = get_openai_client()
-        
+
         prompt = EXTRACTION_PROMPT_TEMPLATE.format(text_content=text)
-        
+
         logger.debug(
             "[LLM-SEMANTIC] Calling OpenAI API for semantic extraction (%s, %d chars)",
             source_type,
             len(text),
         )
-        
+
         response = client.chat.completions.create(
             model=cfg.openai.model,
             messages=[
@@ -122,16 +122,16 @@ def extract_semantic_metadata_with_llm(
             max_tokens=500,
             response_format={"type": "json_object"},
         )
-        
+
         response_text = response.choices[0].message.content
         if not response_text:
             logger.warning("[LLM-SEMANTIC] Empty response from OpenAI")
             return _empty_metadata()
-        
+
         # Parse JSON response
         try:
             extracted = json.loads(response_text)
-            
+
             # Validate and normalize structure
             result = {
                 "diseases": _normalize_list(extracted.get("diseases", [])),
@@ -140,7 +140,7 @@ def extract_semantic_metadata_with_llm(
                 "phenotype_axes": _normalize_list(extracted.get("phenotype_axes", [])),
                 "biomarker_roles": _normalize_list(extracted.get("biomarker_roles", [])),
             }
-            
+
             logger.info(
                 "[LLM-SEMANTIC] Extracted metadata: %d diseases, %d targets, %d signatures, %d axes, %d roles",
                 len(result["diseases"]),
@@ -149,9 +149,9 @@ def extract_semantic_metadata_with_llm(
                 len(result["phenotype_axes"]),
                 len(result["biomarker_roles"]),
             )
-            
+
             return result
-            
+
         except json.JSONDecodeError as e:
             logger.error(
                 "[LLM-SEMANTIC] Failed to parse JSON response from OpenAI: %r. Response: %s",
@@ -159,7 +159,7 @@ def extract_semantic_metadata_with_llm(
                 response_text[:200],
             )
             return _empty_metadata()
-            
+
     except Exception as e:
         logger.warning(
             "[LLM-SEMANTIC] Error calling OpenAI API for semantic extraction: %r",
@@ -175,48 +175,48 @@ def enhance_metadata_with_llm(
 ) -> Dict[str, Any]:
     """
     Enhance existing metadata by extracting additional information with LLM.
-    
+
     Extracts semantic metadata from text and merges it with existing metadata,
     avoiding duplicates.
-    
+
     Args:
         metadata: Existing metadata dictionary
         text: Text content to extract from
         source_type: Type of source (for logging)
-        
+
     Returns:
         Enhanced metadata dictionary with merged results
     """
     extracted = extract_semantic_metadata_with_llm(text, source_type)
-    
+
     # Merge with existing metadata
     result = metadata.copy()
-    
+
     # Merge diseases
     existing_diseases = set(result.get("diseases", []))
     extracted_diseases = set(extracted.get("diseases", []))
     result["diseases"] = sorted(list(existing_diseases | extracted_diseases))
-    
+
     # Merge targets
     existing_targets = set(result.get("targets", []))
     extracted_targets = set(extracted.get("targets", []))
     result["targets"] = sorted(list(existing_targets | extracted_targets))
-    
+
     # Merge signatures
     existing_sigs = set(result.get("lipid_signatures", []))
     extracted_sigs = set(extracted.get("signatures", []))
     result["lipid_signatures"] = sorted(list(existing_sigs | extracted_sigs))
-    
+
     # Merge phenotype axes
     existing_axes = set(result.get("phenotype_axes", []))
     extracted_axes = set(extracted.get("phenotype_axes", []))
     result["phenotype_axes"] = sorted(list(existing_axes | extracted_axes))
-    
+
     # Merge biomarker roles
     existing_roles = set(result.get("biomarker_role", []))
     extracted_roles = set(extracted.get("biomarker_roles", []))
     result["biomarker_role"] = sorted(list(existing_roles | extracted_roles))
-    
+
     return result
 
 

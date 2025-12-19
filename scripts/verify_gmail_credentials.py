@@ -15,9 +15,9 @@ def main():
     print("=" * 60)
     print("Gmail Credentials Verification")
     print("=" * 60)
-    
+
     creds_path = project_root / "credentials" / "gmail_credentials.json"
-    
+
     # Check if file exists
     if not creds_path.exists():
         print(f"\n❌ Credentials file NOT found at:")
@@ -27,22 +27,22 @@ def main():
         print(f"2. Save as: credentials/gmail_credentials.json")
         print(f"\nSee GMAIL_CREDENTIALS_GUIDE.md for detailed steps")
         sys.exit(1)
-    
+
     print(f"\n✅ Credentials file found at:")
     print(f"   {creds_path}")
-    
+
     # Check if it's valid JSON
     try:
         with open(creds_path, 'r') as f:
             creds = json.load(f)
-        
+
         print(f"\n✅ File is valid JSON")
-        
+
         # Check structure
         if "installed" in creds:
             client_id = creds["installed"].get("client_id", "")
             client_secret = creds["installed"].get("client_secret", "")
-            
+
             if client_id and client_secret:
                 print(f"\n✅ Credentials structure is correct")
                 print(f"   Client ID: {client_id[:30]}...")
@@ -60,7 +60,7 @@ def main():
             print(f"   Expected 'installed' key with client_id and client_secret")
             print(f"   File keys: {list(creds.keys())}")
             sys.exit(1)
-            
+
     except json.JSONDecodeError as e:
         print(f"\n❌ File is not valid JSON: {e}")
         print(f"   Please check the file contents")

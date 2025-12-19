@@ -23,10 +23,10 @@ def main():
     print("\n" + "=" * 60)
     print("Configuration Validation")
     print("=" * 60 + "\n")
-    
+
     try:
         passed = validate_configuration()
-        
+
         if passed:
             print("\n✅ All configuration checks passed!")
             print("System is ready to use.\n")
@@ -35,7 +35,7 @@ def main():
             print("\n⚠️  Some configuration checks failed.")
             print("Please review the warnings above.\n")
             sys.exit(1)
-    
+
     except Exception as e:
         logger.error("Configuration validation failed: %r", e)
         print(f"\n❌ Configuration validation failed: {e}\n")

@@ -26,7 +26,7 @@ def main():
     print("\n" + "=" * 80)
     print("PATHWAY ENRICHMENT TEST - SYNTHETIC DATA")
     print("=" * 80 + "\n")
-    
+
     # Test with a small set of known cancer-related genes
     test_genes = {
         "TP53",  # Tumor protein p53
@@ -35,9 +35,9 @@ def main():
         "EGFR",  # Epidermal growth factor receptor
         "MYC",  # MYC proto-oncogene
     }
-    
+
     print(f"Testing with {len(test_genes)} genes: {', '.join(sorted(test_genes))}\n")
-    
+
     # Step 1: Test ID mapping
     print("Step 1: Testing Gene → KEGG ID Mapping")
     print("-" * 80)
@@ -49,26 +49,26 @@ def main():
             print(f"  ✅ {gene} → {kegg_id}")
         else:
             print(f"  ❌ {gene} → Not found")
-    
+
     if not mapped_genes:
         print("\n❌ No genes could be mapped to KEGG IDs. Cannot proceed with pathway test.")
         return
-    
+
     print(f"\n✅ Successfully mapped {len(mapped_genes)}/{len(test_genes)} genes\n")
-    
+
     # Step 2: Test pathway mapping
     print("Step 2: Testing Gene → Pathway Mapping")
     print("-" * 80)
     print("Mapping genes to KEGG pathways (this may take a minute)...\n")
-    
+
     try:
         pathways = map_features_to_kegg_pathways(
             features=set(mapped_genes.keys()),
             feature_type="gene",
         )
-        
+
         print(f"✅ Found {len(pathways)} pathways\n")
-        
+
         if pathways:
             print("Top 5 pathways:")
             for i, (pathway_id, pathway) in enumerate(list(pathways.items())[:5], 1):
@@ -84,18 +84,18 @@ def main():
             print("   - Network issues")
             print("   - KEGG API changes")
             return
-        
+
     except Exception as e:
         print(f"❌ Error mapping to pathways: {e}")
         import traceback
         traceback.print_exc()
         return
-    
+
     # Step 3: Test pathway enrichment
     print("Step 3: Testing Pathway Enrichment Analysis")
     print("-" * 80)
     print("Performing enrichment analysis...\n")
-    
+
     try:
         enrichment_results = perform_pathway_enrichment(
             input_features=set(mapped_genes.keys()),
@@ -103,9 +103,9 @@ def main():
             pathway_sources=["KEGG"],
             p_value_threshold=0.1,  # More lenient for testing
         )
-        
+
         print(f"✅ Found {len(enrichment_results)} significantly enriched pathways\n")
-        
+
         if enrichment_results:
             print("Top 5 enriched pathways:")
             for i, result in enumerate(enrichment_results[:5], 1):
@@ -121,13 +121,13 @@ def main():
         else:
             print("⚠️  No significantly enriched pathways found")
             print("   This could be normal if the test genes don't cluster in pathways")
-    
+
     except Exception as e:
         print(f"❌ Error in enrichment analysis: {e}")
         import traceback
         traceback.print_exc()
         return
-    
+
     print("\n" + "=" * 80)
     print("✅ PATHWAY ENRICHMENT TEST COMPLETE!")
     print("=" * 80 + "\n")

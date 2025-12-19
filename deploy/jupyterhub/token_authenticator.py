@@ -1,4 +1,3 @@
-import os
 import jwt
 from jupyterhub.auth import Authenticator
 from traitlets import Unicode
@@ -10,7 +9,7 @@ class TokenAuthenticator(Authenticator):
     jwt_secret = Unicode(
         help="Secret used to validate HS256 JWT tokens"
     ).tag(config=True)
-    
+
     auto_login = True
     login_service = "Streamlit SSO"
 
@@ -18,7 +17,7 @@ class TokenAuthenticator(Authenticator):
         """Validate JWT token from query parameter or data dict."""
         # Try query param first (auto_login flow)
         token = handler.get_argument("token", "")
-        
+
         # Fallback to data dict
         if not token and isinstance(data, dict):
             token = data.get("token", "")

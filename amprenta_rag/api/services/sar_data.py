@@ -111,7 +111,6 @@ def get_activity_cliffs_for_target(
        "similarity", "fold_change", "assay_id": None}
     """
     try:
-        from rdkit import Chem
         from rdkit.Chem import AllChem
         from rdkit import DataStructs
     except Exception:

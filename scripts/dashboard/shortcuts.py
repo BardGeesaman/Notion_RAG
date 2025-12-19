@@ -31,7 +31,7 @@ def render_shortcuts_help() -> None:
 def inject_shortcuts_js() -> None:
     """
     Inject JavaScript to handle keyboard shortcuts.
-    
+
     Uses st.components.v1.html to inject JavaScript that listens for keydown events
     and updates Streamlit session state for navigation.
     """
@@ -40,25 +40,25 @@ def inject_shortcuts_js() -> None:
     (function() {
         let keys = [];
         let lastKeyTime = Date.now();
-        
+
         function handleKeyDown(event) {
             const now = Date.now();
-            
+
             // Reset keys if too much time has passed (for multi-key shortcuts)
             if (now - lastKeyTime > 1000) {
                 keys = [];
             }
             lastKeyTime = now;
-            
+
             // Don't trigger shortcuts when typing in inputs
-            if (event.target.tagName === 'INPUT' || 
-                event.target.tagName === 'TEXTAREA' || 
+            if (event.target.tagName === 'INPUT' ||
+                event.target.tagName === 'TEXTAREA' ||
                 event.target.isContentEditable) {
                 return;
             }
-            
+
             const key = event.key.toLowerCase();
-            
+
             // Single key shortcuts
             if (key === '?' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
                 event.preventDefault();
@@ -68,7 +68,7 @@ def inject_shortcuts_js() -> None:
                 }, '*');
                 return;
             }
-            
+
             // Ctrl+K for command palette
             if ((key === 'k' || key === 'K') && (event.ctrlKey || event.metaKey)) {
                 event.preventDefault();
@@ -78,7 +78,7 @@ def inject_shortcuts_js() -> None:
                 }, '*');
                 return;
             }
-            
+
             if (key === '/' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
                 event.preventDefault();
                 window.parent.postMessage({
@@ -87,7 +87,7 @@ def inject_shortcuts_js() -> None:
                 }, '*');
                 return;
             }
-            
+
             if (key === 'escape' || key === 'esc') {
                 event.preventDefault();
                 window.parent.postMessage({
@@ -96,16 +96,16 @@ def inject_shortcuts_js() -> None:
                 }, '*');
                 return;
             }
-            
+
             // Multi-key shortcuts (g+key pattern)
             if (key === 'g') {
                 keys.push('g');
                 return;
             }
-            
+
             if (keys.length > 0 && keys[0] === 'g') {
                 let action = null;
-                
+
                 if (key === 'h') {
                     action = 'navigate_home';
                 } else if (key === 'e') {
@@ -123,7 +123,7 @@ def inject_shortcuts_js() -> None:
                 } else if (key === 'q') {
                     action = 'navigate_qa';
                 }
-                
+
                 if (action) {
                     event.preventDefault();
                     window.parent.postMessage({
@@ -131,16 +131,16 @@ def inject_shortcuts_js() -> None:
                         value: {action: action}
                     }, '*');
                 }
-                
+
                 keys = [];
             } else {
                 keys = [];
             }
         }
-        
+
         // Listen for keydown events
         document.addEventListener('keydown', handleKeyDown);
-        
+
         // Cleanup function (not really needed for Streamlit but good practice)
         window.addEventListener('beforeunload', function() {
             document.removeEventListener('keydown', handleKeyDown);
@@ -148,14 +148,14 @@ def inject_shortcuts_js() -> None:
     })();
     </script>
     """
-    
+
     components.html(js_code, height=0)
 
 
 def handle_shortcut_action(action: str) -> None:
     """
     Handle shortcut actions by updating session state.
-    
+
     Args:
         action: Action string from JavaScript
     """
@@ -169,7 +169,7 @@ def handle_shortcut_action(action: str) -> None:
         'navigate_protocols': 'Protocols',
         'navigate_qa': 'Q&A Tracker',
     }
-    
+
     if action in page_mapping:
         st.session_state["selected_page"] = page_mapping[action]
         st.rerun()

@@ -6,7 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Table, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 
 from amprenta_rag.database.base import Base
 import uuid

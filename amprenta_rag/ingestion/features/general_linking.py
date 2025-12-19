@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 def _find_or_create_feature_page(feature_type: str, feature_name: str) -> Optional[str]:
     """
     Stub: Notion support removed. Returns None.
-    
+
     Previously found or created a feature page in Notion.
     """
     logger.debug(
@@ -33,7 +33,7 @@ def link_feature_to_dataset(
 ) -> bool:
     """
     Stub: Notion support removed. Returns False.
-    
+
     Previously linked a feature page to a dataset page in Notion.
     """
     logger.debug(

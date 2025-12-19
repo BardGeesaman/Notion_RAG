@@ -33,7 +33,7 @@ def render_browse_tab():
     st.subheader("Protocol Library")
 
     with db_session() as db:
-        protocols = db.query(Protocol).filter(Protocol.is_active == True).order_by(Protocol.name).all()
+        protocols = db.query(Protocol).filter(Protocol.is_active).order_by(Protocol.name).all()
 
         if not protocols:
             st.info("No protocols found. Create your first protocol!")
@@ -107,7 +107,7 @@ def render_link_tab():
     st.subheader("Link Protocol to Experiment")
 
     with db_session() as db:
-        protocols = db.query(Protocol).filter(Protocol.is_active == True).all()
+        protocols = db.query(Protocol).filter(Protocol.is_active).all()
         experiments = db.query(Experiment).order_by(Experiment.name).limit(100).all()
 
         if not protocols:

@@ -15,59 +15,10 @@ from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 
 from amprenta_rag.database.base import Base
-from amprenta_rag.models.auth import (
-    User,
-    Team,
-    TeamMember,
-    Project,
-    FeaturePermission,
-    AuditLog,
-)
 from amprenta_rag.models.chemistry import (
-    Compound,
-    BiochemicalAssay,
-    ActivityResult,
-    ADMEResult,
-    PKStudy,
-    ToxicologyResult,
-    HTSCampaign,
-    HTSResult,
-    BiochemicalResult,
-    TargetProductProfile,
-    CandidateNomination,
-    GenericAssayResult,
     compound_program,
     hts_campaign_program,
     biochemical_result_program,
-)
-from amprenta_rag.models.content import Literature, Email, RAGChunk, LiteratureCritique
-from amprenta_rag.models.eln import (
-    LabNotebookEntry,
-    LabNotebookEntryAssociation,
-    Protocol,
-    ExperimentProtocol,
-)
-from amprenta_rag.models.sample import StorageLocation, Sample, SampleTransfer
-from amprenta_rag.models.discovery import DiscoveryJob, DiscoveredStudy, HarvestSchedule
-from amprenta_rag.models.user_prefs import (
-    Feedback,
-    UserFavorite,
-    Notification,
-    EmailSubscription,
-    Bookmark,
-    Note,
-    SavedFilter,
-    Comment,
-)
-from amprenta_rag.models.qa import SavedQuestion, SavedAnswer
-from amprenta_rag.models.automation import WorkflowRule, WorkflowExecution
-from amprenta_rag.models.misc import (
-    ExperimentTemplate,
-    ScheduledEvent,
-    RetentionPolicy,
-    OntologyTerm,
-    GeneticVariant,
-    CostEntry,
 )
 
 
@@ -473,4 +424,66 @@ feature_pathway_map = Table(
     Column("feature_id", UUID(as_uuid=True), index=True, nullable=False),
     Column("pathway_id", UUID(as_uuid=True), index=True, nullable=False),
     Column("meta", JSON, nullable=True),
+)
+
+# Re-export models from subpackages for backward compatibility
+from amprenta_rag.models.chemistry import (  # noqa: F401
+    Compound,
+    HTSCampaign,
+    HTSResult,
+    BiochemicalResult,
+    ActivityResult,
+    TargetProductProfile,
+    CandidateNomination,
+    GenericAssayResult,
+)
+from amprenta_rag.models.auth import (  # noqa: F401
+    User,
+    Team,
+    TeamMember,
+    Project,
+    FeaturePermission,
+    AuditLog,
+)
+from amprenta_rag.models.automation import (  # noqa: F401
+    WorkflowRule,
+    WorkflowExecution,
+)
+from amprenta_rag.models.content import (  # noqa: F401
+    Literature,
+    RAGChunk,
+    LiteratureCritique,
+)
+from amprenta_rag.models.discovery import (  # noqa: F401
+    DiscoveredStudy,
+    HarvestSchedule,
+    DiscoveryJob,
+)
+from amprenta_rag.models.user_prefs import (  # noqa: F401
+    Note,
+    Bookmark,
+    Notification,
+    UserFavorite,
+    EmailSubscription,
+)
+from amprenta_rag.models.content import Email  # noqa: F401
+from amprenta_rag.models.sample import (  # noqa: F401
+    Sample,
+    StorageLocation,
+    SampleTransfer,
+)
+from amprenta_rag.models.qa import (  # noqa: F401
+    SavedQuestion,
+    SavedAnswer,
+)
+from amprenta_rag.models.misc import (  # noqa: F401
+    ScheduledEvent,
+    RetentionPolicy,
+    OntologyTerm,
+)
+from amprenta_rag.models.eln import (  # noqa: F401
+    Protocol,
+    ExperimentProtocol,
+    LabNotebookEntry,
+    LabNotebookEntryAssociation,
 )

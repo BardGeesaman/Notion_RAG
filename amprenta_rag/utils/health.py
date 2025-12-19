@@ -14,33 +14,33 @@ logger = get_logger(__name__)
 def get_db_stats(db) -> Dict[str, int]:
     """
     Get database statistics (row counts for key tables).
-    
+
     Args:
         db: Database session
-        
+
     Returns:
         Dict with counts for users, experiments, compounds, signatures, datasets
     """
     stats = {
-        "users": db.query(User).filter(User.is_active == True).count(),
+        "users": db.query(User).filter(User.is_active).count(),
         "experiments": db.query(Experiment).count(),
         "compounds": db.query(Compound).count(),
         "signatures": db.query(Signature).count(),
         "datasets": db.query(Dataset).count(),
     }
-    
+
     return stats
 
 
 def check_api_connectivity() -> Dict[str, bool]:
     """
     Check connectivity to external APIs (OpenAI, Pinecone).
-    
+
     Returns:
         Dict with connectivity status: {openai: bool, pinecone: bool}
     """
     result = {"openai": False, "pinecone": False}
-    
+
     # Check OpenAI
     try:
         from amprenta_rag.clients.openai_client import get_openai_client
@@ -50,7 +50,7 @@ def check_api_connectivity() -> Dict[str, bool]:
         result["openai"] = True
     except Exception as e:
         logger.debug("[HEALTH] OpenAI connectivity check failed: %r", e)
-    
+
     # Check Pinecone
     try:
         from amprenta_rag.clients.pinecone_client import get_pinecone_client
@@ -60,14 +60,14 @@ def check_api_connectivity() -> Dict[str, bool]:
         result["pinecone"] = True
     except Exception as e:
         logger.debug("[HEALTH] Pinecone connectivity check failed: %r", e)
-    
+
     return result
 
 
 def get_system_info() -> Dict[str, Any]:
     """
     Get system information (Python version, platform, memory).
-    
+
     Returns:
         Dict with system information
     """
@@ -77,7 +77,7 @@ def get_system_info() -> Dict[str, Any]:
         "processor": platform.processor(),
         "architecture": platform.machine(),
     }
-    
+
     # Try to get memory info if psutil is available
     try:
         import psutil
@@ -90,5 +90,5 @@ def get_system_info() -> Dict[str, Any]:
         }
     except ImportError:
         info["memory"] = {"available": False, "note": "psutil not installed"}
-    
+
     return info

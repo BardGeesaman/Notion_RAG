@@ -25,12 +25,12 @@ def upgrade():
         sa.Column('is_active', sa.Boolean(), nullable=False, server_default='true'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-    
+
     # Create indexes
     op.create_index('ix_ontology_terms_vocabulary', 'ontology_terms', ['vocabulary'])
     op.create_index('ix_ontology_terms_term', 'ontology_terms', ['term'])
     op.create_index('ix_ontology_terms_parent_id', 'ontology_terms', ['parent_id'])
-    
+
     # Create unique constraint
     op.create_unique_constraint('uq_ontology_terms_vocab_term', 'ontology_terms', ['vocabulary', 'term'])
 

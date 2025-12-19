@@ -26,7 +26,7 @@ def upgrade():
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=True),
     )
-    
+
     # Create indexes
     op.create_index('ix_comments_entity', 'comments', ['entity_type', 'entity_id'])
     op.create_index('ix_comments_parent_id', 'comments', ['parent_id'])

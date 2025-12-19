@@ -18,10 +18,10 @@ VENDORS = {
 def search_vendors(query: str) -> List[Dict[str, str]]:
     """
     Search vendors for compound. Returns mock data (real APIs need subscriptions).
-    
+
     Args:
         query: Search query (SMILES, CAS number, compound name, etc.)
-    
+
     Returns:
         List of vendor results with catalog_id, price, availability, url
     """
@@ -55,7 +55,7 @@ def search_vendors(query: str) -> List[Dict[str, str]]:
 def get_vendor_info() -> List[Dict[str, str]]:
     """
     Return list of supported vendors.
-    
+
     Returns:
         List of vendor dictionaries with id, name, and url
     """

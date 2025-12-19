@@ -26,7 +26,7 @@ def link_component_to_lipid_species(
 ) -> None:
     """
     Stub: Notion linking removed. No-op.
-    
+
     Previously linked component to lipid species in Notion.
     """
     logger.debug(
@@ -41,7 +41,7 @@ def link_signature_to_source(
 ) -> None:
     """
     Stub: Notion linking removed. No-op.
-    
+
     Previously created reverse link from signature page to source page in Notion.
     """
     logger.debug(
@@ -55,7 +55,7 @@ def link_component_to_metabolite_feature(
 ) -> None:
     """
     Stub: Notion linking removed. No-op.
-    
+
     Previously linked component's lipid species to Metabolite Feature page in Notion.
     """
     logger.debug(
@@ -70,7 +70,7 @@ def link_component_to_feature(
 ) -> None:
     """
     Stub: Notion linking removed. No-op.
-    
+
     Previously linked signature component to feature page in Notion.
     """
     logger.debug(

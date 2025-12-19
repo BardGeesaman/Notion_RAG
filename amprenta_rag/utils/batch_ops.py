@@ -13,13 +13,13 @@ logger = get_logger(__name__)
 def batch_export(entity_type: str, ids: List[str], db, format: str = "csv") -> bytes:
     """
     Export multiple entities of the same type.
-    
+
     Args:
         entity_type: Type of entity ("experiment", "compound", "signature", "dataset")
         ids: List of entity IDs (UUIDs as strings)
         db: Database session
         format: Export format ("csv", "json", "excel")
-        
+
     Returns:
         Exported data as bytes
     """
@@ -33,11 +33,11 @@ def batch_export(entity_type: str, ids: List[str], db, format: str = "csv") -> b
         # Use data_export functions for datasets
         from amprenta_rag.utils.data_export import export_to_csv, export_to_json, export_to_excel
         import pandas as pd
-        
+
         datasets = db.query(Dataset).filter(Dataset.id.in_(ids)).all()
         if not datasets:
             return b""
-        
+
         data = []
         for ds in datasets:
             data.append({
@@ -50,7 +50,7 @@ def batch_export(entity_type: str, ids: List[str], db, format: str = "csv") -> b
                 "created_at": ds.created_at.isoformat() if ds.created_at else None,
             })
         df = pd.DataFrame(data)
-        
+
         if format == "csv":
             return export_to_csv(df)
         elif format == "json":
@@ -64,22 +64,22 @@ def batch_export(entity_type: str, ids: List[str], db, format: str = "csv") -> b
 def batch_delete(entity_type: str, ids: List[str], db) -> int:
     """
     Delete multiple entities of the same type.
-    
+
     Args:
         entity_type: Type of entity ("experiment", "compound", "signature", "dataset")
         ids: List of entity IDs (UUIDs as strings)
         db: Database session
-        
+
     Returns:
         Number of entities deleted
     """
     from uuid import UUID
-    
+
     if not ids:
         return 0
-    
+
     uuid_ids = [UUID(id_str) if isinstance(id_str, str) else id_str for id_str in ids]
-    
+
     if entity_type == "experiment":
         deleted = db.query(Experiment).filter(Experiment.id.in_(uuid_ids)).delete(synchronize_session=False)
     elif entity_type == "compound":
@@ -90,8 +90,8 @@ def batch_delete(entity_type: str, ids: List[str], db) -> int:
         deleted = db.query(Dataset).filter(Dataset.id.in_(uuid_ids)).delete(synchronize_session=False)
     else:
         raise ValueError(f"Unsupported entity type: {entity_type}")
-    
+
     db.commit()
     logger.info("[BATCH_OPS] Deleted %d %s entities", deleted, entity_type)
-    
+
     return deleted

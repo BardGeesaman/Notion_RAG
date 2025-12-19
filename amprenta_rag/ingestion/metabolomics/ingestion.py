@@ -9,9 +9,8 @@ feature linking, and RAG embedding.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-import requests
 
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.metabolomics.embedding import embed_metabolomics_dataset
@@ -105,7 +104,7 @@ def ingest_metabolomics_file(
         ...     file_path="data/metabolomics_sample.csv",
         ...     create_page=False,
         ... )
-        
+
         >>> # With Notion sync (requires ENABLE_NOTION_SYNC=true)
         >>> dataset_id = ingest_metabolomics_file(
         ...     file_path="data/metabolomics_sample.csv",
@@ -133,7 +132,7 @@ def ingest_metabolomics_file(
     cfg = get_config()
     postgres_dataset = None
     page_id = None
-    
+
     if cfg.pipeline.use_postgres_as_sot:
         try:
             dataset_name = f"Internal Metabolomics — {Path(file_path).stem}"
@@ -173,25 +172,25 @@ def ingest_metabolomics_file(
                 program_ids=program_ids,
                 experiment_ids=experiment_ids,
             )
-    
+
     # Link to Programs/Experiments in Postgres (if Postgres dataset exists)
     if cfg.pipeline.use_postgres_as_sot and postgres_dataset and (program_ids or experiment_ids):
         try:
             from amprenta_rag.ingestion.postgres_program_experiment_linking import (
                 link_dataset_to_programs_and_experiments_in_postgres,
             )
-            
+
             logger.info(
                 "[INGEST][METABOLOMICS] Linking dataset %s to programs/experiments in Postgres",
                 postgres_dataset.id,
             )
-            
+
             results = link_dataset_to_programs_and_experiments_in_postgres(
                 dataset_id=postgres_dataset.id,
                 notion_program_ids=program_ids,
                 notion_experiment_ids=experiment_ids,
             )
-            
+
             logger.info(
                 "[INGEST][METABOLOMICS] Linked dataset to %d programs, %d experiments in Postgres",
                 results["programs_linked"],
@@ -209,23 +208,23 @@ def ingest_metabolomics_file(
             from amprenta_rag.ingestion.features.postgres_linking import (
                 batch_link_features_to_dataset_in_postgres,
             )
-            
+
             logger.info(
                 "[INGEST][METABOLOMICS] Batch linking %d metabolites to Postgres (dataset: %s)",
                 len(metabolite_set),
                 postgres_dataset.id,
             )
-            
+
             # Convert to FeatureType tuples
             from amprenta_rag.models.domain import FeatureType
             feature_tuples = [(name, FeatureType.METABOLITE) for name in metabolite_set]
-            
+
             results = batch_link_features_to_dataset_in_postgres(
                 features=feature_tuples,
                 dataset_id=postgres_dataset.id,
                 max_workers=cfg.pipeline.feature_linking_max_workers,
             )
-            
+
             linked_count = sum(1 for v in results.values() if v)
             logger.info(
                 "[INGEST][METABOLOMICS] Batch linked %d/%d metabolites to Postgres",
@@ -250,7 +249,7 @@ def ingest_metabolomics_file(
                     len(metabolite_set),
                     cfg.pipeline.feature_linking_max_workers,
                 )
-                
+
                 features = [("metabolite", metabolite) for metabolite in metabolite_set]
                 feature_pages = batch_link_features(
                     features=features,
@@ -258,7 +257,7 @@ def ingest_metabolomics_file(
                     max_workers=cfg.pipeline.feature_linking_max_workers,
                     enable_linking=True,
                 )
-                
+
                 linked_count = sum(1 for v in feature_pages.values() if v)
                 logger.info(
                     "[INGEST][METABOLOMICS] Batch linked %d/%d metabolites to Notion Metabolite Features DB",
@@ -281,7 +280,7 @@ def ingest_metabolomics_file(
 
     # Embed into Pinecone
     dataset_name = Path(file_path).stem
-    
+
     # TIER 3: Use Postgres-aware embedding if Postgres dataset exists
     if cfg.pipeline.use_postgres_as_sot and postgres_dataset:
         try:

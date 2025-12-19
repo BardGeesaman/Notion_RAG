@@ -19,7 +19,7 @@ def main() -> None:
     print("Creating initial Alembic migration...")
     print("=" * 80)
     print()
-    
+
     # Run alembic revision with autogenerate
     cmd = [
         sys.executable,
@@ -30,10 +30,10 @@ def main() -> None:
         "-m",
         "Initial schema: programs, experiments, datasets, features, signatures",
     ]
-    
+
     print(f"Running: {' '.join(cmd)}")
     print()
-    
+
     try:
         result = subprocess.run(cmd, check=True, cwd=Path(__file__).parent.parent)
         print()

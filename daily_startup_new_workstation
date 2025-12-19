@@ -1,0 +1,10 @@
+cd ~/Documents/RAG
+conda activate myenv
+docker compose up -d
+export POSTGRES_PASSWORD=postgres POSTGRES_USER=postgres POSTGRES_DB=amprenta
+
+# Terminal 1: API
+uvicorn amprenta_rag.api.main:app --reload --port 8000
+
+# Terminal 2: Dashboard
+streamlit run scripts/run_dashboard.py

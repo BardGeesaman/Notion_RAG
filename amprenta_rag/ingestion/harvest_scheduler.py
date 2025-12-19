@@ -29,11 +29,11 @@ def get_scheduler() -> BackgroundScheduler:
     global _scheduler_instance
     if not APSCHEDULER_AVAILABLE:
         raise ImportError("APScheduler is not installed. Install with: pip install apscheduler")
-    
+
     if _scheduler_instance is None:
         _scheduler_instance = BackgroundScheduler()
         logger.info("[HARVEST] Created scheduler instance")
-    
+
     return _scheduler_instance
 
 
@@ -59,7 +59,7 @@ def stop_scheduler() -> None:
 def run_harvest(schedule_id: str) -> None:
     """
     Run a harvest job for a specific schedule.
-    
+
     Args:
         schedule_id: UUID of the harvest schedule
     """
@@ -70,16 +70,16 @@ def run_harvest(schedule_id: str) -> None:
         if not schedule:
             logger.warning("[HARVEST] Schedule not found: %s", schedule_id)
             return
-        
+
         if not schedule.is_active:
             logger.debug("[HARVEST] Schedule is inactive, skipping: %s", schedule.name)
             return
-        
+
         logger.info("[HARVEST] Running harvest: %s (%s)", schedule.name, schedule.repository)
-        
+
         # Update last_run
         schedule.last_run = datetime.utcnow()
-        
+
         # Run discovery job
         try:
             run_discovery_job(
@@ -88,7 +88,7 @@ def run_harvest(schedule_id: str) -> None:
                 max_results=50,
                 user_id=str(schedule.created_by_id) if schedule.created_by_id else None,
             )
-            
+
             # Calculate next_run
             schedule.next_run = datetime.utcnow() + timedelta(hours=schedule.interval_hours)
             db.commit()
@@ -103,7 +103,7 @@ def run_harvest(schedule_id: str) -> None:
 def schedule_harvest(schedule_id: str) -> None:
     """
     Add a harvest schedule to the scheduler.
-    
+
     Args:
         schedule_id: UUID of the harvest schedule
     """
@@ -114,14 +114,14 @@ def schedule_harvest(schedule_id: str) -> None:
         if not schedule:
             logger.warning("[HARVEST] Schedule not found: %s", schedule_id)
             return
-        
+
         scheduler = get_scheduler()
         job_id = f"harvest_{schedule_id}"
-        
+
         # Remove existing job if present
         if scheduler.get_job(job_id):
             scheduler.remove_job(job_id)
-        
+
         # Calculate next run time
         if schedule.next_run:
             start_date = schedule.next_run
@@ -129,7 +129,7 @@ def schedule_harvest(schedule_id: str) -> None:
             start_date = schedule.last_run + timedelta(hours=schedule.interval_hours)
         else:
             start_date = datetime.utcnow()
-        
+
         # Add job
         scheduler.add_job(
             run_harvest,
@@ -150,9 +150,9 @@ def load_active_schedules() -> None:
     db_gen = get_db()
     db = next(db_gen)
     try:
-        schedules = db.query(HarvestSchedule).filter(HarvestSchedule.is_active == True).all()
+        schedules = db.query(HarvestSchedule).filter(HarvestSchedule.is_active).all()
         logger.info("[HARVEST] Loading %d active schedules", len(schedules))
-        
+
         for schedule in schedules:
             try:
                 schedule_harvest(str(schedule.id))

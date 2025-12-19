@@ -29,7 +29,7 @@ def upgrade():
         sa.Column('created_at', sa.DateTime(), default=sa.func.now()),
         sa.Column('created_by_id', UUID(as_uuid=True), sa.ForeignKey('users.id'), nullable=True),
     )
-    
+
     op.create_table(
         'discovered_studies',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
@@ -44,7 +44,7 @@ def upgrade():
         sa.Column('imported_experiment_id', UUID(as_uuid=True), sa.ForeignKey('experiments.id'), nullable=True),
         sa.Column('discovered_at', sa.DateTime(), default=sa.func.now()),
     )
-    
+
     op.create_index('ix_discovered_studies_job_id', 'discovered_studies', ['job_id'])
     op.create_index('ix_discovered_studies_status', 'discovered_studies', ['status'])
 

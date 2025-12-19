@@ -11,10 +11,8 @@ Tests the mapping functions that convert feature identifiers to pathway database
 
 from __future__ import annotations
 
-import re
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from amprenta_rag.analysis.id_mapping import (
     batch_map_features_to_pathway_ids,
@@ -57,7 +55,7 @@ class TestMapProteinToUniprot:
         mock_response.status_code = 200
         mock_response.json.return_value = {"jobId": "test-job-123"}
         mock_post.return_value = mock_response
-        
+
         # Mock GET for polling results
         mock_get_response = MagicMock()
         mock_get_response.status_code = 200

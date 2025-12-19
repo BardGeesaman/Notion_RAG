@@ -22,19 +22,19 @@ class EvalResult:
 def evaluate_faithfulness(answer: str, chunks: List[str]) -> float:
     """
     Evaluate if the answer's claims are supported by the context chunks.
-    
+
     Args:
         answer: The generated answer
         chunks: List of context chunks used to generate the answer
-        
+
     Returns:
         Score from 0.0 to 1.0 (1.0 = all claims supported)
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     context = "\n\n---\n\n".join(chunks[:8])
-    
+
     prompt = (
         "Evaluate if the following answer's claims are supported by the provided context.\n\n"
         f"Context:\n{context}\n\n"
@@ -45,7 +45,7 @@ def evaluate_faithfulness(answer: str, chunks: List[str]) -> float:
         "- 0.0: No claims are supported or answer contradicts context\n\n"
         "Respond with ONLY a number between 0.0 and 1.0 (e.g., 0.85):"
     )
-    
+
     try:
         logger.debug("[EVAL] Evaluating faithfulness")
         resp = client.chat.completions.create(
@@ -66,17 +66,17 @@ def evaluate_faithfulness(answer: str, chunks: List[str]) -> float:
 def evaluate_relevance(question: str, answer: str) -> float:
     """
     Evaluate if the answer addresses the question.
-    
+
     Args:
         question: The original question
         answer: The generated answer
-        
+
     Returns:
         Score from 0.0 to 1.0 (1.0 = fully relevant)
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     prompt = (
         "Evaluate if the following answer addresses the question.\n\n"
         f"Question:\n{question}\n\n"
@@ -87,7 +87,7 @@ def evaluate_relevance(question: str, answer: str) -> float:
         "- 0.0: Answer does not address the question\n\n"
         "Respond with ONLY a number between 0.0 and 1.0 (e.g., 0.90):"
     )
-    
+
     try:
         logger.debug("[EVAL] Evaluating relevance")
         resp = client.chat.completions.create(
@@ -108,19 +108,19 @@ def evaluate_relevance(question: str, answer: str) -> float:
 def evaluate_context_precision(question: str, chunks: List[str]) -> float:
     """
     Evaluate if the context chunks are relevant to the question.
-    
+
     Args:
         question: The original question
         chunks: List of context chunks
-        
+
     Returns:
         Score from 0.0 to 1.0 (1.0 = all chunks relevant)
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     context = "\n\n---\n\n".join(chunks[:8])
-    
+
     prompt = (
         "Evaluate if the following context chunks are relevant to the question.\n\n"
         f"Question:\n{question}\n\n"
@@ -131,7 +131,7 @@ def evaluate_context_precision(question: str, chunks: List[str]) -> float:
         "- 0.0: No chunks are relevant\n\n"
         "Respond with ONLY a number between 0.0 and 1.0 (e.g., 0.75):"
     )
-    
+
     try:
         logger.debug("[EVAL] Evaluating context precision")
         resp = client.chat.completions.create(
@@ -152,23 +152,23 @@ def evaluate_context_precision(question: str, chunks: List[str]) -> float:
 def evaluate_rag_response(question: str, answer: str, chunks: List[str]) -> EvalResult:
     """
     Evaluate a RAG response using multiple metrics.
-    
+
     Args:
         question: The original question
         answer: The generated answer
         chunks: List of context chunks used
-        
+
     Returns:
         EvalResult with all metrics and overall score
     """
     logger.info("[EVAL] Evaluating RAG response for question: %s", question[:50])
-    
+
     faithfulness = evaluate_faithfulness(answer, chunks)
     relevance = evaluate_relevance(question, answer)
     context_precision = evaluate_context_precision(question, chunks)
-    
+
     overall = (faithfulness + relevance + context_precision) / 3.0
-    
+
     logger.info(
         "[EVAL] Scores - Faithfulness: %.2f, Relevance: %.2f, Context Precision: %.2f, Overall: %.2f",
         faithfulness,
@@ -176,7 +176,7 @@ def evaluate_rag_response(question: str, answer: str, chunks: List[str]) -> Eval
         context_precision,
         overall,
     )
-    
+
     return EvalResult(
         faithfulness=faithfulness,
         relevance=relevance,

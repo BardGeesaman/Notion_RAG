@@ -22,10 +22,10 @@ TestType = Literal["t-test", "anova", "correlation", "chi-square"]
 def get_effect_size_preset(size: str) -> float:
     """
     Get preset effect size (Cohen's d conventions).
-    
+
     Args:
         size: "small", "medium", or "large"
-        
+
     Returns:
         Effect size value
     """
@@ -45,20 +45,20 @@ def calculate_sample_size(
 ) -> int:
     """
     Calculate required sample size for a given effect size and power.
-    
+
     Args:
         effect_size: Effect size (Cohen's d for t-test, f for ANOVA, r for correlation)
         alpha: Significance level (default 0.05)
         power: Desired power (default 0.80)
         test_type: Type of test ("t-test", "anova", "correlation", "chi-square")
-        
+
     Returns:
         Required sample size (per group for t-test, total for others)
     """
     if not STATSMODELS_AVAILABLE:
         logger.error("[POWER] statsmodels not available")
         raise ImportError("statsmodels is required for power analysis")
-    
+
     try:
         if test_type == "t-test":
             power_analysis = TTestIndPower()
@@ -69,7 +69,7 @@ def calculate_sample_size(
                 ratio=1.0,  # Equal group sizes
             )
             return int(n) if n else 0
-        
+
         elif test_type == "anova":
             power_analysis = FTestAnovaPower()
             # For ANOVA, effect_size is f (Cohen's f)
@@ -80,7 +80,7 @@ def calculate_sample_size(
                 nobs=None,
             )
             return int(n) if n else 0
-        
+
         elif test_type == "correlation":
             # For correlation, use TTestPower with transformed effect size
             # r to t transformation: t = r * sqrt((n-2)/(1-r^2))
@@ -95,7 +95,7 @@ def calculate_sample_size(
                 nobs=None,
             )
             return int(n) if n else 0
-        
+
         elif test_type == "chi-square":
             # Chi-square power analysis is more complex
             # Using a simplified approximation based on effect size
@@ -112,10 +112,10 @@ def calculate_sample_size(
                 nobs=None,
             )
             return int(n) if n else 0
-        
+
         else:
             raise ValueError(f"Unsupported test type: {test_type}")
-    
+
     except Exception as e:
         logger.error("[POWER] Error calculating sample size: %r", e)
         raise
@@ -129,20 +129,20 @@ def calculate_power(
 ) -> float:
     """
     Calculate statistical power for a given sample size and effect size.
-    
+
     Args:
         n: Sample size (per group for t-test, total for others)
         effect_size: Effect size (Cohen's d for t-test, f for ANOVA, r for correlation)
         alpha: Significance level (default 0.05)
         test_type: Type of test ("t-test", "anova", "correlation", "chi-square")
-        
+
     Returns:
         Statistical power (0.0 to 1.0)
     """
     if not STATSMODELS_AVAILABLE:
         logger.error("[POWER] statsmodels not available")
         raise ImportError("statsmodels is required for power analysis")
-    
+
     try:
         if test_type == "t-test":
             power_analysis = TTestIndPower()
@@ -153,7 +153,7 @@ def calculate_power(
                 ratio=1.0,
             )
             return float(power)
-        
+
         elif test_type == "anova":
             power_analysis = FTestAnovaPower()
             power = power_analysis.power(
@@ -162,7 +162,7 @@ def calculate_power(
                 alpha=alpha,
             )
             return float(power)
-        
+
         elif test_type == "correlation":
             power_analysis = TTestPower()
             # For correlation, approximate using t-test power
@@ -172,7 +172,7 @@ def calculate_power(
                 alpha=alpha,
             )
             return float(power)
-        
+
         elif test_type == "chi-square":
             # Simplified chi-square power calculation
             logger.warning("[POWER] Chi-square power calculation is simplified")
@@ -183,10 +183,10 @@ def calculate_power(
                 alpha=alpha,
             )
             return float(power)
-        
+
         else:
             raise ValueError(f"Unsupported test type: {test_type}")
-    
+
     except Exception as e:
         logger.error("[POWER] Error calculating power: %r", e)
         raise

@@ -31,7 +31,7 @@ def _render_browse_tab() -> None:
         user = get_current_user()
         if user:
             saved_filters = get_user_filters("experiment", user.get("id"), db)
-            
+
             col1, col2, col3 = st.columns([2, 1, 1])
             with col1:
                 if saved_filters:
@@ -72,7 +72,7 @@ def _render_browse_tab() -> None:
                             delete_filter(str(selected_filter.id), db)
                             st.success("Filter deleted!")
                             st.rerun()
-        
+
         search_term = st.text_input("Search experiments by name", "", key="exp_search")
 
         query = db.query(Experiment)
@@ -110,7 +110,7 @@ def _render_browse_tab() -> None:
                 experiment_ids = [str(exp.id) for exp in experiments]
                 mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
                 file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
-                
+
                 try:
                     export_data = export_experiments(experiment_ids, export_format, db)
                     st.download_button(
@@ -148,7 +148,7 @@ def _render_browse_tab() -> None:
                     dataset_count = len(experiment.datasets)
                     if dataset_count > 0:
                         st.write(f"**Related Datasets:** {dataset_count}")
-                    
+
                     # Export as PowerPoint button
                     try:
                         pptx_data = generate_experiment_slides(experiment.id, db)
@@ -162,7 +162,7 @@ def _render_browse_tab() -> None:
                         )
                     except Exception as e:
                         st.error(f"Failed to generate PowerPoint: {e}")
-                    
+
                     # Share via Email section
                     if is_email_configured():
                         st.markdown("---")
@@ -191,7 +191,7 @@ def _render_browse_tab() -> None:
                                         st.error(f"Error sending email: {e}")
                                 else:
                                     st.error("Please enter a recipient email address")
-                    
+
                     # Save as Template button
                     user = get_current_user()
                     if user:
@@ -199,7 +199,7 @@ def _render_browse_tab() -> None:
                             with st.form(f"template_form_{experiment.id}"):
                                 template_name = st.text_input("Template Name*", value=f"{experiment.name} Template")
                                 template_description = st.text_area("Description", value=experiment.description or "")
-                                
+
                                 if st.form_submit_button("Create Template", type="primary"):
                                     if template_name:
                                         try:
@@ -268,7 +268,7 @@ def _render_edit_tab() -> None:
         exp_options = {exp.name: exp for exp in experiments}
         selected_name = st.selectbox("Select experiment", list(exp_options.keys()))
         experiment = exp_options[selected_name]
-        
+
         # Store version for optimistic locking
         st.session_state[f"edit_version_{experiment.id}"] = experiment.version
 
@@ -330,9 +330,9 @@ def _render_edit_tab() -> None:
                 "sample_groups": sample_groups,
                 "design_metadata": metadata,
             }
-            
+
             expected_version = st.session_state.get(f"edit_version_{experiment.id}", 1)
-            
+
             try:
                 update_with_lock(experiment, updates, expected_version, db)
                 st.success("Saved successfully!")
@@ -361,13 +361,13 @@ def _render_templates_tab() -> None:
     """Render the Templates tab."""
     user = get_current_user()
     user_id = user.get("id") if user else None
-    
+
     with db_session() as db:
         templates = db.query(ExperimentTemplate).order_by(ExperimentTemplate.created_at.desc()).all()
-        
+
         st.subheader("Experiment Templates")
         st.markdown("Use templates to quickly create experiments with pre-filled values.")
-        
+
         if templates:
             for template in templates:
                 with st.expander(f"**{template.name}**"):
@@ -394,14 +394,14 @@ def _render_templates_tab() -> None:
                             st.rerun()
         else:
             st.info("No templates available. Create one by saving an experiment as a template.")
-        
+
         st.markdown("---")
         st.subheader("Create from Template")
-        
+
         if st.session_state.get("template_data"):
             template_data = st.session_state["template_data"]
             st.info("Template loaded. Fill in the form below and create your experiment.")
-            
+
             with st.form("create_from_template"):
                 name = st.text_input("Experiment Name*", value=template_data.get("name", ""))
                 description = st.text_area("Description", value=template_data.get("description", ""))
@@ -412,7 +412,7 @@ def _render_templates_tab() -> None:
                 )
                 organism_input = st.text_input("Organism (comma-separated)", value=", ".join(template_data.get("organism", [])) if template_data.get("organism") else "")
                 sample_groups_json = st.text_area("Sample Groups (JSON)", value=json.dumps(template_data.get("sample_groups", {}), indent=2), height=100)
-                
+
                 if st.form_submit_button("Create Experiment", type="primary"):
                     if not name:
                         st.error("Experiment name is required")
@@ -420,7 +420,7 @@ def _render_templates_tab() -> None:
                         try:
                             sample_groups = json.loads(sample_groups_json) if sample_groups_json.strip() else {}
                             organism = [o.strip() for o in organism_input.split(",") if o.strip()] if organism_input.strip() else None
-                            
+
                             experiment = Experiment(
                                 name=name,
                                 description=description if description.strip() else None,
@@ -429,18 +429,18 @@ def _render_templates_tab() -> None:
                                 sample_groups=sample_groups,
                                 created_by_id=UUID(user_id) if user_id and user_id != "test" else None,
                             )
-                            
+
                             db.add(experiment)
                             db.commit()
                             db.refresh(experiment)
-                            
+
                             # Fire workflow trigger
                             from amprenta_rag.automation.engine import fire_trigger
                             fire_trigger("experiment_created", {
                                 "experiment_id": str(experiment.id),
                                 "name": experiment.name
                             }, db)
-                            
+
                             st.success(f"Experiment '{name}' created successfully!")
                             st.session_state.pop("template_data", None)
                             st.session_state.pop("use_template_id", None)
@@ -470,17 +470,17 @@ def _render_study_quality_tab() -> None:
     """Render the Study Quality tab."""
     st.subheader("Study Quality Assessment")
     st.markdown("Automated quality assessment for experiments.")
-    
+
     with db_session() as db:
         experiments = db.query(Experiment).order_by(Experiment.created_at.desc()).limit(100).all()
-        
+
         if not experiments:
             st.info("No experiments available for assessment.")
             return
-        
+
         exp_options = {exp.name: exp.id for exp in experiments}
         selected_name = st.selectbox("Select Experiment", list(exp_options.keys()))
-        
+
         if st.button("🔍 Run Quality Assessment", type="primary"):
             exp_id = exp_options[selected_name]
             with st.spinner("Assessing study quality..."):
@@ -488,11 +488,11 @@ def _render_study_quality_tab() -> None:
                 st.session_state["quality_assessment"] = result
                 st.session_state["assessed_experiment_id"] = str(exp_id)
                 st.rerun()
-        
+
         if st.session_state.get("quality_assessment") and st.session_state.get("assessed_experiment_id") == str(exp_options.get(selected_name)):
             result = st.session_state["quality_assessment"]
             quality_score = result.get("quality_score", 0)
-            
+
             # Quality Score with color
             if quality_score >= 80:
                 delta_color = "normal"
@@ -506,20 +506,20 @@ def _render_study_quality_tab() -> None:
                 delta_color = "inverse"
                 st.metric("Quality Score", f"{quality_score}/100", delta=None, delta_color=delta_color)
                 st.error("❌ Low Quality")
-            
+
             st.markdown("---")
-            
+
             # Overall Summary
             st.markdown(f"### Summary")
             st.info(result.get("summary", "No summary available"))
-            
+
             st.markdown("---")
-            
+
             # Design Flaws
             issues = result.get("issues", [])
             design_flaws = [i for i in issues if "flaw" in i]
             data_gaps = [i for i in issues if i.get("flaw") in ["Missing organism field", "Missing description", "No linked datasets"]]
-            
+
             if design_flaws:
                 st.markdown("### ⚠️ Design Flaws")
                 flaw_data = []
@@ -529,22 +529,22 @@ def _render_study_quality_tab() -> None:
                         "medium": "🟡",
                         "low": "🟢"
                     }.get(flaw.get("severity", "medium"), "⚪")
-                    
+
                     flaw_data.append({
                         "Severity": f"{severity_emoji} {flaw.get('severity', 'medium').upper()}",
                         "Issue": flaw.get("flaw", ""),
                         "Suggestion": flaw.get("suggestion", ""),
                     })
-                
+
                 df_flaws = pd.DataFrame(flaw_data)
                 st.dataframe(df_flaws, use_container_width=True, hide_index=True)
-            
+
             # Data Gaps
             if data_gaps:
                 st.markdown("### 📋 Data Gaps")
                 for gap in data_gaps:
                     st.markdown(f"- {gap.get('flaw', '')}")
-            
+
             if not design_flaws and not data_gaps:
                 st.success("✅ No issues detected! Study quality is good.")
 

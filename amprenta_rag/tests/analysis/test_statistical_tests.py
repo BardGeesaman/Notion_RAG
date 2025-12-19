@@ -15,7 +15,6 @@ Coverage:
 import math
 
 import numpy as np
-import pytest
 from scipy import stats
 
 
@@ -108,7 +107,7 @@ def test_multiple_testing_correction_fdr_and_bonferroni():
     assert adj_fdr.shape == (4,)
     assert rej_fdr.shape == (4,)
     # At least the smallest p-value should be rejected at q=0.05
-    assert rej_fdr[0] == True
+    assert rej_fdr[0]
     # BH-adjusted values: p_i * (n / rank_i), capped at 1.0
     # For p=0.001 (rank 1): 0.001 * 4/1 = 0.004
     # For p=0.02 (rank 2): 0.02 * 4/2 = 0.04
@@ -122,7 +121,7 @@ def test_multiple_testing_correction_fdr_and_bonferroni():
     # Bonferroni-adjusted p for first element should be 0.004
     assert approx_equal(adj_bonf[0], min(0.001 * len(pvals), 1.0))
     # The smallest p-value should be rejected under Bonferroni at alpha=0.05
-    assert rej_bonf[0] == True
+    assert rej_bonf[0]
 
 
 def test_edge_cases_empty_and_nans():

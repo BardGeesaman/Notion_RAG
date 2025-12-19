@@ -30,7 +30,7 @@ def render_coverage_page():
         if df.empty:
             st.warning("No datasets found. Ingest some data to see the coverage map.")
             return
-        
+
         filter_status = st.selectbox("Filter by ingestion status", ["All"] + sorted(df["status"].dropna().unique().tolist()))
         filter_prog = st.selectbox("Filter by program", ["All"] + sorted(df["program"].dropna().unique().tolist()))
         filter_dis = st.selectbox("Filter by disease", ["All"] + sorted(df["disease"].dropna().unique().tolist()))

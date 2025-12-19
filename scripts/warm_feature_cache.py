@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List
 from uuid import UUID
 
 from tqdm import tqdm
@@ -23,7 +23,6 @@ from tqdm import tqdm
 # Ensure repository imports work when run as a script
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amprenta_rag.config import get_config
 from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset, Program
 from amprenta_rag.ingestion.dataset_feature_cache import get_feature_cache
@@ -59,11 +58,11 @@ def fetch_dataset_ids_for_program(program_id: str) -> List[str]:
         except ValueError:
             # Not a valid UUID, try by name
             program = db.query(Program).filter(Program.name.ilike(f"%{program_id}%")).first()
-        
+
         if not program:
             logger.warning("[CACHE-WARM] Program not found: %s", program_id)
             return []
-        
+
         # Get datasets linked to this program
         datasets = program.datasets if hasattr(program, 'datasets') else []
         return [str(d.id) for d in datasets]

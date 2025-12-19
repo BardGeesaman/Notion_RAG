@@ -45,7 +45,7 @@ def normalize_gene_identifier(raw: str) -> str:
     # Check if it's an Ensembl ID (ENSG0000... or similar)
     ensembl_pattern = r"^ENS[A-Z]*G\d+"
     is_ensembl = bool(re.match(ensembl_pattern, normalized, re.IGNORECASE))
-    
+
     if is_ensembl:
         # Keep Ensembl IDs as-is but ensure uppercase and clean whitespace
         normalized = normalized.upper().strip()

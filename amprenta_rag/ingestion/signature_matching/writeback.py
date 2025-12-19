@@ -21,7 +21,7 @@ def update_dataset_with_signature_matches(
 ) -> None:
     """
     Stub: Notion support removed. No-op.
-    
+
     Previously updated a dataset's Notion page with signature match information.
     """
     logger.debug(

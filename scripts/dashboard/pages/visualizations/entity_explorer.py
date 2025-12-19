@@ -4,7 +4,7 @@ import streamlit as st
 
 from scripts.dashboard.components.cytoscape import render_cytoscape
 from scripts.dashboard.db_session import db_session
-from amprenta_rag.database.models import Program, Experiment, Dataset, Signature
+from amprenta_rag.database.models import Program
 
 
 def _load_hierarchy(program_id: str | None):

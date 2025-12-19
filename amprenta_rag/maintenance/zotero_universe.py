@@ -7,7 +7,7 @@ Notion support has been removed - Postgres is now the source of truth.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Set
 
 import requests
 

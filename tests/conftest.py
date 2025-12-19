@@ -11,7 +11,6 @@ import pytest
 import os
 from pathlib import Path
 from unittest.mock import Mock, patch
-from typing import Generator
 
 # Set test environment variables before imports
 os.environ.setdefault("USE_POSTGRES_AS_SOT", "true")

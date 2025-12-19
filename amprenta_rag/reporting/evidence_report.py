@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from amprenta_rag.database.session import db_session
@@ -56,7 +56,7 @@ def generate_program_report(program_id: UUID) -> EvidenceReport:
         datasets = getattr(program, "datasets", [])
         sigs = getattr(program, "signatures", []) if hasattr(program, "signatures") else []
         sections = []
-        
+
         overview = EvidenceSection(
             title="Overview",
             summary_text=f"Program: {program.name if program else program_id}",
@@ -66,7 +66,7 @@ def generate_program_report(program_id: UUID) -> EvidenceReport:
             references=None,
         )
         sections.append(overview)
-        
+
         return EvidenceReport(
             entity_id=program_id,
             entity_type="program",
@@ -79,7 +79,7 @@ def generate_dataset_report(dataset_id: UUID) -> EvidenceReport:
     """Generate an evidence report for a Dataset from Postgres."""
     with db_session() as db:
         d = db.query(Dataset).filter(Dataset.id == dataset_id).first()
-        
+
         sections = [
             EvidenceSection(
                 title="Overview",
@@ -102,7 +102,7 @@ def generate_signature_report(signature_id: UUID) -> EvidenceReport:
     """Generate an evidence report for a Signature from Postgres."""
     with db_session() as db:
         s = db.query(Signature).filter(Signature.id == signature_id).first()
-        
+
         sections = [
             EvidenceSection(
                 title="Overview",
@@ -113,7 +113,7 @@ def generate_signature_report(signature_id: UUID) -> EvidenceReport:
                 references=None,
             )
         ]
-        
+
         val = validate_signature_against_all_datasets(signature_id)
         sections.append(
             EvidenceSection(
@@ -357,7 +357,7 @@ def write_evidence_report_to_notion(
 ) -> bool:
     """
     DEPRECATED: Notion support removed. Returns False.
-    
+
     Previously wrote an evidence report to a Notion page.
     """
     logger.debug(

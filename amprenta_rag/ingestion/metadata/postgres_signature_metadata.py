@@ -20,10 +20,10 @@ logger = get_logger(__name__)
 def get_signature_metadata_from_postgres(signature: SignatureModel) -> Dict[str, Any]:
     """
     Extract metadata from a Postgres Signature model.
-    
+
     Args:
         signature: SignatureModel instance from Postgres
-        
+
     Returns:
         Dictionary with signature metadata:
         - short_id: str | None
@@ -44,12 +44,12 @@ def collect_signature_metadata_from_postgres(
 ) -> Dict[str, Any]:
     """
     Fetch Signature models from Postgres and collect their metadata.
-    
+
     Similar to the Notion-based collect_signature_metadata() but uses Postgres.
-    
+
     Args:
         signature_ids: List of Postgres UUIDs for signature models
-        
+
     Returns:
         Dictionary with aggregated metadata:
         - sig_short_ids: List[str] - Short IDs from signatures
@@ -61,7 +61,7 @@ def collect_signature_metadata_from_postgres(
     sig_roles: List[str] = []
     sig_axes: List[str] = []
     sig_ownership: List[str] = []
-    
+
     if not signature_ids:
         return {
             "sig_short_ids": [],
@@ -69,7 +69,7 @@ def collect_signature_metadata_from_postgres(
             "sig_axes": [],
             "sig_ownership": [],
         }
-    
+
     with db_session() as db:
         try:
             signatures = (
@@ -77,22 +77,22 @@ def collect_signature_metadata_from_postgres(
                 .filter(SignatureModel.id.in_(signature_ids))
                 .all()
             )
-            
+
             for signature in signatures:
                 if signature.short_id:
                     sig_short_ids.append(signature.short_id)
                 elif signature.name:
                     sig_short_ids.append(signature.name)
-                
+
                 if signature.biomarker_role:
                     sig_roles.extend(signature.biomarker_role)
-                
+
                 if signature.phenotype_axes:
                     sig_axes.extend(signature.phenotype_axes)
-                
+
                 if signature.data_ownership:
                     sig_ownership.append(signature.data_ownership)
-            
+
             return {
                 "sig_short_ids": list(set(sig_short_ids)),
                 "sig_roles": list(set(sig_roles)),
@@ -115,10 +115,10 @@ def collect_signature_metadata_from_postgres(
 def find_signatures_by_short_id(short_id: str) -> List[SignatureModel]:
     """
     Find signatures in Postgres by short ID.
-    
+
     Args:
         short_id: Short identifier to search for
-        
+
     Returns:
         List of SignatureModel instances matching the short_id
     """
@@ -133,16 +133,16 @@ def find_signatures_by_short_id(short_id: str) -> List[SignatureModel]:
 def find_signature_by_notion_id(notion_page_id: str) -> SignatureModel | None:
     """
     Find a signature in Postgres by Notion page ID.
-    
+
     Args:
         notion_page_id: Notion page ID (with or without dashes)
-        
+
     Returns:
         SignatureModel instance or None if not found
     """
     with db_session() as db:
         clean_id = notion_page_id.replace("-", "")
-        
+
         return (
             db.query(SignatureModel)
             .filter(SignatureModel.notion_page_id == clean_id)

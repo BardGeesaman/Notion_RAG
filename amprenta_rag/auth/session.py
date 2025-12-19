@@ -37,22 +37,22 @@ def update_last_activity() -> None:
 def check_session_timeout(timeout_minutes: int = 30) -> bool:
     """
     Check if the session has timed out.
-    
+
     Args:
         timeout_minutes: Session timeout in minutes
-        
+
     Returns:
         True if session has timed out, False otherwise
     """
     if not is_authenticated():
         return False
-    
+
     last_activity = st.session_state.get("last_activity")
     if last_activity is None:
         # Initialize if not set
         update_last_activity()
         return False
-    
+
     elapsed_minutes = (time.time() - last_activity) / 60
     return elapsed_minutes >= timeout_minutes
 
@@ -60,21 +60,21 @@ def check_session_timeout(timeout_minutes: int = 30) -> bool:
 def get_session_remaining(timeout_minutes: int = 30) -> int:
     """
     Get remaining session time in minutes.
-    
+
     Args:
         timeout_minutes: Session timeout in minutes
-        
+
     Returns:
         Minutes remaining until timeout (0 if timed out or not authenticated)
     """
     if not is_authenticated():
         return 0
-    
+
     last_activity = st.session_state.get("last_activity")
     if last_activity is None:
         update_last_activity()
         return timeout_minutes
-    
+
     elapsed_minutes = (time.time() - last_activity) / 60
     remaining = timeout_minutes - elapsed_minutes
     return max(0, int(remaining))

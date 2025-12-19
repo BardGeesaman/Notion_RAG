@@ -16,20 +16,20 @@ def recommend_design(
 ) -> Dict[str, Any]:
     """
     Recommend an experimental design based on research question and constraints.
-    
+
     Args:
         research_question: The research question to address
         sample_count: Available or planned sample count
         variables: List of variables/factors to consider
-        
+
     Returns:
         Dict with design_type, rationale, min_samples, considerations
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     variables_str = ", ".join(variables) if variables else "none specified"
-    
+
     prompt = (
         "Analyze this research question and recommend an appropriate experimental design.\n\n"
         f"Research Question: {research_question}\n\n"
@@ -46,7 +46,7 @@ def recommend_design(
         '{"design_type": "case_control", "rationale": "brief explanation", '
         '"min_samples": 40, "considerations": ["consideration1", "consideration2"]}'
     )
-    
+
     try:
         logger.info("[DESIGN] Recommending design for question: %s", research_question[:50])
         resp = client.chat.completions.create(
@@ -57,16 +57,16 @@ def recommend_design(
         )
         import json
         result = json.loads(resp.choices[0].message.content.strip())  # type: ignore[union-attr]
-        
+
         # Ensure all required fields
         result.setdefault("design_type", "observational")
         result.setdefault("rationale", "Standard observational design")
         result.setdefault("min_samples", sample_count)
         result.setdefault("considerations", [])
-        
+
         logger.info("[DESIGN] Recommended design: %s", result["design_type"])
         return result
-    
+
     except Exception as e:
         logger.error("[DESIGN] Error recommending design: %r", e)
         return {
@@ -80,10 +80,10 @@ def recommend_design(
 def get_design_requirements(design_type: str) -> Dict[str, Any]:
     """
     Get hardcoded requirements for a design type.
-    
+
     Args:
         design_type: Type of experimental design
-        
+
     Returns:
         Dict with min_samples, min_groups, requirements, description
     """
@@ -159,14 +159,14 @@ def get_design_requirements(design_type: str) -> Dict[str, Any]:
             "description": "Observe natural variation without intervention",
         },
     }
-    
+
     default = {
         "min_samples": 20,
         "min_groups": 2,
         "requirements": ["Standard experimental design"],
         "description": "General experimental design",
     }
-    
+
     return requirements_map.get(design_type.lower(), default)
 
 
@@ -177,34 +177,34 @@ def validate_design(
 ) -> List[str]:
     """
     Validate experimental design against requirements.
-    
+
     Args:
         design_type: Type of experimental design
         sample_count: Total number of samples
         group_count: Number of groups/conditions
-        
+
     Returns:
         List of warning messages if requirements not met
     """
     warnings = []
-    
+
     try:
         requirements = get_design_requirements(design_type)
         min_samples = requirements["min_samples"]
         min_groups = requirements["min_groups"]
-        
+
         # Check sample count
         if sample_count < min_samples:
             warnings.append(
                 f"Insufficient samples: {sample_count} < {min_samples} required for {design_type}"
             )
-        
+
         # Check group count
         if group_count < min_groups:
             warnings.append(
                 f"Insufficient groups: {group_count} < {min_groups} required for {design_type}"
             )
-        
+
         # Check samples per group
         if group_count > 0:
             samples_per_group = sample_count / group_count
@@ -216,10 +216,10 @@ def validate_design(
                 warnings.append(
                     f"Low samples per group: {samples_per_group:.1f} (recommend at least 10-20 for {design_type})"
                 )
-        
+
         logger.debug("[DESIGN] Validation for %s: %d warnings", design_type, len(warnings))
         return warnings
-    
+
     except Exception as e:
         logger.error("[DESIGN] Error validating design: %r", e)
         return [f"Validation error: {str(e)}"]

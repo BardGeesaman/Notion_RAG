@@ -12,7 +12,7 @@ from scripts.dashboard.db_session import db_session
 def render_evidence_report_page():
     st.header("Evidence Report Viewer")
     entity_type = st.selectbox("Select Entity Type", ["Program", "Dataset", "Signature"])
-    
+
     with db_session() as db:
         if entity_type == "Program":
             options = [(p.id, p.name) for p in db.query(Program).all()]
@@ -20,11 +20,11 @@ def render_evidence_report_page():
             options = [(d.id, d.name) for d in db.query(Dataset).all()]
         else:
             options = [(s.id, s.name) for s in db.query(Signature).all()]
-    
+
     if not options:
         st.warning("No entities found. Please create some data first.")
         return
-    
+
     selected_id = st.selectbox("Select Entity", options, format_func=lambda x: x[1])
     if st.button("Generate Report"):
         if entity_type == "Program":

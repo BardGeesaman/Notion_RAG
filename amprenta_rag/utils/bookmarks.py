@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import List
 from uuid import UUID
 
-from amprenta_rag.database.models import Bookmark, Experiment, Compound, Signature
+from amprenta_rag.database.models import Bookmark
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -13,13 +13,13 @@ logger = get_logger(__name__)
 def add_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> Bookmark:
     """
     Add a bookmark for a user.
-    
+
     Args:
         user_id: UUID of the user
         entity_type: Type of entity (experiment, compound, signature)
         entity_id: UUID of the entity
         db: Database session
-        
+
     Returns:
         Created Bookmark object
     """
@@ -28,11 +28,11 @@ def add_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> Bookmark
         entity_type=entity_type,
         entity_id=UUID(entity_id) if isinstance(entity_id, str) else entity_id,
     )
-    
+
     db.add(bookmark)
     db.commit()
     db.refresh(bookmark)
-    
+
     logger.info("[BOOKMARK] Added bookmark %s for user %s", bookmark.id, user_id)
     return bookmark
 
@@ -40,7 +40,7 @@ def add_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> Bookmark
 def remove_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> None:
     """
     Remove a bookmark for a user.
-    
+
     Args:
         user_id: UUID of the user
         entity_type: Type of entity
@@ -56,7 +56,7 @@ def remove_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> None:
         )
         .first()
     )
-    
+
     if bookmark:
         db.delete(bookmark)
         db.commit()
@@ -68,11 +68,11 @@ def remove_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> None:
 def get_user_bookmarks(user_id: str, db) -> List[Bookmark]:
     """
     Get all bookmarks for a user.
-    
+
     Args:
         user_id: UUID of the user
         db: Database session
-        
+
     Returns:
         List of Bookmark objects, ordered by created_at descending
     """
@@ -82,20 +82,20 @@ def get_user_bookmarks(user_id: str, db) -> List[Bookmark]:
         .order_by(Bookmark.created_at.desc())
         .all()
     )
-    
+
     return bookmarks
 
 
 def is_bookmarked(user_id: str, entity_type: str, entity_id: str, db) -> bool:
     """
     Check if an entity is bookmarked by a user.
-    
+
     Args:
         user_id: UUID of the user
         entity_type: Type of entity
         entity_id: UUID of the entity
         db: Database session
-        
+
     Returns:
         True if bookmarked, False otherwise
     """
@@ -108,5 +108,5 @@ def is_bookmarked(user_id: str, entity_type: str, entity_id: str, db) -> bool:
         )
         .first()
     )
-    
+
     return bookmark is not None

@@ -64,7 +64,7 @@ def render_qa_tracker_page():
         st.subheader("My Questions")
         search = st.text_input("Search questions")
         with db_session() as db:
-            query = db.query(SavedQuestion).filter(SavedQuestion.is_archived == False)
+            query = db.query(SavedQuestion).filter(not SavedQuestion.is_archived)
             if search:
                 like = f"%{search}%"
                 query = query.filter(SavedQuestion.question_text.ilike(like))

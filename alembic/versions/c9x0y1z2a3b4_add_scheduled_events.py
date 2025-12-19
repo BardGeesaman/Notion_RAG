@@ -28,7 +28,7 @@ def upgrade():
         sa.Column('notes', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-    
+
     # Create indexes
     op.create_index('ix_scheduled_events_event_type', 'scheduled_events', ['event_type'])
     op.create_index('ix_scheduled_events_resource_name', 'scheduled_events', ['resource_name'])

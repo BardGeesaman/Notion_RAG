@@ -1,7 +1,6 @@
 """Sample Inventory Management."""
 import uuid
 from datetime import datetime
-from typing import Optional, List
 
 import streamlit as st
 
@@ -200,14 +199,14 @@ def render_transfer_tab():
                     sample_obj.storage_location_id = location_options[to_loc]
                 db.commit()
                 db.refresh(transfer)
-                
+
                 # Fire workflow trigger
                 from amprenta_rag.automation.engine import fire_trigger
                 fire_trigger("sample_transferred", {
                     "sample_id": str(sample_obj.id),
                     "to_location": str(location_options[to_loc])
                 }, db)
-                
+
                 st.success("Transfer recorded")
                 st.rerun()
 

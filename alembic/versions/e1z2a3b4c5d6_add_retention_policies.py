@@ -26,15 +26,15 @@ def upgrade():
         sa.Column('is_active', sa.Boolean(), nullable=False, server_default='true'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-    
+
     # Create index on retention_policies
     op.create_index('ix_retention_policies_entity_type', 'retention_policies', ['entity_type'])
     op.create_index('ix_retention_policies_is_active', 'retention_policies', ['is_active'])
-    
+
     # Add archive fields to experiments
     op.add_column('experiments', sa.Column('is_archived', sa.Boolean(), nullable=False, server_default='false'))
     op.add_column('experiments', sa.Column('archived_at', sa.DateTime(), nullable=True))
-    
+
     # Add archive fields to datasets
     op.add_column('datasets', sa.Column('is_archived', sa.Boolean(), nullable=False, server_default='false'))
     op.add_column('datasets', sa.Column('archived_at', sa.DateTime(), nullable=True))
@@ -44,11 +44,11 @@ def downgrade():
     # Remove archive fields from datasets
     op.drop_column('datasets', 'archived_at')
     op.drop_column('datasets', 'is_archived')
-    
+
     # Remove archive fields from experiments
     op.drop_column('experiments', 'archived_at')
     op.drop_column('experiments', 'is_archived')
-    
+
     # Drop retention_policies table
     op.drop_index('ix_retention_policies_is_active', 'retention_policies')
     op.drop_index('ix_retention_policies_entity_type', 'retention_policies')

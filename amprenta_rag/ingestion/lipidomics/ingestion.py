@@ -9,9 +9,8 @@ feature linking, signature scoring, and RAG embedding.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-import requests
 
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.lipidomics.embedding import embed_lipidomics_dataset
@@ -96,13 +95,13 @@ def ingest_lipidomics_file(
     cfg = get_config()
     postgres_dataset = None
     page_id = None
-    
+
     if cfg.pipeline.use_postgres_as_sot:
         try:
             from amprenta_rag.ingestion.postgres_integration import (
                 create_or_update_dataset_in_postgres,
             )
-            
+
             dataset_name = f"Internal Lipidomics — {Path(file_path).stem}"
             postgres_dataset = create_or_update_dataset_in_postgres(
                 name=dataset_name,
@@ -128,7 +127,7 @@ def ingest_lipidomics_file(
             # If Postgres is required, fail; otherwise fallback to Notion
             if cfg.pipeline.use_postgres_as_sot:
                 raise RuntimeError(f"Postgres creation failed (required): {e}") from e
-    
+
     # Attach file (noted in summary for now) - only if Notion page exists
     if page_id and (cfg.pipeline.enable_notion_sync or cfg.pipeline.enable_dual_write or not cfg.pipeline.use_postgres_as_sot):
         attach_file_to_page(page_id, file_path, "Lipidomics")
@@ -142,25 +141,25 @@ def ingest_lipidomics_file(
                 program_ids=program_ids,
                 experiment_ids=experiment_ids,
             )
-    
+
     # Link to Programs/Experiments in Postgres (if Postgres dataset exists)
     if cfg.pipeline.use_postgres_as_sot and postgres_dataset and (program_ids or experiment_ids):
         try:
             from amprenta_rag.ingestion.postgres_program_experiment_linking import (
                 link_dataset_to_programs_and_experiments_in_postgres,
             )
-            
+
             logger.info(
                 "[INGEST][LIPIDOMICS] Linking dataset %s to programs/experiments in Postgres",
                 postgres_dataset.id,
             )
-            
+
             results = link_dataset_to_programs_and_experiments_in_postgres(
                 dataset_id=postgres_dataset.id,
                 notion_program_ids=program_ids,
                 notion_experiment_ids=experiment_ids,
             )
-            
+
             logger.info(
                 "[INGEST][LIPIDOMICS] Linked dataset to %d programs, %d experiments in Postgres",
                 results["programs_linked"],
@@ -179,21 +178,21 @@ def ingest_lipidomics_file(
                 batch_link_features_to_dataset_in_postgres,
             )
             from amprenta_rag.models.domain import FeatureType
-            
+
             logger.info(
                 "[INGEST][LIPIDOMICS] Batch linking %d lipid species to Postgres (dataset: %s)",
                 len(species_set),
                 postgres_dataset.id,
             )
-            
+
             feature_tuples = [(name, FeatureType.LIPID) for name in species_set]
-            
+
             results = batch_link_features_to_dataset_in_postgres(
                 features=feature_tuples,
                 dataset_id=postgres_dataset.id,
                 max_workers=cfg.pipeline.feature_linking_max_workers,
             )
-            
+
             linked_count = sum(1 for v in results.values() if v)
             logger.info(
                 "[INGEST][LIPIDOMICS] Batch linked %d/%d lipid species to Postgres",
@@ -218,7 +217,7 @@ def ingest_lipidomics_file(
                     len(species_set),
                     cfg.pipeline.feature_linking_max_workers,
                 )
-                
+
                 features = [("lipid", lipid) for lipid in species_set]
                 feature_pages = batch_link_features(
                     features=features,
@@ -226,7 +225,7 @@ def ingest_lipidomics_file(
                     max_workers=cfg.pipeline.feature_linking_max_workers,
                     enable_linking=True,
                 )
-                
+
                 linked_count = sum(1 for v in feature_pages.values() if v)
                 logger.info(
                     "[INGEST][LIPIDOMICS] Batch linked %d/%d lipid species to Notion Lipid Species DB",
@@ -287,7 +286,7 @@ def ingest_lipidomics_file(
 
     # Embed into Pinecone
     dataset_name = Path(file_path).stem
-    
+
     # TIER 3: Use Postgres-aware embedding if Postgres dataset exists
     cfg = get_config()
     if cfg.pipeline.use_postgres_as_sot and postgres_dataset:

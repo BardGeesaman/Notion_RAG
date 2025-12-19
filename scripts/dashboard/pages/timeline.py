@@ -13,7 +13,7 @@ def render_timeline_page() -> None:
     """Render the Timeline page."""
     st.header("📅 Activity Timeline")
     st.markdown("View recent activity across experiments, compounds, samples, and discoveries.")
-    
+
     with db_session() as db:
         # Filters
         col1, col2 = st.columns(2)
@@ -32,25 +32,25 @@ def render_timeline_page() -> None:
                 format_func=lambda x: f"Last {x} days" if x < 365 else "All time",
                 key="timeline_days"
             )
-        
+
         # Get timeline
         timeline = get_timeline(limit=100, db=db)
-        
+
         # Filter by selected types
         if entity_types:
             timeline = [item for item in timeline if item["type"] in entity_types]
-        
+
         # Filter by date range
         if days_back < 365:
             cutoff = datetime.utcnow() - timedelta(days=days_back)
             timeline = [item for item in timeline if item["timestamp"] and item["timestamp"] >= cutoff]
-        
+
         st.metric("Total Items", len(timeline))
-        
+
         if timeline:
             st.markdown("---")
             st.subheader("Timeline")
-            
+
             # Display timeline items
             for item in timeline:
                 # Emoji icons per type
@@ -61,10 +61,10 @@ def render_timeline_page() -> None:
                     "discovery": "🔍",
                 }
                 icon = icons.get(item["type"], "📌")
-                
+
                 timestamp_str = item["timestamp"].strftime("%Y-%m-%d %H:%M") if item["timestamp"] else "Unknown"
                 user_str = f" by {item['user']}" if item["user"] else ""
-                
+
                 col1, col2 = st.columns([4, 1])
                 with col1:
                     st.markdown(f"{icon} **{item['name']}** ({item['type']}) - {timestamp_str}{user_str}")
@@ -81,7 +81,7 @@ def render_timeline_page() -> None:
                         st.session_state["selected_page"] = page
                         st.session_state[f"selected_{item['type']}_id"] = item["id"]
                         st.rerun()
-                
+
                 st.divider()
         else:
             st.info("No activity found for the selected filters.")

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -17,9 +16,9 @@ def render_workflows_page() -> None:
     """Render the Workflows page."""
     st.header("⚙️ Workflow Automation")
     st.markdown("Create and manage automated workflow rules.")
-    
+
     tab1, tab2, tab3 = st.tabs(["Rules", "Create Rule", "History"])
-    
+
     with tab1:
         render_rules_tab()
     with tab2:
@@ -31,14 +30,14 @@ def render_workflows_page() -> None:
 def render_rules_tab() -> None:
     """Render the Rules tab."""
     st.subheader("Workflow Rules")
-    
+
     with db_session() as db:
         rules = db.query(WorkflowRule).order_by(WorkflowRule.created_at.desc()).all()
-        
+
         if not rules:
             st.info("No workflow rules yet. Create your first rule!")
             return
-        
+
         for rule in rules:
             with st.expander(f"**{rule.name}** - {rule.trigger_type} → {rule.action_type}"):
                 col1, col2 = st.columns([3, 1])
@@ -63,7 +62,7 @@ def render_rules_tab() -> None:
                         db.commit()
                         st.success("Rule status updated!")
                         st.rerun()
-                    
+
                     if st.button("🗑️ Delete", key=f"delete_rule_{rule.id}"):
                         db.delete(rule)
                         db.commit()
@@ -74,24 +73,24 @@ def render_rules_tab() -> None:
 def render_create_tab() -> None:
     """Render the Create Rule tab."""
     st.subheader("Create New Workflow Rule")
-    
+
     user = get_current_user()
     if not user:
         st.error("You must be logged in to create workflow rules.")
         return
-    
+
     with db_session() as db:
         with st.form("create_workflow_rule"):
             name = st.text_input("Rule Name*", placeholder="e.g., Notify on new experiment")
             description = st.text_area("Description", placeholder="Optional description")
-            
+
             trigger_type = st.selectbox("Trigger Type*", TRIGGER_TYPES)
-            
+
             action_type = st.selectbox(
                 "Action Type*",
                 ["send_notification", "add_note", "run_validation"]
             )
-            
+
             # Action config as JSON
             st.markdown("**Action Configuration (JSON)**")
             action_config_json = st.text_area(
@@ -100,7 +99,7 @@ def render_create_tab() -> None:
                 height=150,
                 help="JSON object with action parameters"
             )
-            
+
             # Trigger config (optional)
             st.markdown("**Trigger Configuration (Optional JSON)**")
             trigger_config_json = st.text_area(
@@ -109,21 +108,21 @@ def render_create_tab() -> None:
                 height=100,
                 help="JSON object with filter conditions - leave empty to match all"
             )
-            
+
             submitted = st.form_submit_button("Create Rule", type="primary")
-            
+
             if submitted:
                 if not name or not trigger_type or not action_type:
                     st.error("Name, trigger type, and action type are required")
                     return
-                
+
                 # Parse action config
                 try:
                     action_config = json.loads(action_config_json) if action_config_json.strip() else {}
                 except json.JSONDecodeError as e:
                     st.error(f"Invalid action config JSON: {e}")
                     return
-                
+
                 # Parse trigger config
                 trigger_config = None
                 if trigger_config_json.strip():
@@ -132,7 +131,7 @@ def render_create_tab() -> None:
                     except json.JSONDecodeError as e:
                         st.error(f"Invalid trigger config JSON: {e}")
                         return
-                
+
                 # Create rule
                 rule = WorkflowRule(
                     name=name,
@@ -144,7 +143,7 @@ def render_create_tab() -> None:
                     is_active=True,
                     created_by_id=user.get("id") if user.get("id") and user.get("id") != "test" else None,
                 )
-                
+
                 db.add(rule)
                 db.commit()
                 st.success(f"Workflow rule '{name}' created!")
@@ -154,28 +153,28 @@ def render_create_tab() -> None:
 def render_history_tab() -> None:
     """Render the History tab."""
     st.subheader("Execution History")
-    
+
     with db_session() as db:
         executions = db.query(WorkflowExecution).order_by(
             WorkflowExecution.triggered_at.desc()
         ).limit(100).all()
-        
+
         if not executions:
             st.info("No workflow executions yet.")
             return
-        
+
         # Display as table
         execution_data = []
         for exec in executions:
             rule_name = exec.rule.name if exec.rule else "Unknown"
             status_emoji = "✅" if exec.status == "success" else "❌" if exec.status == "failed" else "⏳"
             triggered_at_str = exec.triggered_at.strftime("%Y-%m-%d %H:%M:%S") if exec.triggered_at else "Unknown"
-            
+
             execution_data.append({
                 "Rule": rule_name,
                 "Status": f"{status_emoji} {exec.status}",
                 "Triggered": triggered_at_str,
             })
-        
+
         df = pd.DataFrame(execution_data)
         st.dataframe(df, use_container_width=True, hide_index=True)

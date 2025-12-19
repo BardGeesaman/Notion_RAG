@@ -30,39 +30,39 @@ logger = get_logger(__name__)
 def build_experiment_text_content(experiment: ExperimentModel) -> str:
     """
     Build text content for embedding from Postgres experiment fields.
-    
+
     Args:
         experiment: ExperimentModel instance from Postgres
-        
+
     Returns:
         Combined text content for embedding
     """
     parts: List[str] = []
-    
+
     # Title
     if experiment.name:
         parts.append(f"Experiment: {experiment.name}")
-    
+
     # Type
     if experiment.type:
         parts.append(f"Type: {experiment.type}")
-    
+
     # Description
     if experiment.description:
         parts.append(f"\nDescription: {experiment.description}")
-    
+
     # Disease
     if experiment.disease:
         parts.append(f"Disease: {', '.join(experiment.disease)}")
-    
+
     # Matrix
     if experiment.matrix:
         parts.append(f"Matrix: {', '.join(experiment.matrix)}")
-    
+
     # Model systems
     if experiment.model_systems:
         parts.append(f"Model Systems: {', '.join(experiment.model_systems)}")
-    
+
     # Additional experiment fields
     if experiment.targets:
         parts.append(f"Targets: {', '.join(experiment.targets)}")
@@ -74,28 +74,28 @@ def build_experiment_text_content(experiment: ExperimentModel) -> str:
         parts.append(f"Biomarker Role: {', '.join(experiment.biomarker_role)}")
     if experiment.treatment_arms:
         parts.append(f"Treatment Arms: {', '.join(experiment.treatment_arms)}")
-    
+
     # Linked programs
     if experiment.programs:
         program_names = [p.name for p in experiment.programs]
         parts.append(f"Programs: {', '.join(program_names)}")
-    
+
     # Linked datasets
     if experiment.datasets:
         dataset_names = [d.name for d in experiment.datasets]
         parts.append(f"Related Datasets: {', '.join(dataset_names)}")
         parts.append(f"({len(dataset_names)} dataset(s) linked)")
-    
+
     return "\n".join(parts)
 
 
 def get_experiment_metadata_from_postgres(experiment: ExperimentModel) -> Dict[str, Any]:
     """
     Extract metadata from Postgres experiment for Pinecone embedding.
-    
+
     Args:
         experiment: ExperimentModel instance
-        
+
     Returns:
         Metadata dictionary for Pinecone
     """
@@ -105,7 +105,7 @@ def get_experiment_metadata_from_postgres(experiment: ExperimentModel) -> Dict[s
         "experiment_id": str(experiment.id),
         "title": experiment.name or "Untitled Experiment",
     }
-    
+
     # Add array fields
     if experiment.disease:
         metadata["diseases"] = experiment.disease
@@ -113,11 +113,11 @@ def get_experiment_metadata_from_postgres(experiment: ExperimentModel) -> Dict[s
         metadata["matrix"] = experiment.matrix
     if experiment.model_systems:
         metadata["model_systems"] = experiment.model_systems
-    
+
     # Add type
     if experiment.type:
         metadata["experiment_type"] = experiment.type
-    
+
     # Add new experiment fields
     if experiment.targets:
         metadata["targets"] = experiment.targets
@@ -129,7 +129,7 @@ def get_experiment_metadata_from_postgres(experiment: ExperimentModel) -> Dict[s
         metadata["biomarker_role"] = experiment.biomarker_role
     if experiment.treatment_arms:
         metadata["treatment_arms"] = experiment.treatment_arms
-    
+
     return metadata
 
 
@@ -140,10 +140,10 @@ def ingest_experiment_from_postgres(
 ) -> None:
     """
     Ingest an experiment directly from Postgres into Pinecone.
-    
+
     This function performs the complete experiment ingestion pipeline using only
     Postgres data - no Notion API calls required:
-    
+
     1. Fetches experiment from Postgres
     2. Builds text content from Postgres fields
     3. Extracts metadata from Postgres fields
@@ -151,12 +151,12 @@ def ingest_experiment_from_postgres(
     5. Upserts vectors to Pinecone
     6. Links features to Postgres
     7. Detects signatures (if enabled)
-    
+
     Args:
         experiment_id: Postgres experiment UUID
         force: If True, re-ingest even if already embedded
         update_notion: If True, optionally update Notion (disabled by default)
-        
+
     Raises:
         ValueError: If experiment not found
         Exception: If ingestion fails at any step
@@ -165,36 +165,36 @@ def ingest_experiment_from_postgres(
         "[INGEST][POSTGRES-EXPERIMENT] Starting Postgres-only ingestion for experiment %s",
         experiment_id,
     )
-    
+
     with db_session() as db:
         experiment = (
             db.query(ExperimentModel)
             .filter(ExperimentModel.id == experiment_id)
             .first()
         )
-        
+
         if not experiment:
             raise ValueError(f"Experiment {experiment_id} not found in Postgres")
-    
+
     logger.info(
         "[INGEST][POSTGRES-EXPERIMENT] Found experiment: %s (%s)",
         experiment.name,
         experiment.type,
     )
-    
+
     # Build text content from Postgres fields
     full_text = build_experiment_text_content(experiment)
-    
+
     if not full_text or len(full_text.strip()) < 50:
         logger.warning(
             "[INGEST][POSTGRES-EXPERIMENT] Experiment %s has very little text content; skipping ingestion",
             experiment_id,
         )
         return
-    
+
     # Extract metadata from Postgres
     base_meta = get_experiment_metadata_from_postgres(experiment)
-    
+
     # Chunk and embed
     chunks = chunk_text(full_text)
     if not chunks:
@@ -203,13 +203,13 @@ def ingest_experiment_from_postgres(
             experiment_id,
         )
         return
-    
+
     logger.info(
         "[INGEST][POSTGRES-EXPERIMENT] Generated %d chunk(s) for experiment %s",
         len(chunks),
         experiment_id,
     )
-    
+
     try:
         embeddings = embed_texts(chunks)
     except Exception as e:
@@ -219,27 +219,27 @@ def ingest_experiment_from_postgres(
             e,
         )
         raise
-    
+
     # Prepare vectors for Pinecone
     index = get_pinecone_index()
     cfg = get_config()
-    
+
     vectors: List[Dict[str, Any]] = []
     embedding_ids: List[str] = []
-    
+
     experiment_id_str = str(experiment_id).replace("-", "")
-    
+
     for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
         chunk_id = f"{experiment_id_str}_chunk_{order:03d}"
         embedding_ids.append(chunk_id)
-        
+
         snippet = textwrap.shorten(chunk, width=300)
-        
+
         meta: Dict[str, Any] = {
             **base_meta,
             "snippet": snippet,
         }
-        
+
         vectors.append(
             {
                 "id": chunk_id,
@@ -247,20 +247,20 @@ def ingest_experiment_from_postgres(
                 "metadata": sanitize_metadata(meta),
             }
         )
-    
+
     if not vectors:
         logger.warning(
             "[INGEST][POSTGRES-EXPERIMENT] No vectors to upsert for experiment %s; skipping",
             experiment_id,
         )
         return
-    
+
     logger.info(
         "[INGEST][POSTGRES-EXPERIMENT] Upserting %d vectors into Pinecone for experiment %s",
         len(vectors),
         experiment_id,
     )
-    
+
     # Batch upserts to avoid Pinecone size limits
     batch_size = 100
     try:
@@ -268,7 +268,7 @@ def ingest_experiment_from_postgres(
             batch = vectors[i : i + batch_size]
             batch_num = (i // batch_size) + 1
             total_batches = (len(vectors) + batch_size - 1) // batch_size
-            
+
             logger.debug(
                 "[INGEST][POSTGRES-EXPERIMENT] Upserting batch %d/%d (%d vectors) for experiment %s",
                 batch_num,
@@ -276,9 +276,9 @@ def ingest_experiment_from_postgres(
                 len(batch),
                 experiment_id,
             )
-            
+
             index.upsert(vectors=batch, namespace=cfg.pinecone.namespace)
-            
+
             if batch_num % 10 == 0 or batch_num == total_batches:
                 logger.info(
                     "[INGEST][POSTGRES-EXPERIMENT] Completed batch %d/%d for experiment %s",
@@ -293,7 +293,7 @@ def ingest_experiment_from_postgres(
             e,
         )
         raise
-    
+
     # Extract and link features from text
     try:
         feature_names = extract_features_from_text(full_text)
@@ -305,7 +305,7 @@ def ingest_experiment_from_postgres(
                 "[INGEST][POSTGRES-EXPERIMENT] Extracted %d feature(s) from experiment text",
                 len(feature_names),
             )
-            
+
             # If experiment has linked datasets, we could link features to those datasets
             # For now, just log that features were found
             for dataset in experiment.datasets:
@@ -334,7 +334,7 @@ def ingest_experiment_from_postgres(
             experiment_id,
             e,
         )
-    
+
     # Detect and ingest signatures from content
     try:
         source_metadata = {
@@ -342,13 +342,13 @@ def ingest_experiment_from_postgres(
             "matrix": base_meta.get("matrix", []),
             "model_systems": base_meta.get("model_systems", []),
         }
-        
+
         # Signature detection (Postgres-based)
         try:
             from amprenta_rag.ingestion.postgres_signature_detection import (
                 detect_and_ingest_signatures_from_postgres_content,
             )
-            
+
             detect_and_ingest_signatures_from_postgres_content(
                 all_text_content=full_text,
                 attachment_paths=[],
@@ -368,7 +368,7 @@ def ingest_experiment_from_postgres(
             experiment_id,
             e,
         )
-    
+
     logger.info(
         "[INGEST][POSTGRES-EXPERIMENT] Postgres-only ingestion complete for experiment %s",
         experiment_id,

@@ -8,22 +8,21 @@ RAG pipeline: Pinecone queries, match processing, chunk collection, and answer s
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field
 from amprenta_rag.query.semantic_cache import get_semantic_cache
 
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.utils.rate_limit import get_rate_limiter, RateLimitError
+from amprenta_rag.utils.rate_limit import get_rate_limiter
 from amprenta_rag.query.bm25_search import bm25_search, reciprocal_rank_fusion
 from amprenta_rag.query.pinecone_query import build_meta_filter, query_pinecone
 from amprenta_rag.query.rag.chunk_collection import collect_chunks
 from amprenta_rag.rag.hybrid_chunk_collection import collect_hybrid_chunks
 from amprenta_rag.query.rag.match_processing import filter_matches, summarize_match
-from amprenta_rag.query.rag.models import RAGQueryResult, Citation
-from amprenta_rag.query.rag.synthesis import synthesize_answer, synthesize_answer_with_citations
+from amprenta_rag.query.rag.models import RAGQueryResult
+from amprenta_rag.query.rag.synthesis import synthesize_answer_with_citations
 from amprenta_rag.query.reranker import get_reranker
 from amprenta_rag.query.hyde import generate_hypothetical_answer
 from amprenta_rag.query.hallucination import check_groundedness
-from amprenta_rag.query.evaluation import evaluate_rag_response, EvalResult
+from amprenta_rag.query.evaluation import evaluate_rag_response
 from amprenta_rag.query.agent import agentic_rag
 from amprenta_rag.query.trust_scoring import weight_results_by_trust, get_trust_summary
 
@@ -98,7 +97,7 @@ def query_rag(
                 context_chunks=[],
                 citations=[],
             )
-    
+
     # Check semantic cache
     if use_cache and generate_answer:
         cache = get_semantic_cache()
@@ -106,7 +105,7 @@ def query_rag(
         if cached is not None:
             logger.info("[RAG] Returning cached result")
             return cached
-    
+
     # Agentic multi-step flow
     if use_agent:
         logger.info("[RAG] Using agentic multi-step flow")
@@ -119,14 +118,14 @@ def query_rag(
             context_chunks=[],
             citations=[],
         )
-    
+
     # Generate hypothetical answer for HyDE if enabled
     if use_hyde:
         logger.info("[RAG][HYDE] Generating hypothetical answer")
         search_query = generate_hypothetical_answer(user_query)
     else:
         search_query = user_query
-    
+
     logger.info("[RAG] Querying Pinecone (top_k=%d) for: %s", top_k, user_query)
     meta_filter = build_meta_filter(
         disease=disease,
@@ -293,10 +292,10 @@ def query_rag(
                     "score": getattr(m, "score", None) or 0.0,
                     "metadata": meta,
                 })
-        
+
         # Apply trust weighting
         weighted_dicts = weight_results_by_trust(match_dicts)
-        
+
         # Convert back to original format (preserve order)
         raw_matches = []
         for wd in weighted_dicts:
@@ -313,7 +312,7 @@ def query_rag(
                         orig_m.score = wd.get("final_score", getattr(orig_m, "score", 0.0))
                     raw_matches.append(orig_m)
                     break
-    
+
     matches = [summarize_match(m) for m in raw_matches]
     filtered = filter_matches(matches, tag=tag)
 
@@ -331,7 +330,7 @@ def query_rag(
         chunks = collect_hybrid_chunks(filtered, prefer_postgres=True)
     else:
         chunks = collect_chunks(filtered)
-    
+
     if not chunks:
         return RAGQueryResult(
             query=user_query,

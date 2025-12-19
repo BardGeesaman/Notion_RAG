@@ -53,7 +53,7 @@ def process_zotero_item(
 ) -> tuple[int, int, int]:
     """
     Process a single Zotero item: fetch metadata, attachments, notes, and ingest.
-    
+
     Returns:
         Tuple of (ingested_count, skipped_count, error_count)
     """

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-from io import StringIO
 
 import pandas as pd
 import streamlit as st
@@ -22,16 +21,16 @@ def render_import_page() -> None:
     """Render the Import Data page."""
     st.header("📥 Import Data")
     st.markdown("Bulk import experiments, compounds, or samples from CSV or JSON files.")
-    
+
     # Entity type selection
     entity_type = st.selectbox(
         "Entity Type",
         ["Experiments", "Compounds", "Samples"],
         key="import_entity_type"
     )
-    
+
     entity_type_lower = entity_type.lower()
-    
+
     # Download template button
     st.markdown("### Template")
     template_df = get_template(entity_type_lower)
@@ -45,9 +44,9 @@ def render_import_page() -> None:
             key=f"template_{entity_type_lower}",
         )
         st.caption(f"Template includes columns: {', '.join(template_df.columns.tolist())}")
-    
+
     st.divider()
-    
+
     # File uploader
     st.markdown("### Upload File")
     uploaded_file = st.file_uploader(
@@ -56,7 +55,7 @@ def render_import_page() -> None:
         help=f"Upload a CSV or JSON file containing {entity_type_lower} data",
         key=f"upload_{entity_type_lower}",
     )
-    
+
     if uploaded_file is not None:
         # Read file based on extension
         try:
@@ -75,33 +74,33 @@ def render_import_page() -> None:
             else:
                 st.error("Unsupported file type")
                 return
-            
+
             st.success(f"✅ File loaded: {len(df)} rows")
-            
+
             # Show preview
             st.markdown("### Preview (First 5 Rows)")
             st.dataframe(df.head(5), use_container_width=True, hide_index=True)
-            
+
             # Validate
             st.markdown("### Validation")
             validation_errors = validate_import_data(df, entity_type_lower)
-            
+
             if validation_errors:
                 st.error("❌ Validation Failed")
                 for error in validation_errors:
                     st.error(f"• {error}")
             else:
                 st.success("✅ Validation passed")
-            
+
             st.divider()
-            
+
             # Import section
             st.markdown("### Import")
-            
+
             if st.button(f"Import {entity_type}", type="primary", disabled=bool(validation_errors)):
                 user = get_current_user()
                 user_id = user.get("id") if user else None
-                
+
                 with st.spinner(f"Importing {entity_type_lower}..."):
                     with db_session() as db:
                         if entity_type_lower == "experiment":
@@ -113,26 +112,26 @@ def render_import_page() -> None:
                         else:
                             st.error(f"Unknown entity type: {entity_type_lower}")
                             return
-                
+
                 # Display results
                 st.markdown("### Import Results")
-                
+
                 if result.get("created", 0) > 0:
                     st.success(f"✅ Successfully imported {result['created']} {entity_type_lower}(s)")
-                
+
                 if result.get("duplicates", 0) > 0:
                     st.info(f"ℹ️ Skipped {result['duplicates']} duplicate compound(s)")
-                
+
                 if result.get("errors"):
                     st.error(f"❌ {len(result['errors'])} error(s) occurred:")
                     for error in result["errors"]:
                         st.error(f"• {error}")
-                
+
                 if result.get("created", 0) == 0 and not result.get("errors"):
                     st.warning("⚠️ No records were imported. Check your data and try again.")
         except Exception as e:
             st.error(f"Error processing file: {e}")
-    
+
     else:
         st.info("👆 Upload a file to begin importing data.")
         st.markdown("""

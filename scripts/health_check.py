@@ -23,12 +23,12 @@ def main():
     print("\n" + "=" * 60)
     print("System Health Check")
     print("=" * 60 + "\n")
-    
+
     try:
         results = check_system_health()
-        
+
         overall_status = results["overall_status"]
-        
+
         if overall_status == "healthy":
             print("\n✅ System is healthy!")
             sys.exit(0)
@@ -38,7 +38,7 @@ def main():
         else:
             print("\n❌ System is unhealthy (critical components failing).")
             sys.exit(2)
-    
+
     except Exception as e:
         logger.error("Health check failed: %r", e)
         print(f"\n❌ Health check failed: {e}\n")

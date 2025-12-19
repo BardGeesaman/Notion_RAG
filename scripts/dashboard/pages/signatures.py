@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from amprenta_rag.database.models import Dataset, Feature, Signature
+from amprenta_rag.database.models import Dataset, Signature
 from amprenta_rag.signatures.signature_validation import validate_signature_against_all_datasets
 from scripts.dashboard.db_session import db_session
 

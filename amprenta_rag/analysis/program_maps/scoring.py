@@ -6,7 +6,7 @@ Postgres is now the source of truth - Notion support has been removed.
 """
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from amprenta_rag.analysis.program_maps.models import ProgramSignatureScore
@@ -14,7 +14,7 @@ from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Program as ProgramModel
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.signatures.signature_loader import Signature, load_signatures_from_postgres
+from amprenta_rag.signatures.signature_loader import load_signatures_from_postgres
 
 logger = get_logger(__name__)
 
@@ -66,7 +66,7 @@ def _get_program_name(program_page_id: str) -> str:
                 program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
             except ValueError:
                 program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
-            
+
             if program and program.name:
                 return program.name
             return f"Program {program_page_id[:8]}"

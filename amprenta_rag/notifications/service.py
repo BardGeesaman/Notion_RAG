@@ -19,14 +19,14 @@ def create_notification(
 ) -> Notification:
     """
     Create a new notification for a user.
-    
+
     Args:
         user_id: UUID of the user
         title: Notification title
         message: Optional notification message
         notification_type: Type of notification (info, success, warning, discovery)
         db: Database session
-        
+
     Returns:
         Created Notification object
     """
@@ -37,11 +37,11 @@ def create_notification(
         notification_type=notification_type,
         is_read=False,
     )
-    
+
     db.add(notification)
     db.commit()
     db.refresh(notification)
-    
+
     logger.info("[NOTIFICATION] Created notification %s for user %s", notification.id, user_id)
     return notification
 
@@ -49,12 +49,12 @@ def create_notification(
 def get_unread_notifications(user_id: str, db, limit: int = 10) -> List[Notification]:
     """
     Get unread notifications for a user.
-    
+
     Args:
         user_id: UUID of the user
         db: Database session
         limit: Maximum number of notifications to return
-        
+
     Returns:
         List of Notification objects, ordered by created_at descending
     """
@@ -62,24 +62,24 @@ def get_unread_notifications(user_id: str, db, limit: int = 10) -> List[Notifica
         db.query(Notification)
         .filter(
             Notification.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
-            Notification.is_read == False,
+            not Notification.is_read,
         )
         .order_by(Notification.created_at.desc())
         .limit(limit)
         .all()
     )
-    
+
     return notifications
 
 
 def get_unread_count(user_id: str, db) -> int:
     """
     Get count of unread notifications for a user.
-    
+
     Args:
         user_id: UUID of the user
         db: Database session
-        
+
     Returns:
         Count of unread notifications
     """
@@ -87,18 +87,18 @@ def get_unread_count(user_id: str, db) -> int:
         db.query(Notification)
         .filter(
             Notification.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
-            Notification.is_read == False,
+            not Notification.is_read,
         )
         .count()
     )
-    
+
     return count
 
 
 def mark_as_read(notification_id: str, db) -> None:
     """
     Mark a notification as read.
-    
+
     Args:
         notification_id: UUID of the notification
         db: Database session
@@ -106,7 +106,7 @@ def mark_as_read(notification_id: str, db) -> None:
     notification = db.query(Notification).filter(
         Notification.id == (UUID(notification_id) if isinstance(notification_id, str) else notification_id)
     ).first()
-    
+
     if notification:
         notification.is_read = True
         db.commit()
@@ -118,7 +118,7 @@ def mark_as_read(notification_id: str, db) -> None:
 def mark_all_read(user_id: str, db) -> None:
     """
     Mark all notifications as read for a user.
-    
+
     Args:
         user_id: UUID of the user
         db: Database session
@@ -127,10 +127,10 @@ def mark_all_read(user_id: str, db) -> None:
         db.query(Notification)
         .filter(
             Notification.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
-            Notification.is_read == False,
+            not Notification.is_read,
         )
         .update({"is_read": True})
     )
-    
+
     db.commit()
     logger.info("[NOTIFICATION] Marked %d notifications as read for user %s", updated, user_id)

@@ -130,7 +130,7 @@ def _update_experiment_embedding_metadata(
 ) -> None:
     """
     Stub: Notion support removed. No-op.
-    
+
     Previously updated the Experiment page with embedding metadata in Notion.
     """
     logger.debug(
@@ -256,7 +256,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment", force: 
     vectors: List[Dict[str, Any]] = []
     canonical_page_id = page.get("id", exp_page_id)
     page_id_clean = canonical_page_id.replace("-", "")
-    
+
     for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
         chunk_id = f"{page_id_clean}_exp_chunk_{order:03d}"
 

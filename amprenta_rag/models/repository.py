@@ -16,7 +16,7 @@ from typing import List, Optional
 class DataFile:
     """
     Represents a data file from a repository study.
-    
+
     Attributes:
         file_id: Repository-specific file identifier
         filename: Original filename
@@ -37,7 +37,7 @@ class DataFile:
 class StudyMetadata:
     """
     Unified metadata model for studies from any repository.
-    
+
     Attributes:
         study_id: Repository-specific study identifier (e.g., "GSE12345", "PXD012345")
         repository: Repository name ("GEO", "PRIDE", "MetaboLights", "MW")
@@ -62,7 +62,7 @@ class StudyMetadata:
     title: str
     summary: str
     omics_type: str
-    
+
     # Optional fields
     doi: Optional[str] = None
     pubmed_id: Optional[str] = None
@@ -76,7 +76,7 @@ class StudyMetadata:
     platform: Optional[str] = None
     num_samples: Optional[int] = None
     raw_metadata: dict = field(default_factory=dict)
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
         return {

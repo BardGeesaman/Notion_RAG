@@ -23,7 +23,7 @@ def create_signature(db: Session, signature: SignatureCreate) -> SignatureModel:
         name=signature.name,
         description=signature.description,
     )
-    
+
     # Add components
     for comp in signature.components:
         db_component = SignatureComponentModel(
@@ -36,17 +36,17 @@ def create_signature(db: Session, signature: SignatureCreate) -> SignatureModel:
             weight=comp.weight or 1.0,
         )
         db_signature.components.append(db_component)
-        
+
         # Link to feature if feature_id provided
         if comp.feature_id:
             feature = db.query(FeatureModel).filter(FeatureModel.id == comp.feature_id).first()
             if feature:
                 db_signature.features.append(feature)
-    
+
     # Auto-compute modalities from components
     modalities = list(set(comp.feature_type.value for comp in signature.components))
     db_signature.modalities = modalities
-    
+
     # Add program relationships
     if signature.program_ids:
         from amprenta_rag.api.services.programs import get_program
@@ -54,7 +54,7 @@ def create_signature(db: Session, signature: SignatureCreate) -> SignatureModel:
             program = get_program(db, program_id)
             if program:
                 db_signature.programs.append(program)
-    
+
     db.add(db_signature)
     db.commit()
     db.refresh(db_signature)
@@ -80,13 +80,13 @@ def get_signatures(
 ) -> List[SignatureModel]:
     """Get all signatures with optional filtering."""
     query = db.query(SignatureModel)
-    
+
     if name_filter:
         query = query.filter(SignatureModel.name.ilike(f"%{name_filter}%"))
-    
+
     if program_id:
         query = query.filter(SignatureModel.programs.any(id=program_id))
-    
+
     return query.offset(skip).limit(limit).all()
 
 
@@ -99,20 +99,20 @@ def update_signature(
     db_signature = get_signature(db, signature_id)
     if not db_signature:
         return None
-    
+
     update_data = signature.model_dump(exclude_unset=True)
     components = update_data.pop("components", None)
     program_ids = update_data.pop("program_ids", None)
-    
+
     for field, value in update_data.items():
         setattr(db_signature, field, value)
-    
+
     # Update components if provided
     if components is not None:
         # Clear existing components
         db_signature.components.clear()
         db_signature.features.clear()
-        
+
         # Add new components
         modalities = []
         for comp in components:
@@ -127,16 +127,16 @@ def update_signature(
             )
             db_signature.components.append(db_component)
             modalities.append(comp.feature_type.value)
-            
+
             # Link to feature if feature_id provided
             if comp.feature_id:
                 feature = db.query(FeatureModel).filter(FeatureModel.id == comp.feature_id).first()
                 if feature:
                     db_signature.features.append(feature)
-        
+
         # Update modalities
         db_signature.modalities = list(set(modalities))
-    
+
     # Update program relationships if provided
     if program_ids is not None:
         from amprenta_rag.api.services.programs import get_program
@@ -145,7 +145,7 @@ def update_signature(
             program = get_program(db, program_id)
             if program:
                 db_signature.programs.append(program)
-    
+
     db.commit()
     db.refresh(db_signature)
     return db_signature
@@ -156,7 +156,7 @@ def delete_signature(db: Session, signature_id: UUID) -> bool:
     db_signature = get_signature(db, signature_id)
     if not db_signature:
         return False
-    
+
     db.delete(db_signature)
     db.commit()
     return True

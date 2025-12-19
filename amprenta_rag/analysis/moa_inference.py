@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 from uuid import UUID
 
 from amprenta_rag.analysis.pathway.enrichment import perform_pathway_enrichment

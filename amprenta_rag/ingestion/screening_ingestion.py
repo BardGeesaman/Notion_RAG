@@ -12,7 +12,6 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from amprenta_rag.database.session import db_session
 from amprenta_rag.chemistry.normalization import (
     compute_molecular_descriptors,
     generate_compound_id,
@@ -49,14 +48,14 @@ def ingest_hts_campaign_metadata(
 ) -> HTSCampaign:
     """
     Ingest HTS campaign metadata from a file.
-    
+
     Expected format: CSV/TSV with columns:
     - campaign_name, description, assay_type, target, library_id, total_wells, run_date
-    
+
     Args:
         metadata_file: Path to metadata file
         campaign_id: Optional campaign ID (auto-generated if not provided)
-        
+
     Returns:
         HTSCampaign object
     """
@@ -64,19 +63,19 @@ def ingest_hts_campaign_metadata(
         "[INGEST][SCREENING] Ingesting HTS campaign metadata from %s",
         metadata_file,
     )
-    
+
     # Read metadata file
     try:
         df = pd.read_csv(metadata_file, sep="\t" if metadata_file.suffix == ".tsv" else ",")
     except Exception as e:
         raise ValueError(f"Error reading metadata file: {e}")
-    
+
     # Extract metadata (assume single row or take first row)
     row = df.iloc[0].to_dict()
-    
+
     if not campaign_id:
         campaign_id = row.get("campaign_id") or row.get("campaign_name", "UNKNOWN")
-    
+
     campaign = HTSCampaign(
         campaign_id=campaign_id,
         campaign_name=row.get("campaign_name", campaign_id),
@@ -88,16 +87,16 @@ def ingest_hts_campaign_metadata(
         hit_count=row.get("hit_count", 0),
         run_date=row.get("run_date"),
     )
-    
+
     # Insert into database
     insert_hts_campaign_pg(campaign)
-    
+
     logger.info(
         "[INGEST][SCREENING] Ingested HTS campaign %s: %s",
         campaign_id,
         campaign.campaign_name,
     )
-    
+
     return campaign
 
 
@@ -111,9 +110,9 @@ def ingest_hts_hit_list(
 ) -> int:
     """
     Ingest HTS hit list from a file.
-    
+
     Expected format: CSV/TSV with SMILES and assay values.
-    
+
     Args:
         hit_list_file: Path to hit list file
         campaign_id: Campaign ID to associate results with
@@ -121,7 +120,7 @@ def ingest_hts_hit_list(
         vendor_id_column: Optional vendor ID column
         value_column: Name of value/activity column
         hit_threshold: Optional threshold for hit classification
-        
+
     Returns:
         Number of compounds ingested
     """
@@ -130,7 +129,7 @@ def ingest_hts_hit_list(
         hit_list_file,
         campaign_id,
     )
-    
+
     # Read hit list file
     try:
         df = pd.read_csv(
@@ -139,25 +138,25 @@ def ingest_hts_hit_list(
         )
     except Exception as e:
         raise ValueError(f"Error reading hit list file: {e}")
-    
+
     if smiles_column not in df.columns:
         raise ValueError(f"SMILES column '{smiles_column}' not found in file")
-    
+
     compounds: Dict[str, Compound] = {}
     results: List[HTSResult] = []
-    
+
     for idx, row in df.iterrows():
         smiles = str(row[smiles_column]).strip()
         if not smiles or smiles == "nan":
             continue
-        
+
         # Normalize compound
         canonical_smiles, inchi_key, molecular_formula = normalize_smiles(smiles)
         compound_id = generate_compound_id(smiles)
-        
+
         # Compute descriptors
         descriptors = compute_molecular_descriptors(smiles)
-        
+
         # Create compound object
         compound = Compound(
             compound_id=compound_id,
@@ -168,7 +167,7 @@ def ingest_hts_hit_list(
             **descriptors,
         )
         compounds[compound_id] = compound
-        
+
         # Extract value
         raw_value = None
         if value_column in df.columns:
@@ -176,7 +175,7 @@ def ingest_hts_hit_list(
                 raw_value = float(row[value_column])
             except (ValueError, TypeError):
                 pass
-        
+
         # Determine hit status
         hit_flag = 0
         hit_category = None
@@ -189,11 +188,11 @@ def ingest_hts_hit_list(
             # This is a simple heuristic - should be configurable
             hit_flag = 1 if raw_value > 0 else 0
             hit_category = "hit" if hit_flag else "inactive"
-        
+
         # Create result
         result_id = f"{campaign_id}_{compound_id}_{idx}"
         row.get(vendor_id_column) if vendor_id_column else None
-        
+
         result = HTSResult(
             result_id=result_id,
             campaign_id=campaign_id,
@@ -206,21 +205,21 @@ def ingest_hts_hit_list(
             hit_category=hit_category,
         )
         results.append(result)
-    
+
     # Batch insert compounds
     for compound in compounds.values():
         insert_compound_pg(compound)
-    
+
     # Batch insert results
     insert_hts_results_pg(results)
-    
+
     logger.info(
         "[INGEST][SCREENING] Ingested %d compounds and %d results for campaign %s",
         len(compounds),
         len(results),
         campaign_id,
     )
-    
+
     return len(compounds)
 
 
@@ -232,15 +231,15 @@ def ingest_biochemical_results(
 ) -> int:
     """
     Ingest biochemical assay results from a file.
-    
+
     Expected format: CSV/TSV with SMILES and IC50/EC50/Ki/Kd values.
-    
+
     Args:
         results_file: Path to results file
         campaign_id: Optional campaign ID
         smiles_column: Name of SMILES column
         assay_name: Assay name (or auto-detect from filename)
-        
+
     Returns:
         Number of results ingested
     """
@@ -248,10 +247,10 @@ def ingest_biochemical_results(
         "[INGEST][SCREENING] Ingesting biochemical results from %s",
         results_file,
     )
-    
+
     if not assay_name:
         assay_name = results_file.stem
-    
+
     # Read results file
     try:
         df = pd.read_csv(
@@ -260,25 +259,25 @@ def ingest_biochemical_results(
         )
     except Exception as e:
         raise ValueError(f"Error reading results file: {e}")
-    
+
     if smiles_column not in df.columns:
         raise ValueError(f"SMILES column '{smiles_column}' not found in file")
-    
+
     compounds: Dict[str, Compound] = {}
     biochemical_results: List[BiochemicalResult] = []
-    
+
     for idx, row in df.iterrows():
         smiles = str(row[smiles_column]).strip()
         if not smiles or smiles == "nan":
             continue
-        
+
         # Normalize compound
         canonical_smiles, inchi_key, molecular_formula = normalize_smiles(smiles)
         compound_id = generate_compound_id(smiles)
-        
+
         # Compute descriptors
         descriptors = compute_molecular_descriptors(smiles)
-        
+
         # Create compound object
         compound = Compound(
             compound_id=compound_id,
@@ -289,13 +288,13 @@ def ingest_biochemical_results(
             **descriptors,
         )
         compounds[compound_id] = compound
-        
+
         # Extract activity values
         ic50 = row.get("IC50") or row.get("ic50")
         ec50 = row.get("EC50") or row.get("ec50")
         ki = row.get("Ki") or row.get("ki")
         kd = row.get("Kd") or row.get("kd")
-        
+
         # Convert to float if possible
         for val_name, val in [("ic50", ic50), ("ec50", ec50), ("ki", ki), ("kd", kd)]:
             if val is not None:
@@ -303,7 +302,7 @@ def ingest_biochemical_results(
                     locals()[val_name] = float(val)
                 except (ValueError, TypeError):
                     locals()[val_name] = None
-        
+
         # Determine activity type
         activity_type = None
         if ic50:
@@ -314,11 +313,11 @@ def ingest_biochemical_results(
             activity_type = "Ki"
         elif kd:
             activity_type = "Kd"
-        
+
         # Create biochemical result
         result_id = f"biochem_{compound_id}_{idx}"
         target = row.get("target") or row.get("Target")
-        
+
         result = BiochemicalResult(
             result_id=result_id,
             compound_id=compound_id,
@@ -333,20 +332,20 @@ def ingest_biochemical_results(
             run_date=row.get("run_date") or row.get("date"),
         )
         biochemical_results.append(result)
-    
+
     # Batch insert compounds
     for compound in compounds.values():
         insert_compound_pg(compound)
-    
+
     # Insert biochemical results
     insert_biochemical_results_pg(biochemical_results)
-    
+
     logger.info(
         "[INGEST][SCREENING] Ingested %d compounds for biochemical assay %s",
         len(compounds),
         assay_name,
     )
-    
+
     return len(biochemical_results)
 
 

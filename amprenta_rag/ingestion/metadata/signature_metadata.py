@@ -28,7 +28,7 @@ def enforce_signature_reverse_link(
 def collect_signature_metadata(signature_ids: List[str]) -> Dict[str, Any]:
     """
     DEPRECATED: Notion support has been removed.
-    
+
     Returns empty metadata structure for backward compatibility.
     """
     logger.debug(

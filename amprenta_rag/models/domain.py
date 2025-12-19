@@ -57,7 +57,7 @@ class SignatureDirection(str, Enum):
 class Program:
     """
     A research program/therapeutic area.
-    
+
     Attributes:
         id: Unique identifier (Notion page ID now, Postgres ID in future)
         name: Program name
@@ -82,7 +82,7 @@ class Program:
 class Experiment:
     """
     An experimental study/assay.
-    
+
     Attributes:
         id: Unique identifier
         name: Experiment name/title
@@ -115,7 +115,7 @@ class Experiment:
 class Dataset:
     """
     An experimental dataset (omics data).
-    
+
     Attributes:
         id: Unique identifier
         name: Dataset name/title
@@ -160,7 +160,7 @@ class Dataset:
 class Feature:
     """
     A biological feature (gene, protein, metabolite, lipid).
-    
+
     Attributes:
         id: Unique identifier
         name: Feature name (e.g., gene symbol, protein name, metabolite name)
@@ -191,7 +191,7 @@ class Feature:
 class SignatureComponent:
     """
     A single component of a multi-omics signature.
-    
+
     Attributes:
         feature_id: Feature ID (or name if feature doesn't exist yet)
         feature_type: Feature type
@@ -209,7 +209,7 @@ class SignatureComponent:
 class Signature:
     """
     A multi-omics signature definition.
-    
+
     Attributes:
         id: Unique identifier
         name: Signature name/identifier
@@ -232,7 +232,7 @@ class Signature:
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     notion_page_id: Optional[str] = None
-    
+
     def __post_init__(self):
         """Auto-compute modalities from components if not provided."""
         if not self.modalities:

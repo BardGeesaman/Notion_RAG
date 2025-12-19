@@ -15,10 +15,10 @@ from typing import Dict, List, Optional, Set
 from uuid import UUID
 
 from amprenta_rag.database.session import db_session
-from amprenta_rag.database.models import Program as ProgramModel, Signature as SignatureModel
+from amprenta_rag.database.models import Program as ProgramModel
 from amprenta_rag.ingestion.multi_omics_scoring import extract_dataset_features_by_type
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.signatures.signature_loader import Signature, load_signatures_from_postgres
+from amprenta_rag.signatures.signature_loader import load_signatures_from_postgres
 
 logger = get_logger(__name__)
 
@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 class ProgramSignatureScore:
     """
     Represents a signature score for a program.
-    
+
     Attributes:
         program_id: Program ID (UUID string)
         signature_id: Signature ID (UUID string)
@@ -52,7 +52,7 @@ class ProgramSignatureScore:
 class ProgramOmicsCoverage:
     """
     Represents omics coverage for a program.
-    
+
     Attributes:
         program_id: Program ID (UUID string)
         program_name: Name of program
@@ -73,7 +73,7 @@ class ProgramOmicsCoverage:
 class ProgramSignatureMap:
     """
     Represents a complete program-signature mapping.
-    
+
     Attributes:
         program_id: Program ID (UUID string)
         program_name: Name of program
@@ -93,10 +93,10 @@ class ProgramSignatureMap:
 def get_program_datasets(program_page_id: str) -> List[str]:
     """
     Get all dataset IDs linked to a program.
-    
+
     Args:
         program_page_id: Program identifier (UUID or legacy Notion page ID)
-        
+
     Returns:
         List of dataset IDs (as strings)
     """
@@ -132,7 +132,7 @@ def _get_program_name(program_page_id: str) -> str:
                 program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
             except ValueError:
                 program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
-            
+
             if program and program.name:
                 return program.name
             return f"Program {program_page_id[:8]}"
@@ -148,12 +148,12 @@ def compute_program_signature_scores(
 ) -> List[ProgramSignatureScore]:
     """
     Compute signature scores for all datasets in a program.
-    
+
     Args:
         program_page_id: Program ID (UUID or legacy Notion page ID)
         signature_ids: Optional list of signature IDs to score (if None, scores all)
         use_cache: Whether to use feature cache
-        
+
     Returns:
         List of ProgramSignatureScore objects
     """
@@ -161,57 +161,57 @@ def compute_program_signature_scores(
         "[ANALYSIS][PROGRAM-MAPS] Computing signature scores for program %s",
         program_page_id,
     )
-    
+
     program_name = _get_program_name(program_page_id)
-    
+
     # Get all datasets in program
     dataset_ids = get_program_datasets(program_page_id)
-    
+
     if not dataset_ids:
         logger.warning(
             "[ANALYSIS][PROGRAM-MAPS] No datasets found for program %s",
             program_page_id,
         )
         return []
-    
+
     logger.info(
         "[ANALYSIS][PROGRAM-MAPS] Found %d datasets for program %s",
         len(dataset_ids),
         program_page_id,
     )
-    
+
     # Load signatures from Postgres
     all_signatures = load_signatures_from_postgres()
     sig_name_to_id: Dict[str, str] = {}
-    
+
     # Filter by signature_ids if provided
     if signature_ids:
         all_signatures = [s for s in all_signatures if str(s.id) in signature_ids]
-    
+
     for sig in all_signatures:
         if sig.name:
             sig_name_to_id[sig.name] = str(sig.id) if hasattr(sig, 'id') else sig.name
-    
+
     if not all_signatures:
         logger.warning(
             "[ANALYSIS][PROGRAM-MAPS] No signatures found to score"
         )
         return []
-    
+
     logger.info(
         "[ANALYSIS][PROGRAM-MAPS] Scoring %d signatures against %d datasets",
         len(all_signatures),
         len(dataset_ids),
     )
-    
+
     # Score each signature against program datasets
     signature_scores: Dict[str, ProgramSignatureScore] = {}
-    
+
     for signature in all_signatures:
         matching_datasets: List[str] = []
         scores_by_dataset: Dict[str, float] = {}
         scores_by_omics: Dict[str, List[float]] = defaultdict(list)
-        
+
         for dataset_id in dataset_ids:
             try:
                 # Extract features from dataset
@@ -219,25 +219,25 @@ def compute_program_signature_scores(
                     dataset_id,
                     use_cache=use_cache,
                 )
-                
+
                 # Score signature against dataset
                 from amprenta_rag.ingestion.multi_omics_scoring import score_multi_omics_signature_against_dataset
-                
+
                 score_result = score_multi_omics_signature_against_dataset(
                     signature=signature,
                     dataset_features_by_type=features_by_type,
                 )
-                
+
                 if score_result and score_result.total_score > 0:
                     scores_by_dataset[dataset_id] = score_result.total_score
                     matching_datasets.append(dataset_id)
-                    
+
                     # Track scores by omics type
                     for comp_match in score_result.component_matches:
                         if comp_match.matched:
                             omics_type = comp_match.feature_type
                             scores_by_omics[omics_type].append(comp_match.match_score)
-                
+
             except Exception as e:
                 logger.debug(
                     "[ANALYSIS][PROGRAM-MAPS] Error scoring signature %s against dataset %s: %r",
@@ -246,19 +246,19 @@ def compute_program_signature_scores(
                     e,
                 )
                 continue
-        
+
         if matching_datasets:
             # Compute overall score (average across matching datasets)
             overall_score = sum(scores_by_dataset.values()) / len(scores_by_dataset) if scores_by_dataset else 0.0
-            
+
             # Compute average score by omics type
             score_by_omics: Dict[str, float] = {}
             for omics_type, scores in scores_by_omics.items():
                 score_by_omics[omics_type] = sum(scores) / len(scores) if scores else 0.0
-            
+
             # Coverage fraction
             coverage_fraction = len(matching_datasets) / len(dataset_ids) if dataset_ids else 0.0
-            
+
             # Get signature ID
             sig_id = sig_name_to_id.get(signature.name, signature.name)
             signature_scores[sig_id] = ProgramSignatureScore(
@@ -271,16 +271,16 @@ def compute_program_signature_scores(
                 matching_datasets=matching_datasets,
                 coverage_fraction=coverage_fraction,
             )
-    
+
     result = list(signature_scores.values())
     result.sort(key=lambda s: s.overall_score, reverse=True)
-    
+
     logger.info(
         "[ANALYSIS][PROGRAM-MAPS] Computed scores for %d signatures for program %s",
         len(result),
         program_page_id,
     )
-    
+
     return result
 
 
@@ -290,11 +290,11 @@ def compute_program_omics_coverage(
 ) -> ProgramOmicsCoverage:
     """
     Compute omics coverage for a program.
-    
+
     Args:
         program_page_id: Program ID (UUID or legacy Notion page ID)
         use_cache: Whether to use feature cache
-        
+
     Returns:
         ProgramOmicsCoverage object
     """
@@ -302,35 +302,35 @@ def compute_program_omics_coverage(
         "[ANALYSIS][PROGRAM-MAPS] Computing omics coverage for program %s",
         program_page_id,
     )
-    
+
     program_name = _get_program_name(program_page_id)
-    
+
     # Get all datasets
     dataset_ids = get_program_datasets(program_page_id)
-    
+
     if not dataset_ids:
         return ProgramOmicsCoverage(
             program_id=program_page_id,
             program_name=program_name,
             total_datasets=0,
         )
-    
+
     # Analyze datasets by omics type
     datasets_by_omics: Dict[str, int] = defaultdict(int)
     all_features_by_omics: Dict[str, Set[str]] = defaultdict(set)
-    
+
     for dataset_id in dataset_ids:
         try:
             features_by_type = extract_dataset_features_by_type(
                 dataset_id,
                 use_cache=use_cache,
             )
-            
+
             for omics_type, features in features_by_type.items():
                 if features:
                     datasets_by_omics[omics_type] += 1
                     all_features_by_omics[omics_type].update(features)
-        
+
         except Exception as e:
             logger.debug(
                 "[ANALYSIS][PROGRAM-MAPS] Error analyzing dataset %s: %r",
@@ -338,9 +338,9 @@ def compute_program_omics_coverage(
                 e,
             )
             continue
-    
+
     features_by_omics = {k: len(v) for k, v in all_features_by_omics.items()}
-    
+
     # Generate coverage summary
     coverage_parts = []
     for omics_type in sorted(datasets_by_omics.keys()):
@@ -349,9 +349,9 @@ def compute_program_omics_coverage(
         coverage_parts.append(
             f"{omics_type.capitalize()}: {datasets_count} dataset(s), {features_count} unique features"
         )
-    
+
     coverage_summary = "; ".join(coverage_parts) if coverage_parts else "No omics data"
-    
+
     return ProgramOmicsCoverage(
         program_id=program_page_id,
         program_name=program_name,
@@ -367,29 +367,29 @@ def compute_convergence_indicators(
 ) -> Dict[str, float]:
     """
     Compute cross-omics convergence indicators.
-    
+
     Args:
         signature_scores: List of ProgramSignatureScore objects
-        
+
     Returns:
         Dictionary of convergence metrics
     """
     if not signature_scores:
         return {}
-    
+
     # Count signatures with multi-omics support
     multi_omics_signatures = 0
     total_omics_types = 0
-    
+
     for score in signature_scores:
         omics_count = len([s for s in score.score_by_omics.values() if s > 0])
         if omics_count > 1:
             multi_omics_signatures += 1
         total_omics_types += omics_count
-    
+
     convergence_fraction = multi_omics_signatures / len(signature_scores) if signature_scores else 0.0
     avg_omics_per_signature = total_omics_types / len(signature_scores) if signature_scores else 0.0
-    
+
     return {
         "convergence_fraction": convergence_fraction,
         "avg_omics_per_signature": avg_omics_per_signature,
@@ -404,12 +404,12 @@ def generate_program_signature_map(
 ) -> ProgramSignatureMap:
     """
     Generate a complete program-signature mapping.
-    
+
     Args:
         program_page_id: Program ID (UUID or legacy Notion page ID)
         top_n: Number of top signatures to include
         use_cache: Whether to use feature cache
-        
+
     Returns:
         ProgramSignatureMap object
     """
@@ -417,25 +417,25 @@ def generate_program_signature_map(
         "[ANALYSIS][PROGRAM-MAPS] Generating signature map for program %s",
         program_page_id,
     )
-    
+
     # Compute signature scores
     signature_scores = compute_program_signature_scores(
         program_page_id,
         use_cache=use_cache,
     )
-    
+
     # Compute omics coverage
     omics_coverage = compute_program_omics_coverage(
         program_page_id,
         use_cache=use_cache,
     )
-    
+
     # Get top signatures
     top_signatures = signature_scores[:top_n] if signature_scores else []
-    
+
     # Compute convergence indicators
     convergence_indicators = compute_convergence_indicators(signature_scores)
-    
+
     return ProgramSignatureMap(
         program_id=program_page_id,
         program_name=omics_coverage.program_name,
@@ -452,57 +452,57 @@ def generate_program_map_report(
 ) -> str:
     """
     Generate a human-readable program-signature map report.
-    
+
     Args:
         program_map: ProgramSignatureMap object
         include_all_signatures: Whether to include all signatures or just top N
-        
+
     Returns:
         Markdown-formatted report
     """
     report = f"# Program-Signature Map: {program_map.program_name}\n\n"
-    
+
     # Omics Coverage
     if program_map.omics_coverage:
         report += f"## Omics Coverage\n\n"
         report += f"**Total Datasets**: {program_map.omics_coverage.total_datasets}\n\n"
-        
+
         if program_map.omics_coverage.datasets_by_omics:
             report += f"### Datasets by Omics Type\n\n"
             for omics_type, count in sorted(program_map.omics_coverage.datasets_by_omics.items()):
                 features_count = program_map.omics_coverage.features_by_omics.get(omics_type, 0)
                 report += f"- **{omics_type.capitalize()}**: {count} dataset(s), {features_count} unique features\n"
             report += "\n"
-        
+
         report += f"**Coverage Summary**: {program_map.omics_coverage.coverage_summary}\n\n"
-    
+
     # Convergence Indicators
     if program_map.convergence_indicators:
         report += f"## Cross-Omics Convergence\n\n"
         report += f"**Multi-Omics Signatures**: {program_map.convergence_indicators.get('multi_omics_signature_count', 0)}\n"
         report += f"**Convergence Fraction**: {program_map.convergence_indicators.get('convergence_fraction', 0.0):.3f}\n"
         report += f"**Avg Omics per Signature**: {program_map.convergence_indicators.get('avg_omics_per_signature', 0.0):.2f}\n\n"
-    
+
     # Top Signatures
     signatures_to_show = program_map.signature_scores if include_all_signatures else program_map.top_signatures
-    
+
     report += f"## Signature Scores\n\n"
     report += f"**Total Matching Signatures**: {len(program_map.signature_scores)}\n\n"
-    
+
     if signatures_to_show:
         report += f"### Top {len(signatures_to_show)} Signatures\n\n"
         for i, score in enumerate(signatures_to_show, 1):
             report += f"#### {i}. {score.signature_name}\n\n"
             report += f"- **Overall Score**: {score.overall_score:.3f}\n"
             report += f"- **Coverage**: {score.coverage_fraction:.1%} ({len(score.matching_datasets)}/{program_map.omics_coverage.total_datasets if program_map.omics_coverage else 0} datasets)\n"
-            
+
             if score.score_by_omics:
                 report += f"- **Scores by Omics**:\n"
                 for omics_type, sig_score in sorted(score.score_by_omics.items()):
                     report += f"  - {omics_type.capitalize()}: {sig_score:.3f}\n"
-            
+
             report += "\n"
     else:
         report += "No matching signatures found.\n\n"
-    
+
     return report

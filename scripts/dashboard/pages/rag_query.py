@@ -26,13 +26,13 @@ def render_rag_query_page() -> None:
     available_models = get_available_models()
     model_options = {m["description"]: m["name"] for m in available_models}
     default_model = "gpt-4o"
-    
+
     # Parallel mode checkbox
     use_parallel = st.checkbox("Use Multiple Models", value=False, help="Query multiple models in parallel and synthesize responses")
-    
+
     selected_model_names = []  # Initialize for parallel mode
     selected_model_name = default_model  # Initialize for single mode
-    
+
     if use_parallel:
         selected_models = st.multiselect(
             "Select models to use",
@@ -66,7 +66,7 @@ def render_rag_query_page() -> None:
             "Filter by source type (optional)",
             ["All", "Literature", "Email", "Dataset", "Experiment"],
         )
-    
+
     # Trust scoring option
     use_trust = st.checkbox(
         "Apply Trust Scoring",
@@ -96,14 +96,14 @@ def render_rag_query_page() -> None:
                                 model=default_model,
                                 use_trust_scoring=use_trust,
                             )
-                            
+
                             # Then run parallel reasoning on the question
                             parallel_result = parallel_query(query_text, models=selected_model_names)
-                            
+
                             # Display RAG matches
                             if rag_result and rag_result.matches:
                                 st.success(f"Found {len(rag_result.matches)} RAG results")
-                                
+
                                 # Display trust summary if trust scoring enabled
                                 if use_trust and rag_result.trust_summary:
                                     st.subheader("📊 Source Trust Analysis")
@@ -114,7 +114,7 @@ def render_rag_query_page() -> None:
                                     with col2:
                                         high_trust_count = rag_result.trust_summary.get("high_trust_count", 0)
                                         st.metric("High Trust Sources", high_trust_count)
-                                    
+
                                     # Show trust level breakdown
                                     st.write("**Trust Level Distribution:**")
                                     levels = rag_result.trust_summary.get("levels", {})
@@ -123,11 +123,11 @@ def render_rag_query_page() -> None:
                                             level_label = level.replace("_", " ").title()
                                             st.write(f"  - {level_label}: {count}")
                                     st.markdown("---")
-                                
+
                                 # Display individual model responses
                                 st.subheader("🤖 Individual Model Responses")
                                 cols = st.columns(min(len(parallel_result["individual_responses"]), 3))
-                                
+
                                 for idx, response in enumerate(parallel_result["individual_responses"]):
                                     col_idx = idx % len(cols)
                                     with cols[col_idx]:
@@ -137,20 +137,20 @@ def render_rag_query_page() -> None:
                                                 st.markdown(response.get("response", "No response"))
                                             else:
                                                 st.error(f"Error: {response.get('error', 'Unknown error')}")
-                                
+
                                 st.markdown("---")
-                                
+
                                 # Display synthesized answer
                                 st.subheader("✨ Synthesized Answer")
                                 st.markdown(parallel_result["synthesis"])
                                 st.markdown("---")
-                                
+
                                 # Display RAG answer if available
                                 if rag_result.answer:
                                     st.subheader("📚 RAG Context Answer")
                                     st.markdown(rag_result.answer)
                                     st.markdown("---")
-                                
+
                                 # Display matches
                                 st.subheader("Matches")
                                 for i, match in enumerate(rag_result.matches, 1):
@@ -167,7 +167,7 @@ def render_rag_query_page() -> None:
                                         score_display = f"**Result {i}** - Score: {match.score:.3f} {trust_badge}"
                                     else:
                                         score_display = f"**Result {i}** - Score: {match.score:.3f}"
-                                    
+
                                     with st.expander(score_display):
                                         # Metadata
                                         col1, col2 = st.columns(2)
@@ -241,7 +241,7 @@ def render_rag_query_page() -> None:
                                 with col2:
                                     high_trust_count = result.trust_summary.get("high_trust_count", 0)
                                     st.metric("High Trust Sources", high_trust_count)
-                                
+
                                 # Show trust level breakdown
                                 st.write("**Trust Level Distribution:**")
                                 levels = result.trust_summary.get("levels", {})
@@ -273,7 +273,7 @@ def render_rag_query_page() -> None:
                                     score_display = f"**Result {i}** - Score: {match.score:.3f} {trust_badge}"
                                 else:
                                     score_display = f"**Result {i}** - Score: {match.score:.3f}"
-                                
+
                                 with st.expander(score_display):
                                     # Metadata
                                     col1, col2 = st.columns(2)

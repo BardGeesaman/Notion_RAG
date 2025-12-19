@@ -29,7 +29,7 @@ def _get_program_name(program_page_id: str) -> str:
                 program = db.query(ProgramModel).filter(ProgramModel.id == program_uuid).first()
             except ValueError:
                 program = db.query(ProgramModel).filter(ProgramModel.notion_page_id == program_page_id).first()
-            
+
             if program and program.name:
                 return program.name
             return f"Program {program_page_id[:8]}"

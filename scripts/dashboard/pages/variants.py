@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 import pandas as pd
-from amprenta_rag.database.models import GeneticVariant, Experiment
+from amprenta_rag.database.models import GeneticVariant
 from amprenta_rag.database.session import db_session
 
 

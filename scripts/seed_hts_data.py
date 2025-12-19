@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import math
 import random
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple

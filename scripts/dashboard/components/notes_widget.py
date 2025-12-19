@@ -11,19 +11,19 @@ from amprenta_rag.auth.session import get_current_user
 def render_notes_widget(entity_type: str, entity_id: str) -> None:
     """
     Render a notes widget for an entity.
-    
+
     Args:
         entity_type: Type of entity (experiment, compound, signature, etc.)
         entity_id: UUID of the entity
     """
     user = get_current_user()
-    
+
     st.markdown("### 📝 Notes")
-    
+
     with db_session() as db:
         # Display existing notes
         notes = get_notes(entity_type, entity_id, db)
-        
+
         if notes:
             for note in notes:
                 with st.container():
@@ -42,7 +42,7 @@ def render_notes_widget(entity_type: str, entity_id: str) -> None:
                     st.divider()
         else:
             st.info("No notes yet. Add one below.")
-        
+
         # Add new note
         if user:
             with st.form(f"add_note_{entity_id}", clear_on_submit=True):

@@ -4,9 +4,7 @@ My Subscriptions dashboard page.
 
 from __future__ import annotations
 
-import json
 import os
-import io
 import pandas as pd
 import streamlit as st
 import httpx

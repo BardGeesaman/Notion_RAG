@@ -37,11 +37,11 @@ def notion_headers() -> Dict[str, str]:
 def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
     """
     Find existing Dataset page by study ID.
-    
+
     Args:
         study_id: Repository-specific study identifier
         repository: Repository name
-        
+
     Returns:
         Notion page ID if found, None otherwise
     """
@@ -49,9 +49,9 @@ def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
     if not exp_data_db_id:
         logger.error("[HARVEST] Experimental Data Assets DB ID not configured")
         return None
-    
+
     import requests
-    
+
     # Try different property names for study ID
     property_candidates = [
         "MW Study ID",
@@ -60,7 +60,7 @@ def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
         "MetaboLights Study ID",
         "Study ID",
     ]
-    
+
     for prop_name in property_candidates:
         try:
             cfg = get_config()
@@ -72,7 +72,7 @@ def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
                 },
                 "page_size": 1,
             }
-            
+
             resp = requests.post(
                 url,
                 headers=notion_headers(),
@@ -80,7 +80,7 @@ def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
                 timeout=30,
             )
             resp.raise_for_status()
-            
+
             results = resp.json().get("results", [])
             if results:
                 page_id = results[0].get("id", "")
@@ -98,7 +98,7 @@ def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
                 e,
             )
             continue
-    
+
     # Also try searching in Summary field
     try:
         cfg = get_config()
@@ -110,7 +110,7 @@ def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
             },
             "page_size": 10,
         }
-        
+
         resp = requests.post(
             url,
             headers=notion_headers(),
@@ -118,7 +118,7 @@ def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
             timeout=30,
         )
         resp.raise_for_status()
-        
+
         results = resp.json().get("results", [])
         for result in results:
             props = result.get("properties", {})
@@ -139,7 +139,7 @@ def find_existing_dataset_page(study_id: str, repository: str) -> str | None:
                     return page_id
     except Exception as e:
         logger.debug("[HARVEST] Error searching Summary field: %r", e)
-    
+
     return None
 
 
@@ -149,11 +149,11 @@ def create_dataset_page_from_metadata(
 ) -> str | None:
     """
     Create a Notion Dataset page from StudyMetadata.
-    
+
     Args:
         metadata: StudyMetadata object
         repository: Repository name
-        
+
     Returns:
         Notion page ID if created, None otherwise
     """
@@ -161,42 +161,42 @@ def create_dataset_page_from_metadata(
     if not exp_data_db_id:
         logger.error("[HARVEST] Experimental Data Assets DB ID not configured")
         return None
-    
+
     import requests
-    
+
     # Build page properties
     props = {
         "Experiment Name": {"title": [{"text": {"content": metadata.title}}]},
     }
-    
+
     # Add study ID to Summary
     summary_text = f"{repository} Study ID: {metadata.study_id}\n"
     if metadata.summary:
         summary_text += f"\n{metadata.summary}"
     props["Summary"] = {"rich_text": [{"text": {"content": summary_text}}]}
-    
+
     # Add DOI if available
     if metadata.doi:
         props["Source URL / DOI"] = {"url": metadata.doi}
-    
+
     # Add disease
     if metadata.disease:
         props["Disease"] = {
             "multi_select": [{"name": d} for d in metadata.disease if d]
         }
-    
+
     # Add matrix/sample type
     if metadata.sample_type:
         props["Matrix"] = {
             "multi_select": [{"name": st} for st in metadata.sample_type if st]
         }
-    
+
     # Add model systems/organism
     if metadata.organism:
         props["Model Systems"] = {
             "multi_select": [{"name": o} for o in metadata.organism if o]
         }
-    
+
     # Add omics type
     omics_type_map = {
         "transcriptomics": "Transcriptomics",
@@ -206,7 +206,7 @@ def create_dataset_page_from_metadata(
     }
     omics_type_value = omics_type_map.get(metadata.omics_type, metadata.omics_type)
     props["Omics Type"] = {"select": {"name": omics_type_value}}
-    
+
     # Create page
     try:
         cfg = get_config()
@@ -215,7 +215,7 @@ def create_dataset_page_from_metadata(
             "parent": {"database_id": exp_data_db_id},
             "properties": props,
         }
-        
+
         resp = requests.post(
             url,
             headers=notion_headers(),
@@ -223,7 +223,7 @@ def create_dataset_page_from_metadata(
             timeout=30,
         )
         resp.raise_for_status()
-        
+
         page_id = resp.json().get("id", "")
         logger.info(
             "[HARVEST] Created Dataset page %s for %s study %s",
@@ -232,7 +232,7 @@ def create_dataset_page_from_metadata(
             metadata.study_id,
         )
         return page_id
-        
+
     except Exception as e:
         logger.error(
             "[HARVEST] Error creating Dataset page for %s study %s: %r",
@@ -249,20 +249,20 @@ def create_postgres_dataset_from_metadata(
 ) -> tuple[Optional[str], Optional[str]]:
     """
     Create a Postgres dataset from StudyMetadata.
-    
+
     Args:
         metadata: StudyMetadata object
         repository: Repository name
-        
+
     Returns:
         Tuple of (dataset_id, notion_page_id) - dataset_id is Postgres UUID string
     """
     cfg = get_config()
-    
+
     if not cfg.pipeline.use_postgres_as_sot:
         logger.debug("[HARVEST] Postgres not enabled, skipping Postgres dataset creation")
         return None, None
-    
+
     try:
         # Map omics type string to OmicsType enum
         omics_type_map = {
@@ -278,7 +278,7 @@ def create_postgres_dataset_from_metadata(
                 metadata.omics_type,
             )
             return None, None
-        
+
         # Build external IDs dict with repository study ID
         external_ids = {
             f"{repository.lower()}_study_id": metadata.study_id,
@@ -287,10 +287,10 @@ def create_postgres_dataset_from_metadata(
             external_ids["doi"] = metadata.doi
         if metadata.pubmed_id:
             external_ids["pubmed_id"] = metadata.pubmed_id
-        
+
         # Build file URLs from data files
         file_urls = [df.download_url for df in metadata.data_files if df.download_url]
-        
+
         # Create Postgres dataset
         dataset = create_or_update_dataset_in_postgres(
             name=metadata.title,
@@ -303,16 +303,16 @@ def create_postgres_dataset_from_metadata(
             external_ids=external_ids,
             notion_page_id=None,  # Will be linked later if Notion page created
         )
-        
+
         logger.info(
             "[HARVEST] Created Postgres dataset %s for %s study %s",
             dataset.id,
             repository,
             metadata.study_id,
         )
-        
+
         return str(dataset.id), dataset.notion_page_id
-        
+
     except Exception as e:
         logger.error(
             "[HARVEST] Error creating Postgres dataset for %s study %s: %r",
@@ -333,7 +333,7 @@ def harvest_study(
 ) -> tuple[Optional[str], Optional[str]]:
     """
     Harvest a study from a repository.
-    
+
     Args:
         study_id: Repository-specific study identifier
         repository: Repository name
@@ -341,18 +341,18 @@ def harvest_study(
         create_postgres: If True, create Postgres dataset (default: True if Postgres is SoT)
         ingest: If True, trigger dataset ingestion after creating page
         dry_run: If True, only print what would be done
-        
+
     Returns:
         Tuple of (dataset_id, notion_page_id) where dataset_id is Postgres UUID or None
     """
     cfg = get_config()
-    
+
     # Auto-enable Postgres if it's configured as SoT
     if create_postgres is True and cfg.pipeline.use_postgres_as_sot:
         create_postgres = True
     else:
         create_postgres = False
-    
+
     logger.info(
         "[HARVEST] Harvesting %s study %s (create_notion=%s, create_postgres=%s, ingest=%s)",
         repository,
@@ -361,7 +361,7 @@ def harvest_study(
         create_postgres,
         ingest,
     )
-    
+
     # Get repository instance
     # Load API keys and email from config if available
     geo_api_key = None
@@ -375,12 +375,12 @@ def harvest_study(
             import os
             geo_api_key = os.getenv("GEO_API_KEY", "") or None
             ncbi_email = os.getenv("NCBI_EMAIL", "") or None
-    
+
     repo_instance = get_repository(repository, api_key=geo_api_key, email=ncbi_email)
     if not repo_instance:
         logger.error("[HARVEST] Repository '%s' not found", repository)
         return None, None
-    
+
     # Fetch metadata
     metadata = fetch_study_metadata(study_id, repository)
     if not metadata:
@@ -390,7 +390,7 @@ def harvest_study(
             study_id,
         )
         return None, None
-    
+
     if dry_run:
         print(f"\n{'=' * 80}")
         print(f"DRY RUN: Would harvest {repository} study {study_id}")
@@ -405,11 +405,11 @@ def harvest_study(
             print(f"Sample Type: {', '.join(metadata.sample_type)}")
         print(f"{'=' * 80}\n")
         return None, None
-    
+
     # Create Postgres dataset first (if enabled)
     dataset_id = None
     page_id = None
-    
+
     if create_postgres:
         dataset_id, existing_notion_page_id = create_postgres_dataset_from_metadata(
             metadata,
@@ -422,7 +422,7 @@ def harvest_study(
                 dataset_id,
                 page_id,
             )
-        
+
         # Try to link to programs/experiments if metadata contains relevant information
         # Note: Repository metadata doesn't typically include program/experiment IDs,
         # but we can try to match based on disease or other metadata if needed
@@ -437,25 +437,25 @@ def harvest_study(
                     "[HARVEST] Program/experiment linking skipped for repository study: %r",
                     e,
                 )
-    
+
     # Find or create Notion page (only if explicitly requested)
     if create_notion:
         logger.info("[HARVEST] Notion sync enabled - querying Notion for existing pages")
         # Check if page already exists
         if not page_id:
             page_id = find_existing_dataset_page(study_id, repository)
-        
+
         if not page_id:
             # Create new page
             page_id = create_dataset_page_from_metadata(metadata, repository)
-            
+
             # Link Postgres dataset to Notion page if both exist
             if dataset_id and page_id:
                 try:
                     from amprenta_rag.database.base import get_db
                     from amprenta_rag.database.models import Dataset as DatasetModel
                     from uuid import UUID
-                    
+
                     db = next(get_db())
                     dataset = db.query(DatasetModel).filter(
                         DatasetModel.id == UUID(dataset_id)
@@ -480,14 +480,14 @@ def harvest_study(
                 repository,
                 study_id,
             )
-            
+
             # Link Notion page to Postgres dataset if dataset exists
             if dataset_id and page_id:
                 try:
                     from amprenta_rag.database.base import get_db
                     from amprenta_rag.database.models import Dataset as DatasetModel
                     from uuid import UUID
-                    
+
                     db = next(get_db())
                     dataset = db.query(DatasetModel).filter(
                         DatasetModel.id == UUID(dataset_id)
@@ -505,12 +505,12 @@ def harvest_study(
                         "[HARVEST] Could not link Notion page to Postgres dataset: %r",
                         e,
                     )
-    
+
     # For MW studies, add mwTab data to the page
     if repository in ["MW", "MW_LIPIDOMICS", "MW_METABOLOMICS"] and page_id:
         try:
             from scripts.harvest_mw_studies import fetch_mw_mwtab, add_mwtab_block
-            
+
             mwtab_text = fetch_mw_mwtab(study_id)
             if mwtab_text:
                 add_mwtab_block(page_id, mwtab_text)
@@ -524,12 +524,12 @@ def harvest_study(
                 page_id,
                 e,
             )
-    
+
     # Trigger ingestion if requested
     if ingest:
         # Use dataset_id if available, otherwise page_id
         identifier = dataset_id if dataset_id else page_id
-        
+
         if identifier:
             logger.info(
                 "[HARVEST] Triggering ingestion for dataset %s",
@@ -569,7 +569,7 @@ def harvest_study(
             logger.warning(
                 "[HARVEST] Cannot trigger ingestion: no dataset ID or page ID available",
             )
-    
+
     return dataset_id, page_id
 
 
@@ -618,7 +618,7 @@ def main() -> None:
 
     # Allow Postgres-only operation (no Notion required)
     create_postgres = args.create_postgres and not args.no_postgres
-    
+
     if not args.create_notion and not args.dry_run and not create_postgres:
         parser.error("Either --create-notion, --create-postgres, or --dry-run must be specified")
 

@@ -5,8 +5,6 @@ Revises: ac_dataset_mwtab_json, i0j1k2l3m4n5
 Create Date: 2025-12-17 13:54:02.395124
 
 """
-from alembic import op
-import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.

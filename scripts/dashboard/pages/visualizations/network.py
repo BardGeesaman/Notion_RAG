@@ -8,7 +8,6 @@ import plotly.graph_objects as go
 import streamlit as st
 from sqlalchemy.orm import Session
 
-from amprenta_rag.analysis.id_mapping import map_gene_to_kegg
 from amprenta_rag.database.models import Signature
 from scripts.dashboard.db_session import db_session
 

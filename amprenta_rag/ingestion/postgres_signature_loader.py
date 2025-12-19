@@ -23,17 +23,17 @@ logger = get_logger(__name__)
 def load_signature_from_postgres(signature_model: SignatureModel) -> Optional[Signature]:
     """
     Load a Signature object from a Postgres SignatureModel.
-    
+
     Args:
         signature_model: SignatureModel instance from Postgres
-        
+
     Returns:
         Signature object or None if loading failed
     """
     try:
         # Load signature components
         components: List[SignatureComponent] = []
-        
+
         with db_session() as db:
             try:
                 sig_components = (
@@ -41,7 +41,7 @@ def load_signature_from_postgres(signature_model: SignatureModel) -> Optional[Si
                     .filter(SignatureComponentModel.signature_id == signature_model.id)
                     .all()
                 )
-                
+
                 for comp_model in sig_components:
                     component = SignatureComponent(
                         feature_name=comp_model.feature_name or "",
@@ -57,7 +57,7 @@ def load_signature_from_postgres(signature_model: SignatureModel) -> Optional[Si
                     e,
                 )
                 return None
-        
+
         # Build Signature object
         signature = Signature(
             name=signature_model.name,
@@ -65,15 +65,15 @@ def load_signature_from_postgres(signature_model: SignatureModel) -> Optional[Si
             modalities=signature_model.modalities or [],
             description=signature_model.description,
         )
-        
+
         logger.debug(
             "[POSTGRES-SIGNATURE] Loaded signature %s with %d components",
             signature_model.name,
             len(components),
         )
-        
+
         return signature
-        
+
     except Exception as e:
         logger.error(
             "[POSTGRES-SIGNATURE] Error loading signature %s from Postgres: %r",
@@ -86,21 +86,21 @@ def load_signature_from_postgres(signature_model: SignatureModel) -> Optional[Si
 def fetch_all_signatures_from_postgres() -> List[SignatureModel]:
     """
     Fetch all Signature models from Postgres.
-    
+
     Returns:
         List of SignatureModel instances
     """
     with db_session() as db:
         try:
             signatures = db.query(SignatureModel).all()
-            
+
             logger.debug(
                 "[POSTGRES-SIGNATURE] Fetched %d signature(s) from Postgres",
                 len(signatures),
             )
-            
+
             return signatures
-            
+
         except Exception as e:
             logger.error(
                 "[POSTGRES-SIGNATURE] Error fetching signatures from Postgres: %r",
@@ -112,10 +112,10 @@ def fetch_all_signatures_from_postgres() -> List[SignatureModel]:
 def find_signature_by_id(signature_id: UUID) -> Optional[SignatureModel]:
     """
     Find a signature in Postgres by ID.
-    
+
     Args:
         signature_id: Postgres UUID of the signature
-        
+
     Returns:
         SignatureModel instance or None if not found
     """
@@ -130,10 +130,10 @@ def find_signature_by_id(signature_id: UUID) -> Optional[SignatureModel]:
 def find_signatures_by_name(name: str) -> List[SignatureModel]:
     """
     Find signatures in Postgres by name.
-    
+
     Args:
         name: Signature name to search for
-        
+
     Returns:
         List of SignatureModel instances matching the name
     """

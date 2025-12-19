@@ -97,17 +97,17 @@ def build_dge_text_representation(
         for idx, row in top_genes.iterrows():
             gene_name = str(row.get(gene_column, "")).strip()
             normalized_gene = normalize_gene_identifier(gene_name)
-            
+
             gene_info_parts = [normalized_gene]
-            
+
             if log2fc_col and pd.notna(row.get(log2fc_col)):
                 log2fc_val = row.get(log2fc_col)
                 gene_info_parts.append(f"log2FC={log2fc_val:.2f}")
-            
+
             if pval_col and pd.notna(row.get(pval_col)):
                 pval_val = row.get(pval_col)
                 gene_info_parts.append(f"p={pval_val:.4f}")
-            
+
             gene_info = " (".join(gene_info_parts) + (")" if len(gene_info_parts) > 1 else "")
             text_parts.append(f"- {gene_info}")
 

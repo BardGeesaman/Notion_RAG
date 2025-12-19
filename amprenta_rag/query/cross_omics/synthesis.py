@@ -28,25 +28,25 @@ def synthesize_cross_omics_summary(
 ) -> str:
     """
     Use OpenAI to synthesize a cross-omics summary.
-    
+
     Args:
         prompt: User prompt describing what to summarize
         context_chunks: List of context chunk text strings
         max_chunks: Maximum chunks to include in context
         include_comparative: Whether to include comparative analysis instructions
-        
+
     Returns:
         Synthesized summary text
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     # Prepare context
     context = prepare_context_chunks(context_chunks, max_chunks)
-    
+
     system_prompt = get_cross_omics_system_prompt(include_comparative=include_comparative)
     user_content = f"{prompt}\n\nRelevant context chunks:\n{context}"
-    
+
     try:
         resp = client.chat.completions.create(
             model=chat_model,

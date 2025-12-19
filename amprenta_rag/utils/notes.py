@@ -13,14 +13,14 @@ logger = get_logger(__name__)
 def add_note(entity_type: str, entity_id: str, content: str, user_id: str, db) -> Note:
     """
     Add a note to an entity.
-    
+
     Args:
         entity_type: Type of entity (experiment, compound, signature, etc.)
         entity_id: UUID of the entity
         content: Note content
         user_id: UUID of the user creating the note
         db: Database session
-        
+
     Returns:
         Created Note object
     """
@@ -30,11 +30,11 @@ def add_note(entity_type: str, entity_id: str, content: str, user_id: str, db) -
         content=content,
         created_by_id=UUID(user_id) if user_id and user_id != "test" and isinstance(user_id, str) else (user_id if not isinstance(user_id, str) else None),
     )
-    
+
     db.add(note)
     db.commit()
     db.refresh(note)
-    
+
     logger.info("[NOTES] Added note %s for %s %s", note.id, entity_type, entity_id)
     return note
 
@@ -42,12 +42,12 @@ def add_note(entity_type: str, entity_id: str, content: str, user_id: str, db) -
 def get_notes(entity_type: str, entity_id: str, db) -> List[Note]:
     """
     Get all notes for an entity.
-    
+
     Args:
         entity_type: Type of entity
         entity_id: UUID of the entity
         db: Database session
-        
+
     Returns:
         List of Note objects, ordered by created_at descending
     """
@@ -60,29 +60,29 @@ def get_notes(entity_type: str, entity_id: str, db) -> List[Note]:
         .order_by(Note.created_at.desc())
         .all()
     )
-    
+
     return notes
 
 
 def delete_note(note_id: str, db) -> bool:
     """
     Delete a note.
-    
+
     Args:
         note_id: UUID of the note
         db: Database session
-        
+
     Returns:
         True if deleted, False if not found
     """
     note = db.query(Note).filter(
         Note.id == (UUID(note_id) if isinstance(note_id, str) else note_id)
     ).first()
-    
+
     if note:
         db.delete(note)
         db.commit()
         logger.info("[NOTES] Deleted note %s", note_id)
         return True
-    
+
     return False

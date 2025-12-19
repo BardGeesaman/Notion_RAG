@@ -20,11 +20,11 @@ logger = get_logger(__name__)
 def check_locks():
     """Check for blocking locks and idle connections."""
     engine = get_engine()
-    
+
     with engine.connect() as conn:
         # Check for idle in transaction
         result = conn.execute(text('''
-            SELECT 
+            SELECT
                 pid,
                 usename,
                 application_name,
@@ -38,9 +38,9 @@ def check_locks():
             AND pid != pg_backend_pid()
             ORDER BY state_change
         '''))
-        
+
         idle_connections = result.fetchall()
-        
+
         if idle_connections:
             print(f"\n⚠️  Found {len(idle_connections)} idle in transaction connections:\n")
             for conn_info in idle_connections:
@@ -61,16 +61,16 @@ def check_locks():
 def check_blocking():
     """Check for blocking locks."""
     engine = get_engine()
-    
+
     with engine.connect() as conn:
         result = conn.execute(text('''
-            SELECT 
+            SELECT
                 blocked_locks.pid AS blocked_pid,
                 blocking_locks.pid AS blocking_pid,
                 blocking_activity.query AS blocking_query
             FROM pg_catalog.pg_locks blocked_locks
             JOIN pg_catalog.pg_stat_activity blocked_activity ON blocked_activity.pid = blocked_locks.pid
-            JOIN pg_catalog.pg_locks blocking_locks 
+            JOIN pg_catalog.pg_locks blocking_locks
                 ON blocking_locks.locktype = blocked_locks.locktype
                 AND blocking_locks.database IS NOT DISTINCT FROM blocked_locks.database
                 AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
@@ -78,9 +78,9 @@ def check_blocking():
             JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
             WHERE NOT blocked_locks.granted
         '''))
-        
+
         blocks = result.fetchall()
-        
+
         if blocks:
             print(f"\n⚠️  Found {len(blocks)} blocking locks:\n")
             for block in blocks:
@@ -96,7 +96,7 @@ def check_blocking():
 def terminate_connection(pid: int):
     """Terminate a database connection by PID."""
     engine = get_engine()
-    
+
     with engine.connect() as conn:
         try:
             conn.execute(text(f"SELECT pg_terminate_backend({pid})"))
@@ -111,7 +111,7 @@ def terminate_connection(pid: int):
 def main():
     """Main function."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Fix database locks")
     parser.add_argument(
         "--check",
@@ -128,23 +128,23 @@ def main():
         type=int,
         help="Terminate a specific connection by PID",
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.check or not any([args.terminate_idle, args.terminate_pid]):
         print("Checking database connections...")
         idle_pids = check_locks()
         check_blocking()
-        
+
         if idle_pids and not args.terminate_idle:
             print(f"\n💡 Tip: Run with --terminate-idle to close these connections")
-    
+
     if args.terminate_idle:
         print("\nTerminating idle in transaction connections...")
         idle_pids = check_locks()
         for pid in idle_pids:
             terminate_connection(pid)
-    
+
     if args.terminate_pid:
         terminate_connection(args.terminate_pid)
 

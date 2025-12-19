@@ -15,7 +15,7 @@ from amprenta_rag.database.base import get_db
 def get_database_session() -> Generator[Session, None, None]:
     """
     Dependency to get a database session.
-    
+
     Yields:
         Database session
     """

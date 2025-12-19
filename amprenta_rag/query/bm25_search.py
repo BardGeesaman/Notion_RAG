@@ -18,18 +18,18 @@ def bm25_search(
 ) -> List[Dict[str, Any]]:
     """
     Perform full-text search on RAG chunks using PostgreSQL.
-    
+
     Args:
         query: Search query text
         limit: Max results to return
         source_type: Optional filter by source type
-    
+
     Returns:
         List of dicts with chunk_id, content, score, metadata
     """
     if not query.strip():
         return []
-    
+
     db_gen = get_db()
     db = next(db_gen)
     try:

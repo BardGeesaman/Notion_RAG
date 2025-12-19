@@ -1,6 +1,6 @@
 """Audit logging utilities."""
 import logging
-from typing import Optional, Any
+from typing import Optional
 from datetime import datetime
 
 from amprenta_rag.database.base import get_db

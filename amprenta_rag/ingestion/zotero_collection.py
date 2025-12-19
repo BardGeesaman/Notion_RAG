@@ -75,7 +75,7 @@ def fetch_collection_items(collection_key: str) -> List[Dict[str, Any]]:
 def get_literature_page_id_for_item(item_key: str) -> Optional[str]:
     """
     Stub: Notion support removed. Returns None.
-    
+
     Previously found Literature page by Zotero Item Key in Notion.
     """
     logger.debug("[ZOTERO-COLLECTION] get_literature_page_id_for_item() is a no-op (Notion removed)")
@@ -85,7 +85,7 @@ def get_literature_page_id_for_item(item_key: str) -> Optional[str]:
 def delete_rag_pages_for_item(item_key: str) -> None:
     """
     Stub: Notion support removed. No-op.
-    
+
     Previously archived RAG chunk pages in Notion.
     """
     logger.debug("[ZOTERO-COLLECTION] delete_rag_pages_for_item() is a no-op (Notion removed)")

@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 def _find_or_create_metabolite_page(metabolite_name: str) -> Optional[str]:
     """
     Stub: Notion support removed. Returns None.
-    
+
     Previously found or created a Metabolite Features page in Notion.
     """
     logger.debug(
@@ -33,7 +33,7 @@ def link_metabolites_to_item(
 ) -> int:
     """
     Stub: Notion support removed. Returns 0.
-    
+
     Previously linked metabolites to a Notion item.
     """
     logger.debug(

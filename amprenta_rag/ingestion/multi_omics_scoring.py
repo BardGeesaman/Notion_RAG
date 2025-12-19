@@ -3,7 +3,7 @@ Multi-omics signature scoring engine.
 
 Extends signature scoring to work across all omics types:
 - Gene signatures → Transcriptomics datasets
-- Protein signatures → Proteomics datasets  
+- Protein signatures → Proteomics datasets
 - Metabolite signatures → Metabolomics datasets
 - Lipid signatures → Lipidomics datasets
 - Mixed signatures → Multiple dataset types

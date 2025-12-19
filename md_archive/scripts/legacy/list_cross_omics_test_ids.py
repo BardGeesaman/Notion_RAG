@@ -25,31 +25,31 @@ logger = get_logger(__name__)
 def list_programs():
     """
     List all Programs with page IDs.
-    
+
     Note: If the Programs database has multiple data sources (connected/synced databases),
     direct queries won't work. This function will try direct query first, then fall back
     to finding programs via experiments.
     """
     cfg = get_config()
-    
+
     programs_db_id = cfg.notion.programs_db_id if hasattr(cfg.notion, "programs_db_id") else None
-    
+
     if not programs_db_id:
         print("⚠️  Programs database ID not configured (set NOTION_PROGRAMS_DB_ID in .env)")
         return []
-    
+
     programs = []
     url = f"{cfg.notion.base_url}/databases/{programs_db_id}/query"
-    
+
     try:
         has_more = True
         start_cursor = None
-        
+
         while has_more:
             payload = {"page_size": 100}
             if start_cursor:
                 payload["start_cursor"] = start_cursor
-            
+
             import requests
             resp = requests.post(
                 url,
@@ -58,7 +58,7 @@ def list_programs():
                 timeout=30,
             )
             resp.raise_for_status()
-            
+
             data = resp.json()
             for page in data.get("results", []):
                 props = page.get("properties", {}) or {}
@@ -68,14 +68,14 @@ def list_programs():
                     name_prop = props.get("Name", {}).get("title", []) or []
                 name = name_prop[0].get("plain_text", "") if name_prop else "Unknown"
                 page_id = page.get("id", "")
-                
+
                 programs.append({"name": name, "page_id": page_id})
-            
+
             has_more = data.get("has_more", False)
             start_cursor = data.get("next_cursor")
-        
+
         return programs
-    
+
     except requests.exceptions.HTTPError as e:
         error_text = str(e)
         if "multiple_data_sources" in error_text.lower():
@@ -94,23 +94,23 @@ def list_programs():
 def list_signatures():
     """List all Signatures with page IDs."""
     cfg = get_config()
-    
+
     if not hasattr(cfg.notion, "signature_db_id") or not cfg.notion.signature_db_id:
         print("⚠️  Signatures database ID not configured")
         return []
-    
+
     signatures = []
     url = f"{cfg.notion.base_url}/databases/{cfg.notion.signature_db_id}/query"
-    
+
     try:
         has_more = True
         start_cursor = None
-        
+
         while has_more:
             payload = {"page_size": 100}
             if start_cursor:
                 payload["start_cursor"] = start_cursor
-            
+
             import requests
             resp = requests.post(
                 url,
@@ -119,33 +119,33 @@ def list_signatures():
                 timeout=30,
             )
             resp.raise_for_status()
-            
+
             data = resp.json()
             for page in data.get("results", []):
                 props = page.get("properties", {}) or {}
                 name_prop = props.get("Name", {}).get("title", []) or []
                 name = name_prop[0].get("plain_text", "") if name_prop else "Unknown"
-                
+
                 short_id_prop = props.get("Short ID", {}).get("rich_text", []) or []
                 short_id = short_id_prop[0].get("plain_text", "") if short_id_prop else None
-                
+
                 modalities_prop = props.get("Modalities", {}).get("multi_select", []) or []
                 modalities = [m.get("name", "") for m in modalities_prop] if modalities_prop else []
-                
+
                 page_id = page.get("id", "")
-                
+
                 signatures.append({
                     "name": name,
                     "short_id": short_id,
                     "modalities": modalities,
                     "page_id": page_id,
                 })
-            
+
             has_more = data.get("has_more", False)
             start_cursor = data.get("next_cursor")
-        
+
         return signatures
-    
+
     except Exception as e:
         logger.error("Error listing signatures: %r", e)
         return []
@@ -154,25 +154,25 @@ def list_signatures():
 def list_experiments():
     """List all Experiments with page IDs."""
     cfg = get_config()
-    
+
     experiments_db_id = cfg.notion.experiments_db_id if hasattr(cfg.notion, "experiments_db_id") else None
-    
+
     if not experiments_db_id:
         print("⚠️  Experiments database ID not configured (set NOTION_EXPERIMENTS_DB_ID in .env)")
         return []
-    
+
     experiments = []
     url = f"{cfg.notion.base_url}/databases/{experiments_db_id}/query"
-    
+
     try:
         has_more = True
         start_cursor = None
-        
+
         while has_more:
             payload = {"page_size": 100}
             if start_cursor:
                 payload["start_cursor"] = start_cursor
-            
+
             import requests
             resp = requests.post(
                 url,
@@ -181,21 +181,21 @@ def list_experiments():
                 timeout=30,
             )
             resp.raise_for_status()
-            
+
             data = resp.json()
             for page in data.get("results", []):
                 props = page.get("properties", {}) or {}
                 name_prop = props.get("Name", {}).get("title", []) or []
                 name = name_prop[0].get("plain_text", "") if name_prop else "Unknown"
                 page_id = page.get("id", "")
-                
+
                 experiments.append({"name": name, "page_id": page_id})
-            
+
             has_more = data.get("has_more", False)
             start_cursor = data.get("next_cursor")
-        
+
         return experiments
-    
+
     except Exception as e:
         logger.error("Error listing experiments: %r", e)
         return []
@@ -204,30 +204,30 @@ def list_experiments():
 def list_datasets():
     """List all Datasets (Experimental Data Assets) with page IDs."""
     cfg = get_config()
-    
+
     # Use the exp_data_db_id property
     exp_data_db_id = None
     if hasattr(cfg.notion, "exp_data_db_id"):
         exp_data_db_id = cfg.notion.exp_data_db_id
     elif hasattr(cfg, "NOTION_EXP_DATA_DB_ID"):
         exp_data_db_id = getattr(cfg, "NOTION_EXP_DATA_DB_ID", None)
-    
+
     if not exp_data_db_id:
         print("⚠️  Experimental Data Assets database ID not configured")
         return []
-    
+
     datasets = []
     url = f"{cfg.notion.base_url}/databases/{exp_data_db_id}/query"
-    
+
     try:
         has_more = True
         start_cursor = None
-        
+
         while has_more:
             payload = {"page_size": 100}
             if start_cursor:
                 payload["start_cursor"] = start_cursor
-            
+
             import requests
             resp = requests.post(
                 url,
@@ -236,33 +236,33 @@ def list_datasets():
                 timeout=30,
             )
             resp.raise_for_status()
-            
+
             data = resp.json()
             for page in data.get("results", []):
                 props = page.get("properties", {}) or {}
                 name_prop = props.get("Name", {}).get("title", []) or []
                 name = name_prop[0].get("plain_text", "") if name_prop else "Unknown"
-                
+
                 omics_type_prop = props.get("Omics Type", {}).get("select")
                 omics_type = omics_type_prop.get("name", "") if omics_type_prop else None
-                
+
                 data_origin_prop = props.get("Data Origin", {}).get("select")
                 data_origin = data_origin_prop.get("name", "") if data_origin_prop else None
-                
+
                 page_id = page.get("id", "")
-                
+
                 datasets.append({
                     "name": name,
                     "omics_type": omics_type,
                     "data_origin": data_origin,
                     "page_id": page_id,
                 })
-            
+
             has_more = data.get("has_more", False)
             start_cursor = data.get("next_cursor")
-        
+
         return datasets
-    
+
     except Exception as e:
         logger.error("Error listing datasets: %r", e)
         return []
@@ -271,32 +271,32 @@ def list_datasets():
 def list_features(feature_type: str):
     """List features of a specific type."""
     cfg = get_config()
-    
+
     db_map = {
         "gene": (cfg.notion.gene_features_db_id if hasattr(cfg.notion, "gene_features_db_id") else None, "Gene Features"),
         "protein": (cfg.notion.protein_features_db_id if hasattr(cfg.notion, "protein_features_db_id") else None, "Protein Features"),
         "metabolite": (cfg.notion.metabolite_features_db_id if hasattr(cfg.notion, "metabolite_features_db_id") else None, "Metabolite Features"),
         "lipid": (cfg.notion.lipid_species_db_id if hasattr(cfg.notion, "lipid_species_db_id") else None, "Lipid Species"),
     }
-    
+
     db_id, db_name = db_map.get(feature_type.lower(), (None, None))
-    
+
     if not db_id:
         print(f"⚠️  {db_name} database ID not configured")
         return []
-    
+
     features = []
     url = f"{cfg.notion.base_url}/databases/{db_id}/query"
-    
+
     try:
         has_more = True
         start_cursor = None
-        
+
         while has_more:
             payload = {"page_size": 100}
             if start_cursor:
                 payload["start_cursor"] = start_cursor
-            
+
             import requests
             resp = requests.post(
                 url,
@@ -305,21 +305,21 @@ def list_features(feature_type: str):
                 timeout=30,
             )
             resp.raise_for_status()
-            
+
             data = resp.json()
             for page in data.get("results", []):
                 props = page.get("properties", {}) or {}
                 name_prop = props.get("Name", {}).get("title", []) or []
                 name = name_prop[0].get("plain_text", "") if name_prop else "Unknown"
                 page_id = page.get("id", "")
-                
+
                 features.append({"name": name, "page_id": page_id})
-            
+
             has_more = data.get("has_more", False)
             start_cursor = data.get("next_cursor")
-        
+
         return features
-    
+
     except Exception as e:
         logger.error("Error listing %s features: %r", feature_type, e)
         return []
@@ -327,7 +327,7 @@ def list_features(feature_type: str):
 
 def main():
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="List page IDs for cross-omics testing")
     parser.add_argument(
         "--type",
@@ -346,17 +346,17 @@ def main():
         default=10,
         help="Maximum number of items to show per category (default: 10)",
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.type == "features" and not args.feature_type:
         parser.error("--feature-type is required when --type is 'features'")
-    
+
     print("=" * 80)
     print("🔍 CROSS-OMICS TEST ID FINDER")
     print("=" * 80)
     print()
-    
+
     if args.type in ["programs", "all"]:
         print(f"📋 PROGRAMS (showing up to {args.limit}):")
         print("-" * 80)
@@ -372,7 +372,7 @@ def main():
         else:
             print("   No programs found")
             print()
-    
+
     if args.type in ["experiments", "all"]:
         print(f"🧪 EXPERIMENTS (showing up to {args.limit}):")
         print("-" * 80)
@@ -388,7 +388,7 @@ def main():
         else:
             print("   No experiments found")
             print()
-    
+
     if args.type in ["signatures", "all"]:
         print(f"🔖 SIGNATURES (showing up to {args.limit}):")
         print("-" * 80)
@@ -408,7 +408,7 @@ def main():
         else:
             print("   No signatures found")
             print()
-    
+
     if args.type in ["datasets", "all"]:
         print(f"📊 DATASETS (showing up to {args.limit}):")
         print("-" * 80)
@@ -428,11 +428,11 @@ def main():
         else:
             print("   No datasets found")
             print()
-    
+
     if args.type in ["features", "all"]:
         if args.feature_type or args.type == "all":
             feature_types = [args.feature_type] if args.feature_type else ["gene", "protein", "metabolite", "lipid"]
-            
+
             for ft in feature_types:
                 print(f"🧬 {ft.upper()} FEATURES (showing up to {args.limit}):")
                 print("-" * 80)
@@ -448,7 +448,7 @@ def main():
                 else:
                     print(f"   No {ft} features found")
                     print()
-    
+
     print("=" * 80)
     print()
     print("💡 Usage examples:")

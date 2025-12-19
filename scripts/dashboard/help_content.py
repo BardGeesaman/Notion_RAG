@@ -106,10 +106,10 @@ HELP_TOPICS: Dict[str, Dict[str, any]] = {
 def get_help(page_name: str) -> Optional[Dict[str, any]]:
     """
     Get help content for a specific page.
-    
+
     Args:
         page_name: Name of the page
-        
+
     Returns:
         Help dict with title, description, and tips, or None if not found
     """
@@ -119,23 +119,23 @@ def get_help(page_name: str) -> Optional[Dict[str, any]]:
 def search_help(query: str) -> List[Dict[str, any]]:
     """
     Search help topics by fuzzy matching on title and description.
-    
+
     Args:
         query: Search query string
-        
+
     Returns:
         List of matching help dicts, ordered by relevance
     """
     if not query or not query.strip():
         return []
-    
+
     query_lower = query.lower()
     results = []
-    
+
     for page_name, help_data in HELP_TOPICS.items():
         title = help_data.get("title", "").lower()
         description = help_data.get("description", "").lower()
-        
+
         # Simple fuzzy matching: check if query appears in title or description
         score = 0
         if query_lower in title:
@@ -144,19 +144,19 @@ def search_help(query: str) -> List[Dict[str, any]]:
             score += 5
         if query_lower in page_name.lower():
             score += 3
-        
+
         # Check tips
         for tip in help_data.get("tips", []):
             if query_lower in tip.lower():
                 score += 1
-        
+
         if score > 0:
             results.append({
                 **help_data,
                 "page_name": page_name,
                 "score": score,
             })
-    
+
     # Sort by score descending
     results.sort(key=lambda x: x["score"], reverse=True)
     return results

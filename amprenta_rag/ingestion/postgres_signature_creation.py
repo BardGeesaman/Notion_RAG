@@ -38,7 +38,7 @@ def create_signature_in_postgres(
 ) -> SignatureModel:
     """
     Create a signature in Postgres or return existing one.
-    
+
     Args:
         signature: Signature object to create
         signature_type: Type of signature (e.g., "Literature-derived")
@@ -48,7 +48,7 @@ def create_signature_in_postgres(
         biomarker_roles: Optional biomarker roles
         phenotype_axes: Optional phenotype axes
         db: Optional database session
-        
+
     Returns:
         SignatureModel instance
     """
@@ -89,7 +89,7 @@ def _create_signature_in_postgres_impl(
 ) -> SignatureModel:
     # Generate short ID
     short_id = generate_signature_short_id(signature.name, version)
-    
+
     # Check if signature already exists by short_id or name
     existing = (
         db.query(SignatureModel)
@@ -98,14 +98,14 @@ def _create_signature_in_postgres_impl(
         )
         .first()
     )
-    
+
     if existing:
         logger.debug(
             "[POSTGRES-SIGNATURE] Found existing signature: %s (ID: %s)",
             existing.name,
             existing.id,
         )
-        
+
         # Update metadata if provided
         updated = False
         if description and not existing.description:
@@ -126,13 +126,13 @@ def _create_signature_in_postgres_impl(
         if not existing.short_id:
             existing.short_id = short_id
             updated = True
-        
+
         if updated:
             db.commit()
             logger.debug("[POSTGRES-SIGNATURE] Updated signature metadata: %s", existing.name)
-        
+
         return existing
-    
+
     # Create new signature
     new_signature = SignatureModel(
         name=signature.name,
@@ -143,18 +143,18 @@ def _create_signature_in_postgres_impl(
         phenotype_axes=phenotype_axes or [],
         data_ownership=data_ownership,
     )
-    
+
     db.add(new_signature)
     db.commit()
     db.refresh(new_signature)
-    
+
     logger.info(
         "[POSTGRES-SIGNATURE] Created signature: %s (ID: %s, Short ID: %s)",
         new_signature.name,
         new_signature.id,
         new_signature.short_id,
     )
-    
+
     return new_signature
 
 
@@ -165,12 +165,12 @@ def create_signature_components_in_postgres(
 ) -> Tuple[int, Set[Tuple[str, str]]]:
     """
     Create signature components in Postgres and link to features.
-    
+
     Args:
         signature_model: SignatureModel instance
         signature: Signature object with components
         db: Optional database session
-        
+
     Returns:
         Tuple of (component_count, features_created_set)
         features_created_set contains (feature_type, feature_name) tuples
@@ -321,9 +321,9 @@ def create_signature_from_file_in_postgres(
 ) -> SignatureModel:
     """
     Create a complete signature in Postgres from a Signature object.
-    
+
     Creates the signature and all its components, linking to features.
-    
+
     Args:
         signature: Signature object from loader
         signature_type: Type of signature
@@ -333,7 +333,7 @@ def create_signature_from_file_in_postgres(
         biomarker_roles: Optional biomarker roles
         phenotype_axes: Optional phenotype axes
         db: Optional database session
-        
+
     Returns:
         SignatureModel instance
     """
@@ -408,14 +408,14 @@ def link_signature_to_postgres_source(
 ) -> bool:
     """
     Link a signature to a source (dataset, experiment, etc.) in Postgres.
-    
+
     Args:
         signature_id: Postgres UUID of the signature
         source_type: Type of source ("dataset", "experiment")
         source_id: Postgres UUID of the source (preferred)
         source_notion_id: Notion page ID of the source (fallback for backward compat)
         db: Optional database session
-        
+
     Returns:
         True if linking succeeded, False otherwise
     """

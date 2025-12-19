@@ -86,70 +86,70 @@ def should_exclude_file(file_path: Path) -> bool:
 def find_notion_imports() -> Dict[str, Set[str]]:
     """Find all files with Notion imports."""
     results = defaultdict(set)
-    
+
     for search_dir in SEARCH_DIRS:
         if not search_dir.exists():
             continue
-            
+
         for py_file in search_dir.rglob("*.py"):
             if should_exclude_file(py_file):
                 continue
-                
+
             try:
                 content = py_file.read_text(encoding="utf-8")
-                
+
                 for module_name, patterns in NOTION_MODULES.items():
                     for pattern in patterns:
                         if re.search(pattern, content):
                             results[module_name].add(str(py_file))
                             break
-                                
+
             except Exception:
                 pass
-    
+
     return dict(results)
 
 
 def generate_progress_report() -> None:
     """Generate comprehensive progress report."""
     current_state = find_notion_imports()
-    
+
     # Calculate metrics
     current_counts = {mod: len(files) for mod, files in current_state.items()}
     total_current = len(set().union(*current_state.values())) if current_state else 0
     total_baseline = sum(PHASE_1_1_BASELINE.values())
-    
+
     progress_pct = ((total_baseline - total_current) / total_baseline * 100) if total_baseline > 0 else 100
-    
+
     print("=" * 80)
     print("NOTION REMOVAL PROGRESS REPORT")
     print("=" * 80)
     print()
     print(f"Overall Progress: {progress_pct:.1f}% ({total_baseline - total_current}/{total_baseline} files cleaned)")
     print()
-    
+
     # Module-by-module breakdown
     print("Module-by-Module Progress:")
     print("-" * 80)
-    
+
     for module in sorted(PHASE_1_1_BASELINE.keys()):
         baseline = PHASE_1_1_BASELINE[module]
         current = current_counts.get(module, 0)
         reduction = baseline - current
         pct = (reduction / baseline * 100) if baseline > 0 else 100
-        
+
         status = "✅" if current == 0 else "⚠️"
         print(f"{status} {module:30s} {baseline:3d} → {current:3d} files ({pct:5.1f}% reduction)")
-    
+
     print()
-    
+
     # Phase 2 task status
     print("Phase 2 Task Status:")
     print("-" * 80)
-    
+
     completed_tasks = []
     remaining_tasks = []
-    
+
     for file_path, task in PHASE_2_TASKS.items():
         file_obj = Path(file_path)
         if file_obj.exists():
@@ -158,38 +158,38 @@ def generate_progress_report() -> None:
                 if file_path in module_files:
                     has_imports = True
                     break
-            
+
             if not has_imports:
                 completed_tasks.append((file_path, task))
             else:
                 remaining_tasks.append((file_path, task))
         else:
             remaining_tasks.append((file_path, task))
-    
+
     print(f"✅ Completed: {len(completed_tasks)}/{len(PHASE_2_TASKS)} tasks")
     for file_path, task in completed_tasks:
         print(f"   {task:15s} {file_path}")
-    
+
     print()
     print(f"⏳ Remaining: {len(remaining_tasks)}/{len(PHASE_2_TASKS)} tasks")
     for file_path, task in remaining_tasks[:10]:  # Show first 10
         print(f"   {task:15s} {file_path}")
     if len(remaining_tasks) > 10:
         print(f"   ... and {len(remaining_tasks) - 10} more")
-    
+
     print()
-    
+
     # Files by category
     all_files = set().union(*current_state.values()) if current_state else set()
     core_files = [f for f in all_files if "amprenta_rag/" in f]
     script_files = [f for f in all_files if "scripts/" in f]
-    
+
     print("Files Still Needing Cleanup:")
     print("-" * 80)
     print(f"Core modules: {len(core_files)}")
     print(f"Scripts: {len(script_files)}")
     print()
-    
+
     if core_files:
         print("Core modules (priority):")
         for f in sorted(core_files)[:15]:
@@ -197,7 +197,7 @@ def generate_progress_report() -> None:
             print(f"  - {f} ({task})")
         if len(core_files) > 15:
             print(f"  ... and {len(core_files) - 15} more")
-    
+
     print()
     print("=" * 80)
 

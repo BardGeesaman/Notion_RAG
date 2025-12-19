@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# ruff: noqa: F401
 """Validate all critical imports work."""
 import sys
 

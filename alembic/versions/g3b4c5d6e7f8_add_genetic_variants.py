@@ -26,7 +26,7 @@ def upgrade():
         sa.Column('notes', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-    
+
     # Create index on gene
     op.create_index('ix_genetic_variants_gene', 'genetic_variants', ['gene'])
 

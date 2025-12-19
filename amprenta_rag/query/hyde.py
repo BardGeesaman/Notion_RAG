@@ -10,18 +10,18 @@ logger = get_logger(__name__)
 def generate_hypothetical_answer(query: str) -> str:
     """
     Generate a hypothetical answer to the query for HyDE retrieval.
-    
+
     Args:
         query: User's query text
-        
+
     Returns:
         Hypothetical answer string (2-3 sentences)
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     prompt = f"Write a 2-3 sentence factual answer to this question: {query}"
-    
+
     try:
         logger.info("[HyDE] Generating hypothetical answer for query: %s", query[:50])
         resp = client.chat.completions.create(

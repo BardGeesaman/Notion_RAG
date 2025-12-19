@@ -28,17 +28,17 @@ except ImportError:
 def normalize_smiles(smiles: str) -> tuple[str, Optional[str], Optional[str]]:
     """
     Normalize a SMILES string.
-    
+
     Args:
         smiles: Input SMILES string
-        
+
     Returns:
         Tuple of (canonical_smiles, inchi_key, molecular_formula)
         Returns (original_smiles, None, None) if RDKit is not available
     """
     if not smiles or not smiles.strip():
         return smiles, None, None
-    
+
     if RDKIT_AVAILABLE:
         try:
             mol = Chem.MolFromSmiles(smiles.strip())
@@ -48,10 +48,10 @@ def normalize_smiles(smiles: str) -> tuple[str, Optional[str], Optional[str]]:
                     smiles,
                 )
                 return smiles, None, None
-            
+
             # Generate canonical SMILES
             canonical_smiles = Chem.MolToSmiles(mol, canonical=True)
-            
+
             # Generate InChI key
             inchi_key = None
             try:
@@ -65,12 +65,12 @@ def normalize_smiles(smiles: str) -> tuple[str, Optional[str], Optional[str]]:
                     "[CHEMISTRY][NORM] Could not generate InChI key: %r",
                     e,
                 )
-            
+
             # Generate molecular formula
             molecular_formula = rdMolDescriptors.CalcMolFormula(mol)
-            
+
             return canonical_smiles, inchi_key, molecular_formula
-            
+
         except Exception as e:
             logger.warning(
                 "[CHEMISTRY][NORM] Error normalizing SMILES %s: %r",
@@ -86,10 +86,10 @@ def normalize_smiles(smiles: str) -> tuple[str, Optional[str], Optional[str]]:
 def compute_molecular_descriptors(smiles: str) -> dict[str, Optional[float | int]]:
     """
     Compute molecular descriptors for a compound.
-    
+
     Args:
         smiles: SMILES string
-        
+
     Returns:
         Dictionary of descriptor values
     """
@@ -101,45 +101,45 @@ def compute_molecular_descriptors(smiles: str) -> dict[str, Optional[float | int
         "rotatable_bonds": None,
         "aromatic_rings": None,
     }
-    
+
     # Early return for empty SMILES
     if not smiles or not smiles.strip():
         return descriptors
-    
+
     if not RDKIT_AVAILABLE:
         return descriptors
-    
+
     try:
         mol = Chem.MolFromSmiles(smiles.strip())
         if mol is None:
             return descriptors
-        
+
         descriptors["molecular_weight"] = Descriptors.MolWt(mol)
         descriptors["logp"] = Descriptors.MolLogP(mol)
         descriptors["hbd_count"] = Descriptors.NumHDonors(mol)
         descriptors["hba_count"] = Descriptors.NumHAcceptors(mol)
         descriptors["rotatable_bonds"] = Descriptors.NumRotatableBonds(mol)
         descriptors["aromatic_rings"] = Descriptors.NumAromaticRings(mol)
-        
+
     except Exception as e:
         logger.debug(
             "[CHEMISTRY][NORM] Error computing descriptors for %s: %r",
             smiles,
             e,
         )
-    
+
     return descriptors
 
 
 def generate_compound_id(smiles: str) -> str:
     """
     Generate a unique compound ID from SMILES.
-    
+
     Uses canonical SMILES if RDKit is available, otherwise uses hash of input.
-    
+
     Args:
         smiles: SMILES string
-        
+
     Returns:
         Unique compound ID
     """

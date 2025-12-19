@@ -1,4 +1,3 @@
-import pytest
 
 from amprenta_rag.auth.password import hash_password, verify_password
 

@@ -26,7 +26,7 @@ def upgrade():
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
     op.create_index('ix_target_product_profiles_is_active', 'target_product_profiles', ['is_active'])
-    
+
     op.create_table(
         'candidate_nominations',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),

@@ -49,7 +49,7 @@ def create_program(
 ) -> Program:
     """
     Create a new program in the database.
-    
+
     Args:
         db: Database session
         name: Program name
@@ -58,7 +58,7 @@ def create_program(
         notion_page_id: Notion page ID (for migration)
         external_ids: External system IDs
         commit: Whether to commit the transaction
-    
+
     Returns:
         Created Program object
     """
@@ -70,9 +70,9 @@ def create_program(
         notion_page_id=notion_page_id,
         external_ids=external_ids or {},
     )
-    
+
     db.add(program)
-    
+
     if commit:
         db.commit()
         db.refresh(program)
@@ -81,7 +81,7 @@ def create_program(
             program.name,
             program.id,
         )
-    
+
     return program
 
 
@@ -109,7 +109,7 @@ def get_or_create_program(
 ) -> tuple[Program, bool]:
     """
     Get existing program or create new one.
-    
+
     Returns:
         Tuple of (Program, created: bool)
     """
@@ -118,12 +118,12 @@ def get_or_create_program(
         program = get_program_by_notion_id(db, notion_page_id)
         if program:
             return program, False
-    
+
     # Try to find by name
     program = get_program_by_name(db, name)
     if program:
         return program, False
-    
+
     # Create new
     program = create_program(
         db,
@@ -142,10 +142,10 @@ def list_programs(
 ) -> List[Program]:
     """List all programs with optional pagination."""
     query = db.query(Program).order_by(Program.name)
-    
+
     if limit:
         query = query.limit(limit).offset(offset)
-    
+
     return query.all()
 
 
@@ -179,9 +179,9 @@ def create_experiment(
         modality=modality or [],
         notion_page_id=notion_page_id,
     )
-    
+
     db.add(experiment)
-    
+
     if commit:
         db.commit()
         db.refresh(experiment)
@@ -190,7 +190,7 @@ def create_experiment(
             experiment.name,
             experiment.id,
         )
-    
+
     return experiment
 
 
@@ -211,12 +211,12 @@ def get_or_create_experiment(
 ) -> tuple[Experiment, bool]:
     """
     Get existing experiment or create new one.
-    
+
     Returns:
         Tuple of (Experiment, created: bool)
     """
     notion_page_id = kwargs.get('notion_page_id')
-    
+
     # Try to find by notion_page_id first
     if notion_page_id:
         experiment = db.query(Experiment).filter(
@@ -224,12 +224,12 @@ def get_or_create_experiment(
         ).first()
         if experiment:
             return experiment, False
-    
+
     # Try to find by name
     experiment = get_experiment_by_name(db, name)
     if experiment:
         return experiment, False
-    
+
     # Create new
     experiment = create_experiment(db, name=name, **kwargs)
     return experiment, True
@@ -279,9 +279,9 @@ def create_dataset(
         notion_page_id=notion_page_id,
         external_ids=external_ids or {},
     )
-    
+
     db.add(dataset)
-    
+
     if commit:
         db.commit()
         db.refresh(dataset)
@@ -291,7 +291,7 @@ def create_dataset(
             dataset.id,
             dataset.omics_type,
         )
-    
+
     return dataset
 
 
@@ -313,12 +313,12 @@ def get_or_create_dataset(
 ) -> tuple[Dataset, bool]:
     """
     Get existing dataset or create new one.
-    
+
     Returns:
         Tuple of (Dataset, created: bool)
     """
     notion_page_id = kwargs.get('notion_page_id')
-    
+
     # Try to find by notion_page_id first
     if notion_page_id:
         dataset = db.query(Dataset).filter(
@@ -326,14 +326,14 @@ def get_or_create_dataset(
         ).first()
         if dataset:
             return dataset, False
-    
+
     # Try to find by name and omics_type
     dataset = db.query(Dataset).filter(
         and_(Dataset.name == name, Dataset.omics_type == omics_type)
     ).first()
     if dataset:
         return dataset, False
-    
+
     # Create new
     dataset = create_dataset(db, name=name, omics_type=omics_type, **kwargs)
     return dataset, True
@@ -347,15 +347,15 @@ def list_datasets(
 ) -> List[Dataset]:
     """List datasets with optional filtering."""
     query = db.query(Dataset)
-    
+
     if omics_type:
         query = query.filter(Dataset.omics_type == omics_type)
-    
+
     query = query.order_by(Dataset.name)
-    
+
     if limit:
         query = query.limit(limit).offset(offset)
-    
+
     return query.all()
 
 
@@ -383,9 +383,9 @@ def create_feature(
         notion_page_id=notion_page_id,
         external_ids=external_ids or {},
     )
-    
+
     db.add(feature)
-    
+
     if commit:
         db.commit()
         db.refresh(feature)
@@ -395,7 +395,7 @@ def create_feature(
             feature.feature_type,
             feature.id,
         )
-    
+
     return feature
 
 
@@ -430,19 +430,19 @@ def get_or_create_feature(
 ) -> tuple[Feature, bool]:
     """
     Get existing feature or create new one.
-    
+
     Uses normalized_name for matching if provided.
-    
+
     Returns:
         Tuple of (Feature, created: bool)
     """
     # Search by normalized name first
     search_name = normalized_name or name
-    
+
     feature = get_feature_by_name_and_type(db, search_name, feature_type)
     if feature:
         return feature, False
-    
+
     # Create new
     feature = create_feature(
         db,
@@ -461,17 +461,17 @@ def bulk_get_or_create_features(
 ) -> List[Feature]:
     """
     Bulk get or create features for better performance.
-    
+
     Args:
         db: Database session
         features_data: List of dicts with keys: name, feature_type, normalized_name (optional)
         batch_size: Batch size for committing
-    
+
     Returns:
         List of Feature objects
     """
     features = []
-    
+
     for i, data in enumerate(features_data):
         feature, created = get_or_create_feature(
             db,
@@ -481,7 +481,7 @@ def bulk_get_or_create_features(
             commit=False,
         )
         features.append(feature)
-        
+
         # Commit in batches
         if (i + 1) % batch_size == 0:
             db.commit()
@@ -489,14 +489,14 @@ def bulk_get_or_create_features(
                 "[CRUD][FEATURE] Committed batch of %d features",
                 batch_size
             )
-    
+
     # Final commit
     db.commit()
     logger.info(
         "[CRUD][FEATURE] Created/retrieved %d features",
         len(features)
     )
-    
+
     return features
 
 
@@ -528,9 +528,9 @@ def create_signature(
         data_ownership=data_ownership,
         notion_page_id=notion_page_id,
     )
-    
+
     db.add(signature)
-    
+
     if commit:
         db.commit()
         db.refresh(signature)
@@ -539,7 +539,7 @@ def create_signature(
             signature.name,
             signature.id,
         )
-    
+
     return signature
 
 
@@ -563,13 +563,13 @@ def create_signature_component(
         direction=direction,
         weight=weight,
     )
-    
+
     db.add(component)
-    
+
     if commit:
         db.commit()
         db.refresh(component)
-    
+
     return component
 
 
@@ -590,12 +590,12 @@ def get_or_create_signature(
 ) -> tuple[Signature, bool]:
     """
     Get existing signature or create new one.
-    
+
     Returns:
         Tuple of (Signature, created: bool)
     """
     notion_page_id = kwargs.get('notion_page_id')
-    
+
     # Try to find by notion_page_id first
     if notion_page_id:
         signature = db.query(Signature).filter(
@@ -603,12 +603,12 @@ def get_or_create_signature(
         ).first()
         if signature:
             return signature, False
-    
+
     # Try to find by name
     signature = get_signature_by_name(db, name)
     if signature:
         return signature, False
-    
+
     # Create new
     signature = create_signature(db, name=name, **kwargs)
     return signature, True
@@ -627,7 +627,7 @@ def link_dataset_to_program(
     """Link a dataset to a program."""
     dataset = get_dataset_by_id(db, dataset_id)
     program = get_program_by_id(db, program_id)
-    
+
     if not dataset or not program:
         logger.error(
             "[CRUD][LINK] Cannot link dataset %s to program %s: not found",
@@ -635,10 +635,10 @@ def link_dataset_to_program(
             program_id,
         )
         return
-    
+
     if program not in dataset.programs:
         dataset.programs.append(program)
-        
+
         if commit:
             db.commit()
             logger.debug(
@@ -657,7 +657,7 @@ def link_dataset_to_experiment(
     """Link a dataset to an experiment."""
     dataset = get_dataset_by_id(db, dataset_id)
     experiment = get_experiment_by_id(db, experiment_id)
-    
+
     if not dataset or not experiment:
         logger.error(
             "[CRUD][LINK] Cannot link dataset %s to experiment %s: not found",
@@ -665,10 +665,10 @@ def link_dataset_to_experiment(
             experiment_id,
         )
         return
-    
+
     if experiment not in dataset.experiments:
         dataset.experiments.append(experiment)
-        
+
         if commit:
             db.commit()
             logger.debug(
@@ -686,16 +686,16 @@ def link_dataset_to_features(
 ) -> None:
     """Link a dataset to multiple features."""
     dataset = get_dataset_by_id(db, dataset_id)
-    
+
     if not dataset:
         logger.error("[CRUD][LINK] Dataset %s not found", dataset_id)
         return
-    
+
     for feature_id in feature_ids:
         feature = get_feature_by_id(db, feature_id)
         if feature and feature not in dataset.features:
             dataset.features.append(feature)
-    
+
     if commit:
         db.commit()
         logger.info(
@@ -715,7 +715,7 @@ def link_dataset_to_signature(
     """Link a dataset to a signature with an optional match score."""
     dataset = get_dataset_by_id(db, dataset_id)
     signature = get_signature_by_id(db, signature_id)
-    
+
     if not dataset or not signature:
         logger.error(
             "[CRUD][LINK] Cannot link dataset %s to signature %s: not found",
@@ -723,15 +723,15 @@ def link_dataset_to_signature(
             signature_id,
         )
         return
-    
+
     if signature not in dataset.signatures:
         dataset.signatures.append(signature)
-        
+
         # If match_score is provided, update the junction table
         # This requires direct SQL manipulation - simplified version for now
         if match_score is not None:
             dataset.signature_match_score = match_score
-        
+
         if commit:
             db.commit()
             logger.debug(

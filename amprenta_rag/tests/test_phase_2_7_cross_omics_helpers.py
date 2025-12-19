@@ -1,6 +1,5 @@
 """Tests for Phase 2.7: Cross-Omics Helpers (Postgres-only)."""
 
-import pytest
 
 from amprenta_rag.query.cross_omics.helpers import (
     extract_relation_ids,
@@ -13,7 +12,7 @@ from amprenta_rag.query.cross_omics.helpers import (
 
 class TestModuleImport:
     """Test module imports successfully."""
-    
+
     def test_helpers_module_imports(self):
         """Test helpers module imports without errors."""
         from amprenta_rag.query.cross_omics import helpers
@@ -22,7 +21,7 @@ class TestModuleImport:
 
 class TestUtilityFunctions:
     """Test utility functions still work."""
-    
+
     def test_extract_relation_ids(self):
         """Test extract_relation_ids with mock page dict."""
         mock_page = {
@@ -38,13 +37,13 @@ class TestUtilityFunctions:
         }
         result = extract_relation_ids(mock_page, "Related Items")
         assert result == ["id-1", "id-2"]
-    
+
     def test_extract_relation_ids_empty(self):
         """Test extract_relation_ids with missing property."""
         mock_page = {"properties": {}}
         result = extract_relation_ids(mock_page, "NonExistent")
         assert result == []
-    
+
     def test_extract_select_values_single(self):
         """Test extract_select_values with single select."""
         mock_page = {
@@ -57,7 +56,7 @@ class TestUtilityFunctions:
         }
         result = extract_select_values(mock_page, "Status")
         assert result == ["Active"]
-    
+
     def test_extract_select_values_multi(self):
         """Test extract_select_values with multi-select."""
         mock_page = {
@@ -73,7 +72,7 @@ class TestUtilityFunctions:
         }
         result = extract_select_values(mock_page, "Tags")
         assert result == ["tag1", "tag2"]
-    
+
     def test_extract_text_property_title(self):
         """Test extract_text_property with title."""
         mock_page = {
@@ -86,7 +85,7 @@ class TestUtilityFunctions:
         }
         result = extract_text_property(mock_page, "Name")
         assert result == "Test Name"
-    
+
     def test_extract_text_property_rich_text(self):
         """Test extract_text_property with rich_text."""
         mock_page = {
@@ -102,7 +101,7 @@ class TestUtilityFunctions:
         }
         result = extract_text_property(mock_page, "Description")
         assert result == "Part 1 Part 2"
-    
+
     def test_get_chunk_text_returns_snippet(self):
         """Test get_chunk_text returns snippet from metadata."""
         mock_chunk = {
@@ -112,13 +111,13 @@ class TestUtilityFunctions:
         }
         result = get_chunk_text(mock_chunk)
         assert result == "This is a test snippet."
-    
+
     def test_get_chunk_text_no_snippet(self):
         """Test get_chunk_text returns None when no snippet."""
         mock_chunk = {"metadata": {}}
         result = get_chunk_text(mock_chunk)
         assert result is None
-    
+
     def test_group_chunks_by_omics_type(self):
         """Test group_chunks_by_omics_type groups correctly."""
         mock_chunks = [

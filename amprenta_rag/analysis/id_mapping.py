@@ -28,33 +28,33 @@ _id_mapping_cache: Dict[Tuple[str, str, str], Optional[str]] = {}
 def map_protein_to_uniprot(protein_id: str) -> Optional[str]:
     """
     Map protein identifier to UniProt ID.
-    
+
     Handles various protein ID formats:
     - UniProt IDs (P12345) - returned as-is
     - Gene symbols (TP53) - mapped via UniProt API
     - Ensembl protein IDs (ENSP00000...) - mapped via UniProt API
-    
+
     Args:
         protein_id: Protein identifier
-        
+
     Returns:
         UniProt ID or None if mapping fails
     """
     cache_key = ("uniprot", protein_id, "")
     if cache_key in _id_mapping_cache:
         return _id_mapping_cache[cache_key]
-    
+
     # Check if already a UniProt ID (format: [OPQ][0-9][A-Z0-9]{3}[0-9])
     uniprot_pattern = r"^[OPQ][0-9][A-Z0-9]{3}[0-9]$|^[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$"
     if re.match(uniprot_pattern, protein_id):
         _id_mapping_cache[cache_key] = protein_id
         return protein_id
-    
+
     try:
         # Try UniProt mapping service
         # https://www.uniprot.org/help/id_mapping
         url = "https://rest.uniprot.org/idmapping/run"
-        
+
         # Try as gene name first, then as other ID types
         for from_db in ["Gene_Name", "Ensembl_Protein", "RefSeq_Protein"]:
             try:
@@ -63,19 +63,19 @@ def map_protein_to_uniprot(protein_id: str) -> Optional[str]:
                     "to": "UniProtKB",
                     "ids": protein_id,
                 }
-                
+
                 resp = requests.post(url, data=data, timeout=10)
-                
+
                 if resp.status_code == 200:
                     job_id = resp.json().get("jobId")
                     if job_id:
                         # Poll for results
                         results_url = f"https://rest.uniprot.org/idmapping/results/{job_id}"
-                        
+
                         for _ in range(10):  # Max 10 attempts
                             time.sleep(0.5)  # Wait for job completion
                             results_resp = requests.get(results_url, timeout=10)
-                            
+
                             if results_resp.status_code == 200:
                                 results = results_resp.json()
                                 if results.get("results"):
@@ -89,7 +89,7 @@ def map_protein_to_uniprot(protein_id: str) -> Optional[str]:
                                         _id_mapping_cache[cache_key] = uniprot_id
                                         return uniprot_id
                                 break
-                
+
             except Exception as e:
                 logger.debug(
                     "[ANALYSIS][ID-MAP] UniProt mapping attempt failed for %s from %s: %r",
@@ -98,7 +98,7 @@ def map_protein_to_uniprot(protein_id: str) -> Optional[str]:
                     e,
                 )
                 continue
-        
+
         # If all attempts fail, return None
         logger.debug(
             "[ANALYSIS][ID-MAP] Could not map protein %s to UniProt",
@@ -106,7 +106,7 @@ def map_protein_to_uniprot(protein_id: str) -> Optional[str]:
         )
         _id_mapping_cache[cache_key] = None
         return None
-        
+
     except Exception as e:
         logger.warning(
             "[ANALYSIS][ID-MAP] Error mapping protein %s to UniProt: %r",
@@ -120,25 +120,25 @@ def map_protein_to_uniprot(protein_id: str) -> Optional[str]:
 def map_gene_to_kegg(gene_symbol: str, organism: str = "hsa") -> Optional[str]:
     """
     Map gene symbol to KEGG gene ID.
-    
+
     Args:
         gene_symbol: Gene symbol (e.g., "TP53")
         organism: KEGG organism code (default: "hsa" for human)
-        
+
     Returns:
         KEGG gene ID (e.g., "hsa:7157") or None if mapping fails
     """
     cache_key = ("kegg_gene", gene_symbol, organism)
     if cache_key in _id_mapping_cache:
         return _id_mapping_cache[cache_key]
-    
+
     try:
         # Use KEGG find API to search by gene symbol
         # https://www.kegg.jp/kegg/rest/keggapi.html
         url = f"https://rest.kegg.jp/find/{organism}/{gene_symbol}"
-        
+
         resp = requests.get(url, timeout=10)
-        
+
         if resp.status_code == 200 and resp.text.strip():
             # Parse response (format: kegg_id\tdescription)
             lines = resp.text.strip().split("\n")
@@ -152,14 +152,14 @@ def map_gene_to_kegg(gene_symbol: str, organism: str = "hsa") -> Optional[str]:
                 )
                 _id_mapping_cache[cache_key] = kegg_id
                 return kegg_id
-        
+
         logger.debug(
             "[ANALYSIS][ID-MAP] Could not map gene %s to KEGG",
             gene_symbol,
         )
         _id_mapping_cache[cache_key] = None
         return None
-        
+
     except Exception as e:
         logger.warning(
             "[ANALYSIS][ID-MAP] Error mapping gene %s to KEGG: %r",
@@ -173,35 +173,35 @@ def map_gene_to_kegg(gene_symbol: str, organism: str = "hsa") -> Optional[str]:
 def map_protein_to_kegg(protein_id: str, organism: str = "hsa") -> Optional[str]:
     """
     Map protein identifier to KEGG gene ID.
-    
+
     Strategy:
     1. Map protein to UniProt ID
     2. Map UniProt ID to KEGG gene ID using KEGG conv API
-    
+
     Args:
         protein_id: Protein identifier
         organism: KEGG organism code (default: "hsa" for human)
-        
+
     Returns:
         KEGG gene ID or None if mapping fails
     """
     cache_key = ("kegg_protein", protein_id, organism)
     if cache_key in _id_mapping_cache:
         return _id_mapping_cache[cache_key]
-    
+
     try:
         # First get UniProt ID
         uniprot_id = map_protein_to_uniprot(protein_id)
         if not uniprot_id:
             _id_mapping_cache[cache_key] = None
             return None
-        
+
         # Use KEGG conv API to map UniProt -> KEGG
         # https://rest.kegg.jp/conv/genes/uniprot:{uniprot_id}
         url = f"https://rest.kegg.jp/conv/{organism}/uniprot:{uniprot_id}"
-        
+
         resp = requests.get(url, timeout=10)
-        
+
         if resp.status_code == 200 and resp.text.strip():
             # Parse response (format: uniprot_id\tkegg_id)
             lines = resp.text.strip().split("\n")
@@ -218,14 +218,14 @@ def map_protein_to_kegg(protein_id: str, organism: str = "hsa") -> Optional[str]
                     )
                     _id_mapping_cache[cache_key] = kegg_id
                     return kegg_id
-        
+
         logger.debug(
             "[ANALYSIS][ID-MAP] Could not map protein %s to KEGG",
             protein_id,
         )
         _id_mapping_cache[cache_key] = None
         return None
-        
+
     except Exception as e:
         logger.warning(
             "[ANALYSIS][ID-MAP] Error mapping protein %s to KEGG: %r",
@@ -239,34 +239,34 @@ def map_protein_to_kegg(protein_id: str, organism: str = "hsa") -> Optional[str]
 def map_metabolite_to_kegg(metabolite_name: str) -> Optional[str]:
     """
     Map metabolite name to KEGG Compound ID.
-    
+
     Args:
         metabolite_name: Metabolite name (e.g., "glucose", "ATP")
-        
+
     Returns:
         KEGG Compound ID (e.g., "cpd:C00031") or None if mapping fails
     """
     cache_key = ("kegg_metabolite", metabolite_name, "")
     if cache_key in _id_mapping_cache:
         return _id_mapping_cache[cache_key]
-    
+
     try:
         # Use KEGG find API to search compound database
         url = f"https://rest.kegg.jp/find/compound/{metabolite_name}"
-        
+
         resp = requests.get(url, timeout=10)
-        
+
         if resp.status_code == 200 and resp.text.strip():
             # Parse response (format: cpd:C00001\tname; synonyms)
             lines = resp.text.strip().split("\n")
-            
+
             # Look for exact or best match
             for line in lines:
                 parts = line.split("\t")
                 if len(parts) >= 2:
                     compound_id = parts[0]
                     names = parts[1].lower()
-                    
+
                     # Check if metabolite name is in compound names
                     if metabolite_name.lower() in names:
                         logger.debug(
@@ -276,7 +276,7 @@ def map_metabolite_to_kegg(metabolite_name: str) -> Optional[str]:
                         )
                         _id_mapping_cache[cache_key] = compound_id
                         return compound_id
-            
+
             # If no exact match, return first result
             if lines:
                 first_line = lines[0]
@@ -288,14 +288,14 @@ def map_metabolite_to_kegg(metabolite_name: str) -> Optional[str]:
                 )
                 _id_mapping_cache[cache_key] = compound_id
                 return compound_id
-        
+
         logger.debug(
             "[ANALYSIS][ID-MAP] Could not map metabolite %s to KEGG",
             metabolite_name,
         )
         _id_mapping_cache[cache_key] = None
         return None
-        
+
     except Exception as e:
         logger.warning(
             "[ANALYSIS][ID-MAP] Error mapping metabolite %s to KEGG: %r",
@@ -309,12 +309,12 @@ def map_metabolite_to_kegg(metabolite_name: str) -> Optional[str]:
 def map_gene_to_reactome(gene_symbol: str) -> Optional[str]:
     """
     Map gene symbol to Reactome-compatible identifier.
-    
+
     Reactome uses gene symbols directly for human genes.
-    
+
     Args:
         gene_symbol: Gene symbol (e.g., "TP53")
-        
+
     Returns:
         Gene symbol (Reactome uses symbols directly) or None
     """
@@ -322,7 +322,7 @@ def map_gene_to_reactome(gene_symbol: str) -> Optional[str]:
     # Valid gene symbols are typically alphanumeric with underscores/hyphens
     if re.match(r"^[A-Z0-9_-]+$", gene_symbol, re.IGNORECASE):
         return gene_symbol
-    
+
     logger.debug(
         "[ANALYSIS][ID-MAP] Invalid gene symbol format for Reactome: %s",
         gene_symbol,
@@ -333,12 +333,12 @@ def map_gene_to_reactome(gene_symbol: str) -> Optional[str]:
 def map_protein_to_reactome(protein_id: str) -> Optional[str]:
     """
     Map protein identifier to Reactome-compatible identifier.
-    
+
     Reactome uses UniProt IDs for proteins.
-    
+
     Args:
         protein_id: Protein identifier
-        
+
     Returns:
         UniProt ID or None if mapping fails
     """
@@ -354,13 +354,13 @@ def batch_map_features_to_pathway_ids(
 ) -> Dict[str, Optional[str]]:
     """
     Batch map features to pathway database IDs.
-    
+
     Args:
         features: Set of feature identifiers
         feature_type: One of "gene", "protein", "metabolite", "lipid"
         pathway_source: "KEGG" or "Reactome"
         organism: KEGG organism code (default: "hsa" for human)
-        
+
     Returns:
         Dictionary mapping feature_id -> pathway_db_id
     """
@@ -370,9 +370,9 @@ def batch_map_features_to_pathway_ids(
         feature_type,
         pathway_source,
     )
-    
+
     mapping: Dict[str, Optional[str]] = {}
-    
+
     for feature in features:
         if pathway_source == "KEGG":
             if feature_type == "gene":
@@ -387,7 +387,7 @@ def batch_map_features_to_pathway_ids(
                     feature_type,
                 )
                 mapped_id = None
-        
+
         elif pathway_source == "Reactome":
             if feature_type == "gene":
                 mapped_id = map_gene_to_reactome(feature)
@@ -399,19 +399,19 @@ def batch_map_features_to_pathway_ids(
                     feature_type,
                 )
                 mapped_id = None
-        
+
         else:
             logger.warning(
                 "[ANALYSIS][ID-MAP] Unknown pathway source '%s'",
                 pathway_source,
             )
             mapped_id = None
-        
+
         mapping[feature] = mapped_id
-        
+
         # Rate limiting to respect API limits
         time.sleep(0.1)
-    
+
     successful_mappings = sum(1 for v in mapping.values() if v is not None)
     logger.info(
         "[ANALYSIS][ID-MAP] Successfully mapped %d/%d features to %s IDs",
@@ -419,7 +419,7 @@ def batch_map_features_to_pathway_ids(
         len(features),
         pathway_source,
     )
-    
+
     return mapping
 
 
@@ -433,14 +433,14 @@ def clear_id_mapping_cache():
 def get_cache_stats() -> Dict[str, int]:
     """
     Get statistics about the ID mapping cache.
-    
+
     Returns:
         Dictionary with cache statistics
     """
     total = len(_id_mapping_cache)
     successful = sum(1 for v in _id_mapping_cache.values() if v is not None)
     failed = total - successful
-    
+
     return {
         "total_cached": total,
         "successful_mappings": successful,

@@ -30,7 +30,7 @@ def upgrade():
     )
     op.create_index('ix_workflow_rules_trigger_type', 'workflow_rules', ['trigger_type'])
     op.create_index('ix_workflow_rules_is_active', 'workflow_rules', ['is_active'])
-    
+
     op.create_table(
         'workflow_executions',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),

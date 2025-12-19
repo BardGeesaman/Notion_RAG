@@ -1,0 +1,7 @@
+line-length = 120
+target-version = "py310"
+
+[lint.per-file-ignores]
+"deploy/jupyterhub/jupyterhub_config.py" = ["F821"]  # JupyterHub injects `c` at runtime
+"deploy/jupyterhub/templates/*.ipynb" = ["F821"]     # Notebook cell dependencies
+"md_archive/**" = ["F821", "F401"]                   # Archived legacy code

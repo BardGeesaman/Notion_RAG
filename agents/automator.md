@@ -30,6 +30,13 @@ FROM: Automator
 TO: Architect
 ```
 
+## 2b. Environment Setup
+
+Before running any terminal commands, activate the project conda environment:
+source ~/miniconda3/etc/profile.d/conda.sh && conda activate myenv
+
+This ensures all agents share the same Python environment and installed tools.
+
 ---
 
 ## 3. Responsibilities
@@ -79,10 +86,12 @@ Be explicit and operationally helpful.
 
 ## Python Package Installation
 
-When installing packages in the conda environment, always use:
+All package installations must be performed in the shared conda environment, as described in section 2b above.
+
+When installing packages, always use:
 
 ```bash
-source /opt/miniconda3/etc/profile.d/conda.sh && conda activate myenv
+source ~/miniconda3/etc/profile.d/conda.sh && conda activate myenv
 python -m pip install <package>
 ```
 

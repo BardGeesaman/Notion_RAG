@@ -15,7 +15,7 @@ from scripts.dashboard.db_session import db_session
 def infer_status(ds):
     # Use ingestion_status (actual field) instead of qc_status (doesn't exist)
     ingestion_status = getattr(ds, "ingestion_status", None)
-    
+
     if ingestion_status == "complete" and ds.features and len(ds.features) > 0:
         return "complete"
     if ingestion_status == "failed" or not ds.features:

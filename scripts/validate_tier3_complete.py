@@ -27,13 +27,13 @@ def run_validation_script(script_name: str, description: str) -> bool:
     print(f"Running: {description}")
     print("=" * 80)
     print()
-    
+
     script_path = Path(__file__).parent / script_name
-    
+
     if not script_path.exists():
         print(f"  ⚠️  Script not found: {script_path}")
         return False
-    
+
     try:
         result = subprocess.run(
             [sys.executable, str(script_path)],
@@ -55,13 +55,13 @@ def run_pytest_tests(test_path: str, description: str) -> bool:
     print(f"Running: {description}")
     print("=" * 80)
     print()
-    
+
     test_dir = Path(__file__).parent.parent / test_path
-    
+
     if not test_dir.exists():
         print(f"  ⚠️  Test directory not found: {test_dir}")
         return False
-    
+
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pytest", str(test_dir), "-v"],
@@ -95,16 +95,16 @@ def main() -> None:
         action="store_true",
         help="Skip pytest unit/integration tests",
     )
-    
+
     args = parser.parse_args()
-    
+
     print("\n" + "=" * 80)
     print("TIER 3 COMPREHENSIVE VALIDATION")
     print("=" * 80)
     print()
-    
+
     results = []
-    
+
     # 1. Postgres validation
     results.append(
         (
@@ -112,7 +112,7 @@ def main() -> None:
             run_validation_script("validate_postgres_setup.py", "Postgres Database Validation"),
         )
     )
-    
+
     # 2. Database tests
     if not args.skip_tests:
         results.append(
@@ -124,7 +124,7 @@ def main() -> None:
                 ),
             )
         )
-    
+
     # 3. API endpoint validation
     if not args.skip_api:
         results.append(
@@ -138,7 +138,7 @@ def main() -> None:
         print("Skipping API Endpoint Tests (--skip-api flag)")
         print("=" * 80)
         results.append(("API Endpoints", None))  # Skipped
-    
+
     # 4. API tests
     if not args.skip_tests and not args.skip_api:
         results.append(
@@ -147,7 +147,7 @@ def main() -> None:
                 run_pytest_tests("amprenta_rag/tests/api", "FastAPI Endpoint Tests"),
             )
         )
-    
+
     # 5. Integration tests
     if not args.skip_tests:
         results.append(
@@ -159,17 +159,17 @@ def main() -> None:
                 ),
             )
         )
-    
+
     # Summary
     print("\n" + "=" * 80)
     print("VALIDATION SUMMARY")
     print("=" * 80)
     print()
-    
+
     passed = sum(1 for _, result in results if result is True)
     failed = sum(1 for _, result in results if result is False)
     skipped = sum(1 for _, result in results if result is None)
-    
+
     for name, result in results:
         if result is None:
             status = "⏭️  SKIPPED"
@@ -178,11 +178,11 @@ def main() -> None:
         else:
             status = "❌ FAIL"
         print(f"  {status}: {name}")
-    
+
     print()
     print(f"  Total: {passed} passed, {failed} failed, {skipped} skipped")
     print()
-    
+
     if failed == 0 and passed > 0:
         print("✅ All validations passed! TIER 3 infrastructure is ready.")
         sys.exit(0)

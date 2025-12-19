@@ -36,7 +36,7 @@ _REPOSITORY_REGISTRY: Dict[str, type[RepositoryInterface] | callable] = {
 def register_repository(name: str, repository_class: type[RepositoryInterface]) -> None:
     """
     Register a repository implementation.
-    
+
     Args:
         name: Repository name (e.g., "GEO", "PRIDE")
         repository_class: Repository class that implements RepositoryInterface
@@ -52,12 +52,12 @@ def get_repository(
 ) -> Optional[RepositoryInterface]:
     """
     Get a repository instance by name.
-    
+
     Args:
         name: Repository name (e.g., "GEO", "PRIDE", "MW")
         api_key: Optional API key for repositories that support it (e.g., GEO/NCBI)
         email: Optional email for repositories that require it (e.g., GEO/NCBI)
-        
+
     Returns:
         RepositoryInterface instance, or None if not found
     """
@@ -65,11 +65,11 @@ def get_repository(
     if repo_class is None:
         logger.warning("[REPO][DISCOVERY] Repository '%s' not found", name)
         return None
-    
+
     # Handle callable factories (like MW_LIPIDOMICS)
     if callable(repo_class):
         return repo_class()
-    
+
     # Handle regular classes
     if isinstance(repo_class, type):
         # Check if repository supports API key/email initialization
@@ -78,7 +78,7 @@ def get_repository(
             return GEORepository(api_key=api_key, email=email)
         # Add other repositories with API key support here
         return repo_class()
-    
+
     # Already an instance
     return repo_class
 
@@ -86,7 +86,7 @@ def get_repository(
 def list_available_repositories() -> List[str]:
     """
     List all available repository names.
-    
+
     Returns:
         List of repository names
     """
@@ -102,14 +102,14 @@ def discover_studies(
 ) -> Dict[str, List[str]]:
     """
     Discover studies across repositories matching keywords and filters.
-    
+
     Args:
         keywords: List of search keywords
         omics_type: Optional filter by omics type (e.g., "transcriptomics")
         repository: Optional specific repository name (e.g., "GEO")
         filters: Optional additional filters (disease, organism, sample_type)
         max_results: Maximum results per repository
-        
+
     Returns:
         Dictionary mapping repository names to lists of study IDs
     """
@@ -119,12 +119,12 @@ def discover_studies(
         omics_type,
         repository,
     )
-    
+
     results: Dict[str, List[str]] = {}
-    
+
     # Determine which repositories to search
     repositories_to_search: List[str] = []
-    
+
     if repository:
         # Search specific repository
         if repository in _REPOSITORY_REGISTRY:
@@ -142,7 +142,7 @@ def discover_studies(
             if repo_instance:
                 if omics_type is None or repo_instance.get_omics_type() == omics_type:
                     repositories_to_search.append(repo_name)
-    
+
     # Load API keys and email from config if available
     try:
         from amprenta_rag.config import GEO_API_KEY, NCBI_EMAIL
@@ -151,7 +151,7 @@ def discover_studies(
     except Exception:
         geo_api_key = os.getenv("GEO_API_KEY", "") or None
         ncbi_email = os.getenv("NCBI_EMAIL", "") or None
-    
+
     # Search each repository
     for repo_name in repositories_to_search:
         # Pass API key and email for GEO repository
@@ -161,7 +161,7 @@ def discover_studies(
             repo_instance = get_repository(repo_name)
         if not repo_instance:
             continue
-        
+
         try:
             study_ids = repo_instance.search_studies(
                 keywords=keywords,
@@ -169,7 +169,7 @@ def discover_studies(
                 max_results=max_results,
             )
             results[repo_name] = study_ids
-            
+
             logger.info(
                 "[REPO][DISCOVERY] Found %d studies in %s",
                 len(study_ids),
@@ -182,13 +182,13 @@ def discover_studies(
                 e,
             )
             results[repo_name] = []
-    
+
     total_studies = sum(len(ids) for ids in results.values())
     logger.info(
         "[REPO][DISCOVERY] Total studies found across all repositories: %d",
         total_studies,
     )
-    
+
     return results
 
 
@@ -198,11 +198,11 @@ def fetch_study_metadata(
 ) -> Optional[StudyMetadata]:
     """
     Fetch metadata for a study from a specific repository.
-    
+
     Args:
         study_id: Repository-specific study identifier
         repository: Repository name
-        
+
     Returns:
         StudyMetadata object, or None if not found
     """
@@ -217,7 +217,7 @@ def fetch_study_metadata(
         except Exception:
             geo_api_key = os.getenv("GEO_API_KEY", "") or None
             ncbi_email = os.getenv("NCBI_EMAIL", "") or None
-    
+
     repo_instance = get_repository(repository, api_key=geo_api_key, email=ncbi_email)
     if not repo_instance:
         logger.warning(
@@ -225,7 +225,7 @@ def fetch_study_metadata(
             repository,
         )
         return None
-    
+
     try:
         return repo_instance.fetch_study_metadata(study_id)
     except Exception as e:

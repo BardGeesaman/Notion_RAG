@@ -6,8 +6,7 @@ using mocks for external services (Postgres, Notion, Pinecone).
 """
 
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 # Import the function we're testing

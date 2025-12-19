@@ -21,19 +21,19 @@ class GroundednessResult:
 def check_groundedness(answer: str, chunks: List[str]) -> GroundednessResult:
     """
     Check if an answer is grounded in the provided source chunks.
-    
+
     Args:
         answer: The generated answer to check
         chunks: List of source chunks that should support the answer
-        
+
     Returns:
         GroundednessResult with score and lists of supported/unsupported claims
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     context = "\n\n---\n\n".join(chunks[:8])  # Cap context
-    
+
     prompt = (
         "Analyze the following answer and determine which claims are supported by the provided sources.\n\n"
         f"Sources:\n{context}\n\n"
@@ -46,7 +46,7 @@ def check_groundedness(answer: str, chunks: List[str]) -> GroundednessResult:
         "UNSUPPORTED:\n- [claim 1]\n- [claim 2]\n\n"
         "If a claim is partially supported but has unsupported details, list it under UNSUPPORTED."
     )
-    
+
     try:
         logger.info("[HALLUCINATION] Checking groundedness for answer (length=%d)", len(answer))
         resp = client.chat.completions.create(
@@ -55,11 +55,11 @@ def check_groundedness(answer: str, chunks: List[str]) -> GroundednessResult:
             temperature=0.1,  # Low temperature for consistent parsing
         )
         response_text = resp.choices[0].message.content.strip()  # type: ignore[union-attr]
-        
+
         # Parse response
         supported_claims: List[str] = []
         unsupported_claims: List[str] = []
-        
+
         current_section = None
         for line in response_text.split("\n"):
             line = line.strip()
@@ -75,21 +75,21 @@ def check_groundedness(answer: str, chunks: List[str]) -> GroundednessResult:
                     supported_claims.append(claim)
                 elif current_section == "unsupported":
                     unsupported_claims.append(claim)
-        
+
         # Calculate score: supported / total claims
         total_claims = len(supported_claims) + len(unsupported_claims)
         if total_claims == 0:
             score = 1.0  # No claims to check, assume grounded
         else:
             score = len(supported_claims) / total_claims
-        
+
         logger.info(
             "[HALLUCINATION] Score=%.2f (%d supported, %d unsupported)",
             score,
             len(supported_claims),
             len(unsupported_claims),
         )
-        
+
         return GroundednessResult(
             score=score,
             unsupported_claims=unsupported_claims,

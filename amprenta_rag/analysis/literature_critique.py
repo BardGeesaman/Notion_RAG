@@ -13,16 +13,16 @@ logger = get_logger(__name__)
 def generate_critique(text: str) -> Dict[str, Any]:
     """
     Generate a critical analysis of scientific text.
-    
+
     Args:
         text: Scientific text to analyze
-        
+
     Returns:
         Dictionary with strengths, weaknesses, limitations, and methodology_score
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     prompt = f"""Analyze the following scientific text with rigorous scientific evaluation.
 Provide a critical analysis including strengths, weaknesses, limitations, and a methodology score (0-100).
 
@@ -47,9 +47,9 @@ Be thorough and critical. Focus on scientific rigor, experimental design, statis
             response_format={"type": "json_object"},
             temperature=0.3,
         )
-        
+
         result = json.loads(response.choices[0].message.content)
-        
+
         # Ensure all required fields exist
         return {
             "strengths": result.get("strengths", []),
@@ -70,16 +70,16 @@ Be thorough and critical. Focus on scientific rigor, experimental design, statis
 def extract_unanswered_questions(text: str) -> List[str]:
     """
     Extract unanswered questions and gaps from scientific text.
-    
+
     Args:
         text: Scientific text to analyze
-        
+
     Returns:
         List of question strings identifying gaps and open questions
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     prompt = f"""Analyze the following scientific text and identify gaps, unanswered questions, and areas requiring further research.
 
 Text to analyze:
@@ -104,7 +104,7 @@ Focus on:
             response_format={"type": "json_object"},
             temperature=0.3,
         )
-        
+
         result = json.loads(response.choices[0].message.content)
         return result.get("questions", [])
     except Exception as e:
@@ -115,17 +115,17 @@ Focus on:
 def detect_contradictions(text1: str, text2: str) -> List[Dict[str, str]]:
     """
     Detect contradictions between two scientific texts.
-    
+
     Args:
         text1: First scientific text
         text2: Second scientific text
-        
+
     Returns:
         List of dictionaries with claim_a, claim_b, topic, and severity
     """
     client = get_openai_client()
     chat_model, _ = get_default_models()
-    
+
     prompt = f"""Compare the following two scientific texts and identify any contradictory claims or conflicting findings.
 
 Text 1:
@@ -153,10 +153,10 @@ Focus on factual contradictions, conflicting experimental results, or opposing c
             response_format={"type": "json_object"},
             temperature=0.3,
         )
-        
+
         result = json.loads(response.choices[0].message.content)
         contradictions = result.get("contradictions", [])
-        
+
         # Validate structure
         validated = []
         for c in contradictions:
@@ -167,7 +167,7 @@ Focus on factual contradictions, conflicting experimental results, or opposing c
                     "topic": str(c["topic"]),
                     "severity": str(c["severity"]),
                 })
-        
+
         return validated
     except Exception as e:
         logger.error("[LITERATURE] Failed to detect contradictions: %s", e)

@@ -28,7 +28,7 @@ def upgrade() -> None:
         sa.Column("created_by_id", UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=True),
     )
     op.create_index("ix_adme_results_compound_id", "adme_results", ["compound_id"])
-    
+
     # PK studies
     op.create_table(
         "pk_studies",
@@ -49,7 +49,7 @@ def upgrade() -> None:
         sa.Column("created_by_id", UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=True),
     )
     op.create_index("ix_pk_studies_compound_id", "pk_studies", ["compound_id"])
-    
+
     # Toxicology results
     op.create_table(
         "toxicology_results",

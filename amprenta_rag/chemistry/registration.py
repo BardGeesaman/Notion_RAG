@@ -16,7 +16,7 @@ def _get_next_corporate_id(db) -> str:
     result = db.query(Compound).filter(
         Compound.compound_id.like("AMP-%")
     ).order_by(Compound.compound_id.desc()).first()
-    
+
     if result:
         try:
             current_num = int(result.compound_id.split("-")[1])
@@ -25,7 +25,7 @@ def _get_next_corporate_id(db) -> str:
             next_num = 1
     else:
         next_num = 1
-    
+
     return f"AMP-{next_num:05d}"
 
 
@@ -35,7 +35,7 @@ def check_duplicate(smiles: str) -> Optional[str]:
         return None
 
     canonical, inchi_key, _ = normalize_smiles(smiles)
-    
+
     db_gen = get_db()
     db = next(db_gen)
     try:
@@ -73,7 +73,7 @@ def register_compound(
     db = next(db_gen)
     try:
         corporate_id = _get_next_corporate_id(db)
-        
+
         compound = Compound(
             compound_id=corporate_id,
             smiles=canonical or smiles,
@@ -87,19 +87,19 @@ def register_compound(
             rotatable_bonds=descriptors.get("rotatable_bonds"),
             aromatic_rings=descriptors.get("aromatic_rings"),
         )
-        
+
         db.add(compound)
         db.commit()
         db.refresh(compound)
         logger.info("[CHEMISTRY][REG] Registered %s", corporate_id)
-        
+
         # Fire workflow trigger
         from amprenta_rag.automation.engine import fire_trigger
         fire_trigger("compound_registered", {
             "compound_id": str(compound.id),
             "smiles": compound.smiles
         }, db)
-        
+
         return corporate_id
     finally:
         db_gen.close()

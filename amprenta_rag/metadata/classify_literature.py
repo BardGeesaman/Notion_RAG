@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional
 
 from amprenta_rag.clients.openai_client import (get_default_models,
                                                 get_openai_client)
-from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -26,7 +25,7 @@ logger = get_logger(__name__)
 def _query_literature_pages(limit: Optional[int] = None) -> List[Dict[str, Any]]:
     """
     Stub: Notion support removed. Returns empty list.
-    
+
     Previously fetched pages from the Literature DB in Notion.
     """
     logger.debug("[METADATA][CLASSIFY-LITERATURE] _query_literature_pages() is a no-op (Notion removed)")
@@ -71,7 +70,7 @@ def _needs_classification(props: Dict[str, Any]) -> bool:
 def _update_literature_properties(page_id: str, updates: Dict[str, Any]) -> None:
     """
     Stub: Notion support removed. No-op.
-    
+
     Previously patched Notion page with new property values.
     """
     logger.debug("[METADATA][CLASSIFY-LITERATURE] _update_literature_properties() is a no-op (Notion removed)")

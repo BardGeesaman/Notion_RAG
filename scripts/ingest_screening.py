@@ -28,14 +28,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Ingest screening data (HTS campaigns, hit lists, biochemical results)"
     )
-    
+
     # Initialize database
     parser.add_argument(
         "--init-db",
         action="store_true",
         help="Initialize chemistry database (creates tables if they don't exist)",
     )
-    
+
     # Campaign metadata
     parser.add_argument(
         "--campaign-metadata-file",
@@ -46,7 +46,7 @@ def main() -> None:
         "--campaign-id",
         help="Campaign ID (auto-generated from metadata if not provided)",
     )
-    
+
     # Hit list
     parser.add_argument(
         "--hit-list-file",
@@ -68,7 +68,7 @@ def main() -> None:
         type=float,
         help="Threshold for hit classification",
     )
-    
+
     # Biochemical results
     parser.add_argument(
         "--biochemical-results-file",
@@ -79,7 +79,7 @@ def main() -> None:
         "--assay-name",
         help="Assay name (default: filename stem)",
     )
-    
+
     # Promotion
     parser.add_argument(
         "--promote-compounds",
@@ -100,13 +100,13 @@ def main() -> None:
         type=int,
         help="Maximum number of compounds to promote",
     )
-    
+
     args = parser.parse_args()
-    
+
     print("\n" + "=" * 80)
     print("SCREENING DATA INGESTION")
     print("=" * 80)
-    
+
     try:
         # Ingest campaign metadata
         if args.campaign_metadata_file:
@@ -119,13 +119,13 @@ def main() -> None:
             campaign_id = campaign.campaign_id
         else:
             campaign_id = args.campaign_id
-        
+
         # Ingest hit list
         if args.hit_list_file:
             if not campaign_id:
                 print("\n❌ Error: --campaign-id is required when ingesting hit list", file=sys.stderr)
                 sys.exit(1)
-            
+
             print(f"\n🧪 Ingesting hit list from {args.hit_list_file}")
             count = ingest_hts_hit_list(
                 args.hit_list_file,
@@ -135,7 +135,7 @@ def main() -> None:
                 hit_threshold=args.hit_threshold,
             )
             print(f"✅ Ingested {count} compounds")
-        
+
         # Ingest biochemical results
         if args.biochemical_results_file:
             print(f"\n🔬 Ingesting biochemical results from {args.biochemical_results_file}")
@@ -145,13 +145,13 @@ def main() -> None:
                 assay_name=args.assay_name,
             )
             print(f"✅ Ingested {count} biochemical results")
-        
+
         # Promote compounds
         if args.promote_compounds:
             if not campaign_id:
                 print("\n❌ Error: --campaign-id is required when promoting compounds", file=sys.stderr)
                 sys.exit(1)
-            
+
             print(f"\n📤 Promoting compounds from campaign {campaign_id} to Notion...")
             promoted = promote_compounds_to_notion(
                 campaign_id=campaign_id,
@@ -160,7 +160,7 @@ def main() -> None:
                 max_compounds=args.max_compounds,
             )
             print(f"✅ Promoted {len(promoted)} compounds (Notion integration pending)")
-        
+
         if not any([
             args.init_db,
             args.campaign_metadata_file,
@@ -170,9 +170,9 @@ def main() -> None:
         ]):
             parser.print_help()
             print("\n⚠️  No actions specified. Use --help for usage information.")
-        
+
         print(f"\n{'=' * 80}\n")
-        
+
     except Exception as e:
         logger.error("[INGEST][SCREENING] Ingestion failed: %r", e)
         print(f"\n❌ Error: {e}\n", file=sys.stderr)

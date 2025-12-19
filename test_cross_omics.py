@@ -22,7 +22,7 @@ def test_feature_summary(feature_type: str, feature_name: str):
     """Test cross-omics feature summary."""
     print(f"\n🔬 Testing Cross-Omics Feature Summary")
     print(f"   Feature: {feature_type}:{feature_name}\n")
-    
+
     try:
         summary = cross_omics_feature_summary(
             feature_name=feature_name,
@@ -30,12 +30,12 @@ def test_feature_summary(feature_type: str, feature_name: str):
             top_k_datasets=5,
             top_k_chunks=20,
         )
-        
+
         print("=" * 80)
         print(summary)
         print("=" * 80)
         print("\n✅ Test completed successfully!")
-        
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
@@ -47,18 +47,18 @@ def test_program_summary(program_page_id: str):
     """Test cross-omics program summary."""
     print(f"\n🔬 Testing Cross-Omics Program Summary")
     print(f"   Program ID: {program_page_id}\n")
-    
+
     try:
         summary = cross_omics_program_summary(
             program_page_id=program_page_id,
             top_k_per_omics=5,
         )
-        
+
         print("=" * 80)
         print(summary)
         print("=" * 80)
         print("\n✅ Test completed successfully!")
-        
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
@@ -70,19 +70,19 @@ def test_signature_summary(signature_page_id: str):
     """Test cross-omics signature summary."""
     print(f"\n🔬 Testing Cross-Omics Signature Summary")
     print(f"   Signature ID: {signature_page_id}\n")
-    
+
     try:
         summary = cross_omics_signature_summary(
             signature_page_id=signature_page_id,
             top_k_datasets=5,
             top_k_chunks=20,
         )
-        
+
         print("=" * 80)
         print(summary)
         print("=" * 80)
         print("\n✅ Test completed successfully!")
-        
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
@@ -94,18 +94,18 @@ def test_dataset_summary(dataset_page_id: str):
     """Test cross-omics dataset summary."""
     print(f"\n🔬 Testing Cross-Omics Dataset Summary")
     print(f"   Dataset ID: {dataset_page_id}\n")
-    
+
     try:
         summary = cross_omics_dataset_summary(
             dataset_page_id=dataset_page_id,
             top_k_chunks=20,
         )
-        
+
         print("=" * 80)
         print(summary)
         print("=" * 80)
         print("\n✅ Test completed successfully!")
-        
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
@@ -115,7 +115,7 @@ def test_dataset_summary(dataset_page_id: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Test cross-omics RAG reasoning functions")
-    
+
     parser.add_argument(
         "--feature",
         help="Test feature summary in format 'type:name' (e.g., 'lipid:Cer(d18:1/16:0)', 'gene:TP53')",
@@ -132,9 +132,9 @@ def main():
         "--dataset",
         help="Test dataset summary with Notion page ID",
     )
-    
+
     args = parser.parse_args()
-    
+
     if not any([args.feature, args.program, args.signature, args.dataset]):
         parser.print_help()
         print("\n💡 Examples:")
@@ -144,7 +144,7 @@ def main():
         print("   python test_cross_omics.py --signature <signature_page_id>")
         print("   python test_cross_omics.py --dataset <dataset_page_id>")
         sys.exit(1)
-    
+
     if args.feature:
         if ":" not in args.feature:
             print("❌ Error: --feature must be in format 'type:name'")
@@ -152,19 +152,19 @@ def main():
         feature_type, feature_name = args.feature.split(":", 1)
         feature_type = feature_type.lower().strip()
         feature_name = feature_name.strip()
-        
+
         if feature_type not in ["gene", "protein", "metabolite", "lipid"]:
             print(f"❌ Error: Invalid feature_type '{feature_type}'. Must be: gene, protein, metabolite, lipid")
             sys.exit(1)
-        
+
         test_feature_summary(feature_type, feature_name)
-    
+
     elif args.program:
         test_program_summary(args.program)
-    
+
     elif args.signature:
         test_signature_summary(args.signature)
-    
+
     elif args.dataset:
         test_dataset_summary(args.dataset)
 

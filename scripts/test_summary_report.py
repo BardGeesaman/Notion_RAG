@@ -36,10 +36,10 @@ def main() -> None:
     print("TIER 3 COMPREHENSIVE TEST SUMMARY")
     print("=" * 80)
     print()
-    
+
     # Test results
     results = []
-    
+
     # 1. Existing ingestion tests
     print("1. Running Existing Ingestion Tests...")
     print("-" * 80)
@@ -47,7 +47,7 @@ def main() -> None:
         [sys.executable, "-m", "pytest", "amprenta_rag/tests/ingestion/", "-v", "--tb=no"],
         "Ingestion tests"
     )
-    
+
     if success:
         # Extract test count
         lines = output.split("\n")
@@ -59,9 +59,9 @@ def main() -> None:
     else:
         print(f"  ❌ Tests failed")
         results.append(("Ingestion Tests", False, "Failed"))
-    
+
     print()
-    
+
     # 2. Utility tests
     print("2. Running Utility Tests...")
     print("-" * 80)
@@ -69,7 +69,7 @@ def main() -> None:
         [sys.executable, "-m", "pytest", "amprenta_rag/tests/test_*.py", "-v", "--tb=no"],
         "Utility tests"
     )
-    
+
     if success:
         lines = output.split("\n")
         for line in lines:
@@ -80,9 +80,9 @@ def main() -> None:
     else:
         print(f"  ❌ Tests failed")
         results.append(("Utility Tests", False, "Failed"))
-    
+
     print()
-    
+
     # 3. Module structure test
     print("3. Testing Module Structure...")
     print("-" * 80)
@@ -90,7 +90,7 @@ def main() -> None:
         [sys.executable, "scripts/test_module_structure.py"],
         "Module structure"
     )
-    
+
     if success:
         lines = output.split("\n")
         for line in lines:
@@ -101,9 +101,9 @@ def main() -> None:
     else:
         print(f"  ⚠️  Some modules failed (may be expected)")
         results.append(("Module Structure", False, "Some failures"))
-    
+
     print()
-    
+
     # 4. Configuration validation
     print("4. Running Configuration Validation...")
     print("-" * 80)
@@ -111,7 +111,7 @@ def main() -> None:
         [sys.executable, "scripts/validate_configuration.py"],
         "Configuration validation"
     )
-    
+
     if success:
         lines = output.split("\n")
         for line in lines:
@@ -122,9 +122,9 @@ def main() -> None:
     else:
         print(f"  ⚠️  Configuration validation had warnings")
         results.append(("Configuration", True, "Warnings present"))
-    
+
     print()
-    
+
     # 5. Domain models test
     print("5. Testing Domain Models...")
     print("-" * 80)
@@ -138,32 +138,32 @@ def main() -> None:
     except Exception as e:
         print(f"  ❌ Domain models import failed: {e}")
         results.append(("Domain Models", False, str(e)))
-    
+
     print()
-    
+
     # Summary
     print("=" * 80)
     print("TEST SUMMARY")
     print("=" * 80)
     print()
-    
+
     passed = sum(1 for _, success, _ in results if success)
     total = len(results)
-    
+
     for name, success, details in results:
         status = "✅" if success else "❌"
         print(f"  {status} {name}: {details}")
-    
+
     print()
     print(f"  Total: {passed}/{total} test suites passed")
     print()
-    
+
     # Dependencies check
     print("=" * 80)
     print("DEPENDENCY STATUS")
     print("=" * 80)
     print()
-    
+
     dependencies = [
         ("pytest", "pytest"),
         ("SQLAlchemy", "sqlalchemy"),
@@ -171,22 +171,22 @@ def main() -> None:
         ("psycopg2", "psycopg2"),
         ("pydantic", "pydantic"),
     ]
-    
+
     for name, module in dependencies:
         try:
             __import__(module)
             print(f"  ✅ {name}")
         except ImportError:
             print(f"  ❌ {name} (not installed)")
-    
+
     print()
-    
+
     # Recommendations
     print("=" * 80)
     print("RECOMMENDATIONS")
     print("=" * 80)
     print()
-    
+
     if passed == total:
         print("✅ All available tests passed!")
         print()
@@ -200,7 +200,7 @@ def main() -> None:
         print("  1. Install missing dependencies: pip install -r requirements.txt")
         print("  2. Fix any failing tests")
         print("  3. Re-run: python scripts/test_summary_report.py")
-    
+
     print()
 
 

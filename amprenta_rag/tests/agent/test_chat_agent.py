@@ -147,7 +147,7 @@ class TestRunChatTurn:
         mock_query_rag.return_value = mock_result
 
         session, answer = run_chat_turn(empty_session, "What genes are upregulated?")
-        
+
         mock_query_rag.assert_called_once()
         assert answer == "Test answer from RAG"
 
@@ -161,7 +161,7 @@ class TestRunChatTurn:
         mock_query_rag.return_value = mock_result
 
         session, answer = run_chat_turn(empty_session, "Some query")
-        
+
         assert "couldn't find enough evidence" in answer
 
     @patch("amprenta_rag.agent.chat_agent.cross_omics_dataset_summary_postgres")
@@ -170,12 +170,12 @@ class TestRunChatTurn:
         from amprenta_rag.agent.chat_agent import run_chat_turn
 
         mock_summary.return_value = "Dataset summary text"
-        
+
         session, answer = run_chat_turn(
-            empty_session, 
+            empty_session,
             "summarize dataset: 12345678-1234-1234-1234-123456789abc"
         )
-        
+
         mock_summary.assert_called_once_with("12345678-1234-1234-1234-123456789abc")
         assert answer == "Dataset summary text"
 
@@ -185,7 +185,7 @@ class TestRunChatTurn:
 
         session, _ = run_chat_turn(empty_session, "help")
         session, _ = run_chat_turn(session, "what can you do?")
-        
+
         assert len(session.turns) == 2
 
     def test_error_handling(self, empty_session):
@@ -195,10 +195,10 @@ class TestRunChatTurn:
         # Mock query_rag to raise an exception (inside the try block)
         with patch("amprenta_rag.agent.chat_agent.query_rag") as mock_rag:
             mock_rag.side_effect = Exception("Test error")
-            
+
             # This routes to freeform_rag which calls query_rag
             session, answer = run_chat_turn(empty_session, "random question")
-            
+
             assert "Error:" in answer
             assert "Test error" in answer
 

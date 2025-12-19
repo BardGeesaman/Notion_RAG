@@ -1,9 +1,9 @@
 """Compound linking utilities using PostgreSQL."""
-from typing import Optional, List
+from typing import List
 from uuid import UUID
 
 from amprenta_rag.database.base import get_db
-from amprenta_rag.database.models import Compound, Signature, Program
+from amprenta_rag.database.models import Compound, Program
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -17,14 +17,14 @@ def link_compound_to_signature(compound_id: str, signature_id: str) -> bool:
         compound = db.query(Compound).filter(Compound.compound_id == compound_id).first()
         if not compound:
             return False
-        
+
         external_ids = compound.external_ids or {}
         signatures = external_ids.get("signatures", [])
         if signature_id not in signatures:
             signatures.append(signature_id)
         external_ids["signatures"] = signatures
         compound.external_ids = external_ids
-        
+
         db.commit()
         return True
     except Exception as e:
@@ -42,13 +42,13 @@ def link_compound_to_program(compound_id: str, program_id: str) -> bool:
     try:
         compound = db.query(Compound).filter(Compound.compound_id == compound_id).first()
         program = db.query(Program).filter(Program.id == UUID(program_id)).first()
-        
+
         if not compound or not program:
             return False
-        
+
         if program not in compound.programs:
             compound.programs.append(program)
-        
+
         db.commit()
         return True
     except Exception as e:

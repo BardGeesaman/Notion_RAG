@@ -30,26 +30,26 @@ def main():
     print("\n" + "=" * 60)
     print("Configuration Validation")
     print("=" * 60 + "\n")
-    
+
     try:
         # Print configuration summary
         print_config_summary()
-        
+
         # Validate all config sections
         all_issues = validate_all_config()
         has_issues = any(all_issues.values())
-        
+
         print("\n" + "=" * 60)
         if has_issues:
             print("❌ Configuration validation found issues")
             print("=" * 60 + "\n")
-            
+
             for category, issues in all_issues.items():
                 if issues:
                     print(f"\n{category.upper()} Issues:")
                     for issue in issues:
                         print(f"  ⚠️  {issue}")
-            
+
             print("\n" + "=" * 60)
             print("Please fix the issues above and try again.")
             print("=" * 60 + "\n")
@@ -58,7 +58,7 @@ def main():
             print("✅ Configuration is valid!")
             print("=" * 60 + "\n")
             sys.exit(0)
-            
+
     except Exception as e:
         logger.error("Configuration validation failed: %r", e)
         import traceback

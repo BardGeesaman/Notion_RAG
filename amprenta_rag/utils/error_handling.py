@@ -28,7 +28,7 @@ class CircuitBreakerOpen(Exception):
 
 class RetryConfig:
     """Configuration for retry logic."""
-    
+
     def __init__(
         self,
         max_attempts: int = 3,
@@ -50,29 +50,29 @@ def retry_with_backoff(
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Decorator to retry a function with exponential backoff.
-    
+
     Args:
         config: Retry configuration (uses defaults if None)
         log_errors: Whether to log each retry attempt
-        
+
     Returns:
         Decorated function with retry logic
     """
     if config is None:
         config = RetryConfig()
-    
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> T:
             delay = config.initial_delay
             last_exception: Optional[Exception] = None
-            
+
             for attempt in range(1, config.max_attempts + 1):
                 try:
                     return func(*args, **kwargs)
                 except config.retryable_exceptions as e:
                     last_exception = e
-                    
+
                     if attempt < config.max_attempts:
                         if log_errors:
                             logger.warning(
@@ -94,24 +94,24 @@ def retry_with_backoff(
                                 func.__name__,
                                 e,
                             )
-            
+
             if last_exception:
                 raise last_exception
-            
+
             raise RuntimeError("Retry logic failed unexpectedly")
-        
+
         return wrapper
-    
+
     return decorator
 
 
 class CircuitBreaker:
     """
     Circuit breaker pattern for external service calls.
-    
+
     Opens circuit after failure threshold, prevents cascading failures.
     """
-    
+
     def __init__(
         self,
         failure_threshold: int = 5,
@@ -124,19 +124,19 @@ class CircuitBreaker:
         self.failure_count = 0
         self.last_failure_time: Optional[float] = None
         self.state = "closed"  # closed, open, half_open
-    
+
     def call(self, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         """
         Execute function with circuit breaker protection.
-        
+
         Args:
             func: Function to execute
             *args: Positional arguments
             **kwargs: Keyword arguments
-            
+
         Returns:
             Function result
-            
+
         Raises:
             CircuitBreakerOpen: If circuit is open
             Exception: If function call fails
@@ -156,7 +156,7 @@ class CircuitBreaker:
                         f"Circuit breaker is open for {func.__name__}. "
                         f"Wait {self.recovery_timeout - elapsed:.1f}s before retrying."
                     )
-        
+
         # Attempt call
         try:
             result = func(*args, **kwargs)
@@ -172,7 +172,7 @@ class CircuitBreaker:
         except self.expected_exception as e:
             self.failure_count += 1
             self.last_failure_time = time.time()
-            
+
             if self.failure_count >= self.failure_threshold:
                 self.state = "open"
                 logger.error(
@@ -180,7 +180,7 @@ class CircuitBreaker:
                     func.__name__,
                     self.failure_count,
                 )
-            
+
             raise
 
 
@@ -191,12 +191,12 @@ def graceful_degradation(
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Decorator to provide graceful degradation on failure.
-    
+
     Args:
         fallback_value: Value to return on failure
         fallback_func: Function to call on failure (takes same args)
         log_warning: Whether to log warnings
-        
+
     Returns:
         Decorated function with graceful degradation
     """
@@ -212,7 +212,7 @@ def graceful_degradation(
                         func.__name__,
                         e,
                     )
-                
+
                 if fallback_func:
                     try:
                         return fallback_func(*args, **kwargs)
@@ -222,21 +222,21 @@ def graceful_degradation(
                             func.__name__,
                             fallback_error,
                         )
-                
+
                 return fallback_value
-        
+
         return wrapper
-    
+
     return decorator
 
 
 class ErrorTracker:
     """Track and report errors for monitoring."""
-    
+
     def __init__(self, max_errors: int = 100):
         self.max_errors = max_errors
         self.errors: list[dict[str, Any]] = []
-    
+
     def record_error(
         self,
         operation: str,
@@ -251,23 +251,23 @@ class ErrorTracker:
             "error_message": str(error),
             "context": context or {},
         }
-        
+
         self.errors.append(error_entry)
-        
+
         # Keep only recent errors
         if len(self.errors) > self.max_errors:
             self.errors.pop(0)
-    
+
     def get_error_summary(self) -> dict[str, Any]:
         """Get summary of recent errors."""
         if not self.errors:
             return {"total_errors": 0}
-        
+
         error_types = {}
         for error in self.errors:
             error_type = error["error_type"]
             error_types[error_type] = error_types.get(error_type, 0) + 1
-        
+
         return {
             "total_errors": len(self.errors),
             "error_types": error_types,

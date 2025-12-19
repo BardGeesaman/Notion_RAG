@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column("description", sa.Text, nullable=True),
         sa.Column("created_at", sa.DateTime, nullable=False),
     )
-    
+
     # Activity results table
     op.create_table(
         "activity_results",
@@ -38,7 +38,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime, nullable=False),
         sa.Column("created_by_id", UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=True),
     )
-    
+
     # Indexes
     op.create_index("ix_activity_results_compound_id", "activity_results", ["compound_id"])
     op.create_index("ix_activity_results_assay_id", "activity_results", ["assay_id"])

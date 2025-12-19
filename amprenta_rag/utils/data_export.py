@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import io
 import json
-from typing import List, Optional
+from typing import List
 
 import pandas as pd
 
@@ -30,10 +30,10 @@ def export_to_json(df: pd.DataFrame) -> bytes:
 def export_to_excel(df: pd.DataFrame) -> bytes:
     """Export DataFrame to Excel format."""
     try:
-        import openpyxl
+        import openpyxl  # noqa: F401
     except ImportError:
         raise ImportError("openpyxl is required for Excel export. Install with: pip install openpyxl")
-    
+
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name="Data")
@@ -43,17 +43,17 @@ def export_to_excel(df: pd.DataFrame) -> bytes:
 def export_experiments(experiment_ids: List[str], format: str, db) -> bytes:
     """
     Export experiments to specified format.
-    
+
     Args:
         experiment_ids: List of experiment UUIDs
         format: Export format ("csv", "json", "excel")
         db: Database session
-        
+
     Returns:
         Exported data as bytes
     """
     experiments = db.query(Experiment).filter(Experiment.id.in_(experiment_ids)).all()
-    
+
     if not experiments:
         # Return empty DataFrame
         df = pd.DataFrame()
@@ -80,7 +80,7 @@ def export_experiments(experiment_ids: List[str], format: str, db) -> bytes:
                 "updated_at": exp.updated_at.isoformat() if exp.updated_at else None,
             })
         df = pd.DataFrame(data)
-    
+
     if format == "csv":
         return export_to_csv(df)
     elif format == "json":
@@ -94,17 +94,17 @@ def export_experiments(experiment_ids: List[str], format: str, db) -> bytes:
 def export_compounds(compound_ids: List[str], format: str, db) -> bytes:
     """
     Export compounds to specified format.
-    
+
     Args:
         compound_ids: List of compound IDs (compound_id field, not UUID)
         format: Export format ("csv", "json", "excel")
         db: Database session
-        
+
     Returns:
         Exported data as bytes
     """
     compounds = db.query(Compound).filter(Compound.compound_id.in_(compound_ids)).all()
-    
+
     if not compounds:
         df = pd.DataFrame()
     else:
@@ -126,7 +126,7 @@ def export_compounds(compound_ids: List[str], format: str, db) -> bytes:
                 "updated_at": comp.updated_at.isoformat() if comp.updated_at else None,
             })
         df = pd.DataFrame(data)
-    
+
     if format == "csv":
         return export_to_csv(df)
     elif format == "json":
@@ -140,17 +140,17 @@ def export_compounds(compound_ids: List[str], format: str, db) -> bytes:
 def export_signatures(signature_ids: List[str], format: str, db) -> bytes:
     """
     Export signatures to specified format.
-    
+
     Args:
         signature_ids: List of signature UUIDs
         format: Export format ("csv", "json", "excel")
         db: Database session
-        
+
     Returns:
         Exported data as bytes
     """
     signatures = db.query(Signature).filter(Signature.id.in_(signature_ids)).all()
-    
+
     if not signatures:
         df = pd.DataFrame()
     else:
@@ -169,7 +169,7 @@ def export_signatures(signature_ids: List[str], format: str, db) -> bytes:
                 "updated_at": sig.updated_at.isoformat() if sig.updated_at else None,
             })
         df = pd.DataFrame(data)
-    
+
     if format == "csv":
         return export_to_csv(df)
     elif format == "json":

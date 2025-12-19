@@ -1,6 +1,5 @@
 """Discovery Workflow - Automated repository scanning and import."""
 import streamlit as st
-from datetime import datetime
 from amprenta_rag.database.models import DiscoveryJob, DiscoveredStudy, HarvestSchedule
 from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.session import get_current_user
@@ -127,14 +126,14 @@ def render_history_tab():
 def render_schedules_tab():
     st.subheader("Harvest Schedules")
     st.markdown("Manage automated repository harvesting schedules")
-    
+
     user = get_current_user()
-    
+
     with db_session() as db:
         # List active schedules
         st.markdown("### Active Schedules")
         schedules = db.query(HarvestSchedule).order_by(HarvestSchedule.created_at.desc()).all()
-        
+
         if not schedules:
             st.info("No schedules yet. Create your first schedule below!")
         else:
@@ -148,7 +147,7 @@ def render_schedules_tab():
                     with col2:
                         st.markdown(f"**Last Run:** {schedule.last_run.strftime('%Y-%m-%d %H:%M') if schedule.last_run else 'Never'}")
                         st.markdown(f"**Next Run:** {schedule.next_run.strftime('%Y-%m-%d %H:%M') if schedule.next_run else 'Not scheduled'}")
-                    
+
                     col1, col2, col3 = st.columns(3)
                     with col1:
                         if st.button("🔄 Toggle Active", key=f"toggle_{schedule.id}"):
@@ -163,9 +162,9 @@ def render_schedules_tab():
                             db.commit()
                             st.success("Schedule deleted")
                             st.rerun()
-        
+
         st.divider()
-        
+
         # Create new schedule
         st.markdown("### Create New Schedule")
         with st.form("create_schedule"):
@@ -173,9 +172,9 @@ def render_schedules_tab():
             repository = st.selectbox("Repository", ["GEO", "MetaboLights"])
             query = st.text_input("Search Query*", placeholder="e.g., ALS transcriptomics")
             interval_hours = st.number_input("Interval (hours)", min_value=1, max_value=168, value=24)
-            
+
             submitted = st.form_submit_button("Create Schedule", type="primary")
-            
+
             if submitted:
                 if not name or not query:
                     st.error("Name and query are required")
@@ -190,10 +189,10 @@ def render_schedules_tab():
                     )
                     db.add(new_schedule)
                     db.commit()
-                    
+
                     # Schedule the harvest job
                     schedule_harvest(str(new_schedule.id))
-                    
+
                     st.success(f"Schedule '{name}' created and activated!")
                     st.rerun()
 

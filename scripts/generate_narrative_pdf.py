@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 import markdown
 from fpdf import FPDF
-import re
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -26,17 +25,17 @@ def clean_text_for_pdf(text: str) -> str:
 def markdown_to_pdf_fpdf2(md_content: str, output_path: Path):
     # Pre-process markdown to remove unsupported characters
     cleaned_md = clean_text_for_pdf(md_content)
-    
+
     # Convert Markdown to HTML
     html = markdown.markdown(cleaned_md)
-    
+
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("helvetica", size=12)
-    
+
     # Write HTML
     pdf.write_html(html)
-    
+
     pdf.output(output_path)
 
 def main():

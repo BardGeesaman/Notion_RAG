@@ -27,17 +27,17 @@ def requires_postgres():
         from amprenta_rag.config import get_config
         cfg = get_config()
         postgres_cfg = cfg.postgres
-        
+
         # Check if Postgres config is present
         if not postgres_cfg.user or not postgres_cfg.db:
             pytest.skip("Postgres not configured (set POSTGRES_USER, POSTGRES_DB)")
-        
+
         # Try to connect
         from amprenta_rag.database.base import get_engine
         engine = get_engine()
         with engine.connect() as conn:
             conn.execute("SELECT 1")
-        
+
         return True
     except Exception as e:
         pytest.skip(f"Postgres not available: {e}")

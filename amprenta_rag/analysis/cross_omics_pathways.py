@@ -5,8 +5,7 @@ from typing import Dict, List, Optional, Set
 from uuid import UUID
 
 from amprenta_rag.analysis.pathway.enrichment import perform_pathway_enrichment
-from amprenta_rag.analysis.pathway.models import Pathway
-from amprenta_rag.database.models import Dataset, Feature, Program, dataset_feature_assoc
+from amprenta_rag.database.models import Feature, Program, dataset_feature_assoc
 from amprenta_rag.database.session import db_session
 
 

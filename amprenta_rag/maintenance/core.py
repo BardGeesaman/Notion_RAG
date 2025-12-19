@@ -7,7 +7,6 @@ Notion support has been removed - Postgres is now the source of truth.
 
 from __future__ import annotations
 
-from typing import Dict, Optional
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
@@ -30,7 +29,7 @@ def delete_all_pinecone_vectors() -> None:
 def archive_all_pages_in_db(db_id: str, label: str = "") -> None:
     """
     Stub: Notion support removed. No-op.
-    
+
     Previously archived all pages in a Notion database.
     """
     logger.debug("[MAINTENANCE][CORE] archive_all_pages_in_db() is a no-op (Notion removed)")

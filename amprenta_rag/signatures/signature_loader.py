@@ -60,7 +60,7 @@ class SignatureComponent:
     def species(self) -> str:
         """
         Backward compatibility: return feature_name as species.
-        
+
         Allows existing code that uses .species to continue working.
         """
         return self.feature_name
@@ -240,17 +240,17 @@ def load_signature_from_tsv(tsv_path: Path) -> Signature:
 def load_signatures_from_postgres() -> List[Signature]:
     """
     Load all signatures from Postgres database.
-    
+
     Returns:
         List of Signature objects
     """
     from amprenta_rag.database.session import db_session
     from amprenta_rag.database.models import Signature as SignatureModel
-    
+
     with db_session() as db:
         db_signatures = db.query(SignatureModel).all()
         signatures = []
-        
+
         for db_sig in db_signatures:
             components = []
             if hasattr(db_sig, 'components') and db_sig.components:
@@ -262,7 +262,7 @@ def load_signatures_from_postgres() -> List[Signature]:
                             direction=comp_data.get('direction'),
                             weight=comp_data.get('weight'),
                         ))
-            
+
             sig = Signature(
                 name=db_sig.name or str(db_sig.id),
                 components=components,
@@ -270,5 +270,5 @@ def load_signatures_from_postgres() -> List[Signature]:
             )
             sig.id = db_sig.id
             signatures.append(sig)
-        
+
         return signatures

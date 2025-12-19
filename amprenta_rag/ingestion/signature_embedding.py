@@ -56,7 +56,7 @@ def embed_signature(
         for comp in signature.components:
             feature_name = getattr(comp, "feature_name", comp.species)
             feature_type = getattr(comp, "feature_type", "lipid")
-            
+
             comp_line = f"- {feature_name} ({feature_type})"
             if comp.direction:
                 comp_line += f" [{comp.direction}]"

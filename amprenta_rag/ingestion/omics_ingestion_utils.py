@@ -9,10 +9,8 @@ Notion support has been removed - Postgres is now the source of truth.
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -33,7 +31,7 @@ def create_omics_dataset_page(
 ) -> str:
     """
     Stub: Notion support removed. Returns empty string.
-    
+
     Previously created a new Experimental Data Asset page in Notion.
     Datasets are now created directly in Postgres.
     """
@@ -50,7 +48,7 @@ def attach_file_to_page(
 ) -> None:
     """
     Stub: Notion support removed. No-op.
-    
+
     Previously attached a file to a Notion page.
     """
     logger.debug(
@@ -66,7 +64,7 @@ def link_to_programs_and_experiments(
 ) -> None:
     """
     Stub: Notion support removed. No-op.
-    
+
     Previously linked dataset to Programs and Experiments via Notion relations.
     Linking is now done directly in Postgres.
     """

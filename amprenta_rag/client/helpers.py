@@ -1,12 +1,10 @@
 """Convenience helpers for notebook write-back operations."""
 
 import os
-from urllib.parse import parse_qs, urlparse
-from typing import Optional
 
 def get_context_from_url() -> dict:
     """Extract context params passed from Streamlit.
-    
+
     Returns dict with experiment_id, dataset_id, compound_id if present.
     """
     # JupyterHub passes original URL via JUPYTERHUB_OAUTH_CALLBACK_URL or similar
@@ -27,7 +25,7 @@ def save_annotation(
     compound_id: str = None,
 ) -> dict:
     """Save an annotation to an entity.
-    
+
     Args:
         client: RAGClient instance
         text: Annotation text
@@ -36,7 +34,7 @@ def save_annotation(
         dataset_id: Target dataset UUID
         signature_id: Target signature UUID
         compound_id: Target compound UUID
-        
+
     Returns:
         Created annotation dict
     """

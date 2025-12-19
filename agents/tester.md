@@ -29,6 +29,13 @@ FROM: Tester
 TO: Architect
 ```
 
+## 2b. Environment Setup
+
+Before running any terminal commands, activate the project conda environment:
+source ~/miniconda3/etc/profile.d/conda.sh && conda activate myenv
+
+This ensures all agents share the same Python environment and installed tools.
+
 ---
 
 ## 3. Responsibilities

@@ -13,11 +13,9 @@ from amprenta_rag.analysis.program_maps.reporting import generate_program_map_re
 from amprenta_rag.analysis.power_analysis import (
     calculate_sample_size,
     calculate_power,
-    get_effect_size_preset,
 )
 from amprenta_rag.analysis.pattern_detection import (
     find_recurring_features,
-    calculate_overlap,
     get_cross_dataset_summary,
 )
 from amprenta_rag.analysis.confounder_detection import (
@@ -135,14 +133,14 @@ def render_analysis_page() -> None:
                                         with col2:
                                             mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
                                             file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
-                                            
+
                                             if export_format == "csv":
                                                 export_data = export_to_csv(df_results)
                                             elif export_format == "json":
                                                 export_data = export_to_json(df_results)
                                             else:
                                                 export_data = export_to_excel(df_results)
-                                            
+
                                             st.download_button(
                                                 label=f"📥 Download Results ({export_format.upper()})",
                                                 data=export_data,
@@ -242,14 +240,14 @@ def render_analysis_page() -> None:
                                         with col2:
                                             mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
                                             file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
-                                            
+
                                             if export_format == "csv":
                                                 export_data = export_to_csv(df_results)
                                             elif export_format == "json":
                                                 export_data = export_to_json(df_results)
                                             else:
                                                 export_data = export_to_excel(df_results)
-                                            
+
                                             st.download_button(
                                                 label=f"📥 Download Results ({export_format.upper()})",
                                                 data=export_data,
@@ -352,14 +350,14 @@ def render_analysis_page() -> None:
                                 with col2:
                                     mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
                                     file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
-                                    
+
                                     if export_format == "csv":
                                         export_data = export_to_csv(df_results)
                                     elif export_format == "json":
                                         export_data = export_to_json(df_results)
                                     else:
                                         export_data = export_to_excel(df_results)
-                                    
+
                                     st.download_button(
                                         label=f"📥 Download Results ({export_format.upper()})",
                                         data=export_data,
@@ -532,14 +530,14 @@ def render_analysis_page() -> None:
                                         with col2:
                                             mime_types = {"csv": "text/csv", "json": "application/json", "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
                                             file_extensions = {"csv": "csv", "json": "json", "excel": "xlsx"}
-                                            
+
                                             if export_format == "csv":
                                                 export_data = export_to_csv(df_matches)
                                             elif export_format == "json":
                                                 export_data = export_to_json(df_matches)
                                             else:
                                                 export_data = export_to_excel(df_matches)
-                                            
+
                                             st.download_button(
                                                 label=f"📥 Download Results ({export_format.upper()})",
                                                 data=export_data,
@@ -668,10 +666,10 @@ def render_analysis_page() -> None:
     with tab5:
         st.subheader("Cross-Dataset Pattern Detection")
         st.markdown("Find recurring features and patterns across multiple datasets.")
-        
+
         with db_session() as db:
             datasets = db.query(Dataset).order_by(Dataset.name).all()
-            
+
             if not datasets:
                 st.info("No datasets available. Ingest datasets first.")
             else:
@@ -681,10 +679,10 @@ def render_analysis_page() -> None:
                     list(dataset_options.keys()),
                     help="Select 2 or more datasets to find recurring features",
                 )
-                
+
                 if len(selected_datasets) >= 2:
                     dataset_ids = [dataset_options[d] for d in selected_datasets]
-                    
+
                     col1, col2 = st.columns(2)
                     with col1:
                         min_occurrence = st.number_input(
@@ -694,7 +692,7 @@ def render_analysis_page() -> None:
                             value=2,
                             help="Minimum number of datasets a feature must appear in",
                         )
-                    
+
                     with col2:
                         if st.button("Find Patterns", type="primary"):
                             with st.spinner("Analyzing patterns across datasets..."):
@@ -705,7 +703,7 @@ def render_analysis_page() -> None:
                                         db=db,
                                         min_occurrence=min_occurrence,
                                     )
-                                    
+
                                     if recurring:
                                         st.markdown("### Recurring Features")
                                         recurring_df = pd.DataFrame([
@@ -717,11 +715,11 @@ def render_analysis_page() -> None:
                                             for r in recurring
                                         ])
                                         st.dataframe(recurring_df, hide_index=True, use_container_width=True)
-                                        
+
                                         # Summary statistics
                                         st.markdown("### Summary Statistics")
                                         summary = get_cross_dataset_summary(dataset_ids, db)
-                                        
+
                                         col_a, col_b = st.columns(2)
                                         with col_a:
                                             st.markdown("**Total Features per Dataset:**")
@@ -731,7 +729,7 @@ def render_analysis_page() -> None:
                                                     did[:8] + "..."
                                                 )
                                                 st.metric(dataset_name, count)
-                                        
+
                                         with col_b:
                                             st.markdown("**Unique Features per Dataset:**")
                                             for did, count in summary["unique_features_per_dataset"].items():
@@ -740,7 +738,7 @@ def render_analysis_page() -> None:
                                                     did[:8] + "..."
                                                 )
                                                 st.metric(f"{dataset_name} (unique)", count)
-                                        
+
                                         if summary["overlap_counts"]:
                                             st.markdown("**Pairwise Overlaps:**")
                                             overlap_df = pd.DataFrame([
@@ -750,7 +748,7 @@ def render_analysis_page() -> None:
                                             st.dataframe(overlap_df, hide_index=True, use_container_width=True)
                                     else:
                                         st.info(f"No features found recurring in {min_occurrence} or more datasets.")
-                                
+
                                 except Exception as e:
                                     st.error(f"❌ Error analyzing patterns: {str(e)}")
                                     st.exception(e)
@@ -761,35 +759,35 @@ def render_analysis_page() -> None:
     with tab6:
         st.subheader("Confounder Detection")
         st.markdown("Upload sample metadata and detect potential confounders in experimental design.")
-        
+
         uploaded_file = st.file_uploader(
             "Upload Sample Metadata CSV",
             type=["csv"],
             help="CSV file with sample metadata (one row per sample)",
         )
-        
+
         if uploaded_file is not None:
             try:
                 metadata_df = pd.read_csv(uploaded_file)
                 st.success(f"Loaded {len(metadata_df)} samples with {len(metadata_df.columns)} columns")
-                
+
                 # Display preview
                 with st.expander("Preview Data"):
                     st.dataframe(metadata_df.head(10), use_container_width=True)
-                
+
                 # Select group column
                 group_column = st.selectbox(
                     "Select Group Column",
                     metadata_df.columns.tolist(),
                     help="Column containing group labels (e.g., treatment vs control)",
                 )
-                
+
                 if st.button("Detect Confounders", type="primary"):
                     with st.spinner("Analyzing potential confounders..."):
                         try:
                             # Detect confounders
                             results = detect_confounders(metadata_df, group_column)
-                            
+
                             if results:
                                 # Display results table
                                 st.markdown("### Confounder Detection Results")
@@ -798,18 +796,18 @@ def render_analysis_page() -> None:
                                 results_df["is_confounder"] = results_df["is_confounder"].apply(lambda x: "⚠️ Yes" if x else "✓ No")
                                 results_df.columns = ["Column", "Test", "P-Value", "Confounder"]
                                 st.dataframe(results_df, hide_index=True, use_container_width=True)
-                                
+
                                 # Get report and show warnings
                                 report = get_confounder_report(metadata_df, group_column)
-                                
+
                                 st.markdown("### Summary")
                                 st.info(report["summary"])
-                                
+
                                 if report["warnings"]:
                                     st.markdown("### Warnings")
                                     for warning in report["warnings"]:
                                         st.warning(warning)
-                                
+
                                 # Highlight significant confounders
                                 confounders = [r for r in results if r["is_confounder"]]
                                 if confounders:
@@ -829,11 +827,11 @@ def render_analysis_page() -> None:
                                     )
                             else:
                                 st.info("No variables tested. Check that your metadata file has valid data.")
-                        
+
                         except Exception as e:
                             st.error(f"❌ Error detecting confounders: {str(e)}")
                             st.exception(e)
-            
+
             except Exception as e:
                 st.error(f"❌ Error reading CSV file: {str(e)}")
                 st.exception(e)
@@ -844,14 +842,14 @@ def render_analysis_page() -> None:
     with tab7:
         st.subheader("Experimental Design Assistant")
         st.markdown("Get AI-powered recommendations for your experimental design based on your research question.")
-        
+
         research_question = st.text_area(
             "Research Question",
             height=100,
             placeholder="e.g., Does treatment X reduce disease severity compared to placebo?",
             help="Describe what you want to investigate",
         )
-        
+
         col1, col2 = st.columns(2)
         with col1:
             sample_count = st.number_input(
@@ -860,14 +858,14 @@ def render_analysis_page() -> None:
                 value=20,
                 help="Total number of samples you have or plan to collect",
             )
-        
+
         with col2:
             variables_input = st.text_input(
                 "Variables/Factors",
                 placeholder="e.g., treatment, age, gender",
                 help="Comma-separated list of variables or factors",
             )
-        
+
         if st.button("Get Recommendations", type="primary"):
             if not research_question:
                 st.error("Please enter a research question")
@@ -876,54 +874,54 @@ def render_analysis_page() -> None:
                     try:
                         # Parse variables
                         variables = [v.strip() for v in variables_input.split(",")] if variables_input else []
-                        
+
                         # Get recommendation
                         recommendation = recommend_design(
                             research_question=research_question,
                             sample_count=sample_count,
                             variables=variables,
                         )
-                        
+
                         design_type = recommendation.get("design_type", "observational")
-                        
+
                         # Display recommendation
                         st.markdown("### Recommended Design")
                         st.success(f"**Design Type:** {design_type.replace('_', ' ').title()}")
-                        
+
                         st.markdown("**Rationale:**")
                         st.write(recommendation.get("rationale", "No rationale provided"))
-                        
+
                         # Get requirements
                         requirements = get_design_requirements(design_type)
-                        
+
                         st.markdown("### Design Requirements")
                         st.info(f"**Description:** {requirements['description']}")
-                        
+
                         st.markdown("**Minimum Requirements:**")
                         for req in requirements["requirements"]:
                             st.markdown(f"- {req}")
-                        
+
                         st.metric("Minimum Samples", requirements["min_samples"])
                         st.metric("Minimum Groups", requirements["min_groups"])
-                        
+
                         # Validate design
                         estimated_groups = len(variables) + 1 if variables else 2  # Rough estimate
                         warnings = validate_design(design_type, sample_count, estimated_groups)
-                        
+
                         if warnings:
                             st.markdown("### ⚠️ Design Validation Warnings")
                             for warning in warnings:
                                 st.warning(warning)
                         else:
                             st.success("✓ Design meets minimum requirements")
-                        
+
                         # Show considerations
                         considerations = recommendation.get("considerations", [])
                         if considerations:
                             st.markdown("### Additional Considerations")
                             for consideration in considerations:
                                 st.markdown(f"- {consideration}")
-                    
+
                     except Exception as e:
                         st.error(f"❌ Error generating recommendations: {str(e)}")
                         st.exception(e)

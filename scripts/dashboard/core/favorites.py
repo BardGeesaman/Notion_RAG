@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List
 from uuid import UUID as UUID_cls
 
 import streamlit as st

@@ -32,12 +32,12 @@ logger = get_logger(__name__)
 def resolve_postgres_id_from_metadata(metadata: Dict[str, Any]) -> Optional[UUID]:
     """
     Resolve Postgres ID from Pinecone metadata.
-    
+
     Checks for dataset_id, program_id, experiment_id, signature_id, or feature_id.
-    
+
     Args:
         metadata: Pinecone metadata dictionary
-        
+
     Returns:
         Postgres UUID if found, None otherwise
     """
@@ -48,24 +48,24 @@ def resolve_postgres_id_from_metadata(metadata: Dict[str, Any]) -> Optional[UUID
                 return UUID(metadata[id_field])
             except (ValueError, TypeError):
                 continue
-    
+
     return None
 
 
 def get_entity_type_from_metadata(metadata: Dict[str, Any]) -> Optional[str]:
     """
     Determine entity type from metadata.
-    
+
     Args:
         metadata: Pinecone metadata dictionary
-        
+
     Returns:
         Entity type ("Dataset", "Program", "Experiment", "Signature", "Feature") or None
     """
     source_type = metadata.get("source_type") or metadata.get("source")
     if source_type:
         return source_type
-    
+
     # Infer from ID fields
     if "dataset_id" in metadata:
         return "Dataset"
@@ -77,7 +77,7 @@ def get_entity_type_from_metadata(metadata: Dict[str, Any]) -> Optional[str]:
         return "Signature"
     if "feature_id" in metadata:
         return "Feature"
-    
+
     return None
 
 
@@ -89,12 +89,12 @@ def fetch_postgres_context(
 ) -> Optional[str]:
     """
     Fetch RAG context text from Postgres for a given entity.
-    
+
     Args:
         postgres_id: Postgres UUID
         entity_type: Type of entity ("Dataset", "Program", etc.)
         db: Database session
-        
+
     Returns:
         Text representation for RAG, or None if not found
     """
@@ -106,7 +106,7 @@ def fetch_postgres_context(
                 db=db,
                 include_notion_narrative=include_notion_narrative,
             )
-    
+
     try:
         if entity_type == "Dataset":
             return build_dataset_rag_text(postgres_id, db=db, include_notion_narrative=include_notion_narrative)
@@ -134,9 +134,9 @@ def fetch_postgres_context(
             feature = db.query(FeatureModel).filter(FeatureModel.id == postgres_id).first()
             if feature:
                 return f"Feature: {feature.name} (Type: {feature.feature_type})"
-        
+
         return None
-        
+
     except Exception as e:
         logger.warning(
             "[RAG][POSTGRES] Error fetching context for %s %s: %r",
@@ -154,21 +154,21 @@ def get_notion_id_from_postgres(
 ) -> Optional[str]:
     """
     Get Notion page ID from Postgres entity.
-    
+
     Useful for hybrid queries that need to fetch narrative from Notion.
-    
+
     Args:
         postgres_id: Postgres UUID
         entity_type: Type of entity
         db: Database session
-        
+
     Returns:
         Notion page ID if available, None otherwise
     """
     if db is None:
         with db_session() as db:
             return get_notion_id_from_postgres(postgres_id, entity_type, db=db)
-    
+
     try:
         if entity_type == "Dataset":
             dataset = db.query(DatasetModel).filter(DatasetModel.id == postgres_id).first()
@@ -185,9 +185,9 @@ def get_notion_id_from_postgres(
         if entity_type == "Feature":
             feature = db.query(FeatureModel).filter(FeatureModel.id == postgres_id).first()
             return feature.notion_page_id if feature else None
-        
+
         return None
-        
+
     except Exception as e:
         logger.warning(
             "[RAG][POSTGRES] Error getting Notion ID for %s %s: %r",

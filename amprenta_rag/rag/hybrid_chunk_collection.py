@@ -29,29 +29,29 @@ def collect_hybrid_chunks(
 ) -> List[str]:
     """
     Collect chunks from matches, preferring Postgres data when available.
-    
+
     This function:
     1. Checks for Postgres IDs in metadata
     2. Fetches structured data from Postgres
     3. Falls back to Notion if Postgres data unavailable
     4. Optionally combines both for richer context
-    
+
     Args:
         matches: List of match summaries from Pinecone
         prefer_postgres: If True, use Postgres data when available
-        
+
     Returns:
         List of chunk text strings
     """
     chunks = []
-    
+
     for match in matches:
         metadata = match.metadata
-        
+
         # Try to resolve Postgres ID
         postgres_id = resolve_postgres_id_from_metadata(metadata)
         entity_type = get_entity_type_from_metadata(metadata)
-        
+
         if postgres_id and entity_type and prefer_postgres:
             # Fetch from Postgres
             postgres_text = fetch_postgres_context(postgres_id, entity_type)
@@ -63,16 +63,16 @@ def collect_hybrid_chunks(
                     postgres_id,
                 )
                 continue
-        
+
         # DEPRECATED: Notion fallback removed
         # Fall back to snippet from metadata
-        
+
         # Last resort: use snippet from metadata
         snippet = metadata.get("snippet") or match.snippet
         if snippet:
             chunks.append(snippet)
             logger.debug("[RAG][HYBRID] Used snippet from metadata")
-    
+
     return chunks
 
 
@@ -82,27 +82,27 @@ def collect_enhanced_chunks(
 ) -> List[str]:
     """
     Collect enhanced chunks combining Postgres structured data with Notion narrative.
-    
+
     This provides the richest context by combining:
     - Structured data from Postgres (relationships, metadata)
     - Narrative content from Notion (results, conclusions, descriptions)
-    
+
     Args:
         matches: List of match summaries
         include_notion_narrative: Include Notion narrative if available
-        
+
     Returns:
         List of enhanced chunk text strings
     """
     chunks = []
-    
+
     for match in matches:
         metadata = match.metadata
-        
+
         # Get Postgres data
         postgres_id = resolve_postgres_id_from_metadata(metadata)
         entity_type = get_entity_type_from_metadata(metadata)
-        
+
         if postgres_id and entity_type:
             # Build text from Postgres (includes structured data)
             postgres_text = fetch_postgres_context(
@@ -110,16 +110,16 @@ def collect_enhanced_chunks(
                 entity_type,
                 include_notion_narrative=include_notion_narrative,
             )
-            
+
             if postgres_text:
                 chunks.append(postgres_text)
                 continue
-        
+
         # DEPRECATED: Notion fallback removed
         # Use snippet as last resort
         snippet = metadata.get("snippet") or match.snippet
         if snippet:
             chunks.append(snippet)
-    
+
     return chunks
 

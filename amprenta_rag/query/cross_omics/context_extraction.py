@@ -18,10 +18,10 @@ logger = get_logger(__name__)
 def extract_disease_context(page: Dict[str, Any]) -> List[str]:
     """
     Extract disease context from a page dictionary.
-    
+
     Args:
         page: Page dictionary with properties
-        
+
     Returns:
         List of disease names
     """
@@ -35,10 +35,10 @@ def extract_disease_context(page: Dict[str, Any]) -> List[str]:
 def extract_matrix_context(page: Dict[str, Any]) -> List[str]:
     """
     Extract matrix context from a page dictionary.
-    
+
     Args:
         page: Page dictionary with properties
-        
+
     Returns:
         List of matrix types (CSF, plasma, serum, tissue, etc.)
     """
@@ -48,10 +48,10 @@ def extract_matrix_context(page: Dict[str, Any]) -> List[str]:
 def extract_model_system_context(page: Dict[str, Any]) -> List[str]:
     """
     Extract model system context from a page dictionary.
-    
+
     Args:
         page: Page dictionary with properties
-        
+
     Returns:
         List of model systems (in vitro, in vivo, patient, cell line, etc.)
     """
@@ -64,13 +64,13 @@ def extract_aggregated_context(
 ) -> Dict[str, Any]:
     """
     DEPRECATED: This function previously used Notion. Now returns empty context.
-    
+
     Use Postgres-based context extraction instead.
-    
+
     Args:
         page_ids: List of page IDs (unused)
         page_type: Type of pages (unused)
-        
+
     Returns:
         Empty context dictionary
     """
@@ -88,30 +88,30 @@ def extract_aggregated_context(
 def format_context_for_prompt(context: Dict[str, Any]) -> str:
     """
     Format aggregated context for inclusion in LLM prompts.
-    
+
     Args:
         context: Dictionary from extract_aggregated_context
-        
+
     Returns:
         Formatted string describing the context
     """
     parts: List[str] = []
-    
+
     if context.get("diseases"):
         diseases_str = ", ".join(context["diseases"])
         parts.append(f"Disease context: {diseases_str}")
-    
+
     if context.get("matrix"):
         matrix_str = ", ".join(context["matrix"])
         parts.append(f"Matrix types: {matrix_str}")
-    
+
     if context.get("model_systems"):
         model_str = ", ".join(context["model_systems"])
         parts.append(f"Model systems: {model_str}")
-    
+
     if not parts:
         return "No disease, matrix, or model system context available."
-    
+
     return "\n".join(parts)
 
 
@@ -120,32 +120,32 @@ def identify_comparative_context(
 ) -> Optional[Dict[str, Any]]:
     """
     Identify if context suggests comparative analysis (disease vs control).
-    
+
     Looks for patterns that suggest comparative studies:
     - Disease terms present
     - Control/comparison groups mentioned
     - Multiple conditions
-    
+
     Args:
         context: Dictionary from extract_aggregated_context
-        
+
     Returns:
         Dictionary with comparative analysis hints, or None if not applicable
     """
     diseases = context.get("diseases", [])
     if not diseases:
         return None
-    
+
     # Check for control/comparison indicators
     comparative_hints: Dict[str, Any] = {
         "has_disease_context": True,
         "diseases": diseases,
         "suggests_comparison": True,
     }
-    
+
     # Check model systems for patient/control patterns
     model_systems = context.get("model_systems", [])
     if any("patient" in ms.lower() or "control" in ms.lower() for ms in model_systems):
         comparative_hints["has_control_group"] = True
-    
+
     return comparative_hints

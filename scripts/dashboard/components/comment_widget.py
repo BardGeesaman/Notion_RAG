@@ -12,7 +12,7 @@ from scripts.dashboard.db_session import db_session
 def render_comments_widget(entity_type: str, entity_id: str | UUID) -> None:
     """
     Render a comments widget for an entity.
-    
+
     Args:
         entity_type: Type of entity ("experiment", "dataset", "signature", "compound")
         entity_id: UUID string or UUID object of the entity
@@ -20,31 +20,31 @@ def render_comments_widget(entity_type: str, entity_id: str | UUID) -> None:
     # Convert entity_id to UUID if it's a string
     if isinstance(entity_id, str):
         entity_id = UUID(entity_id)
-    
+
     user = get_current_user()
     user_id = UUID(user.get("id")) if user and user.get("id") and user.get("id") != "test" else None
-    
+
     with db_session() as db:
         # Get existing comments
         comments = get_comments(entity_type, entity_id, db)
-        
+
         st.markdown("### 💬 Comments")
-        
+
         # Display existing comments
         if comments:
             for comment in comments:
                 _render_comment(comment, user_id, db, entity_type, entity_id)
         else:
             st.info("No comments yet. Be the first to comment!")
-        
+
         st.markdown("---")
-        
+
         # Add new comment form
         if user_id:
             with st.form(f"add_comment_{entity_type}_{entity_id}", clear_on_submit=True):
                 comment_text = st.text_area("Add a comment", placeholder="Write your comment here...", height=100)
                 submitted = st.form_submit_button("💬 Add Comment", type="primary")
-                
+
                 if submitted:
                     if comment_text.strip():
                         try:
@@ -68,15 +68,15 @@ def render_comments_widget(entity_type: str, entity_id: str | UUID) -> None:
 def _render_comment(comment: dict, user_id: UUID | None, db, entity_type: str, entity_id: UUID) -> None:
     """Render a single comment with its replies."""
     comment_id = UUID(comment["id"])
-    
+
     # Comment container
     with st.container():
         col1, col2 = st.columns([5, 1])
-        
+
         with col1:
             st.markdown(f"**{comment['author']}** - {comment['created_at'].strftime('%Y-%m-%d %H:%M')}")
             st.markdown(comment["content"])
-        
+
         with col2:
             # Delete button (only for own comments)
             if user_id and comment.get("author_id") == str(user_id):
@@ -89,7 +89,7 @@ def _render_comment(comment: dict, user_id: UUID | None, db, entity_type: str, e
                             st.error("Failed to delete comment.")
                     except Exception as e:
                         st.error(f"Error: {e}")
-        
+
         # Replies section
         if comment.get("replies"):
             with st.container():
@@ -97,7 +97,7 @@ def _render_comment(comment: dict, user_id: UUID | None, db, entity_type: str, e
                 for reply in comment["replies"]:
                     st.markdown(f"↳ **{reply.get('author', 'Unknown')}** - {reply['created_at'].strftime('%Y-%m-%d %H:%M')}")
                     st.markdown(f"  {reply['content']}")
-        
+
         # Reply form
         if user_id:
             if st.session_state.get(f"show_reply_{comment_id}", False):
@@ -131,6 +131,6 @@ def _render_comment(comment: dict, user_id: UUID | None, db, entity_type: str, e
                 if st.button("↳ Reply", key=f"show_reply_{comment_id}"):
                     st.session_state[f"show_reply_{comment_id}"] = True
                     st.rerun()
-        
+
         st.markdown("---")
 

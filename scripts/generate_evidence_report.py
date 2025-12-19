@@ -10,7 +10,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from tqdm import tqdm
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -33,7 +32,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate evidence reports for Notion entities"
     )
-    
+
     # Entity type selection
     entity_group = parser.add_mutually_exclusive_group(required=True)
     entity_group.add_argument(
@@ -61,7 +60,7 @@ def main() -> None:
         choices=["gene", "protein", "metabolite", "lipid"],
         help="Feature type (required with --feature)",
     )
-    
+
     # Options
     parser.add_argument(
         "--top-k-per-omics",
@@ -101,40 +100,40 @@ def main() -> None:
         default="Evidence Report",
         help="Notion property name to write to (default: 'Evidence Report')",
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.feature and not args.feature_type:
         parser.error("--feature-type is required when using --feature")
-    
+
     print("\n" + "=" * 80)
     print("EVIDENCE REPORT GENERATION")
     print("=" * 80)
-    
+
     try:
         report = None
-        
+
         if args.program_id:
             print(f"\nGenerating evidence report for program: {args.program_id}")
             report = generate_program_evidence_report(
                 program_page_id=args.program_id,
                 top_k_per_omics=args.top_k_per_omics,
             )
-        
+
         elif args.experiment_id:
             print(f"\nGenerating evidence report for experiment: {args.experiment_id}")
             report = generate_experiment_evidence_report(
                 experiment_page_id=args.experiment_id,
                 top_k_chunks=args.top_k_chunks,
             )
-        
+
         elif args.dataset_id:
             print(f"\nGenerating evidence report for dataset: {args.dataset_id}")
             report = generate_dataset_evidence_report(
                 dataset_page_id=args.dataset_id,
                 top_k_chunks=args.top_k_chunks,
             )
-        
+
         elif args.signature_id:
             print(f"\nGenerating evidence report for signature: {args.signature_id}")
             report = generate_signature_evidence_report(
@@ -142,7 +141,7 @@ def main() -> None:
                 top_k_datasets=args.top_k_datasets,
                 top_k_chunks=args.top_k_chunks,
             )
-        
+
         elif args.feature:
             print(f"\nGenerating evidence report for {args.feature_type} feature: {args.feature}")
             report = generate_feature_evidence_report(
@@ -151,24 +150,24 @@ def main() -> None:
                 top_k_datasets=args.top_k_datasets,
                 top_k_chunks=args.top_k_chunks,
             )
-        
+
         if not report:
             print("\n❌ Error: Could not generate report", file=sys.stderr)
             sys.exit(1)
-        
+
         # Format report
         formatted_report = format_evidence_report(report, include_metadata=True)
-        
+
         print(f"\n{'=' * 80}")
         print("EVIDENCE REPORT")
         print(f"{'=' * 80}\n")
         print(formatted_report)
-        
+
         # Write to file if requested
         if args.output:
             args.output.write_text(formatted_report, encoding="utf-8")
             print(f"\n✅ Evidence report saved to {args.output}")
-        
+
         # Export to PDF if requested
         if args.pdf:
             if args.output:
@@ -194,9 +193,9 @@ def main() -> None:
                 print("✅ Evidence report written to Notion")
             else:
                 print("⚠️  Warning: Could not write report to Notion (check logs)")
-        
+
         print(f"\n{'=' * 80}\n")
-        
+
     except Exception as e:
         logger.error("[REPORTING][EVIDENCE] Report generation failed: %r", e)
         print(f"\n❌ Error: {e}\n", file=sys.stderr)

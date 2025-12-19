@@ -56,16 +56,16 @@ def get_features(
 ) -> List[FeatureModel]:
     """Get all features with optional filtering."""
     query = db.query(FeatureModel)
-    
+
     if name_filter:
         query = query.filter(FeatureModel.name.ilike(f"%{name_filter}%"))
-    
+
     if feature_type:
         query = query.filter(FeatureModel.feature_type == feature_type.value)
-    
+
     if dataset_id:
         query = query.filter(FeatureModel.datasets.any(id=dataset_id))
-    
+
     return query.offset(skip).limit(limit).all()
 
 
@@ -78,12 +78,12 @@ def update_feature(
     db_feature = get_feature(db, feature_id)
     if not db_feature:
         return None
-    
+
     update_data = feature.model_dump(exclude_unset=True)
-    
+
     for field, value in update_data.items():
         setattr(db_feature, field, value)
-    
+
     db.commit()
     db.refresh(db_feature)
     return db_feature
@@ -94,7 +94,7 @@ def delete_feature(db: Session, feature_id: UUID) -> bool:
     db_feature = get_feature(db, feature_id)
     if not db_feature:
         return False
-    
+
     db.delete(db_feature)
     db.commit()
     return True

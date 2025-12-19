@@ -47,7 +47,7 @@ class GmailClient:
     ):
         """
         Initialize Gmail client.
-        
+
         Args:
             credentials_file: Path to OAuth2 credentials JSON file
             token_file: Path to store/load OAuth2 token JSON file
@@ -57,21 +57,21 @@ class GmailClient:
                 "Gmail API libraries not installed. "
                 "Install with: pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client"
             )
-        
+
         self.credentials_file = credentials_file or os.getenv(
             "GMAIL_CREDENTIALS_FILE", "credentials/gmail_credentials.json"
         )
         self.token_file = token_file or os.getenv(
             "GMAIL_TOKEN_FILE", "credentials/gmail_token.json"
         )
-        
+
         self.service = None
         self._authenticate()
 
     def _authenticate(self) -> None:
         """Authenticate with Gmail API using OAuth2."""
         creds = None
-        
+
         # Load existing token if available
         token_path = Path(self.token_file)
         if token_path.exists():
@@ -82,7 +82,7 @@ class GmailClient:
                 logger.warning(
                     "[GMAIL] Could not load existing token file: %r", e
                 )
-        
+
         # If no valid credentials, authenticate
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -94,7 +94,7 @@ class GmailClient:
                         "[GMAIL] Could not refresh credentials: %r", e
                     )
                     creds = None
-            
+
             if not creds:
                 # Start OAuth flow
                 creds_path = Path(self.credentials_file)
@@ -108,19 +108,19 @@ class GmailClient:
                         "4. Create OAuth 2.0 credentials\n"
                         "5. Save as credentials/gmail_credentials.json"
                     )
-                
+
                 flow = InstalledAppFlow.from_client_secrets_file(
                     str(creds_path), SCOPES
                 )
                 creds = flow.run_local_server(port=0)
                 logger.info("[GMAIL] Completed OAuth2 authentication")
-            
+
             # Save token for future use
             token_path.parent.mkdir(parents=True, exist_ok=True)
             with open(token_path, "w") as token:
                 token.write(creds.to_json())
             logger.info("[GMAIL] Saved credentials to token file")
-        
+
         # Build Gmail API service
         try:
             self.service = build("gmail", "v1", credentials=creds)
@@ -137,25 +137,25 @@ class GmailClient:
     ) -> List[Dict[str, Any]]:
         """
         Fetch emails from Gmail.
-        
+
         Args:
             query: Gmail search query (e.g., "in:inbox", "from:example@gmail.com")
             max_results: Maximum number of emails to fetch
             since: Only fetch emails since this datetime
-            
+
         Returns:
             List of email dictionaries with parsed email data
         """
         if not self.service:
             raise RuntimeError("Gmail service not initialized. Call _authenticate() first.")
-        
+
         # Build query with date filter if provided
         if since:
             since_str = since.strftime("%Y/%m/%d")
             query = f"{query} after:{since_str}"
-        
+
         logger.info("[GMAIL] Fetching emails with query: %s", query)
-        
+
         try:
             # List messages
             results = (
@@ -164,13 +164,13 @@ class GmailClient:
                 .list(userId="me", q=query, maxResults=max_results)
                 .execute()
             )
-            
+
             messages = results.get("messages", [])
             logger.info("[GMAIL] Found %d message(s)", len(messages))
-            
+
             if not messages:
                 return []
-            
+
             # Fetch full message details
             emails = []
             for msg in messages:
@@ -183,10 +183,10 @@ class GmailClient:
                         "[GMAIL] Error parsing message %s: %r", msg.get("id"), e
                     )
                     continue
-            
+
             logger.info("[GMAIL] Successfully parsed %d email(s)", len(emails))
             return emails
-            
+
         except HttpError as e:
             logger.error("[GMAIL] Gmail API error: %r", e)
             raise
@@ -194,10 +194,10 @@ class GmailClient:
     def _parse_email_message(self, message_id: str) -> Optional[Dict[str, Any]]:
         """
         Parse a single email message into structured data.
-        
+
         Args:
             message_id: Gmail message ID
-            
+
         Returns:
             Dictionary with email data or None if parsing fails
         """
@@ -208,18 +208,18 @@ class GmailClient:
                 .get(userId="me", id=message_id, format="full")
                 .execute()
             )
-            
+
             # Extract headers
             headers = message.get("payload", {}).get("headers", [])
             header_dict = {h["name"].lower(): h["value"] for h in headers}
-            
+
             # Extract body
             body_text = self._extract_body(message.get("payload", {}))
-            
+
             if not body_text:
                 logger.debug("[GMAIL] No text body found for message %s", message_id)
                 return None
-            
+
             # Parse email data
             email_data = {
                 "id": message_id,
@@ -233,9 +233,9 @@ class GmailClient:
                 "snippet": message.get("snippet", ""),
                 "labels": message.get("labelIds", []),
             }
-            
+
             return email_data
-            
+
         except Exception as e:
             logger.warning(
                 "[GMAIL] Error parsing message %s: %r", message_id, e
@@ -245,19 +245,19 @@ class GmailClient:
     def _extract_body(self, payload: Dict[str, Any]) -> str:
         """
         Extract text body from email payload.
-        
+
         Args:
             payload: Email payload dictionary
-            
+
         Returns:
             Email body text
         """
         body_text = ""
-        
+
         # Check if this is a multipart message
         if payload.get("mimeType") == "multipart/alternative" or payload.get("mimeType") == "multipart/mixed":
             parts = payload.get("parts", [])
-            
+
             # Prefer text/plain, fallback to text/html
             for part in parts:
                 mime_type = part.get("mimeType", "")
@@ -266,7 +266,7 @@ class GmailClient:
                     break
                 elif mime_type == "text/html" and not body_text:
                     body_text = self._decode_body(part)
-            
+
             # If no text found, recursively check nested parts
             if not body_text:
                 for part in parts:
@@ -281,23 +281,23 @@ class GmailClient:
             mime_type = payload.get("mimeType", "")
             if mime_type in ["text/plain", "text/html"]:
                 body_text = self._decode_body(payload)
-        
+
         return body_text.strip()
 
     def _decode_body(self, part: Dict[str, Any]) -> str:
         """
         Decode email body from base64.
-        
+
         Args:
             part: Email part dictionary
-            
+
         Returns:
             Decoded body text
         """
         body_data = part.get("body", {}).get("data")
         if not body_data:
             return ""
-        
+
         try:
             # Gmail API uses URL-safe base64 encoding
             decoded = base64.urlsafe_b64decode(body_data)

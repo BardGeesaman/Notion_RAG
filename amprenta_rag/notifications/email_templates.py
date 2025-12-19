@@ -7,18 +7,18 @@ from typing import List, Dict, Any, Optional
 def get_experiment_summary_html(experiment, datasets=None) -> str:
     """
     Generate HTML email template for experiment summary.
-    
+
     Args:
         experiment: Experiment model object
         datasets: Optional list of dataset objects related to the experiment
-        
+
     Returns:
         HTML string with experiment details
     """
     experiment_name = getattr(experiment, "name", "Unknown Experiment")
     description = getattr(experiment, "description", "No description available")
     design_type = getattr(experiment, "design_type", "Unknown")
-    
+
     # Try to get organism from experiment, or from datasets if available
     organism = getattr(experiment, "organism", None)
     if not organism and datasets:
@@ -36,9 +36,9 @@ def get_experiment_summary_html(experiment, datasets=None) -> str:
         organism = organism if organism else "Unknown"
         if isinstance(organism, list):
             organism = ", ".join(organism)
-    
+
     dataset_count = len(datasets) if datasets else 0
-    
+
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -95,26 +95,26 @@ def get_experiment_summary_html(experiment, datasets=None) -> str:
 def get_digest_html(activities: List[Dict[str, Any]], period: str) -> str:
     """
     Generate HTML email template for activity digest.
-    
+
     Args:
         activities: List of activity dicts with keys like 'type', 'name', 'count', 'url'
         period: Time period (e.g., "Daily", "Weekly")
-        
+
     Returns:
         HTML string with activity summary
     """
     # Count activities by type
     activity_counts = {}
     activity_items = {}
-    
+
     for activity in activities:
         activity_type = activity.get("type", "unknown")
         activity_counts[activity_type] = activity_counts.get(activity_type, 0) + 1
-        
+
         if activity_type not in activity_items:
             activity_items[activity_type] = []
         activity_items[activity_type].append(activity)
-    
+
     # Build activity sections
     activity_sections = []
     for activity_type, items in activity_items.items():
@@ -124,10 +124,10 @@ def get_digest_html(activities: List[Dict[str, Any]], period: str) -> str:
             name = item.get("name", "Unknown")
             url = item.get("url", "#")
             section_items.append(f'<li><a href="{url}">{name}</a></li>')
-        
+
         if len(items) > 10:
             section_items.append(f'<li><em>... and {len(items) - 10} more</em></li>')
-        
+
         activity_sections.append(f"""
             <div class="activity-section">
                 <h3>{type_label} ({len(items)})</h3>
@@ -136,7 +136,7 @@ def get_digest_html(activities: List[Dict[str, Any]], period: str) -> str:
                 </ul>
             </div>
         """)
-    
+
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -190,18 +190,18 @@ def get_share_email_html(
 ) -> str:
     """
     Generate HTML email template for sharing notification.
-    
+
     Args:
         entity_type: Type of entity being shared (e.g., "Experiment", "Compound")
         entity_name: Name of the entity
         shared_by: Username of the person sharing
         message: Optional message from the sharer
-        
+
     Returns:
         HTML string for share notification
     """
     entity_type_label = entity_type.replace("_", " ").title()
-    
+
     html = f"""
     <!DOCTYPE html>
     <html>

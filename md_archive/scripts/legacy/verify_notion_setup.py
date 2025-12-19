@@ -18,16 +18,16 @@ import requests
 def check_database(db_id: str, db_name: str) -> tuple[bool, str]:
     """
     Check if a Notion database is accessible.
-    
+
     Returns:
         (is_accessible, error_message)
     """
     if not db_id:
         return False, "Database ID not configured"
-    
+
     cfg = get_config()
     url = f"{cfg.notion.base_url}/databases/{db_id}"
-    
+
     try:
         resp = requests.get(url, headers=notion_headers(), timeout=10)
         if resp.status_code == 200:
@@ -44,9 +44,9 @@ def main():
     print("\n" + "=" * 80)
     print("NOTION DATABASE SETUP VERIFICATION")
     print("=" * 80 + "\n")
-    
+
     cfg = get_config()
-    
+
     # Core databases
     core_databases = [
         ("Experimental Data Assets", cfg.notion.exp_data_db_id),
@@ -56,26 +56,26 @@ def main():
         ("Programs", cfg.notion.programs_db_id),
         ("Experiments", cfg.notion.experiments_db_id),
     ]
-    
+
     # Feature databases
     feature_databases = [
         ("Metabolite Features", cfg.notion.metabolite_features_db_id),
         ("Protein Features", cfg.notion.protein_features_db_id),
         ("Gene Features", cfg.notion.gene_features_db_id),
     ]
-    
+
     # Chemistry databases
     chemistry_databases = [
         ("Compound Features", getattr(cfg.notion, "compound_features_db_id", None)),
         ("HTS Campaigns", getattr(cfg.notion, "hts_campaigns_db_id", None)),
         ("Biochemical Hits", getattr(cfg.notion, "biochemical_hits_db_id", None)),
     ]
-    
+
     # Pathway database
     pathway_databases = [
         ("Pathways", getattr(cfg.notion, "pathways_db_id", None)),
     ]
-    
+
     print("📊 CORE DATABASES")
     print("-" * 80)
     all_good = True
@@ -85,7 +85,7 @@ def main():
         print(f"{status} {name:40s} {message}")
         if not accessible:
             all_good = False
-    
+
     print("\n🧬 FEATURE DATABASES")
     print("-" * 80)
     for name, db_id in feature_databases:
@@ -94,7 +94,7 @@ def main():
         print(f"{status} {name:40s} {message}")
         if not accessible and db_id:  # Only warn if configured but not accessible
             all_good = False
-    
+
     print("\n🧪 CHEMISTRY DATABASES")
     print("-" * 80)
     for name, db_id in chemistry_databases:
@@ -103,7 +103,7 @@ def main():
         print(f"{status} {name:40s} {message}")
         if not accessible and db_id:  # Only warn if configured but not accessible
             all_good = False
-    
+
     print("\n🧬 PATHWAY DATABASES")
     print("-" * 80)
     for name, db_id in pathway_databases:
@@ -112,7 +112,7 @@ def main():
         print(f"{status} {name:40s} {message}")
         if not accessible and db_id:  # Only warn if configured but not accessible
             all_good = False
-    
+
     print("\n" + "=" * 80)
     if all_good:
         print("✅ All configured databases are accessible!")

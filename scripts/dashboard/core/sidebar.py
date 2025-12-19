@@ -239,7 +239,6 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
 
         if user and user.get("role") == "admin":
             if st.button("➕ Register User", key="register_btn"):
-                from scripts.dashboard.pages.auth.register import render_register_page
 
                 st.session_state["show_register"] = True
                 st.rerun()
@@ -348,14 +347,14 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
             use_container_width=True
         )
         st.sidebar.caption("Launch notebooks with API access")
-        
+
         if st.sidebar.button("Generate Report", use_container_width=True):
             st.info("Report generation coming soon")
-        
+
         # Determine dashboard based on context
         current_page = st.session_state.get("selected_page", "")
         campaign_id = st.session_state.get("current_campaign_id")
-        
+
         if "HTS" in current_page or "Screening" in current_page or campaign_id:
             dashboard = "hts_plate_viewer.ipynb"
             context = {"campaign_id": campaign_id} if campaign_id else {}
@@ -365,7 +364,7 @@ def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> s
         else:
             dashboard = "experiment_dashboard.ipynb"
             context = {}
-        
+
         # Extract base URL for Voila
         jupyter_base_url = jupyter_url.split("/hub/login")[0] if "/hub/login" in jupyter_url else "http://localhost:8888"
         voila_url = get_voila_url(username, dashboard, context if context else None, jupyter_base_url)

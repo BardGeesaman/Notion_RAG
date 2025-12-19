@@ -39,10 +39,10 @@ def get_programs(
 ) -> List[ProgramModel]:
     """Get all programs with optional filtering."""
     query = db.query(ProgramModel)
-    
+
     if name_filter:
         query = query.filter(ProgramModel.name.ilike(f"%{name_filter}%"))
-    
+
     return query.offset(skip).limit(limit).all()
 
 
@@ -55,14 +55,14 @@ def update_program(
     db_program = get_program(db, program_id)
     if not db_program:
         return None
-    
+
     update_data = program.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         # Handle None values for list fields (convert to empty list)
         if field in ['disease'] and value is None:
             value = []
         setattr(db_program, field, value)
-    
+
     db.commit()
     db.refresh(db_program)
     return db_program
@@ -73,7 +73,7 @@ def delete_program(db: Session, program_id: UUID) -> bool:
     db_program = get_program(db, program_id)
     if not db_program:
         return False
-    
+
     db.delete(db_program)
     db.commit()
     return True

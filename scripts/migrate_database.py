@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 def main() -> None:
     """Apply migrations."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Apply Alembic migrations")
     parser.add_argument(
         "--revision",
@@ -28,24 +28,24 @@ def main() -> None:
         action="store_true",
         help="Show what would be done without applying",
     )
-    
+
     args = parser.parse_args()
-    
+
     print("=" * 80)
     print("Applying Alembic migrations...")
     print("=" * 80)
     print()
-    
+
     if args.dry_run:
         print("DRY RUN MODE - No changes will be made")
         print()
         cmd = [sys.executable, "-m", "alembic", "history"]
     else:
         cmd = [sys.executable, "-m", "alembic", "upgrade", args.revision]
-    
+
     print(f"Running: {' '.join(cmd)}")
     print()
-    
+
     try:
         result = subprocess.run(cmd, check=True, cwd=Path(__file__).parent.parent)
         if not args.dry_run:

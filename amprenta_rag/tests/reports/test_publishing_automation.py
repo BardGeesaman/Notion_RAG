@@ -6,7 +6,7 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
-from uuid import uuid4, UUID
+from uuid import uuid4
 from unittest.mock import Mock
 
 import pytest
@@ -18,7 +18,7 @@ class _Col:
     def __init__(self, name: str):
         self.name = name
 
-    def __eq__(self, other):  # noqa: DunderEq
+    def __eq__(self, other):
         return ("eq", self.name, other)
 
     def desc(self):

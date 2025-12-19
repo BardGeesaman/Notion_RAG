@@ -278,7 +278,6 @@ def test_notebook_utils_get_api_client_uses_provided_then_env_then_defaults(monk
             # Only env URL works in this test
             self.http = _Http(ok=(api_url == "http://env-ok:8000"))
 
-    import os
     import amprenta_rag.client as client_mod
 
     monkeypatch.setattr(client_mod, "RAGClient", FakeRAGClient)

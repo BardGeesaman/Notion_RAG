@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import math
 import statistics
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from amprenta_rag.database.models import HTSCampaign, HTSResult
+from amprenta_rag.database.models import HTSResult
 from amprenta_rag.database.session import db_session
 
 

@@ -27,7 +27,7 @@ def upgrade():
         sa.Column('created_by_id', UUID(as_uuid=True), sa.ForeignKey('users.id'), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-    
+
     # Create indexes
     op.create_index('ix_generic_assay_results_assay_name', 'generic_assay_results', ['assay_name'])
     op.create_index('ix_generic_assay_results_assay_type', 'generic_assay_results', ['assay_type'])

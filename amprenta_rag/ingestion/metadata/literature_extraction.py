@@ -20,13 +20,13 @@ def get_literature_semantic_metadata(
 ) -> Dict[str, Any]:
     """
     DEPRECATED: Notion support has been removed.
-    
+
     Returns minimal metadata structure from Zotero item only.
     """
     logger.debug(
         "[METADATA] get_literature_semantic_metadata() - Notion support removed, using Zotero data only"
     )
-    
+
     # --- Simple doc_type inference from Zotero item_type and tags ---
     doc_type = "JournalArticle"
     if item.item_type.lower() == "book":

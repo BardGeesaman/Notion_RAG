@@ -23,14 +23,14 @@ def extract_dataset_features_by_type_from_postgres(
 ) -> Dict[str, Set[str]]:
     """
     Extract features from a Postgres dataset grouped by feature type.
-    
+
     Uses the dataset.features relationship to get linked features from Postgres.
     Groups features by their feature_type (gene, protein, metabolite, lipid).
-    
+
     Args:
         dataset_id: Postgres UUID of the dataset
         omics_type: Optional omics type hint (for logging/debugging)
-        
+
     Returns:
         Dictionary mapping feature_type → set of feature names:
         {
@@ -46,7 +46,7 @@ def extract_dataset_features_by_type_from_postgres(
         "metabolite": set(),
         "lipid": set(),
     }
-    
+
     with db_session() as db:
         try:
             dataset = (
@@ -54,26 +54,26 @@ def extract_dataset_features_by_type_from_postgres(
                 .filter(DatasetModel.id == dataset_id)
                 .first()
             )
-            
+
             if not dataset:
                 logger.warning(
                     "[FEATURE-EXTRACTION] Dataset %s not found in Postgres",
                     dataset_id,
                 )
                 return features_by_type
-            
+
             features = dataset.features or []
-            
+
             logger.info(
                 "[FEATURE-EXTRACTION] Found %d linked feature(s) for dataset %s",
                 len(features),
                 dataset_id,
             )
-            
+
             for feature in features:
                 feature_type = feature.feature_type.lower()
                 feature_name = feature.name
-                
+
                 type_mapping = {
                     "gene": "gene",
                     "g": "gene",
@@ -88,9 +88,9 @@ def extract_dataset_features_by_type_from_postgres(
                     "lipidomics": "lipid",
                     "lipid species": "lipid",
                 }
-                
+
                 mapped_type = type_mapping.get(feature_type, feature_type)
-                
+
                 if mapped_type in features_by_type:
                     features_by_type[mapped_type].add(feature_name)
                 else:
@@ -99,7 +99,7 @@ def extract_dataset_features_by_type_from_postgres(
                         feature_type,
                         feature_name,
                     )
-            
+
             total_features = sum(len(s) for s in features_by_type.values())
             logger.info(
                 "[FEATURE-EXTRACTION] Extracted %d total feature(s) from dataset %s: "
@@ -111,9 +111,9 @@ def extract_dataset_features_by_type_from_postgres(
                 len(features_by_type["metabolite"]),
                 len(features_by_type["lipid"]),
             )
-            
+
             return features_by_type
-            
+
         except Exception as e:
             logger.error(
                 "[FEATURE-EXTRACTION] Error extracting features from dataset %s: %r",
@@ -128,21 +128,21 @@ def get_dataset_feature_count_by_type(
 ) -> Dict[str, int]:
     """
     Get count of features by type for a dataset (without loading all feature names).
-    
+
     Useful for quick checks and summaries.
-    
+
     Args:
         dataset_id: Postgres UUID of the dataset
-        
+
     Returns:
         Dictionary mapping feature_type → count
     """
     from sqlalchemy import func
-    
+
     with db_session() as db:
         try:
             from amprenta_rag.database.models import dataset_feature_assoc
-            
+
             counts = (
                 db.query(Feature.feature_type, func.count(Feature.id))
                 .join(dataset_feature_assoc, Feature.id == dataset_feature_assoc.c.feature_id)
@@ -150,14 +150,14 @@ def get_dataset_feature_count_by_type(
                 .group_by(Feature.feature_type)
                 .all()
             )
-            
+
             result: Dict[str, int] = {
                 "gene": 0,
                 "protein": 0,
                 "metabolite": 0,
                 "lipid": 0,
             }
-            
+
             for feature_type, count in counts:
                 type_lower = feature_type.lower() if feature_type else ""
                 type_mapping = {
@@ -169,9 +169,9 @@ def get_dataset_feature_count_by_type(
                 mapped_type = type_mapping.get(type_lower, type_lower)
                 if mapped_type in result:
                     result[mapped_type] = count
-            
+
             return result
-            
+
         except Exception as e:
             logger.error(
                 "[FEATURE-EXTRACTION] Error getting feature counts for dataset %s: %r",

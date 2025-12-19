@@ -41,9 +41,9 @@ def detect_and_ingest_signatures_from_postgres_content(
 ) -> Dict[str, Any]:
     """
     Detect and ingest signatures from source content using Postgres.
-    
+
     This is the Postgres-first version that works without Notion page IDs.
-    
+
     Args:
         all_text_content: Combined text content from the source
         attachment_paths: List of paths to attached files
@@ -52,34 +52,34 @@ def detect_and_ingest_signatures_from_postgres_content(
         source_name: Optional name for the source (for signature naming)
         source_dataset_id: Optional Postgres UUID of dataset (for linking)
         source_experiment_id: Optional Postgres UUID of experiment (for linking)
-        
+
     Returns:
         Dictionary with counts: {"detected": N, "ingested": M, "errors": K, "signature_ids": [...]}
     """
     counts: Dict[str, Any] = {"detected": 0, "ingested": 0, "errors": 0, "signature_ids": []}
-    
+
     if not all_text_content and not attachment_paths:
         return counts
-    
+
     # Infer signature metadata from source
     inferred_metadata = infer_signature_metadata_from_source(
         source_type=source_type,
         source_metadata=source_metadata,
     )
-    
+
     signature_candidates: List[tuple] = []
-    
+
     try:
         # 1. Check for signature keywords in text
         has_keywords = detect_signature_keywords(all_text_content)
-        
+
         if has_keywords:
             logger.debug(
                 "[POSTGRES-SIGNATURE-DETECT] Signature keywords detected in %s source",
                 source_type,
             )
             counts["detected"] += 1
-            
+
             # Try to extract embedded table
             embedded_table = extract_embedded_signature_table(all_text_content)
             if embedded_table:
@@ -87,7 +87,7 @@ def detect_and_ingest_signatures_from_postgres_content(
                 logger.debug(
                     "[POSTGRES-SIGNATURE-DETECT] Found embedded signature table",
                 )
-            
+
             # Try to extract from text table
             text_table = extract_signature_from_text_table(all_text_content)
             if text_table and text_table.get("components"):
@@ -95,7 +95,7 @@ def detect_and_ingest_signatures_from_postgres_content(
                 logger.debug(
                     "[POSTGRES-SIGNATURE-DETECT] Found text table signature",
                 )
-        
+
         # 2. Check for attached signature files
         if attachment_paths:
             attached_signature_files = find_attached_signature_files(attachment_paths)
@@ -106,18 +106,18 @@ def detect_and_ingest_signatures_from_postgres_content(
                     "[POSTGRES-SIGNATURE-DETECT] Found signature file: %s",
                     sig_file.name,
                 )
-        
+
         # 3. Process each signature candidate
         for candidate_type, candidate_data in signature_candidates:
             try:
                 sig_file_path: Optional[Path] = None
-                
+
                 if candidate_type == "embedded_table":
                     # Save embedded table to temporary file
                     components = candidate_data  # List[Dict[str, str]]
                     if not components or len(components) < 2:
                         continue
-                    
+
                     with tempfile.TemporaryDirectory() as tmpdir:
                         sig_name = source_name or f"{source_type}_signature"
                         sig_file_path = save_extracted_signature_to_file(
@@ -125,13 +125,13 @@ def detect_and_ingest_signatures_from_postgres_content(
                             Path(tmpdir),
                             f"{sig_name}_signature",
                         )
-                        
+
                 elif candidate_type == "text_table":
                     # Process text table
                     components = candidate_data.get("components", [])
                     if not components or len(components) < 2:
                         continue
-                    
+
                     with tempfile.TemporaryDirectory() as tmpdir:
                         sig_name = source_name or f"{source_type}_signature"
                         sig_file_path = save_extracted_signature_to_file(
@@ -139,17 +139,17 @@ def detect_and_ingest_signatures_from_postgres_content(
                             Path(tmpdir),
                             f"{sig_name}_signature",
                         )
-                        
+
                 elif candidate_type == "file":
                     # Direct file ingestion
                     sig_file_path = candidate_data  # Path
-                
+
                 if not sig_file_path or not sig_file_path.exists():
                     continue
-                
+
                 # Load signature from file
                 signature = load_signature_from_tsv(sig_file_path)
-                
+
                 # Create signature in Postgres
                 signature_model = create_signature_from_file_in_postgres(
                     signature=signature,
@@ -159,10 +159,10 @@ def detect_and_ingest_signatures_from_postgres_content(
                     biomarker_roles=inferred_metadata.get("biomarker_roles"),
                     phenotype_axes=inferred_metadata.get("phenotype_axes"),
                 )
-                
+
                 counts["ingested"] += 1
                 counts["signature_ids"].append(str(signature_model.id))
-                
+
                 # Link signature to source
                 if source_dataset_id:
                     link_signature_to_postgres_source(
@@ -176,7 +176,7 @@ def detect_and_ingest_signatures_from_postgres_content(
                         source_type="experiment",
                         source_id=source_experiment_id,
                     )
-                
+
                 # Embed signature into Pinecone
                 try:
                     embed_signature_with_postgres_id(
@@ -189,14 +189,14 @@ def detect_and_ingest_signatures_from_postgres_content(
                         signature_model.id,
                         e,
                     )
-                
+
                 logger.info(
                     "[POSTGRES-SIGNATURE-DETECT] Created signature %s (ID: %s) from %s",
                     signature_model.name,
                     signature_model.id,
                     source_type,
                 )
-                
+
             except Exception as e:
                 counts["errors"] += 1
                 logger.warning(
@@ -204,14 +204,14 @@ def detect_and_ingest_signatures_from_postgres_content(
                     e,
                 )
                 continue
-        
+
     except Exception as e:
         logger.warning(
             "[POSTGRES-SIGNATURE-DETECT] Error in signature detection: %r",
             e,
         )
         counts["errors"] += 1
-    
+
     if counts["ingested"] > 0:
         logger.info(
             "[POSTGRES-SIGNATURE-DETECT] Processed signatures: %d detected, %d ingested, %d errors",
@@ -219,7 +219,7 @@ def detect_and_ingest_signatures_from_postgres_content(
             counts["ingested"],
             counts["errors"],
         )
-    
+
     return counts
 
 
@@ -229,7 +229,7 @@ def embed_signature_with_postgres_id(
 ) -> None:
     """
     Embed a signature into Pinecone using Postgres signature_id.
-    
+
     Args:
         signature_id: Postgres UUID of the signature
         signature: Signature object with components
@@ -238,40 +238,40 @@ def embed_signature_with_postgres_id(
     from amprenta_rag.config import get_config
     from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
     from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
-    
+
     cfg = get_config()
-    
+
     try:
         # Build text representation
         signature_type = "Multi-Omics Signature" if (signature.modalities and len(signature.modalities) > 1) else "Signature"
         text_parts = [
             f"{signature_type}: {signature.name}",
         ]
-        
+
         if signature.modalities:
             modalities_str = ", ".join(mod.title() for mod in signature.modalities)
             text_parts.append(f"Modalities: {modalities_str}")
-        
+
         if signature.description:
             text_parts.append(f"\nDescription: {signature.description}")
-        
+
         text_parts.append("\nComponents:")
         for comp in signature.components:
             feature_type = getattr(comp, "feature_type", "lipid")
             feature_name = getattr(comp, "feature_name", comp.species)
             direction = getattr(comp, "direction", "")
             weight = getattr(comp, "weight", 1.0)
-            
+
             comp_text = f"- {feature_name} ({feature_type})"
             if direction:
                 comp_text += f" {direction}"
             if weight and weight != 1.0:
                 comp_text += f" (weight: {weight})"
-            
+
             text_parts.append(comp_text)
-        
+
         full_text = "\n".join(text_parts)
-        
+
         # Chunk and embed
         chunks = chunk_text(full_text)
         if not chunks:
@@ -280,17 +280,17 @@ def embed_signature_with_postgres_id(
                 signature_id,
             )
             return
-        
+
         embeddings = embed_texts(chunks)
-        
+
         # Prepare vectors for Pinecone
         index = get_pinecone_index()
         vectors = []
         signature_id_str = str(signature_id).replace("-", "")
-        
+
         for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
             chunk_id = f"{signature_id_str}_chunk_{order:03d}"
-            
+
             metadata: Dict[str, Any] = {
                 "source": "Signature",
                 "source_type": "Signature",
@@ -298,16 +298,16 @@ def embed_signature_with_postgres_id(
                 "title": signature.name,
                 "snippet": textwrap.shorten(chunk, width=300),
             }
-            
+
             if signature.modalities:
                 metadata["modalities"] = signature.modalities
-            
+
             vectors.append({
                 "id": chunk_id,
                 "values": emb,
                 "metadata": sanitize_metadata(metadata),
             })
-        
+
         # Upsert to Pinecone
         if vectors:
             index.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
@@ -316,7 +316,7 @@ def embed_signature_with_postgres_id(
                 signature_id,
                 len(vectors),
             )
-        
+
     except Exception as e:
         logger.error(
             "[POSTGRES-SIGNATURE-EMBED] Error embedding signature %s: %r",

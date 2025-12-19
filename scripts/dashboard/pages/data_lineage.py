@@ -1,7 +1,6 @@
 """Data Lineage Visualization page."""
 from __future__ import annotations
 
-from uuid import UUID
 
 import plotly.graph_objects as go
 import streamlit as st
@@ -15,10 +14,10 @@ def render_data_lineage_page() -> None:
     """Render the Data Lineage Visualization page."""
     st.header("🔗 Data Lineage")
     st.markdown("Visualize relationships between experiments, datasets, signatures, and protocols")
-    
+
     # Mode selector
     view_mode = st.radio("View", ["Single Entity", "Full Graph"], horizontal=True)
-    
+
     with db_session() as db:
         if view_mode == "Single Entity":
             render_single_entity_view(db)
@@ -29,14 +28,14 @@ def render_data_lineage_page() -> None:
 def render_single_entity_view(db) -> None:
     """Render single entity lineage view."""
     st.subheader("Single Entity Lineage")
-    
+
     # Entity type selector
     entity_type = st.selectbox("Entity Type", ["Experiment", "Dataset", "Signature"])
-    
+
     # Entity selector based on type
     entity_id = None
     entity_name = None
-    
+
     if entity_type == "Experiment":
         experiments = db.query(Experiment).order_by(Experiment.name).limit(200).all()
         if experiments:
@@ -67,7 +66,7 @@ def render_single_entity_view(db) -> None:
         else:
             st.info("No signatures available.")
             return
-    
+
     if st.button("Show Lineage", type="primary"):
         if entity_id:
             with st.spinner("Building lineage graph..."):
@@ -83,9 +82,9 @@ def render_full_graph_view(db) -> None:
     """Render full graph overview."""
     st.subheader("Full Lineage Graph")
     st.markdown("Overview of all connections in the system")
-    
+
     limit = st.slider("Max Experiments", min_value=10, max_value=500, value=100, step=10)
-    
+
     if st.button("Generate Graph", type="primary"):
         with st.spinner(f"Building full lineage graph (up to {limit} experiments)..."):
             try:
@@ -99,21 +98,21 @@ def render_full_graph_view(db) -> None:
 def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> None:
     """
     Render a lineage graph using Plotly.
-    
+
     Args:
         lineage_data: Dictionary with "nodes" and "edges" lists
         title: Graph title
     """
     nodes = lineage_data.get("nodes", [])
     edges = lineage_data.get("edges", [])
-    
+
     if not nodes:
         st.info("No nodes found in lineage graph.")
         return
-    
+
     if not edges:
         st.warning("No connections found. Graph may show isolated nodes.")
-    
+
     # Color mapping for node types
     color_map = {
         "experiment": "#3498db",  # Blue
@@ -122,14 +121,14 @@ def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> No
         "protocol": "#9b59b6",     # Purple
         "project": "#f39c12",      # Yellow
     }
-    
+
     # Build node positions using a simple force-directed layout simulation
     # For simplicity, we'll use a circular layout
     import math
-    
+
     node_positions = {}
     num_nodes = len(nodes)
-    
+
     # Calculate positions in a circle
     for i, node in enumerate(nodes):
         angle = 2 * math.pi * i / num_nodes if num_nodes > 0 else 0
@@ -137,28 +136,28 @@ def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> No
         x = radius * math.cos(angle)
         y = radius * math.sin(angle)
         node_positions[node["id"]] = (x, y)
-    
+
     # Create edge traces
     edge_x = []
     edge_y = []
     edge_info = []
-    
+
     for edge in edges:
         source_pos = node_positions.get(edge["source"])
         target_pos = node_positions.get(edge["target"])
-        
+
         if source_pos and target_pos:
             edge_x.extend([source_pos[0], target_pos[0], None])
             edge_y.extend([source_pos[1], target_pos[1], None])
             edge_info.append(edge["relationship"])
-    
+
     # Create node traces
     node_x = []
     node_y = []
     node_text = []
     node_colors = []
     node_hover = []
-    
+
     for node in nodes:
         pos = node_positions.get(node["id"])
         if pos:
@@ -166,7 +165,7 @@ def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> No
             node_y.append(pos[1])
             node_text.append(node["name"])
             node_colors.append(color_map.get(node["type"], "#95a5a6"))  # Default gray
-            
+
             # Build hover text
             hover_parts = [f"<b>{node['name']}</b>", f"Type: {node['type']}"]
             if node.get("metadata"):
@@ -174,10 +173,10 @@ def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> No
                     if value:
                         hover_parts.append(f"{key}: {value}")
             node_hover.append("<br>".join(hover_parts))
-    
+
     # Create figure
     fig = go.Figure()
-    
+
     # Add edges
     fig.add_trace(
         go.Scatter(
@@ -189,7 +188,7 @@ def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> No
             showlegend=False,
         )
     )
-    
+
     # Add nodes
     fig.add_trace(
         go.Scatter(
@@ -209,7 +208,7 @@ def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> No
             showlegend=False,
         )
     )
-    
+
     # Update layout
     fig.update_layout(
         title=title,
@@ -233,9 +232,9 @@ def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> No
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         height=600,
     )
-    
+
     st.plotly_chart(fig, use_container_width=True)
-    
+
     # Show summary stats
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -247,7 +246,7 @@ def render_lineage_graph(lineage_data: dict, title: str = "Lineage Graph") -> No
         for node in nodes:
             node_types[node["type"]] = node_types.get(node["type"], 0) + 1
         st.metric("Node Types", len(node_types))
-    
+
     # Show node type breakdown
     if node_types:
         st.markdown("### Node Type Breakdown")

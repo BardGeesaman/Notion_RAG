@@ -12,12 +12,12 @@ logger = get_logger(__name__)
 def global_search(query: str, db, limit: int = 5) -> Dict[str, List[Dict[str, Any]]]:
     """
     Search across multiple entity types in the database.
-    
+
     Args:
         query: Search query string
         db: Database session
         limit: Maximum number of results per entity type
-        
+
     Returns:
         Dict with results grouped by entity type:
         {
@@ -34,7 +34,7 @@ def global_search(query: str, db, limit: int = 5) -> Dict[str, List[Dict[str, An
             "signatures": [],
             "datasets": [],
         }
-    
+
     search_term = f"%{query.strip()}%"
     results = {
         "experiments": [],
@@ -42,7 +42,7 @@ def global_search(query: str, db, limit: int = 5) -> Dict[str, List[Dict[str, An
         "signatures": [],
         "datasets": [],
     }
-    
+
     # Search Experiments
     experiments = (
         db.query(Experiment)
@@ -58,7 +58,7 @@ def global_search(query: str, db, limit: int = 5) -> Dict[str, List[Dict[str, An
             "name": exp.name,
             "type": exp.type,
         })
-    
+
     # Search Compounds
     compounds = (
         db.query(Compound)
@@ -74,7 +74,7 @@ def global_search(query: str, db, limit: int = 5) -> Dict[str, List[Dict[str, An
             "compound_id": comp.compound_id,
             "smiles": comp.smiles[:100] + "..." if comp.smiles and len(comp.smiles) > 100 else comp.smiles,
         })
-    
+
     # Search Signatures
     signatures = (
         db.query(Signature)
@@ -87,7 +87,7 @@ def global_search(query: str, db, limit: int = 5) -> Dict[str, List[Dict[str, An
             "id": str(sig.id),
             "name": sig.name,
         })
-    
+
     # Search Datasets
     datasets = (
         db.query(Dataset)
@@ -100,9 +100,9 @@ def global_search(query: str, db, limit: int = 5) -> Dict[str, List[Dict[str, An
             "id": str(ds.id),
             "name": ds.name,
         })
-    
+
     logger.debug("[GLOBAL_SEARCH] Query '%s' returned: %d experiments, %d compounds, %d signatures, %d datasets",
-                 query, len(results["experiments"]), len(results["compounds"]), 
+                 query, len(results["experiments"]), len(results["compounds"]),
                  len(results["signatures"]), len(results["datasets"]))
-    
+
     return results

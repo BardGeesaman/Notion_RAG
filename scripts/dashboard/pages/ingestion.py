@@ -636,7 +636,6 @@ def render_ingestion_page() -> None:
 
                             from amprenta_rag.chemistry.registration import register_compound
                             from amprenta_rag.chemistry.normalization import (
-                                compute_molecular_descriptors,
                                 generate_compound_id,
                                 normalize_smiles,
                             )

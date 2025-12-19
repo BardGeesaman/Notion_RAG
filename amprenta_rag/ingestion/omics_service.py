@@ -46,7 +46,7 @@ logger = get_logger(__name__)
 def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
     """
     Main entry point for omics dataset ingestion.
-    
+
     This function orchestrates the complete ingestion pipeline:
     1. Routes to appropriate omics-specific parser based on req.omics_type
     2. Creates/updates Dataset record in Postgres
@@ -56,7 +56,7 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
        - RAGChunk creation
        - Pinecone embedding
     4. Returns the dataset UUID
-    
+
     Args:
         req: OmicsDatasetIngestRequest containing:
             - omics_type: "lipidomics" | "metabolomics" | "proteomics" | "transcriptomics"
@@ -67,14 +67,14 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
             - sample_type: Optional sample type list
             - organism: Optional organism list
             - And other metadata fields
-    
+
     Returns:
         UUID: The Postgres UUID of the created/updated dataset
-    
+
     Raises:
         ValueError: If omics_type is not recognized
         Exception: If parsing or ingestion fails (ingestion_status set to "failed")
-    
+
     Example:
         >>> req = OmicsDatasetIngestRequest(
         ...     omics_type="lipidomics",
@@ -84,7 +84,7 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
         ... )
         >>> dataset_uuid = ingest_dataset_from_file(req)
         >>> print(f"Ingested dataset: {dataset_uuid}")
-    
+
     Note:
         - Uses Postgres as sole system of record
         - Notion sync optional (via ENABLE_NOTION_SYNC config)
@@ -96,11 +96,11 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
             if hasattr(req, "dataset_path")
             else None
         )
-        
+
         if dataset:
             dataset.ingestion_status = "in_progress"
             db.commit()
-        
+
         try:
             if req.omics_type == "lipidomics":
                 parsed = _import_lipidomics(req)
@@ -161,9 +161,9 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
             if dataset:
                 dataset.ingestion_status = "complete"
                 db.commit()
-            
+
             return dataset_uuid
-        
+
         except Exception:
             if dataset:
                 dataset.ingestion_status = "failed"
@@ -174,16 +174,16 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
 def reingest_dataset_from_postgres(dataset_id: UUID, force: bool = False) -> None:
     """
     Re-run ingestion pipeline for an existing dataset.
-    
+
     Useful for:
     - Re-embedding after text content changes
     - Re-scoring against new signatures
     - Fixing ingestion errors
-    
+
     Args:
         dataset_id: UUID of existing dataset in Postgres
         force: If True, re-ingest even if already embedded
-    
+
     Note:
         This does NOT re-parse the original file - it works with existing
         Dataset and Feature records in Postgres.

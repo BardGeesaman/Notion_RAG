@@ -104,15 +104,15 @@ def _download_data_files(repo_obj, accession: str, repo: str) -> list:
 def render_repositories_page():
     st.header("🌎 Repository Browser & Import")
     st.info(HELP_TEXT)
-    
+
     # Initialize session state for search results
     if "repo_search_results" not in st.session_state:
         st.session_state.repo_search_results = None
     if "repo_search_params" not in st.session_state:
         st.session_state.repo_search_params = {}
-    
+
     tab1, tab2 = st.tabs(["Browse & Import", "Imported Studies"])
-    
+
     with tab1:
             st.subheader("Search Repositories")
             repo = st.selectbox("Repository", list(repo_map.keys()))
@@ -134,7 +134,7 @@ def render_repositories_page():
             if repo in ("MW", "MetaboLights"):
                 matrix = st.text_input("Matrix (MW/MetaboLights)", value="")
                 analytical_platform = st.text_input("Analytical Platform", value="")
-            
+
             # Check if search params changed (clear results if they did)
             current_params = {
                 "repo": repo, "keyword": keyword, "disease": disease, "species": species,
@@ -179,7 +179,7 @@ def render_repositories_page():
                 if repo in ("MW", "MetaboLights"):
                     kwargs["analytical_platform"] = analytical_platform or None
                     kwargs["matrix"] = matrix or None
-                
+
                 try:
                     with st.spinner(f"Searching {repo}..."):
                         results = fn(**kwargs)
@@ -189,37 +189,37 @@ def render_repositories_page():
                     with st.expander("Show full error details"):
                         st.exception(e)
                     return
-                
+
                 # Store results in session state
                 st.session_state.repo_search_results = {
                     "repo": repo,
                     "results": results,
                     "kwargs": kwargs,
                 }
-                
+
             # Display results if they exist in session state
             if st.session_state.repo_search_results and st.session_state.repo_search_results["repo"] == repo:
                 search_data = st.session_state.repo_search_results
                 results = search_data["results"]
                 kwargs = search_data["kwargs"]
-                
+
                 # Debug: Show search parameters
                 active_filters = {k: v for k, v in kwargs.items() if v}
                 fsum = f"Showing {repo} results for " + \
                       ", ".join([f"{k}='{v}'" for k, v in active_filters.items()])
                 st.caption(fsum)
-                
+
                 # Debug: Show result count
                 if not results:
                     st.warning(f"⚠️ Search returned 0 results. Try broader search criteria or leave filters empty.")
                     st.info(f"Search parameters used: {active_filters}")
                 else:
                     st.success(f"✅ Found {len(results)} studies")
-                    
+
                     # Import status - check which studies are already imported
                     acckey = repo.lower() + ("_accession" if repo != "MW" else "_study_id")
                     ds_accessions = [r["accession"] for r in results]
-                    
+
                     # Query database for imported studies
                     with db_session() as db:
                         # Check which accessions are already in database
@@ -235,7 +235,7 @@ def render_repositories_page():
                                 acc_value = ds.external_ids.get(acckey)
                                 if acc_value in ds_accessions:
                                     in_db.add(acc_value)
-                    
+
                     summary = []
                     for r in results:
                         summary.append(
@@ -261,7 +261,7 @@ def render_repositories_page():
                     # Keep any extra columns at the end
                     remaining = [c for c in df.columns if c not in desired_cols]
                     df = df[[c for c in desired_cols if c in df.columns] + remaining]
-                    
+
                     if not df.empty:
                         edited_df = st.data_editor(
                             df,
@@ -278,7 +278,7 @@ def render_repositories_page():
                                 ),
                             },
                         )
-                        
+
                         st.markdown(f"**{len(results)} results** | {len([r for r in summary if r['status']=='Imported'])} already imported.")
 
                         # Collect selected studies, skipping already imported
@@ -287,24 +287,24 @@ def render_repositories_page():
                             for idx, row in edited_df.iterrows()
                             if row.get("Selected") and row.get("accession") not in in_db
                         ]
-                        
+
                         if selected_studies:
                             st.info(f"📋 {len(selected_studies)} studies selected for import")
-                            
+
                             if st.button(f"🚀 Import Selected ({len(selected_studies)} studies)", key="import_selected", type="primary"):
                                 import_progress = st.progress(0, text="Starting import...")
                                 imported_count = 0
                                 failed_count = 0
-                                
+
                                 for idx, study in enumerate(selected_studies):
                                     accession = study["accession"]
                                     title = study["title"]
-                                    
+
                                     import_progress.progress(
                                         (idx + 1) / len(selected_studies),
                                         text=f"Importing {idx + 1}/{len(selected_studies)}: {accession}..."
                                     )
-                                    
+
                                     try:
                                         # Fetch full metadata from repository
                                         if repo == "GEO":
@@ -319,18 +319,18 @@ def render_repositories_page():
                                         elif repo == "MW":
                                             from amprenta_rag.ingestion.repositories.mw import MWRepository
                                             repo_obj = MWRepository()
-                                        
+
                                         metadata = repo_obj.fetch_study_metadata(accession)
-                                        
+
                                         if not metadata:
                                             st.warning(f"⚠️ Could not fetch metadata for {accession}")
                                             failed_count += 1
                                             continue
-                                        
+
                                         # Import into database
                                         from amprenta_rag.ingestion.postgres_integration import create_or_update_dataset_in_postgres
                                         from amprenta_rag.models.domain import OmicsType
-                                        
+
                                         # Prepare organism as list (function expects List[str])
                                         organism_list = None
                                         if metadata.organism:
@@ -338,7 +338,7 @@ def render_repositories_page():
                                                 organism_list = metadata.organism
                                             else:
                                                 organism_list = [str(metadata.organism)]
-                                        
+
                                         # Prepare external_ids dict with DOI and PubMed if available
                                         ext_ids = {acckey: accession}
                                         if metadata.doi:
@@ -354,7 +354,7 @@ def render_repositories_page():
                                             except Exception as dl_err:
                                                 st.warning(f"⚠️ mwTab download failed for {accession}: {dl_err}")
                                             ext_ids["mwtab_cached"] = mwtab_cached
-                                        
+
                                         # Convert omics_type string to OmicsType enum
                                         omics_type_enum = OmicsType.METABOLOMICS  # Default for MW/MetaboLights
                                         if metadata.omics_type:
@@ -368,7 +368,7 @@ def render_repositories_page():
                                                     omics_type_enum = OmicsType.PROTEOMICS
                                                 elif repo in ("MW", "MetaboLights"):
                                                     omics_type_enum = OmicsType.METABOLOMICS
-                                        
+
                                         with db_session() as db:
                                             dataset = create_or_update_dataset_in_postgres(
                                                 db=db,
@@ -420,9 +420,9 @@ def render_repositories_page():
                                     except Exception as e:
                                         st.error(f"❌ Failed to import {accession}: {str(e)}")
                                         failed_count += 1
-                                
+
                                 import_progress.empty()
-                                
+
                                 # Summary
                                 st.success(f"🎉 Import complete! {imported_count} succeeded, {failed_count} failed.")
                                 if imported_count > 0:
@@ -430,11 +430,11 @@ def render_repositories_page():
                                 st.rerun()
                         else:
                             st.info("👈 Check the boxes in the 'Select' column to import studies")
-    
+
     # Tab2: Imported studies management
     with tab2:
         st.subheader("Imported Studies Management")
-        
+
         with db_session() as db:
             all_imported = (
                 db.query(Dataset)
@@ -463,7 +463,7 @@ def render_repositories_page():
                         "# Features": len(d.features) if d.features else 0,
                     }
                 )
-        
+
         pdf = pd.DataFrame(dtable)
         pedit = st.data_editor(pdf, key="imported_mgr", num_rows="dynamic")
         del_rows = [r for r in pedit.to_dict("records") if r["Selected"]]

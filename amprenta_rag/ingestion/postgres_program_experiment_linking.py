@@ -30,11 +30,11 @@ def find_program_by_notion_id(
 ) -> Optional[Program]:
     """
     Find a Program in Postgres by Notion page ID.
-    
+
     Args:
         notion_page_id: Notion page ID
         db: Optional database session
-        
+
     Returns:
         Program model instance or None if not found
     """
@@ -50,11 +50,11 @@ def find_experiment_by_notion_id(
 ) -> Optional[Experiment]:
     """
     Find an Experiment in Postgres by Notion page ID.
-    
+
     Args:
         notion_page_id: Notion page ID
         db: Optional database session
-        
+
     Returns:
         Experiment model instance or None if not found
     """
@@ -71,18 +71,18 @@ def convert_notion_ids_to_postgres_uuids(
 ) -> tuple[List[UUID], List[UUID]]:
     """
     Convert Notion page IDs to Postgres UUIDs for programs and experiments.
-    
+
     Args:
         notion_program_ids: List of Notion program page IDs
         notion_experiment_ids: List of Notion experiment page IDs
         db: Optional database session
-        
+
     Returns:
         Tuple of (program_uuids, experiment_uuids)
     """
     program_uuids: List[UUID] = []
     experiment_uuids: List[UUID] = []
-    
+
     if db is None:
         with db_session() as db:
             return _convert_notion_ids_to_postgres_uuids_impl(
@@ -104,12 +104,12 @@ def link_dataset_to_programs_in_postgres(
 ) -> int:
     """
     Link a dataset to programs in Postgres via association table.
-    
+
     Args:
         dataset_id: Dataset UUID
         program_ids: List of Program UUIDs
         db: Optional database session
-        
+
     Returns:
         Number of links created
     """
@@ -134,12 +134,12 @@ def link_dataset_to_experiments_in_postgres(
 ) -> int:
     """
     Link a dataset to experiments in Postgres via association table.
-    
+
     Args:
         dataset_id: Dataset UUID
         experiment_ids: List of Experiment UUIDs
         db: Optional database session
-        
+
     Returns:
         Number of links created
     """
@@ -339,9 +339,9 @@ def link_dataset_to_programs_and_experiments_in_postgres(
 ) -> dict[str, int]:
     """
     Link a dataset to programs and experiments in Postgres.
-    
+
     Accepts either Postgres UUIDs directly or Notion page IDs (which will be converted).
-    
+
     Args:
         dataset_id: Dataset UUID
         program_ids: List of Program UUIDs (direct)
@@ -349,7 +349,7 @@ def link_dataset_to_programs_and_experiments_in_postgres(
         notion_program_ids: List of Notion program page IDs (will be converted)
         notion_experiment_ids: List of Notion experiment page IDs (will be converted)
         db: Optional database session
-        
+
     Returns:
         Dict with counts: {'programs_linked': int, 'experiments_linked': int}
     """
@@ -360,7 +360,7 @@ def link_dataset_to_programs_and_experiments_in_postgres(
             notion_experiment_ids=notion_experiment_ids,
             db=db,
         )
-        
+
         # Merge with direct UUIDs
         if program_ids:
             pg_program_ids = list(set(pg_program_ids + program_ids))
@@ -369,12 +369,12 @@ def link_dataset_to_programs_and_experiments_in_postgres(
     else:
         pg_program_ids = program_ids or []
         pg_experiment_ids = experiment_ids or []
-    
+
     results = {
         "programs_linked": 0,
         "experiments_linked": 0,
     }
-    
+
     # Link programs
     if pg_program_ids:
         results["programs_linked"] = link_dataset_to_programs_in_postgres(
@@ -382,7 +382,7 @@ def link_dataset_to_programs_and_experiments_in_postgres(
             program_ids=pg_program_ids,
             db=db,
         )
-    
+
     # Link experiments
     if pg_experiment_ids:
         results["experiments_linked"] = link_dataset_to_experiments_in_postgres(
@@ -390,6 +390,6 @@ def link_dataset_to_programs_and_experiments_in_postgres(
             experiment_ids=pg_experiment_ids,
             db=db,
         )
-    
+
     return results
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
-from uuid import UUID
 
 from scripts.dashboard.db_session import db_session
 from amprenta_rag.database.models import Dataset, Feature

@@ -7,12 +7,11 @@ from fastapi import APIRouter, HTTPException
 
 from amprenta_rag.analysis.cross_omics_pathways import (
     combine_omics_features,
-    analyze_pathway_convergence,
     get_cross_omics_enrichment,
 )
 from amprenta_rag.analysis.pathway.enrichment import perform_pathway_enrichment
 from amprenta_rag.api import schemas
-from amprenta_rag.database.models import Dataset, Feature, dataset_feature_assoc
+from amprenta_rag.database.models import Feature, dataset_feature_assoc
 from amprenta_rag.database.session import db_session
 
 router = APIRouter()

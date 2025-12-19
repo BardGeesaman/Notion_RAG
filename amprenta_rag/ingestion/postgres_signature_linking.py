@@ -30,15 +30,15 @@ def link_signature_to_dataset_in_postgres(
 ) -> bool:
     """
     Link a signature to a dataset in Postgres.
-    
+
     Creates an entry in the dataset_signature_assoc table with optional match_score.
-    
+
     Args:
         signature_id: Postgres UUID of the signature
         dataset_id: Postgres UUID of the dataset
         match_score: Optional match score (overlap fraction, etc.)
         db: Optional database session (will create one if not provided)
-        
+
     Returns:
         True if linking succeeded, False otherwise
     """
@@ -63,10 +63,10 @@ def get_dataset_signatures_from_postgres(
 ) -> List[SignatureModel]:
     """
     Get all signatures linked to a dataset from Postgres.
-    
+
     Args:
         dataset_id: Postgres UUID of the dataset
-        
+
     Returns:
         List of SignatureModel instances linked to the dataset
     """
@@ -77,24 +77,24 @@ def get_dataset_signatures_from_postgres(
                 .filter(DatasetModel.id == dataset_id)
                 .first()
             )
-            
+
             if not dataset:
                 logger.warning(
                     "[SIGNATURE-LINK] Dataset %s not found in Postgres",
                     dataset_id,
                 )
                 return []
-            
+
             signatures = dataset.signatures or []
-            
+
             logger.debug(
                 "[SIGNATURE-LINK] Found %d signature(s) linked to dataset %s",
                 len(signatures),
                 dataset_id,
             )
-            
+
             return signatures
-            
+
         except Exception as e:
             logger.error(
                 "[SIGNATURE-LINK] Error getting signatures for dataset %s: %r",
@@ -109,10 +109,10 @@ def get_signature_datasets_from_postgres(
 ) -> List[DatasetModel]:
     """
     Get all datasets linked to a signature from Postgres.
-    
+
     Args:
         signature_id: Postgres UUID of the signature
-        
+
     Returns:
         List of DatasetModel instances linked to the signature
     """
@@ -123,24 +123,24 @@ def get_signature_datasets_from_postgres(
                 .filter(SignatureModel.id == signature_id)
                 .first()
             )
-            
+
             if not signature:
                 logger.warning(
                     "[SIGNATURE-LINK] Signature %s not found in Postgres",
                     signature_id,
                 )
                 return []
-            
+
             datasets = signature.datasets or []
-            
+
             logger.debug(
                 "[SIGNATURE-LINK] Found %d dataset(s) linked to signature %s",
                 len(datasets),
                 signature_id,
             )
-            
+
             return datasets
-            
+
         except Exception as e:
             logger.error(
                 "[SIGNATURE-LINK] Error getting datasets for signature %s: %r",
@@ -157,12 +157,12 @@ def unlink_signature_from_dataset(
 ) -> bool:
     """
     Unlink a signature from a dataset in Postgres.
-    
+
     Args:
         signature_id: Postgres UUID of the signature
         dataset_id: Postgres UUID of the dataset
         db: Optional database session
-        
+
     Returns:
         True if unlinking succeeded, False otherwise
     """

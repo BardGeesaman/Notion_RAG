@@ -23,7 +23,7 @@ from amprenta_rag.models.domain import FeatureType, OmicsType, SignatureDirectio
 
 class BaseSchema(BaseModel):
     """Base schema with common configuration."""
-    
+
     class Config:
         from_attributes = True
         json_encoders = {
@@ -69,7 +69,7 @@ class Program(ProgramBase):
     updated_at: datetime
     notion_page_id: Optional[str] = None
     external_ids: Optional[dict] = None
-    
+
     # Override disease to handle None from database
     disease: Optional[List[str]] = None
 

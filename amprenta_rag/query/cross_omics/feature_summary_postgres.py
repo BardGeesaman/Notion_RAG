@@ -63,7 +63,7 @@ def cross_omics_feature_summary_postgres(
 
     with db_session() as db:
         feature: FeatureModel | None = None
-        
+
         if feature_id:
             feature = db.query(FeatureModel).filter(FeatureModel.id == feature_id).first()
             if not feature:
@@ -90,29 +90,29 @@ def cross_omics_feature_summary_postgres(
                 return f"Error: Feature '{feature_name}' of type '{feature_type}' not found in Postgres."
         else:
             return "Error: Must provide either feature_id or (feature_name and feature_type)."
-        
+
         feature_name_display = feature.name or "Unknown Feature"
         feature_type_display = feature.feature_type or "unknown"
-        
+
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Found feature: %s (%s)",
             feature_name_display,
             feature_type_display,
         )
-        
+
         datasets = feature.datasets
-        
+
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Found %d linked datasets for feature %s",
             len(datasets),
             feature_name_display,
         )
-        
+
         dataset_page_ids: List[str] = []
         for dataset in datasets[:top_k_datasets]:
             if dataset.notion_page_id:
                 dataset_page_ids.append(dataset.notion_page_id)
-        
+
         query_text = f"{feature_type_display} {feature_name_display} multi-omics"
         feature_chunks = query_pinecone(
             user_query=query_text,
@@ -120,7 +120,7 @@ def cross_omics_feature_summary_postgres(
             meta_filter=None,
             source_types=None,
         )
-        
+
         filtered_chunks: List[Dict[str, Any]] = []
         feature_name_lower = feature_name_display.lower()
         for chunk in feature_chunks:
@@ -128,10 +128,10 @@ def cross_omics_feature_summary_postgres(
             snippet = meta.get("snippet", "").lower()
             title = meta.get("title", "").lower()
             text = f"{title} {snippet}"
-            
+
             if feature_name_lower in text:
                 filtered_chunks.append(chunk)
-        
+
         if dataset_page_ids:
             dataset_chunks = retrieve_chunks_for_objects(
                 dataset_page_ids,
@@ -139,22 +139,22 @@ def cross_omics_feature_summary_postgres(
                 top_k_per_object=top_k_chunks // max(len(dataset_page_ids), 1),
             )
             filtered_chunks.extend(dataset_chunks)
-        
+
         if not filtered_chunks:
             logger.warning(
                 "[RAG][CROSS-OMICS][POSTGRES] No chunks found for feature %s. "
                 "Linked datasets may not have been ingested into RAG.",
                 feature_name_display,
             )
-            
+
             aggregated_context = aggregate_context_from_models(datasets, [])
             comparative_context = identify_comparative_context_postgres(aggregated_context)
-            
+
             omics_types = {}
             for dataset in datasets:
                 omics_type = dataset.omics_type or "Other"
                 omics_types[omics_type] = omics_types.get(omics_type, 0) + 1
-            
+
             additional_info = f"""This {feature_type_display} feature appears in:
 - {len(datasets)} linked dataset(s)
 - Omics types: {', '.join(omics_types.keys()) if omics_types else 'None'}
@@ -184,19 +184,19 @@ Summarize how this feature behaves across different omics modalities and context
             return summary
 
         chunks_by_omics = group_chunks_by_omics_type(filtered_chunks)
-        
+
         context_chunks: List[str] = []
         for chunk in filtered_chunks[:top_k_chunks]:
             meta = chunk.get("metadata", {}) or getattr(chunk, "metadata", {})
             title = meta.get("title", "")
             source = meta.get("source_type", "")
-            
+
             chunk_text = get_chunk_text(chunk)
             if chunk_text:
                 context_chunks.append(f"[{source}] {title}\n{chunk_text}")
-        
+
         omics_counts = {omics: len(chunks) for omics, chunks in chunks_by_omics.items() if chunks}
-        
+
         logger.info(
             "[RAG][CROSS-OMICS][POSTGRES] Retrieved %d chunks for %s feature '%s': %s",
             len(filtered_chunks),
@@ -204,10 +204,10 @@ Summarize how this feature behaves across different omics modalities and context
             feature_name_display,
             omics_counts,
         )
-        
+
         aggregated_context = aggregate_context_from_models(datasets, [])
         comparative_context = identify_comparative_context_postgres(aggregated_context)
-        
+
         additional_info = f"""This {feature_type_display} feature appears in:
 - {len(datasets)} linked dataset(s)
 

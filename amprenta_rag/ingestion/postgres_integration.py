@@ -42,7 +42,7 @@ def create_or_update_dataset_in_postgres(
 ) -> Dataset:
     """
     Create or update a dataset in Postgres.
-    
+
     Args:
         name: Dataset name
         omics_type: OmicsType enum value
@@ -57,7 +57,7 @@ def create_or_update_dataset_in_postgres(
         external_ids: Dict of external IDs (e.g., {"mw_study_id": "ST001234"})
         auto_ingest: Whether to trigger automatic ingestion (not yet implemented)
         db: Database session (optional, will create if not provided)
-    
+
     Returns:
         Dataset object
     """
@@ -104,16 +104,16 @@ def link_features_to_dataset_postgres(
 ) -> List[Feature]:
     """
     Link features to a dataset in Postgres.
-    
+
     Creates features if they don't exist and links them to the dataset.
-    
+
     Args:
         dataset_id: Dataset UUID
         feature_names: List of feature names
         feature_type: Feature type (gene, protein, metabolite, lipid)
         normalized_names: Optional list of normalized names (parallel to feature_names)
         db: Database session (optional)
-    
+
     Returns:
         List of Feature objects
     """

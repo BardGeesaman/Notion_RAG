@@ -149,7 +149,7 @@ def import_discovered_study(discovered_study_id: str) -> Optional[str]:
             study.imported_experiment_id = exp_id
             db.commit()
             logger.info(f"[DISCOVERY] Imported study {study.study_id} as experiment {exp_id}")
-            
+
             # Fire workflow trigger
             from amprenta_rag.automation.engine import fire_trigger
             fire_trigger("discovery_imported", {

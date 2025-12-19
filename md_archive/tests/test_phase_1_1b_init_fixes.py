@@ -6,13 +6,13 @@ from amprenta_rag import chemistry, migration
 
 class TestChemistryPackageImports:
     """Test chemistry package imports after Notion removal."""
-    
+
     def test_package_imports_successfully(self):
         """Test that chemistry package imports without errors."""
-        # This import is implicit by importing from amprenta_rag above, 
+        # This import is implicit by importing from amprenta_rag above,
         # but explicit import ensures we are testing what we think we are.
         assert True  # If we get here, import succeeded
-    
+
     def test_removed_notion_functions_not_available(self):
         """Test that removed Notion functions are not available."""
         removed_functions = [
@@ -22,11 +22,11 @@ class TestChemistryPackageImports:
             'find_or_create_hts_campaign_page',
             'create_biochemical_hit_page',
         ]
-        
+
         for func_name in removed_functions:
             assert not hasattr(chemistry, func_name), \
                 f"{func_name} should be removed from chemistry package"
-    
+
     def test_no_notion_imports_in_file(self):
         """Verify chemistry/__init__.py doesn't contain Notion imports."""
         chem_source = inspect.getsource(chemistry)
@@ -36,11 +36,11 @@ class TestChemistryPackageImports:
 
 class TestMigrationPackageImports:
     """Test migration package imports after Notion removal."""
-    
+
     def test_package_imports_successfully(self):
         """Test that migration package imports without errors."""
         assert True  # If we get here, import succeeded
-    
+
     def test_no_notion_imports_in_file(self):
         """Verify migration/__init__.py doesn't contain Notion imports."""
         mig_source = inspect.getsource(migration)

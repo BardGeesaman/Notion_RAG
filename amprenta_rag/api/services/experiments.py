@@ -23,7 +23,7 @@ def create_experiment(db: Session, experiment: ExperimentCreate) -> ExperimentMo
         matrix=experiment.matrix or [],
         model_systems=experiment.model_systems or [],
     )
-    
+
     # Add program relationships
     if experiment.program_ids:
         from amprenta_rag.api.services.programs import get_program
@@ -31,7 +31,7 @@ def create_experiment(db: Session, experiment: ExperimentCreate) -> ExperimentMo
             program = get_program(db, program_id)
             if program:
                 db_experiment.programs.append(program)
-    
+
     db.add(db_experiment)
     db.commit()
     db.refresh(db_experiment)
@@ -52,13 +52,13 @@ def get_experiments(
 ) -> List[ExperimentModel]:
     """Get all experiments with optional filtering."""
     query = db.query(ExperimentModel)
-    
+
     if name_filter:
         query = query.filter(ExperimentModel.name.ilike(f"%{name_filter}%"))
-    
+
     if program_id:
         query = query.filter(ExperimentModel.programs.any(id=program_id))
-    
+
     return query.offset(skip).limit(limit).all()
 
 
@@ -71,13 +71,13 @@ def update_experiment(
     db_experiment = get_experiment(db, experiment_id)
     if not db_experiment:
         return None
-    
+
     update_data = experiment.model_dump(exclude_unset=True)
     program_ids = update_data.pop("program_ids", None)
-    
+
     for field, value in update_data.items():
         setattr(db_experiment, field, value)
-    
+
     # Update program relationships if provided
     if program_ids is not None:
         from amprenta_rag.api.services.programs import get_program
@@ -86,7 +86,7 @@ def update_experiment(
             program = get_program(db, program_id)
             if program:
                 db_experiment.programs.append(program)
-    
+
     db.commit()
     db.refresh(db_experiment)
     return db_experiment
@@ -97,7 +97,7 @@ def delete_experiment(db: Session, experiment_id: UUID) -> bool:
     db_experiment = get_experiment(db, experiment_id)
     if not db_experiment:
         return False
-    
+
     db.delete(db_experiment)
     db.commit()
     return True

@@ -9,10 +9,10 @@ from amprenta_rag.database.models import Experiment, Compound, Sample, Discovere
 def get_experiment_count(db) -> int:
     """
     Get total count of experiments.
-    
+
     Args:
         db: Database session
-        
+
     Returns:
         Total number of experiments
     """
@@ -22,10 +22,10 @@ def get_experiment_count(db) -> int:
 def get_compound_count(db) -> int:
     """
     Get total count of compounds.
-    
+
     Args:
         db: Database session
-        
+
     Returns:
         Total number of compounds
     """
@@ -35,10 +35,10 @@ def get_compound_count(db) -> int:
 def get_sample_count(db) -> int:
     """
     Get total count of samples.
-    
+
     Args:
         db: Database session
-        
+
     Returns:
         Total number of samples
     """
@@ -48,17 +48,17 @@ def get_sample_count(db) -> int:
 def get_discovery_count(days: int = 7, db=None) -> int:
     """
     Get count of discoveries in the last N days.
-    
+
     Args:
         days: Number of days to look back (default: 7)
         db: Database session
-        
+
     Returns:
         Number of discoveries in the last N days
     """
     if db is None:
         return 0
-    
+
     cutoff = datetime.utcnow() - timedelta(days=days)
     return db.query(DiscoveredStudy).filter(
         DiscoveredStudy.discovered_at >= cutoff
