@@ -2,20 +2,25 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query
 
-from amprenta_rag.api.schemas import RepositorySummary, CatalogDataset
+from amprenta_rag.api.schemas import (
+    CatalogDataset,
+    CatalogDatasetsResponse,
+    CatalogSummaryResponse,
+    RepositorySummary,
+)
 from amprenta_rag.api.services import catalog_service
 
 router = APIRouter()
 
 
-@router.get("/catalog/summary", response_model=dict)
+@router.get("/catalog/summary", response_model=CatalogSummaryResponse)
 def get_catalog_summary():
     """Return repository-level counts and recency."""
     summaries = catalog_service.get_repository_summary()
     return {"repositories": [RepositorySummary(**s) for s in summaries]}
 
 
-@router.get("/catalog/datasets", response_model=dict)
+@router.get("/catalog/datasets", response_model=CatalogDatasetsResponse)
 def list_catalog_datasets(
     source: str | None = Query(default=None),
     search: str | None = Query(default=None),

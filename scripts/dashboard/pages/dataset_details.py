@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 from typing import Optional
+from uuid import UUID
 
 import httpx
 import pandas as pd
@@ -61,13 +62,20 @@ def render_feature_summary(dataset: dict):
     st.subheader("Feature Summary")
     st.bar_chart(count_df.set_index("Feature Type"))
 
-    # Sample values
+    # Paginated feature display
+    page_size = st.session_state.get("feature_page_size", 10)
     sample_rows = []
     for ftype, ids in feature_ids.items():
-        for fid in ids[:10]:
+        for fid in ids[:page_size]:
             sample_rows.append({"Feature Type": ftype, "Feature ID": fid})
     if sample_rows:
         st.table(pd.DataFrame(sample_rows))
+
+        total_features = sum(len(ids) for ids in feature_ids.values())
+        if total_features > page_size:
+            if st.button(f"Show more (viewing {page_size} of {total_features})"):
+                st.session_state["feature_page_size"] = page_size + 20
+                st.rerun()
 
 
 def render_metadata(dataset: dict):
@@ -105,15 +113,26 @@ def render_selection():
     initial_id = st.query_params.get("dataset_id")
     dataset_id = st.text_input("Dataset ID", value=initial_id or "")
     load_clicked = st.button("Load Dataset", type="primary")
+    if dataset_id:
+        try:
+            UUID(dataset_id)
+        except ValueError:
+            st.error("Invalid UUID format. Please enter a valid dataset ID.")
+            return None, False
     return dataset_id, load_clicked or bool(initial_id)
 
 
 def render_page():
     st.set_page_config(page_title="Dataset Details", layout="wide")
+    # Breadcrumb navigation
+    cols = st.columns([1, 1, 8])
+    with cols[0]:
+        if st.button("Catalog"):
+            st.switch_page("pages/external_catalog.py")
+    with cols[1]:
+        st.markdown(" → **Dataset**")
+
     st.title("Dataset Details")
-    # Back link to catalog
-    if st.button("← Back to Catalog"):
-        st.switch_page("pages/external_catalog.py")
 
     dataset_id, should_load = render_selection()
     if not should_load or not dataset_id:

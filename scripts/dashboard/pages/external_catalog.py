@@ -188,3 +188,14 @@ total = data.get("total", len(datasets)) if isinstance(data, dict) else len(data
 
 render_table(datasets, total, page)
 
+col1, col2, col3 = st.columns([1, 2, 1])
+with col1:
+    if st.button("← Previous", disabled=page <= 0):
+        st.session_state["catalog_page"] = page - 1
+        st.rerun()
+with col3:
+    total_pages = math.ceil(total / PAGE_SIZE) if total > 0 else 1
+    if st.button("Next →", disabled=page >= total_pages - 1):
+        st.session_state["catalog_page"] = page + 1
+        st.rerun()
+

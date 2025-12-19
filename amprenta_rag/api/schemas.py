@@ -207,6 +207,19 @@ class CatalogDataset(BaseSchema):
     feature_count: int = 0
 
 
+class CatalogSummaryResponse(BaseSchema):
+    """Response wrapper for catalog summary."""
+
+    repositories: List[RepositorySummary]
+
+
+class CatalogDatasetsResponse(BaseSchema):
+    """Response wrapper for catalog dataset listings."""
+
+    datasets: List[CatalogDataset]
+    total: int
+
+
 # ============================================================================
 # Subscription schemas
 # ============================================================================

@@ -82,10 +82,18 @@ def get_catalog_datasets(
                 )
             )
 
-        total = query.count()
-        results: List[Dataset] = (
-            query.order_by(Dataset.created_at.desc()).offset(offset).limit(limit).all()
+        count_query = query.with_entities(
+            Dataset, func.count().over().label("total_count")
         )
+        rows = (
+            count_query.order_by(Dataset.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        total = rows[0].total_count if rows else 0
+        results: List[Dataset] = [row[0] for row in rows]
 
         datasets: List[dict] = []
         for d in results:

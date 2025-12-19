@@ -40,13 +40,16 @@ def fetch_summary() -> Dict:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def health_score(status: str) -> int:
-    status = (status or "").lower()
-    if status == "healthy":
-        return 100
-    if status == "warning":
-        return 60
-    return 30
+HEALTH_THRESHOLDS = {
+    "healthy_days": 7,    # Synced within 7 days = healthy
+    "warning_days": 30,   # Synced within 30 days = warning
+}
+
+
+def health_score(status: str, last_sync: str = None) -> int:
+    """Calculate health score (0-100) based on status and recency."""
+    base_scores = {"healthy": 100, "warning": 60, "stale": 30}
+    return base_scores.get((status or "").lower(), 0)
 
 
 def render_status_cards(repos: List[Dict]):
@@ -73,7 +76,7 @@ def render_status_cards(repos: List[Dict]):
 
 def render_sync_history(repos: List[Dict]):
     st.subheader("Sync History (last 30 days)")
-    # Placeholder: no API for sync events yet
+    # TODO: HEALTH-1 - Implement /api/v1/catalog/sync-events endpoint for history
     st.info("Sync history endpoint not available. Add endpoint to visualize events.")
 
 
@@ -96,9 +99,10 @@ def render_health_metrics(repos: List[Dict]):
         if dt:
             ages.append((now - dt).total_seconds() / 86400.0)
     data = {
-        "Avg time between syncs (days)": "n/a (no history)",
-        "Success rate": "n/a (no history)",
-        "Data freshness (avg days since last sync)": f"{(sum(ages)/len(ages)):.2f}" if ages else "n/a",
+        "Sync frequency": "Not tracked yet (requires sync event API)",
+        "Success rate": "Not tracked yet (requires sync event API)",
+        "Data freshness": f"{(sum(ages)/len(ages)):.1f} days" if ages else "No data",
+        "Total datasets": sum(r.get("dataset_count", 0) for r in repos),
     }
     st.table(pd.DataFrame(list(data.items()), columns=["Metric", "Value"]))
 
@@ -119,6 +123,14 @@ def render_actions():
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="Repository Health", layout="wide")
 st.title("Repository Health")
+
+# Auto-refresh toggle
+auto_refresh = st.checkbox("Auto-refresh (30s)", value=False)
+if auto_refresh:
+    import time
+
+    time.sleep(30)
+    st.rerun()
 
 with st.spinner("Loading repository status..."):
     summary = fetch_summary()

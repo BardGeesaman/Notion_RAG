@@ -83,7 +83,18 @@ def render_alerts_bell():
                 with col3:
                     st.caption("")
 
+            @st.dialog("Confirm")
+            def confirm_mark_all():
+                st.write(f"Mark all {len(alerts)} alerts as read?")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("Yes", use_container_width=True):
+                        mark_all_read()
+                        st.rerun()
+                with col2:
+                    if st.button("Cancel", use_container_width=True):
+                        st.rerun()
+
             if st.button("Mark all read"):
-                if mark_all_read():
-                    st.rerun()
+                confirm_mark_all()
 

@@ -10,47 +10,10 @@ Items identified during code reviews that are non-blocking but should be address
 
 ## Open Items
 
-### External Catalog (997e198)
-| ID | Priority | Description | File | Added |
-|----|----------|-------------|------|-------|
-| CAT-1 | P3 | Optimize double query (count + all) | catalog_service.py | 2024-12-18 |
-| CAT-2 | P3 | Add prev/next pagination buttons | external_catalog.py | 2024-12-18 |
-| CAT-4 | P3 | Create proper response schemas | catalog.py | 2024-12-18 |
-
-### Subscriptions (09cb143)
-| ID | Priority | Description | File | Added |
-|----|----------|-------------|------|-------|
-| SUB-1 | P3 | Add timestamps to SubscriptionResponse | schemas.py | 2024-12-18 |
-
-### Background Job (8a78a11)
-| ID | Priority | Description | File | Added |
-|----|----------|-------------|------|-------|
-| — | — | — | — | — |
-
-### Alerts Bell (5e5ddea)
-| ID | Priority | Description | File | Added |
-|----|----------|-------------|------|-------|
-| BELL-2 | P3 | Add confirmation for "mark all read" | alerts_bell.py | 2024-12-18 |
-| BELL-3 | P3 | Add navigation link to dataset from alert | alerts_bell.py | 2024-12-18 |
-
-### Dataset Details (pending)
-| ID | Priority | Description | File | Added |
-|----|----------|-------------|------|-------|
-| DS-1 | P3 | Add "Show more" pagination for features | dataset_details.py | 2024-12-18 |
-| DS-2 | P3 | Validate UUID format client-side | dataset_details.py | 2024-12-18 |
-
-### Repository Health (pending commit)
+### Repository Health
 | ID | Priority | Description | File | Added |
 |----|----------|-------------|------|-------|
 | HEALTH-1 | P3 | Add sync event tracking API for history chart | repository_health.py | 2024-12-18 |
-| HEALTH-2 | P3 | Make health score configurable/formula-based | repository_health.py | 2024-12-18 |
-| HEALTH-3 | P3 | Add auto-refresh timer for live updates | repository_health.py | 2024-12-18 |
-| HEALTH-4 | P3 | Add sync frequency and success rate metrics | repository_health.py | 2024-12-18 |
-
-### Navigation Links (pending commit)
-| ID | Priority | Description | File | Added |
-|----|----------|-------------|------|-------|
-| NAV-1 | P3 | Add breadcrumb trail for navigation history | dataset_details.py | 2024-12-18 |
 
 ---
 
@@ -65,4 +28,16 @@ Items identified during code reviews that are non-blocking but should be address
 | NAV-2 | Auto-mark alert read on View navigation | pending | 2024-12-18 |
 | BELL-1 | Show dataset title instead of UUID | pending | 2024-12-18 |
 | DS-3 | Distinguish 404 vs 500 errors in UI | pending | 2024-12-18 |
+| SUB-1 | Timestamps added to SubscriptionResponse | completed | 2025-12-19 |
+| DS-2 | UUID validation implemented | completed | 2025-12-19 |
+| BELL-2 | Confirmation dialog for "mark all read" | completed | 2025-12-19 |
+| BELL-3 | Navigation link to dataset from alert | completed | 2025-12-19 |
+| CAT-1 | Query optimization implemented | completed | 2025-12-19 |
+| CAT-2 | Pagination buttons added | completed | 2025-12-19 |
+| CAT-4 | Response schemas created | completed | 2025-12-19 |
+| DS-1 | "Show more" pagination for features | completed | 2025-12-19 |
+| NAV-1 | Breadcrumb trail navigation | completed | 2025-12-19 |
+| HEALTH-2 | Configurable health score | completed | 2025-12-19 |
+| HEALTH-3 | Auto-refresh timer | completed | 2025-12-19 |
+| HEALTH-4 | Sync frequency and success rate metrics | completed | 2025-12-19 |
 
