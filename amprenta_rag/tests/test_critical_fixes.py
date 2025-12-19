@@ -55,16 +55,21 @@ def test_ingestion_page_module_imports_without_errors():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.skip(reason="Test mocks non-existent auto_linking.get_db - needs rewrite")
-def test_auto_linking_db_session_closes_on_success(monkeypatch):
+def test_db_session_closes_on_success(monkeypatch):
     """
     db_session context manager must close the underlying DB session on success.
     """
-    from amprenta_rag.ingestion import auto_linking
+    from amprenta_rag.database import session as db_session_mod
 
     class DummySession:
         def __init__(self):
             self.closed = False
+
+        def rollback(self):
+            return None
+
+        def commit(self):
+            return None
 
         def close(self):
             self.closed = True
@@ -76,14 +81,13 @@ def test_auto_linking_db_session_closes_on_success(monkeypatch):
             try:
                 yield session
             finally:
-                # get_db's own finally isn't used here; closing is handled by db_session
                 pass
 
         return gen()
 
-    monkeypatch.setattr(auto_linking, "get_db", fake_get_db)
+    monkeypatch.setattr(db_session_mod, "get_db", fake_get_db)
 
-    with auto_linking.db_session() as db:
+    with db_session_mod.db_session() as db:
         assert isinstance(db, DummySession)
         assert not db.closed
 
@@ -91,16 +95,21 @@ def test_auto_linking_db_session_closes_on_success(monkeypatch):
     assert db.closed
 
 
-@pytest.mark.skip(reason="Test mocks non-existent auto_linking.get_db - needs rewrite")
-def test_auto_linking_db_session_closes_on_exception(monkeypatch):
+def test_db_session_closes_on_exception(monkeypatch):
     """
     db_session must also close the session when an exception occurs inside the block.
     """
-    from amprenta_rag.ingestion import auto_linking
+    from amprenta_rag.database import session as db_session_mod
 
     class DummySession:
         def __init__(self):
             self.closed = False
+
+        def rollback(self):
+            return None
+
+        def commit(self):
+            return None
 
         def close(self):
             self.closed = True
@@ -116,10 +125,10 @@ def test_auto_linking_db_session_closes_on_exception(monkeypatch):
 
         return gen()
 
-    monkeypatch.setattr(auto_linking, "get_db", fake_get_db)
+    monkeypatch.setattr(db_session_mod, "get_db", fake_get_db)
 
     with pytest.raises(RuntimeError):
-        with auto_linking.db_session() as db:
+        with db_session_mod.db_session() as db:
             assert isinstance(db, DummySession)
             raise RuntimeError("Simulated failure inside db_session")
 
