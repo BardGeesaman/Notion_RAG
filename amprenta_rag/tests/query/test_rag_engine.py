@@ -167,7 +167,7 @@ class TestSummarizeMatch:
                 self.id = "empty-meta"
                 self.score = 0.75
                 self.metadata = {}
-            
+
             def get(self, key, default=None):
                 # Fallback for dict-style access
                 return getattr(self, key, default)
@@ -254,7 +254,7 @@ class TestQueryRAG:
     """Tests for the main query_rag function."""
 
     @patch("amprenta_rag.query.rag.query.collect_hybrid_chunks")
-    @patch("amprenta_rag.query.rag.query.synthesize_answer")
+    @patch("amprenta_rag.query.rag.synthesis.synthesize_answer")
     @patch("amprenta_rag.query.rag.query.query_pinecone")
     def test_query_rag_basic(self, mock_pinecone, mock_synthesize, mock_chunks):
         """query_rag should orchestrate pinecone query and synthesis."""
