@@ -2,6 +2,8 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+pytestmark = pytest.mark.requires_server
+
 
 @pytest.mark.parametrize("page_name,expected_text,expander", [
     ("Compare", "Compare", "📚 Other Pages"),

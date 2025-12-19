@@ -436,6 +436,9 @@ from amprenta_rag.models.chemistry import (  # noqa: F401
     TargetProductProfile,
     CandidateNomination,
     GenericAssayResult,
+    ADMEResult,  # noqa: F401
+    PKStudy,  # noqa: F401
+    ToxicologyResult,  # noqa: F401
 )
 from amprenta_rag.models.auth import (  # noqa: F401
     User,
@@ -465,6 +468,7 @@ from amprenta_rag.models.user_prefs import (  # noqa: F401
     Notification,
     UserFavorite,
     EmailSubscription,
+    SavedFilter,
 )
 from amprenta_rag.models.content import Email  # noqa: F401
 from amprenta_rag.models.sample import (  # noqa: F401
@@ -480,6 +484,9 @@ from amprenta_rag.models.misc import (  # noqa: F401
     ScheduledEvent,
     RetentionPolicy,
     OntologyTerm,
+    ExperimentTemplate,  # noqa: F401
+    GeneticVariant,  # noqa: F401
+    CostEntry,  # noqa: F401
 )
 from amprenta_rag.models.eln import (  # noqa: F401
     Protocol,

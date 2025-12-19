@@ -105,6 +105,14 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-19] – **Playwright E2E Test Separation**:
+  - Installed Playwright browser binaries (chromium)
+  - Added requires_server marker to pytest.ini
+  - Marked 76 E2E tests with @pytest.mark.requires_server
+  - Added 7 missing model re-exports (ADMEResult, PKStudy, etc.)
+  - Tests now: 355 passed, 32 skipped, 76 requires_server (deselected)
+  - Run E2E: `streamlit run scripts/dashboard/app.py & pytest -m requires_server`
+
 * [2025-12-19] – **Skipped Tests Fix Complete**:
   - Re-enabled 19 tests (was 23 skipped, now 4)
   - API tests: Removed pytestmark skip from test_endpoints.py (12), test_chemistry_endpoints.py (5)
@@ -493,7 +501,7 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 ### Summary
 
-The system has reached **production maturity** with **50+ features**, **342 passing tests** (excluding Playwright), **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Phase 1, 2, 3 code quality complete** (2025-12-19): 0 lint errors, all tests passing, database migrations applied.
+The system has reached **production maturity** with **50+ features**, **355 unit/integration tests passing + 76 E2E tests**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Phase 1, 2, 3 code quality complete** (2025-12-19): 0 lint errors, all tests passing, database migrations applied.
 
 **JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17). **AWS deployment infrastructure COMPLETE** (2025-12-19). **Code quality Phase 1 COMPLETE** (2025-12-18).
 
@@ -501,7 +509,7 @@ The system has reached **production maturity** with **50+ features**, **342 pass
 
 *   **System Status**: Production-Ready with Cloud Deployment Capability. Code quality at 10/10 (Phase 1 & 2 complete).
 *   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (47+ pages), JupyterHub operational, AWS Terraform infrastructure.
-*   **Test Coverage**: 342 passed, 0 failed, 4 skipped (excluding Playwright which needs browser install).
+*   **Test Coverage**: 355 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker).
 *   **Database**: All migrations applied (mwtab_json JSONB, validation_status enum), permissions resolved, name standardized to 'amprenta'.
 *   **JupyterHub**: All 5 phases complete (API client, write endpoints, deployment, SSO, templates).
 *   **Notebook Suite**: 10 Voila notebooks standardized with shared utilities (notebook_utils.py).

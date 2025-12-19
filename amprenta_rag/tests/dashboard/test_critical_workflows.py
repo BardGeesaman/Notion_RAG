@@ -12,7 +12,7 @@ import os
 import pytest
 from playwright.sync_api import Page, expect
 
-pytestmark = pytest.mark.skip(reason="Requires running dashboard server at localhost:8502")
+pytestmark = pytest.mark.requires_server
 
 
 @pytest.fixture(scope="session")

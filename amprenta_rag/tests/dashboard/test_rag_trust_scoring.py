@@ -1,6 +1,8 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+pytestmark = pytest.mark.requires_server
+
 
 @pytest.fixture(scope="function")
 def rag_page(page: Page, base_url: str):

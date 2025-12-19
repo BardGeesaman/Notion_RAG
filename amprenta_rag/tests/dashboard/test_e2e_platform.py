@@ -6,6 +6,7 @@ import pytest
 from playwright.sync_api import Page, expect
 import time
 
+pytestmark = pytest.mark.requires_server
 # Quick self-check
 if __name__ == "__main__":
     print("Syntax OK")

@@ -65,7 +65,8 @@ Simple status legend:
 ### Testing & Development
 - ✅ Comprehensive Test Data Seeding Suite (all domains, size presets, deterministic)
 - ✅ Phase 2 Code Quality (2025-12-19): ruff.toml config, 6,252 whitespace fixes, 213 F401 fixes, 22 E712 fixes, model re-exports restored
-- ✅ Test Suite: 342 passed, 4 skipped (2025-12-19)
+- ✅ Test Suite: 355 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker)
+- ✅ Playwright E2E Separation (2025-12-19): chromium installed, server-dependent tests marked and deselected from default runs
 
 ---
 

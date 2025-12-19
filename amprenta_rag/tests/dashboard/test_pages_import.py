@@ -45,6 +45,7 @@ PAGES = [
 @pytest.mark.ui
 @pytest.mark.parametrize("page_name", PAGES)
 def test_page_imports(page_name: str):
+    pytest.importorskip("pptx")
     module_name = f"scripts.dashboard.pages.{page_name}"
     __import__(module_name)
 

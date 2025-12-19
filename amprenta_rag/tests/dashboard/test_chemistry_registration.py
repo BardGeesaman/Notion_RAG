@@ -1,6 +1,10 @@
 """Chemistry registration E2E test."""
 from playwright.sync_api import Page, expect
 
+import pytest
+
+pytestmark = pytest.mark.requires_server
+
 
 def test_register_compound_and_verify(page: Page, base_url: str):
     page.goto(base_url)
