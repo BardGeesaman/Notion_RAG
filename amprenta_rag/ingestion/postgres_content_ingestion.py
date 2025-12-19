@@ -309,7 +309,7 @@ def ingest_content_direct_to_pinecone(
 
     # Detect signatures (optional, requires Notion page ID - skip if not available)
     try:
-        source_metadata_for_signatures = {
+        {
             "diseases": base_meta.get("diseases", []),
             "matrix": base_meta.get("matrix", []),
             "model_systems": base_meta.get("model_systems", []),

@@ -43,9 +43,9 @@ def main():
             force=args.force,
         )
 
-        print(f"\n✅ Ingestion complete!")
+        print("\n✅ Ingestion complete!")
         print(f"   Experiment page ID: {args.experiment_page_id}")
-        print(f"   Check logs above for chunk count and embedding details")
+        print("   Check logs above for chunk count and embedding details")
 
     except Exception as e:
         logger.error("[INGEST][EXPERIMENT] Ingestion failed: %r", e)

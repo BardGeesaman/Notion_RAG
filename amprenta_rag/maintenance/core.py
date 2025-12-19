@@ -33,7 +33,7 @@ def archive_all_pages_in_db(db_id: str, label: str = "") -> None:
     Previously archived all pages in a Notion database.
     """
     logger.debug("[MAINTENANCE][CORE] archive_all_pages_in_db() is a no-op (Notion removed)")
-    print(f"⚠️ archive_all_pages_in_db() is a no-op (Notion support removed)")
+    print("⚠️ archive_all_pages_in_db() is a no-op (Notion support removed)")
 
 
 def clear_rag_engine_db() -> None:

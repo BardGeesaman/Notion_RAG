@@ -69,7 +69,6 @@ def _render_policies_tab() -> None:
 
                 policy = db.query(RetentionPolicy).filter(RetentionPolicy.id == selected_policy_id).first()
                 if policy:
-                    current_status = "Active" if policy.is_active else "Inactive"
                     new_status = "Inactive" if policy.is_active else "Active"
 
                     if st.button(f"Toggle to {new_status}", key=f"toggle_{selected_policy_id}"):
@@ -158,7 +157,7 @@ def _render_archived_tab() -> None:
                         "Created": exp.created_at.strftime("%Y-%m-%d") if exp.created_at else "",
                     })
 
-                df_exps = pd.DataFrame(exp_data)
+                pd.DataFrame(exp_data)
 
                 # Add restore buttons
                 for idx, exp in enumerate(archived_experiments):

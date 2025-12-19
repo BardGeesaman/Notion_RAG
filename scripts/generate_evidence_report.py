@@ -175,7 +175,7 @@ def main() -> None:
             else:
                 pdf_path = Path(f"evidence_report_{report.entity_id}.pdf")
 
-            print(f"\n📕 Generating PDF...")
+            print("\n📕 Generating PDF...")
             try:
                 markdown_to_pdf(formatted_report, output_path=pdf_path)
                 print(f"✅ PDF saved to {pdf_path}")
@@ -184,7 +184,7 @@ def main() -> None:
 
         # Write to Notion if requested
         if args.write_to_notion:
-            print(f"\n📥 Writing report to Notion...")
+            print("\n📥 Writing report to Notion...")
             success = write_evidence_report_to_notion(
                 report=report,
                 property_name=args.notion_property,

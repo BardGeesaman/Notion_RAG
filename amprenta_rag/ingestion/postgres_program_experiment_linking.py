@@ -80,8 +80,6 @@ def convert_notion_ids_to_postgres_uuids(
     Returns:
         Tuple of (program_uuids, experiment_uuids)
     """
-    program_uuids: List[UUID] = []
-    experiment_uuids: List[UUID] = []
 
     if db is None:
         with db_session() as db:

@@ -28,7 +28,7 @@ def compute_effect_size(group1: Iterable[float], group2: Iterable[float]) -> flo
 
 def compare_cohorts(df: pd.DataFrame, cohort_labels: List[str]) -> pd.DataFrame:
     """Run ANOVA across cohorts for each feature."""
-    features = df.index.tolist()
+    df.index.tolist()
     results: List[Dict[str, float | str]] = []
 
     # Group columns by cohort label

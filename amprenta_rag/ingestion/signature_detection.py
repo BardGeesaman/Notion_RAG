@@ -191,7 +191,7 @@ def extract_signature_from_text_table(text: str) -> Optional[Dict[str, Any]]:
                 col.lower() in ["species", "metabolite", "lipid", "name", "compound"]
                 for col in fieldnames
             )
-            has_direction_col = any(
+            any(
                 col.lower() in ["direction", "dir", "change", "trend"]
                 for col in fieldnames
             )

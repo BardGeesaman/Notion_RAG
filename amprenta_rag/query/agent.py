@@ -231,7 +231,7 @@ def agentic_rag(question: str, max_steps: int = 3) -> AgenticResult:
     # Final synthesis across all gathered context
     logger.info("[AGENT] Synthesizing final answer from %d total chunks", total_chunks)
     from amprenta_rag.query.rag.synthesis import synthesize_answer
-    final_context = "\n\n".join(all_context)
+    "\n\n".join(all_context)
     answer = synthesize_answer(question, all_chunks)
 
     steps.append({

@@ -74,7 +74,7 @@ def test_ena_metadata(study_id: str):
         metadata = ena.fetch_study_metadata(study_id)
 
         if metadata:
-            print(f"✅ Successfully fetched metadata:")
+            print("✅ Successfully fetched metadata:")
             print(f"   Title: {metadata.title}")
             print(f"   Repository: {metadata.repository}")
             print(f"   Omics Type: {metadata.omics_type}")
@@ -87,7 +87,7 @@ def test_ena_metadata(study_id: str):
 
             if metadata.raw_metadata:
                 run_data = metadata.raw_metadata
-                print(f"\n   Raw Metadata Fields:")
+                print("\n   Raw Metadata Fields:")
                 print(f"   - Run Accession: {run_data.get('run_accession', 'N/A')}")
                 print(f"   - Study Accession: {run_data.get('study_accession', 'N/A')}")
                 print(f"   - Experiment Accession: {run_data.get('experiment_accession', 'N/A')}")

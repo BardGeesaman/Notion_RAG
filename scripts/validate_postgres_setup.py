@@ -77,7 +77,7 @@ def check_connection() -> bool:
         with engine.connect() as conn:
             result = conn.execute(text("SELECT version();"))
             version = result.scalar()
-            print(f"  ✅ Connected successfully")
+            print("  ✅ Connected successfully")
             print(f"  PostgreSQL version: {version[:50]}...")
 
         return True
@@ -188,7 +188,7 @@ def check_migrations() -> bool:
             result = conn.execute(text("SELECT version_num FROM alembic_version;"))
             current_revision = result.scalar()
 
-        print(f"  ✅ Migrations applied")
+        print("  ✅ Migrations applied")
         print(f"  Current revision: {current_revision}")
 
         # Check if up to date

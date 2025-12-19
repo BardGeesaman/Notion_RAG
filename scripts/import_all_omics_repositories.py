@@ -290,7 +290,7 @@ Examples:
     args = parser.parse_args()
 
     # List repositories if requested
-    total = success = failed = skipped = 0
+    total = 0
     if args.list_repositories:
         repos = list_available_repositories()
         print("\nAvailable repositories:")

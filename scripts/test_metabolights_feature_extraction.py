@@ -31,16 +31,16 @@ def test_metabolights_metabolite_extraction(study_id: str = "MTBLS1"):
         )
 
         if metabolite_set:
-            print(f"\n✅ Extraction successful!")
+            print("\n✅ Extraction successful!")
             print(f"   Found {len(metabolite_set)} unique metabolites")
-            print(f"\n   Sample metabolites (first 20):")
+            print("\n   Sample metabolites (first 20):")
             for i, metabolite in enumerate(sorted(metabolite_set)[:20], 1):
                 print(f"      {i}. {metabolite}")
 
             if len(metabolite_set) > 20:
                 print(f"   ... and {len(metabolite_set) - 20} more metabolites")
         else:
-            print(f"\n⚠️  No metabolites extracted")
+            print("\n⚠️  No metabolites extracted")
             print("   This may be expected if the study doesn't have accessible metabolite data files")
 
         return metabolite_set

@@ -339,7 +339,7 @@ def _render_edit_tab() -> None:
                 # Update stored version
                 st.session_state[f"edit_version_{experiment.id}"] = experiment.version
             except ConflictError as e:
-                st.error(f"⚠️ Conflict: This record was modified by another user.")
+                st.error("⚠️ Conflict: This record was modified by another user.")
                 st.warning(f"Your version: {e.expected}, Current version: {e.actual}")
                 col1, col2 = st.columns(2)
                 with col1:
@@ -510,7 +510,7 @@ def _render_study_quality_tab() -> None:
             st.markdown("---")
 
             # Overall Summary
-            st.markdown(f"### Summary")
+            st.markdown("### Summary")
             st.info(result.get("summary", "No summary available"))
 
             st.markdown("---")

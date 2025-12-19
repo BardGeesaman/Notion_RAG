@@ -35,7 +35,7 @@ def test_pride_search():
     try:
         project_ids = repo.search_studies(keywords=keywords, max_results=5)
 
-        print(f"\n✅ Search successful!")
+        print("\n✅ Search successful!")
         print(f"   Found {len(project_ids)} projects:")
         for i, pid in enumerate(project_ids, 1):
             print(f"   {i}. {pid}")
@@ -67,7 +67,7 @@ def test_pride_metadata(project_id: str):
         metadata = repo.fetch_study_metadata(project_id)
 
         if metadata:
-            print(f"\n✅ Metadata fetch successful!")
+            print("\n✅ Metadata fetch successful!")
             print(f"   Title: {metadata.title}")
             print(f"   Description: {metadata.summary[:100] if metadata.summary else 'N/A'}...")
             print(f"   Organism: {', '.join(metadata.organism) if metadata.organism else 'N/A'}")
@@ -76,7 +76,7 @@ def test_pride_metadata(project_id: str):
             print(f"   Publication Date: {metadata.publication_date or 'N/A'}")
             return project_id
         else:
-            print(f"\n❌ Metadata fetch returned None")
+            print("\n❌ Metadata fetch returned None")
             return None
 
     except Exception as e:
@@ -108,7 +108,7 @@ def test_pride_files(project_id: str):
         )
 
         if data_files:
-            print(f"\n✅ Files fetch successful!")
+            print("\n✅ Files fetch successful!")
             print(f"   Found {len(data_files)} files:")
             for i, file_info in enumerate(data_files[:5], 1):  # Show first 5
                 print(f"   {i}. {file_info.filename}")
@@ -117,7 +117,7 @@ def test_pride_files(project_id: str):
             if len(data_files) > 5:
                 print(f"   ... and {len(data_files) - 5} more files")
         else:
-            print(f"\n⚠️  No TSV/CSV files found (this is OK - project may only have raw files)")
+            print("\n⚠️  No TSV/CSV files found (this is OK - project may only have raw files)")
 
     except Exception as e:
         print(f"\n❌ Files fetch failed: {e}")

@@ -464,11 +464,11 @@ def generate_program_map_report(
 
     # Omics Coverage
     if program_map.omics_coverage:
-        report += f"## Omics Coverage\n\n"
+        report += "## Omics Coverage\n\n"
         report += f"**Total Datasets**: {program_map.omics_coverage.total_datasets}\n\n"
 
         if program_map.omics_coverage.datasets_by_omics:
-            report += f"### Datasets by Omics Type\n\n"
+            report += "### Datasets by Omics Type\n\n"
             for omics_type, count in sorted(program_map.omics_coverage.datasets_by_omics.items()):
                 features_count = program_map.omics_coverage.features_by_omics.get(omics_type, 0)
                 report += f"- **{omics_type.capitalize()}**: {count} dataset(s), {features_count} unique features\n"
@@ -478,7 +478,7 @@ def generate_program_map_report(
 
     # Convergence Indicators
     if program_map.convergence_indicators:
-        report += f"## Cross-Omics Convergence\n\n"
+        report += "## Cross-Omics Convergence\n\n"
         report += f"**Multi-Omics Signatures**: {program_map.convergence_indicators.get('multi_omics_signature_count', 0)}\n"
         report += f"**Convergence Fraction**: {program_map.convergence_indicators.get('convergence_fraction', 0.0):.3f}\n"
         report += f"**Avg Omics per Signature**: {program_map.convergence_indicators.get('avg_omics_per_signature', 0.0):.2f}\n\n"
@@ -486,7 +486,7 @@ def generate_program_map_report(
     # Top Signatures
     signatures_to_show = program_map.signature_scores if include_all_signatures else program_map.top_signatures
 
-    report += f"## Signature Scores\n\n"
+    report += "## Signature Scores\n\n"
     report += f"**Total Matching Signatures**: {len(program_map.signature_scores)}\n\n"
 
     if signatures_to_show:
@@ -497,7 +497,7 @@ def generate_program_map_report(
             report += f"- **Coverage**: {score.coverage_fraction:.1%} ({len(score.matching_datasets)}/{program_map.omics_coverage.total_datasets if program_map.omics_coverage else 0} datasets)\n"
 
             if score.score_by_omics:
-                report += f"- **Scores by Omics**:\n"
+                report += "- **Scores by Omics**:\n"
                 for omics_type, sig_score in sorted(score.score_by_omics.items()):
                     report += f"  - {omics_type.capitalize()}: {sig_score:.3f}\n"
 

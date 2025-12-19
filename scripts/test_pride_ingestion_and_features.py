@@ -47,7 +47,7 @@ def test_pride_ingestion(project_id: str):
             print(f"\n❌ Failed to fetch metadata for {project_id}")
             return None
 
-        print(f"\n✅ Metadata fetched successfully!")
+        print("\n✅ Metadata fetched successfully!")
         print(f"   Title: {metadata.title}")
         print(f"   Organism: {', '.join(metadata.organism) if metadata.organism else 'N/A'}")
 
@@ -66,7 +66,7 @@ def test_pride_ingestion(project_id: str):
             db.commit()
             db.refresh(dataset)
 
-            print(f"\n✅ Dataset created in Postgres!")
+            print("\n✅ Dataset created in Postgres!")
             print(f"   Dataset ID: {dataset.id}")
             print(f"   Dataset Name: {dataset.name}")
             print(f"   Omics Type: {dataset.omics_type}")
@@ -99,10 +99,10 @@ def test_pride_feature_extraction(dataset_id: UUID, project_id: str):
         )
 
         if linked_count > 0:
-            print(f"\n✅ Feature extraction successful!")
+            print("\n✅ Feature extraction successful!")
             print(f"   Linked {linked_count} proteins to dataset")
         else:
-            print(f"\n⚠️  No features extracted (this may be OK if project has no suitable files)")
+            print("\n⚠️  No features extracted (this may be OK if project has no suitable files)")
             return
 
         # Verify features in database
@@ -113,7 +113,7 @@ def test_pride_feature_extraction(dataset_id: UUID, project_id: str):
                 # Access linked features through relationship
                 features = dataset.features or []
 
-                print(f"\n✅ Verification:")
+                print("\n✅ Verification:")
                 print(f"   Total features linked: {len(features)}")
 
                 # Filter for proteins
@@ -121,13 +121,13 @@ def test_pride_feature_extraction(dataset_id: UUID, project_id: str):
 
                 if proteins:
                     print(f"   Proteins: {len(proteins)}")
-                    print(f"\n   Sample proteins (first 10):")
+                    print("\n   Sample proteins (first 10):")
                     for i, feature in enumerate(proteins[:10], 1):
                         print(f"      {i}. {feature.name}")
                 else:
                     print(f"   No proteins found (features: {len(features)})")
             else:
-                print(f"\n⚠️  Dataset not found in database")
+                print("\n⚠️  Dataset not found in database")
 
     except Exception as e:
         print(f"\n❌ Feature extraction failed: {e}")

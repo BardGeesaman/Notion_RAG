@@ -165,28 +165,28 @@ def find_studies_with_maf(limit=20):
 
             # CASE 2: Known "Private/Missing" codes
             elif study_resp.status_code in [403, 404]:
-                print(f"Private or missing (403/404)")
+                print("Private or missing (403/404)")
                 skipped_studies.append(study_id)
 
             # CASE 3: The dreaded 500 Server Error - skip and continue
             elif study_resp.status_code >= 500:
-                print(f"Server error (500) - skipping")
+                print("Server error (500) - skipping")
                 failed_studies.append(study_id)
 
             else:
                 print(f"Status {study_resp.status_code}")
                 skipped_studies.append(study_id)
 
-        except requests.exceptions.RequestException as e:
-            print(f"Connection error - skipping")
+        except requests.exceptions.RequestException:
+            print("Connection error - skipping")
             failed_studies.append(f"{study_id} (connection)")
         except Exception as e:
             print(f"Error: {e}")
             failed_studies.append(f"{study_id} (exception)")
             continue
 
-    print(f"\n" + "="*70)
-    print(f"SCAN COMPLETE")
+    print("\n" + "="*70)
+    print("SCAN COMPLETE")
     print("="*70)
     print(f"\n✅ Found: {len(found_studies)} studies with MAF files")
     print(f"⚠️  Skipped: {len(skipped_studies)} studies (private/missing)")
@@ -212,7 +212,7 @@ def main():
             for maf_file in study['maf_files']:
                 print(f"    - {maf_file}")
 
-        print(f"\n✅ Use one of these study IDs for testing:")
+        print("\n✅ Use one of these study IDs for testing:")
         print(f"   python scripts/test_metabolights_feature_extraction.py {found_studies[0]['id']}")
     else:
         print("⚠️  No studies with MAF files found in the checked range")

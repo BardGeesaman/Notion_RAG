@@ -77,18 +77,6 @@ def extract_metadata_from_mwtab(mwtab_data: Dict[str, Any]) -> Dict[str, Any]:
                 combined_text = (study_title + " " + study_summary).lower()
 
                 # Common disease patterns (expandable)
-                disease_patterns = [
-                    r"\bfxs\b",
-                    r"\bfragile x\b",
-                    r"\bfragile-x\b",
-                    r"\bals\b",
-                    r"\bamyotrophic\b",
-                    r"\balzheimer\b",
-                    r"\bad\b",
-                    r"\bparkinson\b",
-                    r"\bpd\b",
-                    r"\bhuntington\b",
-                ]
 
                 disease_terms = []
                 if "fxs" in combined_text or "fragile x" in combined_text:

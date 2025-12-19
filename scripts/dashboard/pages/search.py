@@ -212,13 +212,15 @@ def perform_global_search(
             )
             results["Literature"] = [
                 {
-                    "id": str(l.id),
-                    "name": l.title or "Untitled",
-                    "journal": l.journal or "",
-                    "year": l.year or "",
-                    "created": l.created_at.strftime("%Y-%m-%d") if l.created_at else "",
+                    "id": str(literature_item.id),
+                    "name": literature_item.title or "Untitled",
+                    "journal": literature_item.journal or "",
+                    "year": literature_item.year or "",
+                    "created": literature_item.created_at.strftime("%Y-%m-%d")
+                    if literature_item.created_at
+                    else "",
                 }
-                for l in literature
+                for literature_item in literature
             ]
 
         # Search Emails

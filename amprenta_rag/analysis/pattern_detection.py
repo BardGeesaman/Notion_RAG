@@ -108,7 +108,7 @@ def calculate_overlap(dataset_ids: List[str], db) -> Dict[str, Set[str]]:
         return {}
 
     try:
-        dataset_uuids = [UUID(did) for did in dataset_ids]
+        [UUID(did) for did in dataset_ids]
         overlap: Dict[str, Set[str]] = {}
 
         for dataset_id in dataset_ids:

@@ -70,7 +70,7 @@ def test_force_refresh_bypasses_cache_and_populates(monkeypatch):
     cache = get_feature_cache()
     cache.set_features("ds1", {"gene": {"OLD"}})
 
-    new_features = _fake_features("ds1")
+    _fake_features("ds1")
 
     features = extract_dataset_features_by_type(
         dataset_page_id="ds1",

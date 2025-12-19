@@ -33,7 +33,7 @@ def test_metabolights_metadata(study_id: str):
         metadata = repo.fetch_study_metadata(study_id)
 
         if metadata:
-            print(f"\n✅ Metadata fetch successful!")
+            print("\n✅ Metadata fetch successful!")
             print(f"   Title: {metadata.title}")
             print(f"   Description: {metadata.summary[:100] if metadata.summary else 'N/A'}...")
             print(f"   Organism: {', '.join(metadata.organism) if metadata.organism else 'N/A'}")
@@ -42,7 +42,7 @@ def test_metabolights_metadata(study_id: str):
             print(f"   Publication Date: {metadata.publication_date or 'N/A'}")
             return study_id
         else:
-            print(f"\n❌ Metadata fetch returned None")
+            print("\n❌ Metadata fetch returned None")
             return None
 
     except Exception as e:
@@ -71,7 +71,7 @@ def test_metabolights_files(study_id: str):
         all_files = repo.fetch_study_data_files(study_id, file_types=None)
 
         if all_files:
-            print(f"\n✅ Files fetch successful!")
+            print("\n✅ Files fetch successful!")
             print(f"   Found {len(all_files)} total files:")
             for i, file_info in enumerate(all_files[:10], 1):  # Show first 10
                 print(f"   {i}. {file_info.filename}")

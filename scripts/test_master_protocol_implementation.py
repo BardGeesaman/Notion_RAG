@@ -45,7 +45,7 @@ def test_ena_repository():
 
     # Test initialization
     ena = ENARepository()
-    print(f"✅ ENA repository initialized")
+    print("✅ ENA repository initialized")
     print(f"   Repository name: {ena.get_repository_name()}")
     print(f"   Omics type: {ena.get_omics_type()}")
 

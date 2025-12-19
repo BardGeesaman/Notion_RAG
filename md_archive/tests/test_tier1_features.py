@@ -131,7 +131,7 @@ class TestEvidenceReports:
             'create_program_report',
         ]
 
-        has_report_function = any(
+        any(
             hasattr(evidence_report, func) for func in possible_funcs
         )
 

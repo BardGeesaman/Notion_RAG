@@ -367,7 +367,7 @@ def quantify_with_salmon(
 
     try:
         # Run Salmon via subprocess (Subprocess Protocol - STRICT)
-        result = subprocess.run(
+        subprocess.run(
             cmd,
             check=True,
             capture_output=True,
@@ -510,7 +510,7 @@ def quantify_with_kallisto(
     logger.info("[GENOMICS-PIPELINE] Running command: %s", " ".join(cmd))
 
     try:
-        result = subprocess.run(
+        subprocess.run(
             cmd,
             check=True,
             capture_output=True,

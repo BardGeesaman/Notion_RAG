@@ -2248,7 +2248,7 @@ class TestConcurrentEditing:
             assert edit_form.count() > 0, "Edit experiment form should be visible"
 
             # Check for save button (triggers optimistic lock)
-            save_btn = page.locator('button:has-text("Save Changes")').first
+            page.locator('button:has-text("Save Changes")').first
             # May not be visible if no experiment selected, just verify page loads
 
             # Verify no rendering errors

@@ -47,7 +47,7 @@ def generate_pathway_aware_dataset_summary(
         return "No significantly enriched pathways found for this dataset."
 
     # Build summary
-    summary = f"## Pathway Enrichment Analysis\n\n"
+    summary = "## Pathway Enrichment Analysis\n\n"
     summary += f"Found **{len(enrichment_results)}** significantly enriched pathway(s) "
     summary += f"(p < {p_value_threshold}).\n\n"
 
@@ -84,8 +84,8 @@ def generate_pathway_aware_dataset_summary(
         pathway_by_source[source].append(result)
 
     if len(pathway_by_source) > 1:
-        summary += f"### Cross-Database Pathway Convergence\n\n"
-        summary += f"Pathways found across multiple databases:\n"
+        summary += "### Cross-Database Pathway Convergence\n\n"
+        summary += "Pathways found across multiple databases:\n"
         for source, results in pathway_by_source.items():
             summary += f"- **{source}**: {len(results)} pathway(s)\n"
         summary += "\n"
@@ -124,7 +124,7 @@ def generate_pathway_aware_signature_summary(
         return "No significantly enriched pathways found for this signature."
 
     # Build summary
-    summary = f"## Pathway Enrichment Analysis\n\n"
+    summary = "## Pathway Enrichment Analysis\n\n"
     summary += f"Found **{len(enrichment_results)}** significantly enriched pathway(s) "
     summary += f"(p < {p_value_threshold}).\n\n"
 
@@ -158,8 +158,8 @@ def generate_pathway_aware_signature_summary(
         feature_types.update(result.pathway.feature_types)
 
     if len(feature_types) > 1:
-        summary += f"### Multi-Omics Pathway Coverage\n\n"
-        summary += f"This signature spans pathways across multiple omics types: "
+        summary += "### Multi-Omics Pathway Coverage\n\n"
+        summary += "This signature spans pathways across multiple omics types: "
         summary += f"{', '.join(sorted(feature_types))}\n\n"
 
     return summary

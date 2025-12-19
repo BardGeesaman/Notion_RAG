@@ -1,7 +1,18 @@
 line-length = 120
 target-version = "py310"
 
+[lint]
+exclude = [
+    "md_archive/**",
+    "*.md",
+]
+
 [lint.per-file-ignores]
 "deploy/jupyterhub/jupyterhub_config.py" = ["F821"]  # JupyterHub injects `c` at runtime
-"deploy/jupyterhub/templates/*.ipynb" = ["F821"]     # Notebook cell dependencies
+"deploy/jupyterhub/templates/*.ipynb" = ["F821", "E402"]     # Notebook cell dependencies and intentional imports
 "md_archive/**" = ["F821", "F401"]                   # Archived legacy code
+"amprenta_rag/database/models.py" = ["E402"]         # Intentional re-export imports at end of file
+"amprenta_rag/ingestion/repositories/__init__.py" = ["E402"]  # Intentional runtime imports
+"amprenta_rag/ingestion/zotero/*.py" = ["E402"]      # Intentional imports after setup
+"amprenta_rag/tests/**/*.py" = ["E402"]              # sys.path/testing setup imports
+"scripts/**/*.py" = ["E402"]                         # Scripts using runtime sys.path tweaks

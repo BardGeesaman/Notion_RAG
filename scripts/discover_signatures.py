@@ -130,7 +130,7 @@ def main() -> None:
     print("SIGNATURE DISCOVERY")
     print("=" * 80)
     print(f"\nAnalyzing {len(dataset_ids)} dataset(s)...")
-    print(f"Parameters:")
+    print("Parameters:")
     print(f"  Min support: {args.min_support}")
     print(f"  Min features: {args.min_features}")
     print(f"  Max features: {args.max_features}")
@@ -169,7 +169,7 @@ def main() -> None:
             print(f"   Confidence: {candidate.confidence:.3f}")
             print(f"   Co-occurrence: {candidate.co_occurrence_score:.3f}")
             print(f"   Direction consistency: {candidate.direction_consistency:.3f}")
-            print(f"   Top features:")
+            print("   Top features:")
             for feat in candidate.features[:5]:
                 direction_str = f" {feat.direction}" if feat.direction else ""
                 print(f"     - {feat.feature_name} ({feat.feature_type}){direction_str}")

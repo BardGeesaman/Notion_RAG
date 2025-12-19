@@ -364,7 +364,7 @@ def classify_and_update_all_literature(
         classified += 1
 
     print("\n=====================================")
-    print(f"✅ Classification complete.")
+    print("✅ Classification complete.")
     print(f"   Classified: {classified}")
     print(f"   Skipped:    {skipped}")
     print("=====================================\n")

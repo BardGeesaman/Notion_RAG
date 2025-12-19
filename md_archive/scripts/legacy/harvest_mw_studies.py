@@ -95,7 +95,7 @@ def fetch_mw_study_summary(study_id: str) -> Dict[str, Any]:
             # Try to parse as JSON anyway
             try:
                 return resp.json()
-            except:
+            except:  # noqa: E722
                 logger.warning("[MW] Study summary for %s not in JSON format", study_id)
                 return {}
     except Exception as e:
@@ -768,7 +768,7 @@ def harvest_study(
             print(f"  Organism: {mw_meta.get('organism', 'N/A')}")
             print(f"  Sample Type: {mw_meta.get('sample_type', 'N/A')}")
             print(f"  Disease: {mw_meta.get('disease', 'N/A')}")
-            print(f"  Would create/update Notion page")
+            print("  Would create/update Notion page")
             return None
 
         if not create_notion:

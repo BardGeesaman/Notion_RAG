@@ -45,10 +45,10 @@ def render_rules_tab() -> None:
                     st.markdown(f"**Description:** {rule.description or 'No description'}")
                     st.markdown(f"**Status:** {'✅ Active' if rule.is_active else '❌ Inactive'}")
                     if rule.trigger_config:
-                        st.markdown(f"**Trigger Config:**")
+                        st.markdown("**Trigger Config:**")
                         st.json(rule.trigger_config)
                     if rule.action_config:
-                        st.markdown(f"**Action Config:**")
+                        st.markdown("**Action Config:**")
                         st.json(rule.action_config)
                 with col2:
                     # Toggle active status

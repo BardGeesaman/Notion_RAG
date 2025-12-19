@@ -35,7 +35,7 @@ def get_comments(entity_type: str, entity_id: UUID, db: Session) -> List[dict]:
         .filter(
             Comment.entity_type == entity_type,
             Comment.entity_id == entity_id,
-            Comment.parent_id == None,  # Top-level only
+            Comment.parent_id is None,  # Top-level only
         )
         .order_by(Comment.created_at.desc())
         .all()

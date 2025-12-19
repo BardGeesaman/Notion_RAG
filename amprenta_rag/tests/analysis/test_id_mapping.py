@@ -316,7 +316,7 @@ class TestEdgeCases:
 
         clear_id_mapping_cache()
         # Should not raise, may return the first column or None
-        result = map_gene_to_kegg("TP53")
+        map_gene_to_kegg("TP53")
         # Result depends on implementation, just verify no exception
 
 
@@ -334,7 +334,7 @@ class TestProteinToKegg:
         mock_get.return_value = mock_response
 
         clear_id_mapping_cache()
-        result = map_protein_to_kegg("TP53_HUMAN")
+        map_protein_to_kegg("TP53_HUMAN")
 
         assert mock_uniprot.called
 

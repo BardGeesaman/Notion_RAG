@@ -49,7 +49,7 @@ def main():
     print(f"Reading {source_file}...")
     content = source_file.read_text(encoding="utf-8")
 
-    print(f"Converting to PDF using fpdf2...")
+    print("Converting to PDF using fpdf2...")
     try:
         markdown_to_pdf_fpdf2(content, output_file)
         print(f"Success! PDF saved to {output_file}")

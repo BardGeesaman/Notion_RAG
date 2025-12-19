@@ -283,9 +283,8 @@ class ENARepository(RepositoryInterface):
 
             # Extract FASTQ FTP links (Master Protocol: generate links, don't download)
             fastq_ftp = run_data.get("fastq_ftp", "")
-            fastq_links = []
             if fastq_ftp:
-                fastq_links = [link.strip() for link in fastq_ftp.split(";") if link.strip()]
+                [link.strip() for link in fastq_ftp.split(";") if link.strip()]
 
             # Build StudyMetadata
             metadata = StudyMetadata(

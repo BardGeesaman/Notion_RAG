@@ -49,7 +49,7 @@ def check_connection() -> bool:
         with engine.connect() as conn:
             result = conn.execute(text("SELECT version()"))
             version = result.fetchone()[0]
-            print(f"✅ Connection successful!")
+            print("✅ Connection successful!")
             print(f"   PostgreSQL version: {version.split(',')[0]}")
 
         return True
@@ -84,7 +84,7 @@ def check_database_exists(engine) -> bool:
                 return True
             else:
                 print(f"❌ Database '{db_name}' not found")
-                print(f"\nCreate database with:")
+                print("\nCreate database with:")
                 print(f"  CREATE DATABASE {db_name};")
                 return False
 

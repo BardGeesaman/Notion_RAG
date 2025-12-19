@@ -20,7 +20,7 @@ from amprenta_rag.query.cross_omics_reasoning import (
 
 def test_feature_summary(feature_type: str, feature_name: str):
     """Test cross-omics feature summary."""
-    print(f"\n🔬 Testing Cross-Omics Feature Summary")
+    print("\n🔬 Testing Cross-Omics Feature Summary")
     print(f"   Feature: {feature_type}:{feature_name}\n")
 
     try:
@@ -45,7 +45,7 @@ def test_feature_summary(feature_type: str, feature_name: str):
 
 def test_program_summary(program_page_id: str):
     """Test cross-omics program summary."""
-    print(f"\n🔬 Testing Cross-Omics Program Summary")
+    print("\n🔬 Testing Cross-Omics Program Summary")
     print(f"   Program ID: {program_page_id}\n")
 
     try:
@@ -68,7 +68,7 @@ def test_program_summary(program_page_id: str):
 
 def test_signature_summary(signature_page_id: str):
     """Test cross-omics signature summary."""
-    print(f"\n🔬 Testing Cross-Omics Signature Summary")
+    print("\n🔬 Testing Cross-Omics Signature Summary")
     print(f"   Signature ID: {signature_page_id}\n")
 
     try:
@@ -92,7 +92,7 @@ def test_signature_summary(signature_page_id: str):
 
 def test_dataset_summary(dataset_page_id: str):
     """Test cross-omics dataset summary."""
-    print(f"\n🔬 Testing Cross-Omics Dataset Summary")
+    print("\n🔬 Testing Cross-Omics Dataset Summary")
     print(f"   Dataset ID: {dataset_page_id}\n")
 
     try:

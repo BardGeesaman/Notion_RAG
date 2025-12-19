@@ -141,7 +141,7 @@ def generate_report(results: Dict[str, List[Dict[str, str]]], verbose: bool = Fa
         print()
 
     print("=" * 80)
-    print(f"SUMMARY")
+    print("SUMMARY")
     print("=" * 80)
     print(f"Total files with Notion imports: {len(total_files)}")
     print(f"Total import statements: {total_imports}")

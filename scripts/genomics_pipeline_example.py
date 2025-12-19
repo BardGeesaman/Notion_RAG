@@ -128,7 +128,7 @@ def main():
     print("\n📋 Summary:")
     print(f"   • Found: {len(runs)} run(s) with FASTQ files")
     print(f"   • Downloaded: {fastq_path.name if fastq_path else 'None'}")
-    print(f"   • Quantification: Requires Salmon/Kallisto installation")
+    print("   • Quantification: Requires Salmon/Kallisto installation")
 
     print("\n📝 Next Steps:")
     print("   1. Install Salmon: conda install -c bioconda salmon")

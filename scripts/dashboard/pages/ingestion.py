@@ -349,11 +349,11 @@ def render_ingestion_page() -> None:
 
             col1, col2 = st.columns(2)
             with col1:
-                max_emails = st.number_input(
+                st.number_input(
                     "Maximum Emails", min_value=1, max_value=1000, value=50, help="Maximum number of emails to ingest"
                 )
             with col2:
-                query = st.text_input(
+                st.text_input(
                     "Gmail Query (optional)", help="Gmail search query (e.g., 'from:example@gmail.com')"
                 )
 
@@ -528,13 +528,13 @@ def render_ingestion_page() -> None:
                         key="bio_assay_name",
                     )
                 with col2:
-                    target_column = st.text_input(
+                    st.text_input(
                         "Target Column (optional)",
                         value="target",
                         help="Name of the column containing target information",
                         key="bio_target_col",
                     )
-                    units = st.text_input(
+                    st.text_input(
                         "Units", value="nM", help="Units for activity values (e.g., nM, μM)", key="bio_units"
                     )
 
@@ -542,13 +542,13 @@ def render_ingestion_page() -> None:
                 st.markdown("#### Activity Value Columns")
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    ic50_column = st.text_input("IC50 Column", value="IC50", key="bio_ic50")
+                    st.text_input("IC50 Column", value="IC50", key="bio_ic50")
                 with col2:
-                    ec50_column = st.text_input("EC50 Column", value="EC50", key="bio_ec50")
+                    st.text_input("EC50 Column", value="EC50", key="bio_ec50")
                 with col3:
-                    ki_column = st.text_input("Ki Column", value="Ki", key="bio_ki")
+                    st.text_input("Ki Column", value="Ki", key="bio_ki")
                 with col4:
-                    kd_column = st.text_input("Kd Column", value="Kd", key="bio_kd")
+                    st.text_input("Kd Column", value="Kd", key="bio_kd")
 
                 if st.button("🚀 Ingest Biochemical Results", type="primary"):
                     with st.spinner("Ingesting biochemical results... This may take a few minutes."):
@@ -763,6 +763,4 @@ def render_ingestion_page() -> None:
                     st.info(f"💡 Go to **Literature** page to view document: `{doc_id}`")
                     st.code(f"Document ID: {doc_id}", language=None)
                 except Exception as e:
-                    from scripts.dashboard.utils.errors import render_ingest_error
-
                     render_ingest_error(e)

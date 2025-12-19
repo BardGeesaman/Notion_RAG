@@ -8,9 +8,10 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from tqdm import tqdm
 
@@ -19,7 +20,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from amprenta_rag.ingestion.lipidomics_ingestion import ingest_lipidomics_file
 from amprenta_rag.ingestion.metabolomics_ingestion import ingest_metabolomics_file
-from amprenta_rag.ingestion.omics_type_detection import detect_omics_type
 from amprenta_rag.ingestion.proteomics_ingestion import ingest_proteomics_file
 from amprenta_rag.ingestion.transcriptomics_ingestion import ingest_transcriptomics_file
 from amprenta_rag.logging_utils import get_logger
@@ -215,37 +215,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-#!/usr/bin/env python3
-"""
-Batch ingestion framework for multi-omics datasets.
-
-Automatically detects omics type from files and ingests them in batch.
-
-Usage:
-    python scripts/batch_ingest_omics.py --directory <path>
-    python scripts/batch_ingest_omics.py --directory <path> --omics-type lipidomics
-    python scripts/batch_ingest_omics.py --file <path> --file <path> ...
-    python scripts/batch_ingest_omics.py --directory <path> --parallel --max-workers 4
-"""
-
-import argparse
-import sys
-import time
-from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from amprenta_rag.ingestion.lipidomics_ingestion import ingest_lipidomics_file
-from amprenta_rag.ingestion.metabolomics_ingestion import ingest_metabolomics_file
-from amprenta_rag.ingestion.proteomics_ingestion import ingest_proteomics_file
-from amprenta_rag.ingestion.transcriptomics_ingestion import ingest_transcriptomics_file
-from amprenta_rag.logging_utils import get_logger
-
-logger = get_logger(__name__)
 
 # Supported file extensions
 SUPPORTED_EXTENSIONS = {".csv", ".tsv", ".txt"}
@@ -500,7 +469,7 @@ def ingest_single_file(
 
 
 def main() -> None:
-    total = success = failed = skipped = 0
+    total = failed = 0
     parser = argparse.ArgumentParser(
         description="Batch ingest multi-omics datasets with automatic type detection."
     )

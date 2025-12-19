@@ -7,7 +7,8 @@ Run: python scripts/jobs/check_subscriptions.py
 from __future__ import annotations
 
 # --- Robust import for jobs: always importable regardless of directory ---
-import sys, os
+import sys
+import os
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)

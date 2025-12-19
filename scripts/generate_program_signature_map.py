@@ -78,7 +78,7 @@ def main() -> None:
         print(f"Program: {program_map.program_name}")
 
         if program_map.omics_coverage:
-            print(f"\nOmics Coverage:")
+            print("\nOmics Coverage:")
             print(f"  Total Datasets: {program_map.omics_coverage.total_datasets}")
             for omics_type, count in sorted(program_map.omics_coverage.datasets_by_omics.items()):
                 features_count = program_map.omics_coverage.features_by_omics.get(omics_type, 0)
@@ -97,7 +97,7 @@ def main() -> None:
                     print(f"     By Omics: {omics_str}")
 
         if program_map.convergence_indicators:
-            print(f"\nCross-Omics Convergence:")
+            print("\nCross-Omics Convergence:")
             print(f"  Multi-Omics Signatures: {program_map.convergence_indicators.get('multi_omics_signature_count', 0)}")
             print(f"  Convergence Fraction: {program_map.convergence_indicators.get('convergence_fraction', 0.0):.3f}")
             print(f"  Avg Omics per Signature: {program_map.convergence_indicators.get('avg_omics_per_signature', 0.0):.2f}")

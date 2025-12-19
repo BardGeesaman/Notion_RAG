@@ -20,7 +20,7 @@ def test_classifier_separates_targets_and_lipids():
     lipids_prop = updates["Lipid Species (raw)"]["multi_select"]
 
     targets = {t["name"] for t in targets_prop}
-    lipids = {l["name"] for l in lipids_prop}
+    lipids = {lipid_entry["name"] for lipid_entry in lipids_prop}
 
     # Targets: only molecular targets (genes/proteins/etc.)
     # e.g., SPTLC1, DEGS1 – *not* "ceramide" or "sphingomyelin"
@@ -28,5 +28,5 @@ def test_classifier_separates_targets_and_lipids():
     assert not any("sphingomyelin" == t.lower() for t in targets)
 
     # Lipids: contain lipid terms
-    lipid_str = " ".join(l.lower() for l in lipids)
+    lipid_str = " ".join(lipid.lower() for lipid in lipids)
     assert ("ceramide" in lipid_str) or ("sphingomyelin" in lipid_str)

@@ -159,25 +159,25 @@ def build_dataset_text(db: Session, dataset_id: UUID) -> str:
 
     # Methods
     if dataset.methods:
-        sections.append(f"## Methods")
+        sections.append("## Methods")
         sections.append(dataset.methods)
         sections.append("")
 
     # Summary
     if dataset.summary:
-        sections.append(f"## Summary")
+        sections.append("## Summary")
         sections.append(dataset.summary)
         sections.append("")
 
     # Results
     if dataset.results:
-        sections.append(f"## Results")
+        sections.append("## Results")
         sections.append(dataset.results)
         sections.append("")
 
     # Conclusions
     if dataset.conclusions:
-        sections.append(f"## Conclusions")
+        sections.append("## Conclusions")
         sections.append(dataset.conclusions)
         sections.append("")
 
@@ -203,14 +203,14 @@ def build_dataset_text(db: Session, dataset_id: UUID) -> str:
 
     # Linked programs
     if dataset.programs:
-        sections.append(f"## Programs")
+        sections.append("## Programs")
         for prog in dataset.programs:
             sections.append(f"- {prog.name}")
         sections.append("")
 
     # Linked experiments
     if dataset.experiments:
-        sections.append(f"## Experiments")
+        sections.append("## Experiments")
         for exp in dataset.experiments:
             sections.append(f"- {exp.name}")
         sections.append("")
@@ -299,7 +299,7 @@ def build_signature_text(db: Session, signature_id: UUID) -> str:
 
     # Linked programs
     if signature.programs:
-        sections.append(f"## Programs")
+        sections.append("## Programs")
         for prog in signature.programs:
             sections.append(f"- {prog.name}")
         sections.append("")
@@ -451,7 +451,7 @@ def build_experiment_text(db: Session, experiment_id: UUID) -> str:
 
     # Programs
     if experiment.programs:
-        sections.append(f"## Programs")
+        sections.append("## Programs")
         for prog in experiment.programs:
             sections.append(f"- {prog.name}")
         sections.append("")

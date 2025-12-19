@@ -143,7 +143,7 @@ def decompose_rgroups(smiles_list: List[str], core_smarts: str) -> List[Dict[str
             rgroup_idx = 1
 
             # Get atoms and bonds
-            atoms = [mol.GetAtomWithIdx(i) for i in range(mol.GetNumAtoms())]
+            [mol.GetAtomWithIdx(i) for i in range(mol.GetNumAtoms())]
 
             # Find attachment points (atoms in core that have bonds to non-core atoms)
             attachment_points = []

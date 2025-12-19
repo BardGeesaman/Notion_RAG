@@ -50,7 +50,7 @@ def test_cache_hit_miss(dataset_page_id: str) -> None:
     clear_feature_cache(dataset_page_id)
 
     # First call - should miss cache and hit Notion
-    print(f"\n📊 First call (cache miss expected)...")
+    print("\n📊 First call (cache miss expected)...")
     start_time = time.time()
     features1 = extract_dataset_features_by_type(
         dataset_page_id=dataset_page_id,
@@ -62,7 +62,7 @@ def test_cache_hit_miss(dataset_page_id: str) -> None:
     print(f"  📦 Features extracted: {sum(len(v) for v in features1.values())}")
 
     # Second call - should hit cache
-    print(f"\n📊 Second call (cache hit expected)...")
+    print("\n📊 Second call (cache hit expected)...")
     start_time = time.time()
     features2 = extract_dataset_features_by_type(
         dataset_page_id=dataset_page_id,
@@ -75,19 +75,19 @@ def test_cache_hit_miss(dataset_page_id: str) -> None:
 
     # Verify results match
     assert features1 == features2, "Features should match between calls"
-    print(f"  ✅ Features match between calls")
+    print("  ✅ Features match between calls")
 
     # Calculate speedup
     if time1 > 0 and time2 > 0:
         speedup = time1 / time2
-        print(f"\n⚡ Performance Improvement:")
+        print("\n⚡ Performance Improvement:")
         print(f"  First call (cache miss): {time1:.3f}s")
         print(f"  Second call (cache hit):  {time2:.3f}s")
         print(f"  Speedup: {speedup:.1f}x faster with cache!")
 
     # Check cache stats
     stats = get_cache_stats()
-    print(f"\n📊 Cache Statistics:")
+    print("\n📊 Cache Statistics:")
     print(f"  Cached datasets: {stats.get('cached_datasets', 0)}")
     print(f"  Total features: {stats.get('total_features', 0)}")
 
@@ -107,7 +107,7 @@ def test_signature_scoring_with_cache(dataset_page_id: str) -> None:
     clear_feature_cache(dataset_page_id)
 
     # Score with cache (first call - will populate cache)
-    print(f"\n📊 First scoring (will populate cache)...")
+    print("\n📊 First scoring (will populate cache)...")
     start_time = time.time()
     matches1 = find_matching_signatures_for_dataset(
         dataset_page_id=dataset_page_id,
@@ -118,7 +118,7 @@ def test_signature_scoring_with_cache(dataset_page_id: str) -> None:
     print(f"  🎯 Matches found: {len(matches1)}")
 
     # Score again with cache (should use cache)
-    print(f"\n📊 Second scoring (should use cache)...")
+    print("\n📊 Second scoring (should use cache)...")
     start_time = time.time()
     matches2 = find_matching_signatures_for_dataset(
         dataset_page_id=dataset_page_id,
@@ -130,12 +130,12 @@ def test_signature_scoring_with_cache(dataset_page_id: str) -> None:
 
     # Verify results match
     assert len(matches1) == len(matches2), "Match counts should be the same"
-    print(f"  ✅ Results match between calls")
+    print("  ✅ Results match between calls")
 
     # Calculate speedup
     if time1 > 0 and time2 > 0:
         speedup = time1 / time2
-        print(f"\n⚡ Performance Improvement:")
+        print("\n⚡ Performance Improvement:")
         print(f"  First scoring: {time1:.3f}s")
         print(f"  Second scoring: {time2:.3f}s")
         print(f"  Speedup: {speedup:.1f}x faster with cache!")
@@ -171,13 +171,13 @@ def test_batch_scoring(dataset_page_ids: list[str]) -> None:
     print(f"  Average per dataset: {total_time/len(dataset_page_ids):.3f}s")
 
     # Show results
-    print(f"\n📊 Results:")
+    print("\n📊 Results:")
     for dataset_id, matches in results.items():
         print(f"  Dataset {dataset_id[:8]}...: {len(matches)} matches")
 
     # Cache stats
     stats = get_cache_stats()
-    print(f"\n📊 Cache Statistics:")
+    print("\n📊 Cache Statistics:")
     print(f"  Cached datasets: {stats.get('cached_datasets', 0)}")
     print(f"  Total features: {stats.get('total_features', 0)}")
 

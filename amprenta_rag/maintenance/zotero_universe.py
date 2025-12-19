@@ -154,7 +154,7 @@ def cleanup_deleted_items() -> None:
         deleted += 1
 
     print("\n=====================================")
-    print(f"   ✅ Cleanup complete.")
+    print("   ✅ Cleanup complete.")
     print(f"   Kept:    {kept} literature pages")
     print(f"   Deleted: {deleted} literature pages (and associated RAG+vectors)")
     print("=====================================\n")
@@ -213,7 +213,7 @@ def sync_collection_state(collection_key: str) -> None:
         deleted += 1
 
     print("\n=====================================")
-    print(f"   ✅ Sync complete.")
+    print("   ✅ Sync complete.")
     print(f"   Kept:    {kept} literature pages")
     print(f"   Deleted: {deleted} literature pages (and associated RAG+vectors)")
     print("=====================================\n")

@@ -24,7 +24,7 @@ def test_mw_metabolite_extraction(study_id: str = "ST000001"):
     print("="*70 + "\n")
 
     print(f"Extracting metabolites from study: {study_id}")
-    print(f"Using cleaner REST API /data endpoint\n")
+    print("Using cleaner REST API /data endpoint\n")
 
     try:
         metabolite_set = extract_mw_metabolites_from_data_endpoint(
@@ -32,16 +32,16 @@ def test_mw_metabolite_extraction(study_id: str = "ST000001"):
         )
 
         if metabolite_set:
-            print(f"\n✅ Extraction successful!")
+            print("\n✅ Extraction successful!")
             print(f"   Found {len(metabolite_set)} unique metabolites")
-            print(f"\n   Sample metabolites (first 20):")
+            print("\n   Sample metabolites (first 20):")
             for i, metabolite in enumerate(sorted(metabolite_set)[:20], 1):
                 print(f"      {i}. {metabolite}")
 
             if len(metabolite_set) > 20:
                 print(f"   ... and {len(metabolite_set) - 20} more metabolites")
         else:
-            print(f"\n⚠️  No metabolites extracted")
+            print("\n⚠️  No metabolites extracted")
             print("   This may be expected if:")
             print("   - The study doesn't have metabolite identification data")
             print("   - The study structure is different than expected")
@@ -74,14 +74,14 @@ def main():
 
     if metabolite_set:
         print(f"✅ Successfully extracted {len(metabolite_set)} metabolites using REST API!")
-        print(f"\n   Advantages over MetaboLights:")
-        print(f"   • Clean JSON response (no file parsing needed)")
-        print(f"   • More stable API (NIH-hosted)")
-        print(f"   • No brittle endpoints or 500 errors")
+        print("\n   Advantages over MetaboLights:")
+        print("   • Clean JSON response (no file parsing needed)")
+        print("   • More stable API (NIH-hosted)")
+        print("   • No brittle endpoints or 500 errors")
     else:
         print("⚠️  No metabolites extracted")
         print("\n   Try a different study ID:")
-        print(f"   python scripts/test_mw_metabolite_extraction.py ST000002")
+        print("   python scripts/test_mw_metabolite_extraction.py ST000002")
 
 
 if __name__ == "__main__":

@@ -138,7 +138,7 @@ def build_salmon_index(
     logger.info("[INDEX-SETUP] Running: %s", " ".join(cmd))
 
     try:
-        result = subprocess.run(
+        subprocess.run(
             cmd,
             check=True,
             capture_output=True,
@@ -229,9 +229,9 @@ def main():
     )
 
     if index_path:
-        print(f"\n✅ Index setup complete!")
+        print("\n✅ Index setup complete!")
         print(f"   Index location: {index_path}")
-        print(f"\n📋 You can now use this index for quantification:")
+        print("\n📋 You can now use this index for quantification:")
         print(f"   index_path = Path('{index_path}')")
     else:
         print("\n❌ Index setup failed. Check logs for details.")

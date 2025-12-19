@@ -14,7 +14,7 @@ def render_coverage_page():
     )
     with db_session() as db:
         datasets = db.query(Dataset).all()
-        programs = {p.id: p.name for p in db.query(Program).all()}
+        {p.id: p.name for p in db.query(Program).all()}
         df = pd.DataFrame(
             [
                 {

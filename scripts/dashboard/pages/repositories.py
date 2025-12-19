@@ -174,8 +174,11 @@ def render_repositories_page():
                     "omics_type": omics_type or None,
                     "max_results": limit,
                 }
-                if repo == "GEO": kwargs["platform"] = platform or None
-                if repo == "PRIDE": kwargs["instrument"] = instrument or None; kwargs["modality"] = modality or None
+                if repo == "GEO":
+                    kwargs["platform"] = platform or None
+                if repo == "PRIDE":
+                    kwargs["instrument"] = instrument or None
+                    kwargs["modality"] = modality or None
                 if repo in ("MW", "MetaboLights"):
                     kwargs["analytical_platform"] = analytical_platform or None
                     kwargs["matrix"] = matrix or None
@@ -211,7 +214,7 @@ def render_repositories_page():
 
                 # Debug: Show result count
                 if not results:
-                    st.warning(f"⚠️ Search returned 0 results. Try broader search criteria or leave filters empty.")
+                    st.warning("⚠️ Search returned 0 results. Try broader search criteria or leave filters empty.")
                     st.info(f"Search parameters used: {active_filters}")
                 else:
                     st.success(f"✅ Found {len(results)} studies")

@@ -82,7 +82,7 @@ def render_pending_tab():
                         from amprenta_rag.ingestion.discovery_service import import_discovered_study
                         exp_id = import_discovered_study(str(study.id))
                         if exp_id:
-                            st.success(f"Imported as experiment!")
+                            st.success("Imported as experiment!")
                             st.rerun()
                         else:
                             st.error("Import failed")

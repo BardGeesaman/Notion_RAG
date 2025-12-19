@@ -218,7 +218,7 @@ def infer_feature_type(feature_name: str) -> str:
         len(name) >= 6
         and len(name) <= 10
         and re.match(r"^[A-Z0-9]+$", name.upper())
-        and not name_lower in COMMON_METABOLITES
+        and name_lower not in COMMON_METABOLITES
     )
 
     # If it looks like a UniProt ID (already checked above), skip gene symbol check

@@ -33,7 +33,7 @@ print("=" * 80)
 print("\n1. Keyword Detection:")
 has_keywords = detect_signature_keywords(test_content)
 print(f"   Result: {has_keywords}")
-print(f"   Expected: True")
+print("   Expected: True")
 
 # Test 2: Embedded table extraction
 print("\n2. Embedded Table Extraction:")
@@ -43,7 +43,7 @@ if embedded_table:
     for row in embedded_table:
         print(f"     - {row}")
 else:
-    print(f"   Result: None found")
+    print("   Result: None found")
 
 # Test 3: Text table extraction
 print("\n3. Text Table Extraction:")
@@ -53,7 +53,7 @@ if text_table and text_table.get("components"):
     for comp in text_table['components']:
         print(f"     - {comp}")
 else:
-    print(f"   Result: None found")
+    print("   Result: None found")
 
 print("\n" + "=" * 80)
 

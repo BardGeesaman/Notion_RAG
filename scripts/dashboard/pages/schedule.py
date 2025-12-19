@@ -227,7 +227,7 @@ def _render_add_event_tab() -> None:
 
                         if conflicts:
                             conflict_list = [f"{c.title} ({c.start_time.strftime('%Y-%m-%d %H:%M')} - {c.end_time.strftime('%H:%M')})" for c in conflicts]
-                            st.warning(f"⚠️ Potential conflict detected with existing events:\n- " + "\n- ".join(conflict_list))
+                            st.warning("⚠️ Potential conflict detected with existing events:\n- " + "\n- ".join(conflict_list))
 
                             if not st.session_state.get("force_save_event", False):
                                 if st.button("Force Save Anyway", key="force_save_btn"):

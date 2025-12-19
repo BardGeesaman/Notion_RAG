@@ -137,7 +137,7 @@ def main():
         check_blocking()
 
         if idle_pids and not args.terminate_idle:
-            print(f"\n💡 Tip: Run with --terminate-idle to close these connections")
+            print("\n💡 Tip: Run with --terminate-idle to close these connections")
 
     if args.terminate_idle:
         print("\nTerminating idle in transaction connections...")

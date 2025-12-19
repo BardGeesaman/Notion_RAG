@@ -201,7 +201,7 @@ def _render_add_entry_tab() -> None:
 
                         db.add(entry)
                         db.commit()
-                        st.success(f"Cost entry added successfully!")
+                        st.success("Cost entry added successfully!")
                         st.rerun()
 
                     except Exception as e:

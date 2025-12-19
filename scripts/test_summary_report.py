@@ -25,7 +25,7 @@ def run_command(cmd: list, description: str) -> tuple[bool, str]:
         )
         return result.returncode == 0, result.stdout
     except subprocess.TimeoutExpired:
-        return False, f"Command timed out after 120 seconds"
+        return False, "Command timed out after 120 seconds"
     except Exception as e:
         return False, f"Error: {e}"
 
@@ -57,7 +57,7 @@ def main() -> None:
                 results.append(("Ingestion Tests", True, line.strip()))
                 break
     else:
-        print(f"  ❌ Tests failed")
+        print("  ❌ Tests failed")
         results.append(("Ingestion Tests", False, "Failed"))
 
     print()
@@ -78,7 +78,7 @@ def main() -> None:
                 results.append(("Utility Tests", True, line.strip()))
                 break
     else:
-        print(f"  ❌ Tests failed")
+        print("  ❌ Tests failed")
         results.append(("Utility Tests", False, "Failed"))
 
     print()
@@ -99,7 +99,7 @@ def main() -> None:
                 results.append(("Module Structure", True, line.strip()))
                 break
     else:
-        print(f"  ⚠️  Some modules failed (may be expected)")
+        print("  ⚠️  Some modules failed (may be expected)")
         results.append(("Module Structure", False, "Some failures"))
 
     print()
@@ -120,7 +120,7 @@ def main() -> None:
                 results.append(("Configuration", True, line.strip()))
                 break
     else:
-        print(f"  ⚠️  Configuration validation had warnings")
+        print("  ⚠️  Configuration validation had warnings")
         results.append(("Configuration", True, "Warnings present"))
 
     print()
@@ -132,7 +132,7 @@ def main() -> None:
         from amprenta_rag.models.domain import (
             OmicsType,
         )
-        print(f"  ✅ All domain models import successfully")
+        print("  ✅ All domain models import successfully")
         print(f"  ✅ OmicsType enum: {len(list(OmicsType))} types")
         results.append(("Domain Models", True, "All models import OK"))
     except Exception as e:

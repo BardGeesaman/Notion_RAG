@@ -379,21 +379,21 @@ def generate_comparison_report(
     Returns:
         Markdown-formatted report
     """
-    report = f"# Dataset Comparison Report\n\n"
+    report = "# Dataset Comparison Report\n\n"
     report += f"## {comparison.dataset1_name} vs {comparison.dataset2_name}\n\n"
 
-    report += f"### Overall Similarity\n\n"
+    report += "### Overall Similarity\n\n"
     report += f"- **Overall Similarity**: {comparison.overall_similarity:.3f}\n"
     report += f"- **Jaccard Similarity**: {comparison.jaccard_similarity:.3f}\n\n"
 
     if comparison.similarity_by_omics:
-        report += f"### Similarity by Omics Type\n\n"
+        report += "### Similarity by Omics Type\n\n"
         for omics_type, similarity in sorted(comparison.similarity_by_omics.items()):
             report += f"- **{omics_type.capitalize()}**: {similarity:.3f}\n"
         report += "\n"
 
     if comparison.shared_features:
-        report += f"### Shared Features\n\n"
+        report += "### Shared Features\n\n"
         total_shared = sum(len(f) for f in comparison.shared_features.values())
         report += f"**Total shared features**: {total_shared}\n\n"
 
@@ -447,7 +447,7 @@ def generate_clustering_report(
     Returns:
         Markdown-formatted report
     """
-    report = f"# Dataset Clustering Report\n\n"
+    report = "# Dataset Clustering Report\n\n"
     report += f"Found **{len(clusters)}** cluster(s) from dataset comparisons.\n\n"
 
     for cluster in clusters:
@@ -456,7 +456,7 @@ def generate_clustering_report(
         report += f"- **Average similarity**: {cluster.average_similarity:.3f}\n"
         report += f"- **Representative dataset**: {cluster.representative_dataset}\n\n"
 
-        report += f"### Datasets in Cluster\n\n"
+        report += "### Datasets in Cluster\n\n"
         for i, (dataset_id, dataset_name) in enumerate(zip(cluster.dataset_ids, cluster.dataset_names), 1):
             report += f"{i}. {dataset_name} (`{dataset_id}`)\n"
         report += "\n"

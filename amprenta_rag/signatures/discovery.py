@@ -397,7 +397,7 @@ def discover_signature_candidates(
                 continue
 
             # Compute direction consistency
-            direction_consistency = compute_direction_consistency(
+            compute_direction_consistency(
                 feat_name,
                 list(supporting_datasets),
                 all_features,

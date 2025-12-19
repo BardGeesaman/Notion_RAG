@@ -633,7 +633,7 @@ def main() -> None:
         )
 
         if dataset_id or page_id:
-            print(f"\n✅ Harvest complete!")
+            print("\n✅ Harvest complete!")
             print(f"   Study ID: {args.study_id}")
             print(f"   Repository: {args.repository}")
             if dataset_id:
@@ -641,7 +641,7 @@ def main() -> None:
             if page_id:
                 print(f"   Notion Page ID: {page_id}")
             if args.ingest:
-                print(f"   Ingestion: Triggered")
+                print("   Ingestion: Triggered")
         elif args.dry_run:
             print("\n✅ Dry run complete (no datasets created)")
 

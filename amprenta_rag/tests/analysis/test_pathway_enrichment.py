@@ -42,7 +42,7 @@ class TestPerformPathwayEnrichment:
         mock_reactome.return_value = {}
 
         input_features = {"ALDOA", "GAPDH", "PKM"}
-        results = perform_pathway_enrichment(
+        perform_pathway_enrichment(
             input_features=input_features,
             input_feature_types={"gene"},
             pathway_sources=["KEGG"],
@@ -149,7 +149,7 @@ class TestFisherExactTest:
         # Input has 4 of 5 pathway features - strong enrichment
         input_features = {"A", "B", "C", "D"}
 
-        results = perform_pathway_enrichment(
+        perform_pathway_enrichment(
             input_features=input_features,
             input_feature_types={"gene"},
             pathway_sources=["KEGG"],
@@ -355,7 +355,7 @@ class TestEdgeCases:
         mock_kegg.return_value = {"hsa00010": mock_pathway}
 
         # Very strict threshold
-        results = perform_pathway_enrichment(
+        perform_pathway_enrichment(
             input_features={"A"},  # Only 1 match out of 10
             input_feature_types={"gene"},
             pathway_sources=["KEGG"],
@@ -440,7 +440,7 @@ class TestBackgroundHandling:
 
         custom_background = {f"GENE{i}" for i in range(10000)}
 
-        results = perform_pathway_enrichment(
+        perform_pathway_enrichment(
             input_features={"A"},
             input_feature_types={"gene"},
             background_features=custom_background,
@@ -462,7 +462,7 @@ class TestBackgroundHandling:
         )
         mock_kegg.return_value = {"hsa00010": mock_pathway}
 
-        results = perform_pathway_enrichment(
+        perform_pathway_enrichment(
             input_features={"A", "B"},
             input_feature_types={"gene"},
             background_features=None,  # Use default estimation

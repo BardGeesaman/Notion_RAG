@@ -89,7 +89,7 @@ def test_programs_endpoints() -> bool:
             print(f"  Testing GET /programs/{program_id}...")
             resp = requests.get(f"{base_url}/{program_id}", timeout=5)
             if resp.status_code == 200:
-                print(f"  ✅ GET /programs/{{id}}: Retrieved program")
+                print("  ✅ GET /programs/{id}: Retrieved program")
             else:
                 print(f"  ❌ GET /programs/{{id}}: Status {resp.status_code}")
 
@@ -98,7 +98,7 @@ def test_programs_endpoints() -> bool:
             update_data = {"description": "Updated by test script"}
             resp = requests.patch(f"{base_url}/{program_id}", json=update_data, timeout=5)
             if resp.status_code == 200:
-                print(f"  ✅ PATCH /programs/{{id}}: Updated program")
+                print("  ✅ PATCH /programs/{id}: Updated program")
             else:
                 print(f"  ❌ PATCH /programs/{{id}}: Status {resp.status_code}")
 
@@ -106,7 +106,7 @@ def test_programs_endpoints() -> bool:
             print(f"  Testing DELETE /programs/{program_id}...")
             resp = requests.delete(f"{base_url}/{program_id}", timeout=5)
             if resp.status_code in (200, 204):
-                print(f"  ✅ DELETE /programs/{{id}}: Deleted program")
+                print("  ✅ DELETE /programs/{id}: Deleted program")
             else:
                 print(f"  ❌ DELETE /programs/{{id}}: Status {resp.status_code}")
 
@@ -252,7 +252,7 @@ def test_api_docs() -> bool:
         print("  Testing GET /docs (Swagger UI)...")
         resp = requests.get(f"{API_BASE_URL}/docs", timeout=5)
         if resp.status_code == 200:
-            print(f"  ✅ Swagger UI accessible")
+            print("  ✅ Swagger UI accessible")
         else:
             print(f"  ❌ Swagger UI: Status {resp.status_code}")
 
@@ -260,7 +260,7 @@ def test_api_docs() -> bool:
         print("  Testing GET /redoc (ReDoc)...")
         resp = requests.get(f"{API_BASE_URL}/redoc", timeout=5)
         if resp.status_code == 200:
-            print(f"  ✅ ReDoc accessible")
+            print("  ✅ ReDoc accessible")
         else:
             print(f"  ❌ ReDoc: Status {resp.status_code}")
 

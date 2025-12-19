@@ -35,7 +35,7 @@ def main() -> None:
     print()
 
     try:
-        result = subprocess.run(cmd, check=True, cwd=Path(__file__).parent.parent)
+        subprocess.run(cmd, check=True, cwd=Path(__file__).parent.parent)
         print()
         print("✅ Initial migration created successfully!")
         print()

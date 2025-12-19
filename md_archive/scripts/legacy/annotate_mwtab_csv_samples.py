@@ -334,12 +334,12 @@ def main():
         if csv_name.upper().startswith("ST"):
             study_id = csv_name.upper()
 
-    print(f"Loading mwTab JSON for annotation...")
+    print("Loading mwTab JSON for annotation...")
     mwtab_data = load_mwtab_json(study_id, args.mwtab_json)
     if mwtab_data is None:
         return 1
 
-    print(f"Extracting sample metadata...")
+    print("Extracting sample metadata...")
     sample_meta_map = build_sample_metadata_map(mwtab_data)
 
     if not sample_meta_map:

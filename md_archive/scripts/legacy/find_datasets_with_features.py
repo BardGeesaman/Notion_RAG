@@ -198,21 +198,21 @@ def main():
 
         # Show best candidate
         best = max(datasets_with_features, key=lambda x: x["total"])
-        print(f"\n⭐ Best candidate for testing:")
+        print("\n⭐ Best candidate for testing:")
         print(f"   Name: {best['name']}")
         print(f"   ID: {best['page_id']}")
         print(f"   Features: {best['total']} total")
 
-        print(f"\n💡 Test command:")
+        print("\n💡 Test command:")
         print(f"   python scripts/test_feature_caching.py --dataset-id {best['page_id']} --all-tests")
 
     else:
         print(f"\n⚠️  No datasets found with features (min: {args.min_features})")
         print(f"   Checked {len(results)} datasets")
-        print(f"\n   Note: This could mean:")
-        print(f"   • Features haven't been linked yet")
-        print(f"   • Need to ingest datasets to create feature links")
-        print(f"   • Feature databases may not be configured")
+        print("\n   Note: This could mean:")
+        print("   • Features haven't been linked yet")
+        print("   • Need to ingest datasets to create feature links")
+        print("   • Feature databases may not be configured")
 
 
 if __name__ == "__main__":

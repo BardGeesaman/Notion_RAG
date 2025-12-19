@@ -103,7 +103,7 @@ def build_enhanced_prompt(
             if count > 0
         ]
         if omics_lines:
-            prompt_parts.append(f"\nChunks retrieved:\n" + "\n".join(omics_lines))
+            prompt_parts.append("\nChunks retrieved:\n" + "\n".join(omics_lines))
 
     # Add additional information
     if additional_info:

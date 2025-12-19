@@ -198,7 +198,7 @@ if __name__ == "__main__":
     try:
         page_id = create_test_lipidomics_dataset_page()
         print(f"\n✅ Created dataset page: {page_id}\n")
-        print(f"To ingest, run:")
+        print("To ingest, run:")
         print(f"  python scripts/ingest_dataset.py --dataset-page-id {page_id} --force")
     except Exception as e:
         print(f"\n❌ Error: {e}\n", file=sys.stderr)

@@ -41,8 +41,8 @@ def embed_lipidomics_dataset(
         # Build text representation
         text_parts = [
             f"Internal Lipidomics Dataset: {dataset_name}",
-            f"Data Origin: Internal – Amprenta",
-            f"Dataset Source Type: Processed table",
+            "Data Origin: Internal – Amprenta",
+            "Dataset Source Type: Processed table",
             "",
             f"Contains {len(species)} normalized lipid species:",
         ]

@@ -224,7 +224,7 @@ def main() -> None:
 
     print(f"TIER 3 (Architecture Evolution): {completed_tier3}/{total_tier3} components")
     print(f"Phase 1 (Domain Models): {completed_phase1}/{total_phase1} models")
-    print(f"Phase 2 (Postgres Schema): ✅ Complete")
+    print("Phase 2 (Postgres Schema): ✅ Complete")
     print(f"Phase 3 (FastAPI): {sum(fastapi_checks.values())}/{len(fastapi_checks)} components")
     print(f"Phase 4 (Dual-Write): {phase4_complete}/1 components")
     print(f"Phase 5 (RAG Integration): {phase5_complete}/3 components")

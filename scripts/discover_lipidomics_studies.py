@@ -120,7 +120,7 @@ def main():
         lipidomics_studies = discover_lipidomics_studies()
 
         print(f"\n{'=' * 80}")
-        print(f"Lipidomics Studies in Metabolomics Workbench")
+        print("Lipidomics Studies in Metabolomics Workbench")
         print(f"{'=' * 80}")
         print(f"\nTotal lipidomics studies found: {len(lipidomics_studies)}\n")
 
@@ -142,7 +142,7 @@ def main():
 
         print(f"\n{'=' * 80}\n")
         print("To harvest a study, run:")
-        print(f"  python scripts/harvest_mw_studies.py --study-id <STUDY_ID>")
+        print("  python scripts/harvest_mw_studies.py --study-id <STUDY_ID>")
         print("\nTo bulk harvest all lipidomics studies, use:")
         print(
             f"  python scripts/harvest_mw_studies.py --study-id-file {args.output or 'lipidomics_studies.txt'}"

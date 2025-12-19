@@ -88,7 +88,7 @@ def update_master_context_timestamp() -> None:
     if old_pattern in content:
         content = content.replace(old_pattern, new_pattern)
         master_context_path.write_text(content, encoding="utf-8")
-        print(f"  ✅ Updated timestamp in MASTER_CONTEXT_FOR_NEW_CHAT.md")
+        print("  ✅ Updated timestamp in MASTER_CONTEXT_FOR_NEW_CHAT.md")
     else:
         # Try alternative pattern
         import re
@@ -96,9 +96,9 @@ def update_master_context_timestamp() -> None:
         if re.search(pattern, content):
             content = re.sub(pattern, f"**Last Updated**: {timestamp}", content)
             master_context_path.write_text(content, encoding="utf-8")
-            print(f"  ✅ Updated timestamp in MASTER_CONTEXT_FOR_NEW_CHAT.md")
+            print("  ✅ Updated timestamp in MASTER_CONTEXT_FOR_NEW_CHAT.md")
         else:
-            print(f"  ⚠️  Could not find timestamp pattern in MASTER_CONTEXT_FOR_NEW_CHAT.md")
+            print("  ⚠️  Could not find timestamp pattern in MASTER_CONTEXT_FOR_NEW_CHAT.md")
 
 
 def check_context_files() -> dict[str, bool]:

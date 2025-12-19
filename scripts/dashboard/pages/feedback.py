@@ -50,7 +50,7 @@ def render_submit_feedback_tab():
                 )
                 db.add(feedback)
                 db.commit()
-                st.success(f"Feedback submitted! Thank you for your input.")
+                st.success("Feedback submitted! Thank you for your input.")
                 st.rerun()
 
 

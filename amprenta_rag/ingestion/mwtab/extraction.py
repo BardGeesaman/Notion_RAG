@@ -33,7 +33,7 @@ def extract_mwtab_from_page_content(page_content: str) -> Optional[Dict[str, Any
 
     # Strategy 1: Look for code blocks in the text
     # Split by potential code block markers
-    lines = page_content.split("\n")
+    page_content.split("\n")
 
     # Look for JSON-like content (starts with {, contains common mwTab keys)
     mwtab_indicators = [
@@ -71,7 +71,7 @@ def extract_mwtab_from_page_content(page_content: str) -> Optional[Dict[str, Any
                             "[INGEST][MWTAB] Successfully parsed mwTab JSON from page content"
                         )
                         return data
-            except (json.JSONDecodeError, ValueError) as e:
+            except (json.JSONDecodeError, ValueError):
                 continue
 
         # Try brace-counting method for more precise extraction

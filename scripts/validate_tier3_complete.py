@@ -42,7 +42,7 @@ def run_validation_script(script_name: str, description: str) -> bool:
         )
         return result.returncode == 0
     except subprocess.TimeoutExpired:
-        print(f"  ❌ Script timed out after 60 seconds")
+        print("  ❌ Script timed out after 60 seconds")
         return False
     except Exception as e:
         print(f"  ❌ Error running script: {e}")
@@ -70,10 +70,10 @@ def run_pytest_tests(test_path: str, description: str) -> bool:
         )
         return result.returncode == 0
     except subprocess.TimeoutExpired:
-        print(f"  ❌ Tests timed out after 120 seconds")
+        print("  ❌ Tests timed out after 120 seconds")
         return False
     except FileNotFoundError:
-        print(f"  ⚠️  pytest not installed. Install with: pip install pytest")
+        print("  ⚠️  pytest not installed. Install with: pip install pytest")
         return False
     except Exception as e:
         print(f"  ❌ Error running tests: {e}")

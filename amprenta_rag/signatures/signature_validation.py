@@ -11,7 +11,7 @@ def validate_signature_against_all_datasets(
     signature_id: UUID, coverage_threshold: float = 0.1
 ) -> SignatureValidationResult:
     with db_session() as db:
-        sig = db.query(Signature).filter(Signature.id == signature_id).first()
+        db.query(Signature).filter(Signature.id == signature_id).first()
         datasets = db.query(Dataset).all()
         matched_ids = []
         scores = []

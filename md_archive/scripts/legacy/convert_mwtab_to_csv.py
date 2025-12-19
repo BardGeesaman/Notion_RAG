@@ -196,14 +196,14 @@ def main():
     if not rows:
         print(f"⚠️  No tabular rows parsed from mwTab for study {study_id}")
         print(
-            f"   This study's mwTab format may be JSON-only without tab-separated data sections."
+            "   This study's mwTab format may be JSON-only without tab-separated data sections."
         )
         print(
             f"   The mwTab content ({len(mwtab_text)} chars) is available but doesn't contain"
         )
-        print(f"   tab-separated metabolite data tables in the expected format.")
+        print("   tab-separated metabolite data tables in the expected format.")
         print(
-            f"\n   Tip: Try a different study ID, or check the mwTab content manually:"
+            "\n   Tip: Try a different study ID, or check the mwTab content manually:"
         )
         print(
             f"   curl 'https://www.metabolomicsworkbench.org/rest/study/study_id/{study_id}/mwtab'"

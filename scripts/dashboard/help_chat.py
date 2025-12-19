@@ -56,7 +56,7 @@ def get_help_response(question: str) -> str:
         return response
     except Exception as e:
         logger.error("[HELP_CHAT] Error generating response: %r", e)
-        return f"I apologize, but I encountered an error while generating a response. Please try again or check the help documentation directly."
+        return "I apologize, but I encountered an error while generating a response. Please try again or check the help documentation directly."
 
 
 def render_help_chat():

@@ -77,7 +77,7 @@ def main() -> None:
     try:
         if args.dataset1_id and args.dataset2_id:
             # Pairwise comparison
-            print(f"\nComparing datasets:")
+            print("\nComparing datasets:")
             print(f"  Dataset 1: {args.dataset1_id}")
             print(f"  Dataset 2: {args.dataset2_id}")
             print()
@@ -95,7 +95,7 @@ def main() -> None:
             print(f"Jaccard Similarity: {comparison.jaccard_similarity:.3f}")
 
             if comparison.similarity_by_omics:
-                print(f"\nSimilarity by Omics Type:")
+                print("\nSimilarity by Omics Type:")
                 for omics_type, similarity in sorted(comparison.similarity_by_omics.items()):
                     print(f"  {omics_type.capitalize()}: {similarity:.3f}")
 
@@ -157,7 +157,7 @@ def main() -> None:
 
                 if args.output:
                     # Combine comparison and clustering reports
-                    comparison_summary = f"# Dataset Comparison Summary\n\n"
+                    comparison_summary = "# Dataset Comparison Summary\n\n"
                     comparison_summary += f"Compared {len(args.dataset_ids)} datasets in {len(comparisons)} pairwise comparisons.\n\n"
                     full_report = comparison_summary + "\n\n" + clustering_report
                     args.output.write_text(full_report, encoding="utf-8")
@@ -170,7 +170,7 @@ def main() -> None:
             else:
                 # Just comparison report
                 if args.output:
-                    report = f"# Dataset Comparison Summary\n\n"
+                    report = "# Dataset Comparison Summary\n\n"
                     report += f"Compared {len(args.dataset_ids)} datasets in {len(comparisons)} pairwise comparisons.\n\n"
                     report += "## Pairwise Comparisons\n\n"
                     for comp in comparisons_sorted:

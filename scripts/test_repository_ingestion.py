@@ -51,13 +51,13 @@ def test_discovery(repository: str, keywords: list[str], max_results: int = 3) -
 
         study_ids = results.get(repository, [])
 
-        print(f"✅ Discovery successful!")
+        print("✅ Discovery successful!")
         print(f"   Found {len(study_ids)} studies")
         if study_ids:
             print(f"   Examples: {study_ids[:3]}")
             return study_ids
         else:
-            print(f"   ⚠️  No studies found")
+            print("   ⚠️  No studies found")
             return []
 
     except Exception as e:
@@ -86,7 +86,7 @@ def test_metadata_fetch(repository: str, study_id: str) -> bool:
         metadata = fetch_study_metadata(study_id, repository)
 
         if metadata:
-            print(f"✅ Metadata fetch successful!")
+            print("✅ Metadata fetch successful!")
             print(f"   Title: {metadata.title[:60]}...")
             print(f"   Omics Type: {metadata.omics_type}")
             if metadata.disease:
@@ -97,7 +97,7 @@ def test_metadata_fetch(repository: str, study_id: str) -> bool:
                 print(f"   Sample Type: {', '.join(metadata.sample_type)}")
             return True
         else:
-            print(f"❌ Metadata fetch returned None")
+            print("❌ Metadata fetch returned None")
             return False
 
     except Exception as e:
@@ -126,7 +126,7 @@ def test_harvest_dry_run(repository: str, study_id: str) -> bool:
         # Import harvest function
         from scripts.harvest_repository_study import harvest_study
 
-        page_id = harvest_study(
+        harvest_study(
             study_id=study_id,
             repository=repository,
             create_notion=False,
@@ -134,7 +134,7 @@ def test_harvest_dry_run(repository: str, study_id: str) -> bool:
             dry_run=True,
         )
 
-        print(f"✅ Harvest dry-run successful!")
+        print("✅ Harvest dry-run successful!")
         return True
 
     except Exception as e:
@@ -226,14 +226,14 @@ def main() -> None:
             )
 
             if page_id:
-                print(f"✅ Harvest successful!")
+                print("✅ Harvest successful!")
                 print(f"   Dataset page ID: {page_id}")
 
                 if args.test_ingestion:
-                    print(f"\n✅ Ingestion triggered!")
-                    print(f"   Check logs for ingestion progress")
+                    print("\n✅ Ingestion triggered!")
+                    print("   Check logs for ingestion progress")
             else:
-                print(f"⚠️  Harvest completed but no page ID returned")
+                print("⚠️  Harvest completed but no page ID returned")
 
         except Exception as e:
             print(f"❌ Harvest failed: {e}")

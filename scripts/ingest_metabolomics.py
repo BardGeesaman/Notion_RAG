@@ -73,7 +73,7 @@ def main() -> None:
             experiment_ids=args.experiment_ids if args.experiment_ids else None,
         )
 
-        print(f"\n✅ Ingestion complete!")
+        print("\n✅ Ingestion complete!")
         print(f"   Dataset page ID: {page_id}")
         print(f"   File: {args.file}")
         if args.program_ids:

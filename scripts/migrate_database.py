@@ -47,7 +47,7 @@ def main() -> None:
     print()
 
     try:
-        result = subprocess.run(cmd, check=True, cwd=Path(__file__).parent.parent)
+        subprocess.run(cmd, check=True, cwd=Path(__file__).parent.parent)
         if not args.dry_run:
             print()
             print(f"✅ Migrations applied successfully to revision: {args.revision}")

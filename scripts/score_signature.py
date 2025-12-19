@@ -189,16 +189,16 @@ def main():
     print(f"Conflicts: {len(result.conflicting_species)} components")
 
     if result.missing_species:
-        print(f"\nMissing species:")
+        print("\nMissing species:")
         for species in result.missing_species:
             print(f"  - {species}")
 
     if result.conflicting_species:
-        print(f"\nConflicting species (direction mismatch):")
+        print("\nConflicting species (direction mismatch):")
         for species in result.conflicting_species:
             print(f"  - {species}")
 
-    print(f"\nComponent details:")
+    print("\nComponent details:")
     print(
         f"{'Species':<30} {'Matched':<30} {'Match':<12} {'Direction':<12} {'Weight':<8}"
     )
@@ -272,12 +272,12 @@ def main():
         else:
             # Text report
             with report_path.open("w", encoding="utf-8") as f:
-                f.write(f"Signature Scoring Report\n")
+                f.write("Signature Scoring Report\n")
                 f.write(f"{'='*60}\n\n")
                 f.write(f"Signature: {signature.name}\n")
                 f.write(f"Dataset: {dataset_path}\n")
                 f.write(f"Total Score: {result.total_score:.3f}\n\n")
-                f.write(f"Summary:\n")
+                f.write("Summary:\n")
                 f.write(
                     f"  Matched: {len(result.matched_species)}/{len(signature.components)}\n"
                 )
@@ -285,18 +285,18 @@ def main():
                 f.write(f"  Conflicts: {len(result.conflicting_species)}\n\n")
 
                 if result.missing_species:
-                    f.write(f"Missing Species:\n")
+                    f.write("Missing Species:\n")
                     for species in result.missing_species:
                         f.write(f"  - {species}\n")
                     f.write("\n")
 
                 if result.conflicting_species:
-                    f.write(f"Conflicting Species:\n")
+                    f.write("Conflicting Species:\n")
                     for species in result.conflicting_species:
                         f.write(f"  - {species}\n")
                     f.write("\n")
 
-                f.write(f"Component Details:\n")
+                f.write("Component Details:\n")
                 f.write(
                     f"{'Species':<30} {'Matched':<30} {'Match':<12} {'Direction':<12} {'Weight':<8}\n"
                 )

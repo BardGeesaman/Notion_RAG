@@ -25,7 +25,7 @@ def test_no_notion_references():
         if path.is_dir():
             if path.name in excluded:
                 # skip excluded dirs entirely
-                dirs = []
+                pass
             continue
         if not path.is_file():
             continue

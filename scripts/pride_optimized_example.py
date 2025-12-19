@@ -382,7 +382,7 @@ def main():
             print(df.head())
 
             # Extract protein accessions
-            print(f"\n🧬 Extracting protein accessions...")
+            print("\n🧬 Extracting protein accessions...")
             proteins = extract_protein_accessions(df)
             print(f"✅ Extracted {len(proteins)} unique protein accessions")
             if proteins:

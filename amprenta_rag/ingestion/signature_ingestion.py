@@ -18,8 +18,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from amprenta_rag.ingestion.signature_embedding import embed_signature
 from amprenta_rag.ingestion.signature_linking import (
-    link_component_to_feature, link_component_to_lipid_species,
-    link_component_to_metabolite_feature, link_signature_to_source)
+    link_component_to_feature,
+    link_component_to_lipid_species,
+    link_component_to_metabolite_feature,  # noqa: F401 (re-export)
+    link_signature_to_source,  # noqa: F401 (re-export)
+)
 from amprenta_rag.ingestion.signature_notion_crud import (
     find_or_create_component_page, find_or_create_lipid_species_page,
     find_or_create_signature_page, generate_signature_short_id,
@@ -98,24 +101,6 @@ def _link_component_to_lipid_species(
 ) -> None:
     """Backward compatibility wrapper for link_component_to_lipid_species."""
     return link_component_to_lipid_species(component_page_id, lipid_species_page_id)
-
-
-def link_signature_to_source(
-    signature_page_id: str,
-    source_page_id: str,
-    source_type: str,
-) -> None:
-    """Backward compatibility wrapper for link_signature_to_source."""
-    from amprenta_rag.ingestion.signature_linking import link_signature_to_source as link_func
-    return link_func(signature_page_id, source_page_id, source_type)
-
-
-def link_component_to_metabolite_feature(
-    component_page_id: str,
-    lipid_species_page_id: str,
-) -> None:
-    """Backward compatibility wrapper for link_component_to_metabolite_feature."""
-    return link_component_to_metabolite_feature(component_page_id, lipid_species_page_id)
 
 
 def ingest_signature_from_file(
