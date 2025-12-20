@@ -167,6 +167,7 @@ class TestRunChatTurn:
     @patch("amprenta_rag.agent.chat_agent.cross_omics_dataset_summary_postgres")
     def test_dataset_summary_with_valid_id(self, mock_summary, empty_session):
         """Dataset summary with valid ID should call summary function."""
+        from uuid import UUID
         from amprenta_rag.agent.chat_agent import run_chat_turn
 
         mock_summary.return_value = "Dataset summary text"
@@ -176,7 +177,7 @@ class TestRunChatTurn:
             "summarize dataset: 12345678-1234-1234-1234-123456789abc"
         )
 
-        mock_summary.assert_called_once_with("12345678-1234-1234-1234-123456789abc")
+        mock_summary.assert_called_once_with(UUID("12345678-1234-1234-1234-123456789abc"))
         assert answer == "Dataset summary text"
 
     def test_session_accumulates_turns(self, empty_session):

@@ -18,7 +18,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple, Dict, Any
 from uuid import UUID
 
 import GEOparse
@@ -40,7 +40,7 @@ logger = get_logger(__name__)
 
 def extract_geo_features_with_geoparse(
     study_id: str,
-    download_dir: Path = None,
+    download_dir: Optional[Path] = None,
 ) -> Set[str]:
     """
     Extract gene features from GEO study using GEOparse library.
@@ -68,8 +68,8 @@ def extract_geo_features_with_geoparse(
         from amprenta_rag.config import get_config
         cfg = get_config()
 
-        email = getattr(cfg, "ncbi_email", None) or os.getenv("NCBI_EMAIL", "")
-        api_key = getattr(cfg, "geo_api_key", None) or os.getenv("GEO_API_KEY", "")
+        email = str(getattr(cfg, "ncbi_email", None) or os.getenv("NCBI_EMAIL", "") or "")
+        api_key = str(getattr(cfg, "geo_api_key", None) or os.getenv("GEO_API_KEY", "") or "")
 
         if email:
             Entrez.email = email
@@ -164,7 +164,7 @@ def extract_geo_features_with_geoparse(
 
 def extract_pride_proteins_from_data_files(
     study_id: str,
-    download_dir: Path = None,
+    download_dir: Optional[Path] = None,
 ) -> Set[str]:
     """
     Extract protein features from PRIDE data files using optimized priority-based approach.
@@ -262,7 +262,7 @@ def extract_pride_proteins_from_data_files(
             return protein_set
 
         # Convert FTP URL to HTTP for requests library
-        download_url = target_file.download_url
+        download_url = target_file.download_url or ""
         if download_url.startswith("ftp://"):
             download_url = download_url.replace("ftp://ftp.pride.ebi.ac.uk", "https://ftp.pride.ebi.ac.uk")
             logger.info("[FEATURE-EXTRACT][PRIDE] Converted FTP to HTTP")
@@ -823,34 +823,34 @@ def extract_features_from_repository_dataset(
                 dataset_id,
             )
 
-            features: List[Tuple[str, FeatureType]] = []
+            features: List[Tuple[str, str]] = []
 
             if repository.upper() == "GEO":
                 gene_set = extract_geo_features_with_geoparse(
                     study_id=study_id,
                     download_dir=download_dir,
                 )
-                features = [(gene, FeatureType.GENE) for gene in gene_set]
+                features = [(gene, FeatureType.GENE.value) for gene in gene_set]
 
             elif repository.upper() == "PRIDE":
                 protein_set = extract_pride_proteins_from_data_files(
                     study_id=study_id,
                     download_dir=download_dir,
                 )
-                features = [(protein, FeatureType.PROTEIN) for protein in protein_set]
+                features = [(protein, FeatureType.PROTEIN.value) for protein in protein_set]
 
             elif repository.upper() == "METABOLIGHTS":
                 metabolite_set = extract_metabolights_metabolites_from_isa_tab(
                     study_id=study_id,
                     download_dir=download_dir,
                 )
-                features = [(metabolite, FeatureType.METABOLITE) for metabolite in metabolite_set]
+                features = [(metabolite, FeatureType.METABOLITE.value) for metabolite in metabolite_set]
 
             elif repository.upper() in ["MW", "METABOLOMICS WORKBENCH"]:
                 metabolite_set = extract_mw_metabolites_from_data_endpoint(
                     study_id=study_id,
                 )
-                features = [(metabolite, FeatureType.METABOLITE) for metabolite in metabolite_set]
+                features = [(metabolite, FeatureType.METABOLITE.value) for metabolite in metabolite_set]
 
             else:
                 logger.warning("[FEATURE-EXTRACT] Unknown repository: %s", repository)

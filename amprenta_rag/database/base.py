@@ -7,6 +7,8 @@ Provides SQLAlchemy base, engine, and session management for Postgres.
 from __future__ import annotations
 
 from typing import Generator
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
@@ -23,7 +25,7 @@ _engine = None
 _SessionLocal = None
 
 
-def get_engine():
+def get_engine() -> Engine:
     """
     Get or create the database engine.
 
@@ -74,7 +76,7 @@ def get_session_local():
     return _SessionLocal
 
 
-def get_db() -> Generator:
+def get_db() -> Generator[Session, None, None]:
     """
     Get a database session.
 

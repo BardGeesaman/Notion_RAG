@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Set, Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
@@ -24,7 +24,7 @@ def explain_signature_match(
     signature_id: UUID,
     dataset_id: UUID,
     top_n: int = Query(10, ge=1, le=50),
-):
+) -> schemas.SignatureExplanationResponse:
     """Get per-feature explanation of why a signature matches a dataset."""
     with db_session() as db:
         # Load signature
@@ -42,13 +42,14 @@ def explain_signature_match(
             raise HTTPException(404, "Dataset not found")
 
         # Get dataset features via relationship
-        features: List[Feature] = dataset.features if dataset else []
-        dataset_species = {f.name for f in features if f.name}
+        features: List[Feature] = list(dataset.features)  # type: ignore[call-overload]
+        dataset_species: Set[str] = {str(f.name) for f in features if getattr(f, "name", None)}
 
         # Build signature definition
         components: List[SignatureComponent] = []
         if sig_model.components:
-            for comp_data in sig_model.components:
+            components_source: List[dict[str, Any]] = list(sig_model.components or [])  # type: ignore[arg-type]
+            for comp_data in components_source:
                 if isinstance(comp_data, dict):
                     components.append(
                         SignatureComponent(
@@ -69,6 +70,8 @@ def explain_signature_match(
         }
 
         # Build response
+        matches = list(result.component_matches)
+
         all_contribs = [
             schemas.FeatureContribution(
                 feature_name=m.signature_species,
@@ -80,7 +83,7 @@ def explain_signature_match(
                 match_type=m.match_type,
                 direction_match=m.direction_match,
             )
-            for m in result.component_matches
+            for m in matches
         ]
 
         top = result.get_top_contributors(top_n)

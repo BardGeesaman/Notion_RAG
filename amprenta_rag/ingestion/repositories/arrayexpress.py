@@ -75,11 +75,15 @@ class ArrayExpressRepository(RepositoryInterface):
             return None
 
         title = data.get("title") or data.get("name") or study_id
-        description = data.get("description") or ""
-        organism = None
+        summary = data.get("description") or ""
+        organism: Optional[List[str]] = None
         attrs = data.get("attributes", {})
         if isinstance(attrs, dict):
-            organism = attrs.get("Organism") or attrs.get("organism")
+            org_val = attrs.get("Organism") or attrs.get("organism")
+            if isinstance(org_val, list):
+                organism = [str(o) for o in org_val if o]
+            elif isinstance(org_val, str) and org_val:
+                organism = [org_val]
 
         files = self.fetch_study_data_files(study_id, data=data)
 
@@ -87,10 +91,11 @@ class ArrayExpressRepository(RepositoryInterface):
             study_id=study_id,
             repository=self.get_repository_name(),
             title=title,
-            description=description,
-            organism=organism,
+            summary=summary,
+            omics_type=self.get_omics_type(),
+            organism=organism or [],
             data_files=files,
-            raw_metadata=data,
+            raw_metadata=data or {},
         )
 
     def fetch_study_data_files(
@@ -115,39 +120,35 @@ class ArrayExpressRepository(RepositoryInterface):
             results.append(
                 DataFile(
                     file_id=str(file_id),
-                    file_name=fname,
+                    filename=fname,
                     file_type=f.get("type") or "",
                     download_url=download_url,
-                    size=size,
+                    size_bytes=int(size) if isinstance(size, int) else None,
                 )
             )
         return results
 
-    def download_data_file(self, study_id: str, file_info: DataFile, dest_dir: str) -> bool:
-        if not file_info.download_url:
+    def download_data_file(self, study_id: str, file_id: str, output_path: str) -> bool:
+        metadata = self.fetch_study_metadata(study_id)
+        if not metadata:
+            return False
+        target = next((f for f in metadata.data_files if f.file_id == file_id), None)
+        if not target or not target.download_url:
             return False
         repo_rate_limit()
-        dest_path = Path(dest_dir) / (file_info.file_name or file_info.file_id)
+        dest_path = Path(output_path)
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with requests.get(file_info.download_url, stream=True, headers=_headers(), timeout=300) as r:
+            with requests.get(target.download_url, stream=True, headers=_headers(), timeout=300) as r:
                 r.raise_for_status()
                 with open(dest_path, "wb") as f:
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
-            logger.info(
-                "[REPO][ARRAYEXPRESS] Downloaded %s -> %s",
-                file_info.file_id,
-                dest_path,
-            )
+            logger.info("[REPO][ARRAYEXPRESS] Downloaded %s -> %s", target.file_id, dest_path)
             return True
         except Exception as exc:
-            logger.warning(
-                "[REPO][ARRAYEXPRESS] Failed to download %s: %r",
-                file_info.file_id,
-                exc,
-            )
+            logger.warning("[REPO][ARRAYEXPRESS] Failed to download %s: %r", target.file_id, exc)
             return False
 
 

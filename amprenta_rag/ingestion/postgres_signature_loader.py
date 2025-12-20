@@ -47,7 +47,7 @@ def load_signature_from_postgres(signature_model: SignatureModel) -> Optional[Si
                         feature_name=comp_model.feature_name or "",
                         feature_type=comp_model.feature_type,
                         direction=comp_model.direction,
-                        weight=comp_model.weight or 1.0,
+                        weight=float(comp_model.weight) if comp_model.weight is not None else 1.0,
                     )
                     components.append(component)
             except Exception as e:
@@ -60,9 +60,9 @@ def load_signature_from_postgres(signature_model: SignatureModel) -> Optional[Si
 
         # Build Signature object
         signature = Signature(
-            name=signature_model.name,
+            name=signature_model.name or "",
             components=components,
-            modalities=signature_model.modalities or [],
+            modalities=list(signature_model.modalities or []),
             description=signature_model.description,
         )
 

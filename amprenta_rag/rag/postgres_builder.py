@@ -51,7 +51,7 @@ def build_dataset_rag_metadata(
         logger.warning("[RAG][POSTGRES] Dataset %s not found", dataset_id)
         return {}
 
-    metadata = {
+    metadata: Dict[str, Any] = {
         "source_type": "Dataset",
         "dataset_id": str(dataset.id),  # Postgres ID
         "dataset_name": dataset.name,
@@ -98,7 +98,7 @@ def build_program_rag_metadata(
         logger.warning("[RAG][POSTGRES] Program %s not found", program_id)
         return {}
 
-    metadata = {
+    metadata: Dict[str, Any] = {
         "source_type": "Program",
         "program_id": str(program.id),
         "program_name": program.name,
@@ -128,7 +128,7 @@ def build_experiment_rag_metadata(
         logger.warning("[RAG][POSTGRES] Experiment %s not found", experiment_id)
         return {}
 
-    metadata = {
+    metadata: Dict[str, Any] = {
         "source_type": "Experiment",
         "experiment_id": str(experiment.id),
         "experiment_name": experiment.name,
@@ -167,7 +167,7 @@ def build_signature_rag_metadata(
         logger.warning("[RAG][POSTGRES] Signature %s not found", signature_id)
         return {}
 
-    metadata = {
+    metadata: Dict[str, Any] = {
         "source_type": "Signature",
         "signature_id": str(signature.id),
         "signature_name": signature.name,
@@ -200,7 +200,7 @@ def build_feature_rag_metadata(
         logger.warning("[RAG][POSTGRES] Feature %s not found", feature_id)
         return {}
 
-    metadata = {
+    metadata: Dict[str, Any] = {
         "source_type": "Feature",
         "feature_id": str(feature.id),
         "feature_name": feature.name,
@@ -252,12 +252,12 @@ def build_dataset_rag_text(
 
     # Related programs
     if dataset.programs:
-        program_names = [p.name for p in dataset.programs]
+        program_names = [p.name for p in dataset.programs if p.name]
         parts.append(f"Programs: {', '.join(program_names)}")
 
     # Related experiments
     if dataset.experiments:
-        experiment_names = [e.name for e in dataset.experiments]
+        experiment_names = [e.name for e in dataset.experiments if e.name]
         parts.append(f"Experiments: {', '.join(experiment_names)}")
 
     # Signature match score
@@ -285,7 +285,8 @@ def build_program_rag_text(
     if program.description:
         parts.append(f"Description: {program.description}")
     if program.disease:
-        parts.append(f"Disease Focus: {', '.join(program.disease)}")
+        diseases = [d for d in program.disease if d]
+        parts.append(f"Disease Focus: {', '.join(diseases)}")
 
     # Get related datasets count
     dataset_count = len(program.datasets) if program.datasets else 0

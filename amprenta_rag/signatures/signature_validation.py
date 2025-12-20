@@ -1,9 +1,10 @@
-from typing import List
+from typing import List, cast
 from uuid import UUID
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset, Signature
 from amprenta_rag.domain.analytics import SignatureValidationMetrics, SignatureValidationResult
+from typing import Any
 from amprenta_rag.ingestion.signature_matching.matching import score_signature_against_dataset
 
 
@@ -11,15 +12,17 @@ def validate_signature_against_all_datasets(
     signature_id: UUID, coverage_threshold: float = 0.1
 ) -> SignatureValidationResult:
     with db_session() as db:
-        db.query(Signature).filter(Signature.id == signature_id).first()
+        sig = db.query(Signature).filter(Signature.id == signature_id).first()
         datasets = db.query(Dataset).all()
-        matched_ids = []
-        scores = []
+        matched_ids: List[UUID] = []
+        scores: List[float] = []
         for ds in datasets:
-            res = score_signature_against_dataset(signature_id, ds.id, db=db)
-            if res and (res.get("overlap", 0) >= coverage_threshold):
-                matched_ids.append(ds.id)
-                scores.append(res.get("score", 0))
+            if ds.id is None or sig is None:
+                continue
+            res = score_signature_against_dataset(cast(Any, sig), {str(ds.id)})
+            if res and (res.overlap >= coverage_threshold):
+                matched_ids.append(cast(UUID, ds.id))
+                scores.append(float(res.score or 0))
         num_match = len(matched_ids)
         num_total = len(datasets)
         coverage = num_match / num_total if num_total else 0.0

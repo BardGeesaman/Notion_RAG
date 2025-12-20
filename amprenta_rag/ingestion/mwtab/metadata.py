@@ -34,7 +34,7 @@ def extract_metadata_from_mwtab(mwtab_data: Dict[str, Any]) -> Dict[str, Any]:
         - dataset_source_type: str | None
         - source_url: str | None
     """
-    metadata = {
+    metadata: Dict[str, Any] = {
         "model_systems": [],
         "disease_terms": [],
         "matrix_terms": [],

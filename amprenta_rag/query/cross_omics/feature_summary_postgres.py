@@ -150,7 +150,7 @@ def cross_omics_feature_summary_postgres(
             aggregated_context = aggregate_context_from_models(datasets, [])
             comparative_context = identify_comparative_context_postgres(aggregated_context)
 
-            omics_types = {}
+            omics_types: Dict[str, int] = {}
             for dataset in datasets:
                 omics_type = dataset.omics_type or "Other"
                 omics_types[omics_type] = omics_types.get(omics_type, 0) + 1

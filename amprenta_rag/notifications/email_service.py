@@ -23,7 +23,7 @@ SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-FROM_EMAIL = os.getenv("FROM_EMAIL", SMTP_USER)
+FROM_EMAIL = os.getenv("FROM_EMAIL", "") or (SMTP_USER or "")
 
 
 def is_email_configured() -> bool:
@@ -70,7 +70,7 @@ def send_email(
     try:
         # Create message
         msg = MIMEMultipart("alternative" if html_body else "mixed")
-        msg["From"] = FROM_EMAIL or SMTP_USER
+        msg["From"] = (FROM_EMAIL or SMTP_USER or "")
         msg["To"] = to
         msg["Subject"] = subject
 
@@ -99,7 +99,7 @@ def send_email(
         # Send email via SMTP with TLS
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.login(SMTP_USER or "", SMTP_PASSWORD or "")
             server.send_message(msg)
 
         logger.info("[EMAIL] Email sent successfully to %s", to)

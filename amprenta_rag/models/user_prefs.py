@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, JSON, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import Mapped, backref, relationship
 
 from amprenta_rag.database.base import Base
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -31,7 +35,7 @@ class Feedback(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    user = relationship("User", backref="feedback")
+    user: Mapped[Optional["User"]] = relationship("User", backref="feedback")
 
 
 class UserFavorite(Base):
@@ -44,7 +48,7 @@ class UserFavorite(Base):
     page_name = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("User", backref="favorites")
+    user: Mapped["User"] = relationship("User", backref="favorites")
 
 
 class Notification(Base):
@@ -60,7 +64,7 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("User", backref="notifications")
+    user: Mapped["User"] = relationship("User", backref="notifications")
 
 
 class EmailSubscription(Base):
@@ -75,7 +79,7 @@ class EmailSubscription(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("User", backref="email_subscriptions")
+    user: Mapped["User"] = relationship("User", backref="email_subscriptions")
 
 
 class Bookmark(Base):
@@ -89,7 +93,7 @@ class Bookmark(Base):
     entity_id = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("User", backref="bookmarks")
+    user: Mapped["User"] = relationship("User", backref="bookmarks")
 
 
 class Note(Base):
@@ -105,7 +109,7 @@ class Note(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 class SavedFilter(Base):
@@ -120,7 +124,7 @@ class SavedFilter(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("User", foreign_keys=[user_id])
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
 
 
 class Comment(Base):
@@ -137,8 +141,10 @@ class Comment(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
 
-    replies = relationship("Comment", backref=backref("parent", remote_side=[id]))
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    replies: Mapped[List["Comment"]] = relationship(
+        "Comment", backref=backref("parent", remote_side=[id])
+    )
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 __all__ = [

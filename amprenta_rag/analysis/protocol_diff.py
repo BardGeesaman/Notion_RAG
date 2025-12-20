@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from amprenta_rag.database.models import ExperimentProtocol, Protocol
@@ -81,8 +81,8 @@ def diff_protocols(v1: Protocol, v2: Protocol) -> ProtocolDiff:
             parameters_changed.append({"name": key, "from": params1.get(key), "to": params2.get(key)})
 
     return ProtocolDiff(
-        protocol_id=v1.id,
-        other_id=v2.id,
+        protocol_id=cast(UUID, v1.id),
+        other_id=cast(UUID, v2.id),
         added_steps=added_steps,
         removed_steps=removed_steps,
         changed_steps=changed_steps,
@@ -100,9 +100,9 @@ def get_protocol_history(protocol_id: UUID) -> List[ProtocolHistoryItem]:
         while current:
             history.append(
                 ProtocolHistoryItem(
-                    protocol_id=current.id,
+                    protocol_id=cast(UUID, current.id),
                     version=current.version or 1,
-                    parent_id=current.parent_id,
+                    parent_id=cast(Optional[UUID], current.parent_id),
                     name=current.name or str(current.id),
                 )
             )
@@ -129,7 +129,7 @@ def audit_deviations(experiment_id: UUID) -> List[DeviationReport]:
             reports.append(
                 DeviationReport(
                     experiment_id=experiment_id,
-                    protocol_id=proto.id if proto else link.protocol_id,
+                    protocol_id=cast(UUID, proto.id) if proto else cast(UUID, link.protocol_id),
                     protocol_name=proto.name if proto else str(link.protocol_id),
                     protocol_version=proto.version if proto else 1,
                     deviations=deviations if isinstance(deviations, list) else [deviations],

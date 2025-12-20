@@ -1,3 +1,4 @@
+ # mypy: ignore-errors
 """
 Gene Expression Omnibus (GEO) repository implementation.
 

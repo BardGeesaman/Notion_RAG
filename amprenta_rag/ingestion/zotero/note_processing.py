@@ -120,7 +120,7 @@ def process_notes(
                     chunk_id=chunk_id,
                     chunk_text=chunk,
                     parent_type=parent_type,
-                    parent_page_id=parent_page_id,
+                    parent_id=parent_page_id,
                     order=order,
                     when_iso=now,
                 )

@@ -15,13 +15,13 @@ import uuid
 def create_experiment(db: Session, experiment: ExperimentCreate) -> ExperimentModel:
     """Create a new experiment."""
     db_experiment = ExperimentModel(
-        id=uuid.uuid4(),
+        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=experiment.name,
         type=experiment.type,
         description=experiment.description,
-        disease=experiment.disease or [],
-        matrix=experiment.matrix or [],
-        model_systems=experiment.model_systems or [],
+        disease=experiment.disease or [],  # type: ignore[arg-type]
+        matrix=experiment.matrix or [],  # type: ignore[arg-type]
+        model_systems=experiment.model_systems or [],  # type: ignore[arg-type]
     )
 
     # Add program relationships

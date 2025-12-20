@@ -258,7 +258,7 @@ def _unlink_signature_from_dataset_impl(
         result = db.execute(delete_stmt)
         db.commit()
 
-        if result.rowcount > 0:
+        if hasattr(result, "rowcount") and result.rowcount > 0:
             logger.info(
                 "[SIGNATURE-LINK] Unlinked signature %s from dataset %s",
                 signature_id,

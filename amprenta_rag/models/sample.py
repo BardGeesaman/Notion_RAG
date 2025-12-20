@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import Experiment, User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -30,7 +34,9 @@ class StorageLocation(Base):
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    parent = relationship("StorageLocation", remote_side=[id], backref="children")
+    parent: Mapped[Optional["StorageLocation"]] = relationship(
+        "StorageLocation", remote_side=[id], backref="children"
+    )
 
 
 class Sample(Base):
@@ -53,10 +59,12 @@ class Sample(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text, nullable=True)
 
-    storage_location = relationship("StorageLocation", backref="samples")
-    parent_sample = relationship("Sample", remote_side=[id], backref="child_samples")
-    experiment = relationship("Experiment", backref="samples")
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    storage_location: Mapped[Optional["StorageLocation"]] = relationship("StorageLocation", backref="samples")
+    parent_sample: Mapped[Optional["Sample"]] = relationship(
+        "Sample", remote_side=[id], backref="child_samples"
+    )
+    experiment: Mapped[Optional["Experiment"]] = relationship("Experiment", backref="samples")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 class SampleTransfer(Base):
@@ -72,10 +80,14 @@ class SampleTransfer(Base):
     transferred_at = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text, nullable=True)
 
-    sample = relationship("Sample", backref="transfers")
-    from_location = relationship("StorageLocation", foreign_keys=[from_location_id], backref="outgoing_transfers")
-    to_location = relationship("StorageLocation", foreign_keys=[to_location_id], backref="incoming_transfers")
-    transferred_by = relationship("User", foreign_keys=[transferred_by_id])
+    sample: Mapped["Sample"] = relationship("Sample", backref="transfers")
+    from_location: Mapped[Optional["StorageLocation"]] = relationship(
+        "StorageLocation", foreign_keys=[from_location_id], backref="outgoing_transfers"
+    )
+    to_location: Mapped[Optional["StorageLocation"]] = relationship(
+        "StorageLocation", foreign_keys=[to_location_id], backref="incoming_transfers"
+    )
+    transferred_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[transferred_by_id])
 
 
 __all__ = ["StorageLocation", "Sample", "SampleTransfer"]

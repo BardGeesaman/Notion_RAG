@@ -36,7 +36,7 @@ def global_search(query: str, db, limit: int = 5) -> Dict[str, List[Dict[str, An
         }
 
     search_term = f"%{query.strip()}%"
-    results = {
+    results: Dict[str, List[Dict[str, Any]]] = {
         "experiments": [],
         "compounds": [],
         "signatures": [],

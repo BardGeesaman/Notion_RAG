@@ -6,7 +6,7 @@ import json
 import logging
 import hashlib
 from datetime import datetime
-from typing import Optional
+from typing import Optional, cast
 from uuid import UUID
 
 from apscheduler.triggers.cron import CronTrigger
@@ -36,9 +36,9 @@ def run_scheduled_report(schedule_id: UUID) -> None:
             logger.info("[REPORT-SCHED] Schedule disabled, skipping: %s", schedule.name)
             return
 
-        entity_type = schedule.entity_type
-        entity_id = schedule.entity_id
-        fmt = schedule.format
+        entity_type = schedule.entity_type or ""
+        entity_id = cast(Optional[UUID], schedule.entity_id)
+        fmt = schedule.format or ""
         created_by = schedule.created_by_id
         schedule.last_run_at = datetime.utcnow()
         db.commit()

@@ -56,19 +56,9 @@ def _find_or_create_signature_page(
     )
 
 
-def _update_signature_page_if_needed(
-    page_id: str,
-    signature: Signature,
-    signature_type: str,
-    data_ownership: str,
-    version: Optional[str],
-    description: Optional[str],
-    short_id: str,
-) -> None:
+def _update_signature_page_if_needed(*args: Any, **kwargs: Any) -> None:
     """Backward compatibility wrapper for update_signature_page_if_needed."""
-    return update_signature_page_if_needed(
-        page_id, signature, signature_type, data_ownership, version, description, short_id
-    )
+    update_signature_page_if_needed(*args, **kwargs)
 
 
 def _find_or_create_component_page(
@@ -92,7 +82,7 @@ def _find_or_create_lipid_species_page(
 
 def _update_lipid_species_synonyms(page_id: str, new_name: str) -> None:
     """Backward compatibility wrapper for update_lipid_species_synonyms."""
-    return update_lipid_species_synonyms(page_id, new_name)
+    update_lipid_species_synonyms(page_id, [new_name])
 
 
 def _link_component_to_lipid_species(

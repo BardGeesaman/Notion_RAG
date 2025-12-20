@@ -1,13 +1,18 @@
 """Shared error utilities for CLI and application messaging."""
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, TypedDict
 
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
-ERROR_MESSAGES: Dict[str, Dict[str, List[str] | str]] = {
+class ErrorEntry(TypedDict):
+    message: str
+    suggestions: List[str]
+
+
+ERROR_MESSAGES: Dict[str, ErrorEntry] = {
     "db_connection": {
         "message": "Database connection failed: {details}",
         "suggestions": [

@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
+from typing import List, Optional
 
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
 from amprenta_rag.models.chemistry import (
@@ -113,12 +114,30 @@ class Program(Base):
 
     # Audit
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
     # Relationships
-    experiments = relationship("Experiment", secondary=program_experiment_assoc, back_populates="programs")
-    datasets = relationship("Dataset", secondary=program_dataset_assoc, back_populates="programs")
-    signatures = relationship("Signature", secondary=program_signature_assoc, back_populates="programs")
+    experiments: Mapped[List["Experiment"]] = relationship(
+        secondary=program_experiment_assoc, back_populates="programs"
+    )
+    datasets: Mapped[List["Dataset"]] = relationship(
+        secondary=program_dataset_assoc, back_populates="programs"
+    )
+    signatures: Mapped[List["Signature"]] = relationship(
+        secondary=program_signature_assoc, back_populates="programs"
+    )
+    compounds: Mapped[List["Compound"]] = relationship(
+        "Compound", secondary=compound_program, back_populates="programs", viewonly=False
+    )
+    hts_campaigns: Mapped[List["HTSCampaign"]] = relationship(
+        "HTSCampaign", secondary=hts_campaign_program, back_populates="programs", viewonly=False
+    )
+    biochemical_results: Mapped[List["BiochemicalResult"]] = relationship(
+        "BiochemicalResult",
+        secondary=biochemical_result_program,
+        back_populates="programs",
+        viewonly=False,
+    )
 
 
 class Experiment(Base):
@@ -155,7 +174,7 @@ class Experiment(Base):
 
     # Audit
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
     # Project
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=True)
@@ -168,8 +187,16 @@ class Experiment(Base):
     archived_at = Column(DateTime, nullable=True)
 
     # Relationships
-    programs = relationship("Program", secondary=program_experiment_assoc, back_populates="experiments")
-    datasets = relationship("Dataset", secondary=experiment_dataset_assoc, back_populates="experiments")
+    programs: Mapped[List["Program"]] = relationship(
+        secondary=program_experiment_assoc, back_populates="experiments"
+    )
+    datasets: Mapped[List["Dataset"]] = relationship(
+        secondary=experiment_dataset_assoc, back_populates="experiments"
+    )
+    project: Mapped[Optional["Project"]] = relationship(back_populates="experiments")
+    generic_assay_results: Mapped[List["GenericAssayResult"]] = relationship(
+        back_populates="experiment"
+    )
 
 
 class Feature(Base):
@@ -194,8 +221,12 @@ class Feature(Base):
     external_ids = Column(JSON, nullable=True)
 
     # Relationships
-    datasets = relationship("Dataset", secondary=dataset_feature_assoc, back_populates="features")
-    signatures = relationship("Signature", secondary=signature_feature_assoc, back_populates="features")
+    datasets: Mapped[List["Dataset"]] = relationship(
+        secondary=dataset_feature_assoc, back_populates="features"
+    )
+    signatures: Mapped[List["Signature"]] = relationship(
+        secondary=signature_feature_assoc, back_populates="features"
+    )
 
 
 class Dataset(Base):
@@ -261,13 +292,21 @@ class Dataset(Base):
 
     # Audit
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
     # Relationships
-    programs = relationship("Program", secondary=program_dataset_assoc, back_populates="datasets")
-    experiments = relationship("Experiment", secondary=experiment_dataset_assoc, back_populates="datasets")
-    features = relationship("Feature", secondary=dataset_feature_assoc, back_populates="datasets")
-    signatures = relationship("Signature", secondary=dataset_signature_assoc, back_populates="datasets")
+    programs: Mapped[List["Program"]] = relationship(
+        secondary=program_dataset_assoc, back_populates="datasets"
+    )
+    experiments: Mapped[List["Experiment"]] = relationship(
+        secondary=experiment_dataset_assoc, back_populates="datasets"
+    )
+    features: Mapped[List["Feature"]] = relationship(
+        secondary=dataset_feature_assoc, back_populates="datasets"
+    )
+    signatures: Mapped[List["Signature"]] = relationship(
+        secondary=dataset_signature_assoc, back_populates="datasets"
+    )
 
 
 class SignatureComponent(Base):
@@ -287,8 +326,8 @@ class SignatureComponent(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    signature = relationship("Signature", back_populates="components")
-    feature = relationship("Feature")
+    signature: Mapped["Signature"] = relationship(back_populates="components")
+    feature: Mapped[Optional["Feature"]] = relationship("Feature")
 
 
 class Signature(Base):
@@ -319,13 +358,21 @@ class Signature(Base):
 
     # Audit
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
     # Relationships
-    components = relationship("SignatureComponent", back_populates="signature", cascade="all, delete-orphan")
-    features = relationship("Feature", secondary=signature_feature_assoc, back_populates="signatures")
-    datasets = relationship("Dataset", secondary=dataset_signature_assoc, back_populates="signatures")
-    programs = relationship("Program", secondary=program_signature_assoc, back_populates="signatures")
+    components: Mapped[List["SignatureComponent"]] = relationship(
+        back_populates="signature", cascade="all, delete-orphan"
+    )
+    features: Mapped[List["Feature"]] = relationship(
+        secondary=signature_feature_assoc, back_populates="signatures"
+    )
+    datasets: Mapped[List["Dataset"]] = relationship(
+        secondary=dataset_signature_assoc, back_populates="signatures"
+    )
+    programs: Mapped[List["Program"]] = relationship(
+        secondary=program_signature_assoc, back_populates="signatures"
+    )
 
 
 class ReportArtifact(Base):
@@ -343,7 +390,7 @@ class ReportArtifact(Base):
 
     # Audit
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
 
 class ReportSchedule(Base):
@@ -362,7 +409,7 @@ class ReportSchedule(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
 
 class RepositorySubscription(Base):
@@ -382,7 +429,7 @@ class RepositorySubscription(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    user = relationship("User", foreign_keys=[user_id])
+    user: Mapped[Optional["User"]] = relationship(foreign_keys=[user_id])
 
 
 class Alert(Base):
@@ -396,19 +443,9 @@ class Alert(Base):
     is_read = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
-    subscription = relationship("RepositorySubscription")
-    dataset = relationship("Dataset")
+    subscription: Mapped["RepositorySubscription"] = relationship("RepositorySubscription")
+    dataset: Mapped["Dataset"] = relationship("Dataset")
 
-
-# Add relationships to Program model after all models are defined
-# This avoids forward reference issues
-Program.compounds = relationship("Compound", secondary=compound_program, back_populates="programs", viewonly=False)
-Program.hts_campaigns = relationship(
-    "HTSCampaign", secondary=hts_campaign_program, back_populates="programs", viewonly=False
-)
-Program.biochemical_results = relationship(
-    "BiochemicalResult", secondary=biochemical_result_program, back_populates="programs", viewonly=False
-)
 
 gene_protein_map = Table(
     "gene_protein_map",

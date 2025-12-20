@@ -15,13 +15,20 @@ Key Benefits:
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Dict
 from uuid import UUID
 
 from sqlalchemy.orm import Session, selectinload
 
 from amprenta_rag.database.session import db_session
-from amprenta_rag.database.models import Program, Experiment, Dataset, Feature, Signature
+from amprenta_rag.database.models import (
+    Program,
+    Experiment,
+    Dataset,
+    Feature,
+    Signature,
+    SignatureComponent,
+)
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -80,9 +87,10 @@ def build_program_text(db: Session, program_id: UUID) -> str:
     # Datasets
     if program.datasets:
         # Group by omics type
-        by_omics = {}
+        by_omics: Dict[str, list[Dataset]] = {}
         for ds in program.datasets:
-            by_omics.setdefault(ds.omics_type, []).append(ds)
+            omics_key = ds.omics_type or "unknown"
+            by_omics.setdefault(omics_key, []).append(ds)
 
         sections.append(f"## Datasets ({len(program.datasets)})")
         for omics_type, datasets in sorted(by_omics.items()):
@@ -105,8 +113,10 @@ def build_program_text(db: Session, program_id: UUID) -> str:
     # Metadata
     sections.append("## Metadata")
     sections.append(f"- Program ID: {program.id}")
-    sections.append(f"- Created: {program.created_at.isoformat()}")
-    sections.append(f"- Updated: {program.updated_at.isoformat()}")
+    if program.created_at:
+        sections.append(f"- Created: {program.created_at.isoformat()}")
+    if program.updated_at:
+        sections.append(f"- Updated: {program.updated_at.isoformat()}")
 
     return "\n".join(sections)
 
@@ -184,9 +194,10 @@ def build_dataset_text(db: Session, dataset_id: UUID) -> str:
     # Features
     if dataset.features:
         # Group by feature type
-        by_type = {}
+        by_type: Dict[str, list[Feature]] = {}
         for feat in dataset.features:
-            by_type.setdefault(feat.feature_type, []).append(feat)
+            feature_key = feat.feature_type or "unknown"
+            by_type.setdefault(feature_key, []).append(feat)
 
         sections.append(f"## Features ({len(dataset.features)} total)")
         for feat_type, features in sorted(by_type.items()):
@@ -227,8 +238,10 @@ def build_dataset_text(db: Session, dataset_id: UUID) -> str:
     sections.append(f"- Dataset ID: {dataset.id}")
     sections.append(f"- Data Origin: {dataset.data_origin or 'Internal'}")
     sections.append(f"- Source Type: {dataset.dataset_source_type or 'Unknown'}")
-    sections.append(f"- Created: {dataset.created_at.isoformat()}")
-    sections.append(f"- Updated: {dataset.updated_at.isoformat()}")
+    if dataset.created_at:
+        sections.append(f"- Created: {dataset.created_at.isoformat()}")
+    if dataset.updated_at:
+        sections.append(f"- Updated: {dataset.updated_at.isoformat()}")
     if dataset.file_paths:
         sections.append(f"- Files: {', '.join(dataset.file_paths)}")
 
@@ -284,9 +297,10 @@ def build_signature_text(db: Session, signature_id: UUID) -> str:
     # Components
     if signature.components:
         # Group by feature type
-        by_type = {}
+        by_type: Dict[str, list[SignatureComponent]] = {}
         for comp in signature.components:
-            by_type.setdefault(comp.feature_type, []).append(comp)
+            comp_key = comp.feature_type or "unknown"
+            by_type.setdefault(comp_key, []).append(comp)
 
         sections.append(f"## Components ({len(signature.components)} total)")
         for feat_type, components in sorted(by_type.items()):
@@ -314,8 +328,10 @@ def build_signature_text(db: Session, signature_id: UUID) -> str:
     # Metadata
     sections.append("## Metadata")
     sections.append(f"- Signature ID: {signature.id}")
-    sections.append(f"- Created: {signature.created_at.isoformat()}")
-    sections.append(f"- Updated: {signature.updated_at.isoformat()}")
+    if signature.created_at:
+        sections.append(f"- Created: {signature.created_at.isoformat()}")
+    if signature.updated_at:
+        sections.append(f"- Updated: {signature.updated_at.isoformat()}")
 
     return "\n".join(sections)
 
@@ -367,9 +383,10 @@ def build_feature_text(db: Session, feature_id: UUID) -> str:
     # Datasets
     if feature.datasets:
         # Group by omics type
-        by_omics = {}
+        by_omics: Dict[str, list[Dataset]] = {}
         for ds in feature.datasets:
-            by_omics.setdefault(ds.omics_type, []).append(ds)
+            omics_key = ds.omics_type or "unknown"
+            by_omics.setdefault(omics_key, []).append(ds)
 
         sections.append(f"## Datasets ({len(feature.datasets)} total)")
         for omics_type, datasets in sorted(by_omics.items()):
@@ -390,8 +407,10 @@ def build_feature_text(db: Session, feature_id: UUID) -> str:
     # Metadata
     sections.append("## Metadata")
     sections.append(f"- Feature ID: {feature.id}")
-    sections.append(f"- Created: {feature.created_at.isoformat()}")
-    sections.append(f"- Updated: {feature.updated_at.isoformat()}")
+    if feature.created_at:
+        sections.append(f"- Created: {feature.created_at.isoformat()}")
+    if feature.updated_at:
+        sections.append(f"- Updated: {feature.updated_at.isoformat()}")
 
     return "\n".join(sections)
 
@@ -459,9 +478,10 @@ def build_experiment_text(db: Session, experiment_id: UUID) -> str:
     # Datasets
     if experiment.datasets:
         # Group by omics type
-        by_omics = {}
+        by_omics: Dict[str, list[Dataset]] = {}
         for ds in experiment.datasets:
-            by_omics.setdefault(ds.omics_type, []).append(ds)
+            omics_key = ds.omics_type or "unknown"
+            by_omics.setdefault(omics_key, []).append(ds)
 
         sections.append(f"## Datasets ({len(experiment.datasets)} total)")
         for omics_type, datasets in sorted(by_omics.items()):
@@ -473,8 +493,10 @@ def build_experiment_text(db: Session, experiment_id: UUID) -> str:
     # Metadata
     sections.append("## Metadata")
     sections.append(f"- Experiment ID: {experiment.id}")
-    sections.append(f"- Created: {experiment.created_at.isoformat()}")
-    sections.append(f"- Updated: {experiment.updated_at.isoformat()}")
+    if experiment.created_at:
+        sections.append(f"- Created: {experiment.created_at.isoformat()}")
+    if experiment.updated_at:
+        sections.append(f"- Updated: {experiment.updated_at.isoformat()}")
 
     return "\n".join(sections)
 

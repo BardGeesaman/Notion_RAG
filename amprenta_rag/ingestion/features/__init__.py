@@ -9,21 +9,30 @@ Maintains backward compatibility by re-exporting all public functions.
 
 from __future__ import annotations
 
+from typing import Any, Callable, Optional, cast, TYPE_CHECKING
+
 from amprenta_rag.ingestion.features.constants import AMINO_ACIDS, METABOLITE_SYNONYMS, NUCLEOTIDES
 from amprenta_rag.ingestion.features.extraction import extract_features_from_mwtab, extract_features_from_text
 
 # Conditional imports for Notion-dependent linking modules (legacy)
-try:
-    from amprenta_rag.ingestion.features.general_linking import link_feature
-except (ImportError, RuntimeError, ModuleNotFoundError):
-    # Notion sync disabled - general_linking is not available
-    link_feature = None
-
-try:
-    from amprenta_rag.ingestion.features.metabolite_linking import link_features_to_notion_items
-except (ImportError, RuntimeError, ModuleNotFoundError):
-    # Notion sync disabled - metabolite_linking is not available
-    link_features_to_notion_items = None
+if TYPE_CHECKING:
+    from amprenta_rag.ingestion.features.general_linking import link_feature as link_feature_t
+    from amprenta_rag.ingestion.features.metabolite_linking import link_features_to_notion_items as link_features_to_notion_items_t
+    link_feature: Optional[Callable[..., Any]] = link_feature_t
+    link_features_to_notion_items: Optional[Callable[..., Any]] = link_features_to_notion_items_t
+else:
+    link_feature: Any = None
+    link_features_to_notion_items: Any = None
+    try:
+        from amprenta_rag.ingestion.features import general_linking as _gl  # type: ignore[import]
+        link_feature = getattr(_gl, "link_feature", None)
+    except Exception:
+        link_feature = None
+    try:
+        from amprenta_rag.ingestion.features import metabolite_linking as _ml  # type: ignore[import]
+        link_features_to_notion_items = getattr(_ml, "link_features_to_notion_items", None)
+    except Exception:
+        link_features_to_notion_items = None
 from amprenta_rag.ingestion.features.normalization import normalize_metabolite_name
 
 __all__ = [

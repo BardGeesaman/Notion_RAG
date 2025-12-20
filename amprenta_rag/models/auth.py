@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, JSON
+import uuid
+from typing import List, Optional, TYPE_CHECKING
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, JSON, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
-from sqlalchemy import func
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
-import uuid
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import Experiment
 
 
 def generate_uuid() -> uuid.UUID:
@@ -40,8 +44,12 @@ class Team(Base):
     description = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    members = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
-    projects = relationship("Project", back_populates="team", cascade="all, delete-orphan")
+    members: Mapped[List["TeamMember"]] = relationship(
+        back_populates="team", cascade="all, delete-orphan"
+    )
+    projects: Mapped[List["Project"]] = relationship(
+        back_populates="team", cascade="all, delete-orphan"
+    )
 
 
 class TeamMember(Base):
@@ -55,8 +63,8 @@ class TeamMember(Base):
     role = Column(String(20), default="member")  # owner, admin, member, viewer
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    team = relationship("Team", back_populates="members")
-    user = relationship("User", backref="team_memberships")
+    team: Mapped["Team"] = relationship(back_populates="members")
+    user: Mapped["User"] = relationship(backref="team_memberships")
 
 
 class Project(Base):
@@ -71,8 +79,8 @@ class Project(Base):
     is_public = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    team = relationship("Team", back_populates="projects")
-    experiments = relationship("Experiment", backref="project")
+    team: Mapped["Team"] = relationship(back_populates="projects")
+    experiments: Mapped[List["Experiment"]] = relationship(back_populates="project")
 
 
 class FeaturePermission(Base):
@@ -106,7 +114,7 @@ class AuditLog(Base):
     ip_address = Column(String(50), nullable=True)
     timestamp = Column(DateTime, default=func.now(), index=True)
 
-    user = relationship("User", backref="audit_logs")
+    user: Mapped[Optional["User"]] = relationship(backref="audit_logs")
 
 
 __all__ = [

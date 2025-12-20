@@ -1,9 +1,9 @@
 """Help content for dashboard pages."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
-HELP_TOPICS: Dict[str, Dict[str, any]] = {
+HELP_TOPICS: Dict[str, Dict[str, Any]] = {
     "Overview": {
         "title": "Overview Dashboard",
         "description": "View system statistics, recent activity, and quick access to key features.",
@@ -103,7 +103,7 @@ HELP_TOPICS: Dict[str, Dict[str, any]] = {
 }
 
 
-def get_help(page_name: str) -> Optional[Dict[str, any]]:
+def get_help(page_name: str) -> Optional[Dict[str, Any]]:
     """
     Get help content for a specific page.
 
@@ -116,7 +116,7 @@ def get_help(page_name: str) -> Optional[Dict[str, any]]:
     return HELP_TOPICS.get(page_name)
 
 
-def search_help(query: str) -> List[Dict[str, any]]:
+def search_help(query: str) -> List[Dict[str, Any]]:
     """
     Search help topics by fuzzy matching on title and description.
 

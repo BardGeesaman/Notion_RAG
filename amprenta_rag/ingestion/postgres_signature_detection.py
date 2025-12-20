@@ -9,7 +9,7 @@ from __future__ import annotations
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from amprenta_rag.ingestion.signature_detection import (
@@ -166,13 +166,13 @@ def detect_and_ingest_signatures_from_postgres_content(
                 # Link signature to source
                 if source_dataset_id:
                     link_signature_to_postgres_source(
-                        signature_id=signature_model.id,
+                        signature_id=cast(UUID, signature_model.id),
                         source_type="dataset",
                         source_id=source_dataset_id,
                     )
                 elif source_experiment_id:
                     link_signature_to_postgres_source(
-                        signature_id=signature_model.id,
+                        signature_id=cast(UUID, signature_model.id),
                         source_type="experiment",
                         source_id=source_experiment_id,
                     )
@@ -180,7 +180,7 @@ def detect_and_ingest_signatures_from_postgres_content(
                 # Embed signature into Pinecone
                 try:
                     embed_signature_with_postgres_id(
-                        signature_id=signature_model.id,
+                        signature_id=cast(UUID, signature_model.id),
                         signature=signature,
                     )
                 except Exception as e:

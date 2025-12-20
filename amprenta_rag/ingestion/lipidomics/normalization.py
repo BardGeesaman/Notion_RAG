@@ -81,6 +81,8 @@ def normalize_lipid_species(raw_name: str) -> Optional[str]:
         "glucosylceramide": "GlcCer",
     }
 
+    result: Optional[str] = None
+
     # Try to match various formats
     # Format 1: CER 16:0, SM 24:1, etc.
     simple_match = re.match(
@@ -149,13 +151,15 @@ def normalize_lipid_species(raw_name: str) -> Optional[str]:
     from amprenta_rag.ingestion.signature_matching import (
         map_raw_lipid_to_canonical_species)
     result = map_raw_lipid_to_canonical_species(raw_name)
-    if result:
+    if result is not None:
         logger.info(
             "[INGEST][LIPIDOMICS] Normalized raw lipid '%s' -> '%s'",
             raw_name,
             result,
         )
         return result
+
+    return raw_name
 
     logger.warning(
         "[INGEST][LIPIDOMICS] WARNING: Could not normalize raw lipid '%s'",

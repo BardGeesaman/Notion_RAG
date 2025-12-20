@@ -7,7 +7,7 @@ replacing Notion-based chunk page creation.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Generator, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -75,7 +75,9 @@ def create_rag_chunk_in_postgres(
         True
     """
     if db is None:
-        with get_db() as session:
+        db_gen = get_db()
+        session = next(db_gen)
+        try:
             return create_rag_chunk_in_postgres(
                 chunk_id=chunk_id,
                 chunk_text=chunk_text,
@@ -95,6 +97,9 @@ def create_rag_chunk_in_postgres(
                 notion_page_id=notion_page_id,
                 db=session,
             )
+        finally:
+            session.close()
+            next(db_gen, None)
 
     # Check if chunk already exists
     existing = db.query(RAGChunk).filter(RAGChunk.chunk_id == chunk_id).first()
@@ -104,7 +109,7 @@ def create_rag_chunk_in_postgres(
             chunk_id,
             existing.id,
         )
-        return existing.id
+        return cast(UUID, existing.id)
 
     # Create new chunk
     chunk = RAGChunk(
@@ -136,4 +141,4 @@ def create_rag_chunk_in_postgres(
         chunk.id,
     )
 
-    return chunk.id
+    return cast(UUID, chunk.id)

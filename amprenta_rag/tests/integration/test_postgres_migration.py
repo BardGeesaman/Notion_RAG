@@ -9,8 +9,8 @@ These tests ensure that the new *postgres* summary functions:
 
 from __future__ import annotations
 
-from typing import Any, Generator, Optional, Type
-from uuid import uuid4
+from typing import Any, Generator, Optional, Type, cast
+from uuid import UUID, uuid4
 
 import pytest
 from unittest.mock import patch
@@ -84,23 +84,23 @@ def _fake_get_db(session: _DummySession) -> Generator[_DummySession, None, None]
 
 def _make_program_with_context() -> Program:
     program = Program(
-        id=uuid4(),
+        id=uuid4(),  # type: ignore[arg-type]
         name="ALS-CSF Program",
-        disease=["ALS"],
+        disease=["ALS"],  # type: ignore[list-item]
     )
     # Attach one experiment and one dataset with additional context
     exp = Experiment(
-        id=uuid4(),
+        id=uuid4(),  # type: ignore[arg-type]
         name="ALS-CSF-Patient-Study",
-        disease=["ALS"],
-        matrix=["CSF"],
-        model_systems=["patient"],
+        disease=["ALS"],  # type: ignore[list-item]
+        matrix=["CSF"],  # type: ignore[list-item]
+        model_systems=["patient"],  # type: ignore[list-item]
     )
     ds = Dataset(
-        id=uuid4(),
+        id=uuid4(),  # type: ignore[arg-type]
         name="ALS-CSF-Lipidomics",
         omics_type="lipidomics",
-        disease=["ALS"],
+        disease=["ALS"],  # type: ignore[list-item]
         notion_page_id="dataset-page-1",
     )
     program.experiments.append(exp)
@@ -110,19 +110,19 @@ def _make_program_with_context() -> Program:
 
 def _make_dataset_with_context() -> Dataset:
     return Dataset(
-        id=uuid4(),
+        id=uuid4(),  # type: ignore[arg-type]
         name="ALS-CSF-Metabolomics",
         omics_type="metabolomics",
-        disease=["ALS"],
+        disease=["ALS"],  # type: ignore[list-item]
         notion_page_id="dataset-page-2",
     )
 
 
 def _make_signature_with_context(ds: Dataset) -> Signature:
     sig = Signature(
-        id=uuid4(),
+        id=uuid4(),  # type: ignore[arg-type]
         name="ALS-CSF-Core-6Ceramides",
-        modalities=["lipid"],
+        modalities=["lipid"],  # type: ignore[list-item]
         notion_page_id="signature-page-1",
     )
     sig.datasets.append(ds)
@@ -131,7 +131,7 @@ def _make_signature_with_context(ds: Dataset) -> Signature:
 
 def _make_feature_with_context(ds: Dataset) -> Feature:
     feat = Feature(
-        id=uuid4(),
+        id=uuid4(),  # type: ignore[arg-type]
         name="TP53",
         feature_type="gene",
         normalized_name="TP53",
@@ -187,10 +187,11 @@ def test_program_and_dataset_summaries_use_postgres(monkeypatch, which_summary, 
     ) as mock_get, patch(
         "requests.post"
     ) as mock_post:
+        target_id: UUID = cast(UUID, obj.id)
         if which_summary == "program":
-            result = cross_omics_program_summary_postgres(obj.id)
+            result = cross_omics_program_summary_postgres(target_id)
         else:
-            result = cross_omics_dataset_summary_postgres(obj.id)
+            result = cross_omics_dataset_summary_postgres(target_id)
 
     # Function should return a non-empty summary string
     assert isinstance(result, str)
@@ -238,8 +239,8 @@ def test_signature_and_feature_summaries_use_postgres(monkeypatch):
     ) as mock_get, patch(
         "requests.post"
     ) as mock_post:
-        sig_result = cross_omics_signature_summary_postgres(signature_id=signature.id)
-        feat_result = cross_omics_feature_summary_postgres(feature_id=feature.id)
+        sig_result = cross_omics_signature_summary_postgres(signature_id=cast(UUID, signature.id))
+        feat_result = cross_omics_feature_summary_postgres(feature_id=cast(UUID, feature.id))
 
     assert isinstance(sig_result, str) and sig_result
     assert isinstance(feat_result, str) and feat_result

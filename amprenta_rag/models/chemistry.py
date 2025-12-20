@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Table, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
-import uuid
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import Experiment, Program, User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -74,10 +78,17 @@ class Compound(Base):
     version = Column(Integer, default=1, nullable=False)
 
     # Relationships
-    hts_campaigns = relationship("HTSCampaign", back_populates="library")
-    hts_results = relationship("HTSResult", back_populates="compound")
-    biochemical_results = relationship("BiochemicalResult", back_populates="compound")
-    programs = relationship("Program", secondary="compound_program", back_populates="compounds")
+    hts_campaigns: Mapped[List["HTSCampaign"]] = relationship(back_populates="library")
+    hts_results: Mapped[List["HTSResult"]] = relationship(back_populates="compound")
+    biochemical_results: Mapped[List["BiochemicalResult"]] = relationship(back_populates="compound")
+    programs: Mapped[List["Program"]] = relationship(
+        secondary="compound_program", back_populates="compounds"
+    )
+    activity_results: Mapped[List["ActivityResult"]] = relationship(back_populates="compound")
+    adme_results: Mapped[List["ADMEResult"]] = relationship(back_populates="compound")
+    pk_studies: Mapped[List["PKStudy"]] = relationship(back_populates="compound")
+    toxicology_results: Mapped[List["ToxicologyResult"]] = relationship(back_populates="compound")
+    generic_assay_results: Mapped[List["GenericAssayResult"]] = relationship(back_populates="compound")
 
 
 class BiochemicalAssay(Base):
@@ -94,7 +105,7 @@ class BiochemicalAssay(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    results = relationship("ActivityResult", back_populates="assay")
+    results: Mapped[List["ActivityResult"]] = relationship(back_populates="assay")
 
 
 class ActivityResult(Base):
@@ -111,9 +122,9 @@ class ActivityResult(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Relationships
-    compound = relationship("Compound", backref="activity_results")
-    assay = relationship("BiochemicalAssay", back_populates="results")
-    created_by = relationship("User")
+    compound: Mapped["Compound"] = relationship(back_populates="activity_results")
+    assay: Mapped["BiochemicalAssay"] = relationship(back_populates="results")
+    created_by: Mapped[Optional["User"]] = relationship("User")
 
 
 class ADMEResult(Base):
@@ -130,8 +141,8 @@ class ADMEResult(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
-    compound = relationship("Compound", backref="adme_results")
-    created_by = relationship("User")
+    compound: Mapped["Compound"] = relationship(back_populates="adme_results")
+    created_by: Mapped[Optional["User"]] = relationship("User")
 
 
 class PKStudy(Base):
@@ -155,8 +166,8 @@ class PKStudy(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
-    compound = relationship("Compound", backref="pk_studies")
-    created_by = relationship("User")
+    compound: Mapped["Compound"] = relationship(back_populates="pk_studies")
+    created_by: Mapped[Optional["User"]] = relationship("User")
 
 
 class ToxicologyResult(Base):
@@ -174,8 +185,8 @@ class ToxicologyResult(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
-    compound = relationship("Compound", backref="toxicology_results")
-    created_by = relationship("User")
+    compound: Mapped["Compound"] = relationship(back_populates="toxicology_results")
+    created_by: Mapped[Optional["User"]] = relationship("User")
 
 
 class HTSCampaign(Base):
@@ -203,9 +214,13 @@ class HTSCampaign(Base):
 
     # Relationships
     library_compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=True)
-    library = relationship("Compound", back_populates="hts_campaigns")
-    results = relationship("HTSResult", back_populates="campaign", cascade="all, delete-orphan")
-    programs = relationship("Program", secondary="hts_campaign_program", back_populates="hts_campaigns")
+    library: Mapped[Optional["Compound"]] = relationship(back_populates="hts_campaigns")
+    results: Mapped[List["HTSResult"]] = relationship(
+        back_populates="campaign", cascade="all, delete-orphan"
+    )
+    programs: Mapped[List["Program"]] = relationship(
+        secondary="hts_campaign_program", back_populates="hts_campaigns"
+    )
 
 
 class HTSResult(Base):
@@ -228,8 +243,8 @@ class HTSResult(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    campaign = relationship("HTSCampaign", back_populates="results")
-    compound = relationship("Compound", back_populates="hts_results")
+    campaign: Mapped["HTSCampaign"] = relationship(back_populates="results")
+    compound: Mapped["Compound"] = relationship(back_populates="hts_results")
 
 
 class BiochemicalResult(Base):
@@ -258,8 +273,10 @@ class BiochemicalResult(Base):
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)
 
     # Relationships
-    compound = relationship("Compound", back_populates="biochemical_results")
-    programs = relationship("Program", secondary="biochemical_result_program", back_populates="biochemical_results")
+    compound: Mapped["Compound"] = relationship(back_populates="biochemical_results")
+    programs: Mapped[List["Program"]] = relationship(
+        secondary="biochemical_result_program", back_populates="biochemical_results"
+    )
 
 
 class TargetProductProfile(Base):
@@ -275,8 +292,10 @@ class TargetProductProfile(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    created_by = relationship("User", foreign_keys=[created_by_id])
-    nominations = relationship("CandidateNomination", back_populates="tpp", cascade="all, delete-orphan")
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
+    nominations: Mapped[List["CandidateNomination"]] = relationship(
+        back_populates="tpp", cascade="all, delete-orphan"
+    )
 
 
 class CandidateNomination(Base):
@@ -294,9 +313,9 @@ class CandidateNomination(Base):
     nominated_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    compound = relationship("Compound", foreign_keys=[compound_id])
-    tpp = relationship("TargetProductProfile", back_populates="nominations")
-    nominated_by = relationship("User", foreign_keys=[nominated_by_id])
+    compound: Mapped["Compound"] = relationship(foreign_keys=[compound_id])
+    tpp: Mapped["TargetProductProfile"] = relationship(back_populates="nominations")
+    nominated_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[nominated_by_id])
 
 
 class GenericAssayResult(Base):
@@ -315,9 +334,9 @@ class GenericAssayResult(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    experiment = relationship("Experiment", backref="generic_assay_results")
-    compound = relationship("Compound", backref="generic_assay_results")
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    experiment: Mapped[Optional["Experiment"]] = relationship(back_populates="generic_assay_results")
+    compound: Mapped[Optional["Compound"]] = relationship(back_populates="generic_assay_results")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 __all__ = [

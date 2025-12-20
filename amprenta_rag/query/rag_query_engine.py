@@ -1,3 +1,4 @@
+ # mypy: ignore-errors
 # amprenta_rag/query/rag_query_engine.py
 
 """

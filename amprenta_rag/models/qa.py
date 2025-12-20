@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -29,8 +33,10 @@ class SavedQuestion(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     is_archived = Column(Boolean, default=False, nullable=False)
 
-    answers = relationship("SavedAnswer", back_populates="question", cascade="all, delete-orphan")
-    created_by = relationship("User")
+    answers: Mapped[List["SavedAnswer"]] = relationship(
+        "SavedAnswer", back_populates="question", cascade="all, delete-orphan"
+    )
+    created_by: Mapped[Optional["User"]] = relationship("User")
 
 
 class SavedAnswer(Base):
@@ -47,7 +53,7 @@ class SavedAnswer(Base):
     confidence_score = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    question = relationship("SavedQuestion", back_populates="answers")
+    question: Mapped["SavedQuestion"] = relationship("SavedQuestion", back_populates="answers")
 
 
 __all__ = ["SavedQuestion", "SavedAnswer"]

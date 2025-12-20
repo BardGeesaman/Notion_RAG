@@ -7,7 +7,7 @@ This is the Postgres-first alternative to link_features_to_notion_items().
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -43,8 +43,13 @@ def link_features_to_postgres_items(
         item_type: One of "dataset", "literature", "email", "experiment"
     """
     if db is None:
-        with get_db() as session:
+        db_gen = get_db()
+        session = next(db_gen)
+        try:
             return link_features_to_postgres_items(feature_names, item_id, item_type, db=session)
+        finally:
+            session.close()
+            next(db_gen, None)
 
     if not feature_names:
         logger.debug(
@@ -62,7 +67,7 @@ def link_features_to_postgres_items(
     )
 
     linked_count = 0
-    feature_mentions = []
+    feature_mentions: List[str] = []
 
     for feature_name in feature_names:
         try:
@@ -211,6 +216,7 @@ def _update_semantic_metadata_with_features(
 ) -> None:
     """Update semantic_metadata JSON field with feature mentions."""
     try:
+        item: Optional[Union[Literature, Email]]
         if item_type == "literature":
             item = db.query(Literature).filter(Literature.id == item_id).first()
         elif item_type == "email":
@@ -333,9 +339,10 @@ def batch_link_features_to_dataset_in_postgres(
     # Group features by type for efficient batch querying
     features_by_type: Dict[str, List[str]] = {}
     for name, ftype in features:
-        if ftype not in features_by_type:
-            features_by_type[ftype] = []
-        features_by_type[ftype].append(name)
+        ftype_key = ftype or ""
+        if ftype_key not in features_by_type:
+            features_by_type[ftype_key] = []
+        features_by_type[ftype_key].append(name)
 
     # Batch lookup existing features (single query per type)
     feature_cache: Dict[Tuple[str, str], Optional[FeatureModel]] = {}
@@ -355,15 +362,19 @@ def batch_link_features_to_dataset_in_postgres(
 
         # Build lookup map
         for feat in existing:
+            if not feat.name:
+                continue
+            feat_type = feat.feature_type or ""
             existing_features[feat.name] = feat
-            feature_cache[(feat.name, ftype)] = feat
+            feature_cache[(feat.name, feat_type)] = feat
 
     # Create missing features in batch
     features_to_create: List[Tuple[str, str]] = []
     for name, ftype in features:
         normalized = name.strip().lower()
-        if (normalized, ftype) not in feature_cache:
-            features_to_create.append((normalized, ftype))
+        ftype_key = ftype or ""
+        if (normalized, ftype_key) not in feature_cache:
+            features_to_create.append((normalized, ftype_key))
 
     if features_to_create:
         logger.debug(
@@ -410,7 +421,8 @@ def batch_link_features_to_dataset_in_postgres(
     # Link features to dataset (no more database queries needed)
     for name, ftype in features:
         normalized = name.strip().lower()
-        feature = feature_cache.get((normalized, ftype))
+        ftype_key = ftype or ""
+        feature = feature_cache.get((normalized, ftype_key))
 
         if not feature:
             logger.warning(

@@ -9,7 +9,8 @@ feature linking, and RAG embedding.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, cast
+from uuid import UUID
 
 
 from amprenta_rag.config import get_config
@@ -101,7 +102,7 @@ def ingest_transcriptomics_file(
     # TIER 3: Create dataset in Postgres FIRST (primary)
     cfg = get_config()
     postgres_dataset = None
-    page_id = None
+    page_id: Optional[str] = None
 
     if cfg.pipeline.use_postgres_as_sot:
         try:
@@ -116,7 +117,7 @@ def ingest_transcriptomics_file(
                 file_paths=[file_path],
                 description=f"Internal transcriptomics dataset ingested from {file_path}. Contains {len(df)} raw entries, {len(gene_set)} normalized genes.",
                 notion_page_id=notion_page_id,
-                    program_ids=None,
+                program_ids=None,
                 experiment_ids=None,
             )
             logger.info(
@@ -159,16 +160,16 @@ def ingest_transcriptomics_file(
                 postgres_dataset.id,
             )
 
-            results = link_dataset_to_programs_and_experiments_in_postgres(
-                dataset_id=postgres_dataset.id,
+            link_results = link_dataset_to_programs_and_experiments_in_postgres(
+                dataset_id=cast(UUID, postgres_dataset.id),
                 notion_program_ids=program_ids,
                 notion_experiment_ids=experiment_ids,
             )
 
             logger.info(
                 "[INGEST][TRANSCRIPTOMICS] Linked dataset to %d programs, %d experiments in Postgres",
-                results["programs_linked"],
-                results["experiments_linked"],
+                link_results["programs_linked"],
+                link_results["experiments_linked"],
             )
         except Exception as e:
             logger.warning(
@@ -182,23 +183,21 @@ def ingest_transcriptomics_file(
             from amprenta_rag.ingestion.features.postgres_linking import (
                 batch_link_features_to_dataset_in_postgres,
             )
-            from amprenta_rag.models.domain import FeatureType
-
             logger.info(
                 "[INGEST][TRANSCRIPTOMICS] Batch linking %d genes to Postgres (dataset: %s)",
                 len(gene_set),
                 postgres_dataset.id,
             )
 
-            feature_tuples = [(name, FeatureType.GENE) for name in gene_set]
+            feature_tuples = [(name, "gene") for name in gene_set]
 
-            results = batch_link_features_to_dataset_in_postgres(
+            feature_results = batch_link_features_to_dataset_in_postgres(
                 features=feature_tuples,
-                dataset_id=postgres_dataset.id,
+                dataset_id=cast(UUID, postgres_dataset.id),
                 max_workers=cfg.pipeline.feature_linking_max_workers,
             )
 
-            linked_count = sum(1 for v in results.values() if v)
+            linked_count = sum(1 for v in feature_results.values() if v)
             logger.info(
                 "[INGEST][TRANSCRIPTOMICS] Batch linked %d/%d genes to Postgres",
                 linked_count,
@@ -261,7 +260,7 @@ def ingest_transcriptomics_file(
                 embed_dataset_with_postgres_metadata,
             )
             embed_dataset_with_postgres_metadata(
-                dataset_id=postgres_dataset.id,
+                dataset_id=cast(UUID, postgres_dataset.id),
                 dataset_name=dataset_name,
                 species_or_features=list(gene_set),
                 omics_type=OmicsType.TRANSCRIPTOMICS,
@@ -278,7 +277,7 @@ def ingest_transcriptomics_file(
             )
             # Fallback to Notion-based embedding
             embed_transcriptomics_dataset(
-                page_id=page_id,
+                page_id=page_id or "",
                 dataset_name=dataset_name,
                 genes=gene_set,
                 df=df,
@@ -289,7 +288,7 @@ def ingest_transcriptomics_file(
     else:
         # Use Notion-based embedding (default)
         embed_transcriptomics_dataset(
-            page_id=page_id,
+            page_id=page_id or "",
             dataset_name=dataset_name,
             genes=gene_set,
             df=df,
@@ -304,5 +303,5 @@ def ingest_transcriptomics_file(
         page_id,
     )
 
-    return page_id
+    return page_id or ""
 

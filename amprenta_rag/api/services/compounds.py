@@ -43,6 +43,8 @@ def get_compound_programs(compound_id: str) -> List[Dict]:
 def _compound_to_dict(c: Compound) -> Dict:
     if not c:
         return {}
+    created_at_val = getattr(c, "created_at", None)
+    updated_at_val = getattr(c, "updated_at", None)
     return {
         "id": str(getattr(c, "id", "")) if getattr(c, "id", None) else None,
         "compound_id": getattr(c, "compound_id", None),
@@ -55,7 +57,7 @@ def _compound_to_dict(c: Compound) -> Dict:
         "hbd_count": getattr(c, "hbd_count", None),
         "hba_count": getattr(c, "hba_count", None),
         "rotatable_bonds": getattr(c, "rotatable_bonds", None),
-        "created_at": c.created_at.isoformat() if getattr(c, "created_at", None) else None,
-        "updated_at": c.updated_at.isoformat() if getattr(c, "updated_at", None) else None,
+        "created_at": created_at_val.isoformat() if created_at_val else None,
+        "updated_at": updated_at_val.isoformat() if updated_at_val else None,
     }
 

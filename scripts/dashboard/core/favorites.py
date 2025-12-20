@@ -22,7 +22,7 @@ def get_user_favorites(user_id: str) -> list[str]:
                 .order_by(UserFavorite.created_at.desc())
                 .all()
             )
-            return [f.page_name for f in favorites]
+            return [f.page_name for f in favorites if f.page_name]
     except Exception:
         return []
 
@@ -40,7 +40,7 @@ def toggle_favorite(user_id: str, page_name: str) -> None:
             if existing:
                 db.delete(existing)
             else:
-                favorite = UserFavorite(user_id=UUID_cls(user_id), page_name=page_name)
+                favorite = UserFavorite(user_id=UUID_cls(user_id), page_name=page_name)  # type: ignore[arg-type]
                 db.add(favorite)
             db.commit()
     except Exception:
@@ -61,7 +61,7 @@ def update_recent_pages(page_name: str) -> None:
 def render_favorites_section(user: dict | None, update_recent_pages_fn) -> None:
     if not user or user.get("id") == "00000000-0000-0000-0000-000000000001":
         return
-    favorites = get_user_favorites(user.get("id"))
+    favorites = get_user_favorites(str(user.get("id")))
     if favorites:
         with st.sidebar.expander("⭐ Favorites", expanded=True):
             for fav_page in favorites:
@@ -77,7 +77,7 @@ def render_bookmarks_section(user: dict | None) -> None:
         return
     try:
         with db_session() as db:
-            bookmarks = get_user_bookmarks(user.get("id"), db)
+            bookmarks = get_user_bookmarks(str(user.get("id")), db)
             if not bookmarks:
                 return
             with st.sidebar.expander("📌 Bookmarks", expanded=False):

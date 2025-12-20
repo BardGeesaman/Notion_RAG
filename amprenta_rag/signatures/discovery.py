@@ -372,8 +372,8 @@ def discover_signature_candidates(
 
         # Find intersection of datasets containing all features
         supporting_datasets = feature_support.get(cluster_features[0], set())
-        for feat in cluster_features[1:]:
-            supporting_datasets &= feature_support.get(feat, set())
+        for feat_name in cluster_features[1:]:
+            supporting_datasets &= feature_support.get(feat_name, set())
 
         if len(supporting_datasets) < min_support:
             continue
@@ -386,9 +386,9 @@ def discover_signature_candidates(
             # Find feature type from first occurrence
             feat_type = None
             for dataset_id, features in all_features.items():
-                for feat in features:
-                    if feat.feature_name == feat_name:
-                        feat_type = feat.feature_type
+                for feat_obj in features:
+                    if feat_obj.feature_name == feat_name:
+                        feat_type = feat_obj.feature_type
                         break
                 if feat_type:
                     break
@@ -407,9 +407,9 @@ def discover_signature_candidates(
             directions: List[str] = []
             for dataset_id in supporting_datasets:
                 features = all_features.get(dataset_id, [])
-                for feat in features:
-                    if feat.feature_name == feat_name and feat.direction:
-                        directions.append(feat.direction)
+                for feat_obj in features:
+                    if feat_obj.feature_name == feat_name and feat_obj.direction:
+                        directions.append(feat_obj.direction)
 
             most_common_direction = None
             if directions:

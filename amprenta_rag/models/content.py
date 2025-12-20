@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, TSVECTOR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -41,7 +45,9 @@ class Literature(Base):
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)
     external_ids = Column(JSON, nullable=True)
 
-    chunks = relationship("RAGChunk", back_populates="literature", cascade="all, delete-orphan")
+    chunks: Mapped[List["RAGChunk"]] = relationship(
+        back_populates="literature", cascade="all, delete-orphan"
+    )
 
 
 class Email(Base):
@@ -63,7 +69,9 @@ class Email(Base):
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)
     external_ids = Column(JSON, nullable=True)
 
-    chunks = relationship("RAGChunk", back_populates="email", cascade="all, delete-orphan")
+    chunks: Mapped[List["RAGChunk"]] = relationship(
+        back_populates="email", cascade="all, delete-orphan"
+    )
 
 
 class RAGChunk(Base):
@@ -91,10 +99,10 @@ class RAGChunk(Base):
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)
 
     literature_id = Column(UUID(as_uuid=True), ForeignKey("literature.id"), nullable=True, index=True)
-    literature = relationship("Literature", back_populates="chunks")
+    literature: Mapped[Optional["Literature"]] = relationship(back_populates="chunks")
 
     email_id = Column(UUID(as_uuid=True), ForeignKey("emails.id"), nullable=True, index=True)
-    email = relationship("Email", back_populates="chunks")
+    email: Mapped[Optional["Email"]] = relationship(back_populates="chunks")
 
 
 class LiteratureCritique(Base):
@@ -111,7 +119,7 @@ class LiteratureCritique(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
 
 __all__ = ["Literature", "Email", "RAGChunk", "LiteratureCritique"]

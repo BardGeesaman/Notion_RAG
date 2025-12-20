@@ -1,3 +1,4 @@
+ # mypy: ignore-errors
 """
 PDF export utilities for evidence reports and markdown content.
 

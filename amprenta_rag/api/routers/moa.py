@@ -30,7 +30,7 @@ def infer_moa_endpoint(request: schemas.MOAInferenceRequest) -> schemas.MOAInfer
     candidates = infer_moa(request.compound_id, request.dataset_ids)
     return schemas.MOAInferenceResult(
         compound_id=request.compound_id,
-        candidates=[schemas.MOACandidate(**c.asdict()) for c in candidates],
+        candidates=[schemas.MOACandidate(**c.asdict()) for c in candidates],  # type: ignore[arg-type]
     )
 
 
@@ -44,6 +44,6 @@ def compound_moa(compound_id: UUID, dataset_ids: List[UUID] = []) -> schemas.MOA
     candidates = infer_moa(compound_id, dataset_ids)
     return schemas.MOAInferenceResult(
         compound_id=compound_id,
-        candidates=[schemas.MOACandidate(**c.asdict()) for c in candidates],
+        candidates=[schemas.MOACandidate(**c.asdict()) for c in candidates],  # type: ignore[arg-type]
     )
 

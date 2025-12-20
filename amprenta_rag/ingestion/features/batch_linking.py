@@ -120,7 +120,7 @@ def batch_add_dataset_relations(
         max_workers,
     )
 
-    from amprenta_rag.ingestion.features.general_linking import _add_dataset_relation
+    from amprenta_rag.ingestion.features.general_linking import _add_dataset_relation  # type: ignore[attr-defined]
 
     # Process in parallel
     with ThreadPoolExecutor(max_workers=max_workers) as executor:

@@ -24,9 +24,9 @@ def add_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> Bookmark
         Created Bookmark object
     """
     bookmark = Bookmark(
-        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,
+        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,  # type: ignore[arg-type]
         entity_type=entity_type,
-        entity_id=UUID(entity_id) if isinstance(entity_id, str) else entity_id,
+        entity_id=UUID(entity_id) if isinstance(entity_id, str) else entity_id,  # type: ignore[arg-type]
     )
 
     db.add(bookmark)

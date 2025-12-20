@@ -9,7 +9,8 @@ feature linking, and RAG embedding.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, cast
+from uuid import UUID
 
 
 from amprenta_rag.config import get_config
@@ -90,7 +91,7 @@ def ingest_proteomics_file(
     # TIER 3: Create dataset in Postgres FIRST (primary)
     cfg = get_config()
     postgres_dataset = None
-    page_id = None
+    page_id: Optional[str] = None
 
     if cfg.pipeline.use_postgres_as_sot:
         try:
@@ -105,7 +106,7 @@ def ingest_proteomics_file(
                 file_paths=[file_path],
                 description=f"Internal proteomics dataset ingested from {file_path}. Contains {raw_rows} raw entries, {len(protein_set)} normalized proteins.",
                 notion_page_id=notion_page_id,
-                    program_ids=None,
+                program_ids=None,
                 experiment_ids=None,
             )
             logger.info(
@@ -148,16 +149,16 @@ def ingest_proteomics_file(
                 postgres_dataset.id,
             )
 
-            results = link_dataset_to_programs_and_experiments_in_postgres(
-                dataset_id=postgres_dataset.id,
+            link_results = link_dataset_to_programs_and_experiments_in_postgres(
+                dataset_id=cast(UUID, postgres_dataset.id),
                 notion_program_ids=program_ids,
                 notion_experiment_ids=experiment_ids,
             )
 
             logger.info(
                 "[INGEST][PROTEOMICS] Linked dataset to %d programs, %d experiments in Postgres",
-                results["programs_linked"],
-                results["experiments_linked"],
+                link_results["programs_linked"],
+                link_results["experiments_linked"],
             )
         except Exception as e:
             logger.warning(
@@ -171,23 +172,21 @@ def ingest_proteomics_file(
             from amprenta_rag.ingestion.features.postgres_linking import (
                 batch_link_features_to_dataset_in_postgres,
             )
-            from amprenta_rag.models.domain import FeatureType
-
             logger.info(
                 "[INGEST][PROTEOMICS] Batch linking %d proteins to Postgres (dataset: %s)",
                 len(protein_set),
                 postgres_dataset.id,
             )
 
-            feature_tuples = [(name, FeatureType.PROTEIN) for name in protein_set]
+            feature_tuples = [(name, "protein") for name in protein_set]
 
-            results = batch_link_features_to_dataset_in_postgres(
+            feature_results = batch_link_features_to_dataset_in_postgres(
                 features=feature_tuples,
-                dataset_id=postgres_dataset.id,
+                dataset_id=cast(UUID, postgres_dataset.id),
                 max_workers=cfg.pipeline.feature_linking_max_workers,
             )
 
-            linked_count = sum(1 for v in results.values() if v)
+            linked_count = sum(1 for v in feature_results.values() if v)
             logger.info(
                 "[INGEST][PROTEOMICS] Batch linked %d/%d proteins to Postgres",
                 linked_count,
@@ -250,7 +249,7 @@ def ingest_proteomics_file(
                 embed_dataset_with_postgres_metadata,
             )
             embed_dataset_with_postgres_metadata(
-                dataset_id=postgres_dataset.id,
+                dataset_id=cast(UUID, postgres_dataset.id),
                 dataset_name=dataset_name,
                 species_or_features=list(protein_set),
                 omics_type=OmicsType.PROTEOMICS,
@@ -267,7 +266,7 @@ def ingest_proteomics_file(
             )
             # Fallback to Notion-based embedding
             embed_proteomics_dataset(
-                page_id=page_id,
+                page_id=page_id or "",
                 dataset_name=dataset_name,
                 proteins=protein_set,
                 program_ids=program_ids,
@@ -276,7 +275,7 @@ def ingest_proteomics_file(
     else:
         # Use Notion-based embedding (default)
         embed_proteomics_dataset(
-            page_id=page_id,
+            page_id=page_id or "",
             dataset_name=dataset_name,
             proteins=protein_set,
             program_ids=program_ids,
@@ -289,5 +288,5 @@ def ingest_proteomics_file(
         page_id,
     )
 
-    return page_id
+    return page_id or ""
 

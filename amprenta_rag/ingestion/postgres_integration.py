@@ -7,7 +7,7 @@ Postgres as the system of record, replacing Notion as the primary database.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -252,7 +252,7 @@ def _link_features_to_dataset_postgres_impl(
 
     features = bulk_get_or_create_features(db, features_data)
 
-    feature_ids = [f.id for f in features]
+    feature_ids: List[UUID] = [cast(UUID, f.id) for f in features if f.id is not None]
     link_dataset_to_features(db, dataset_id, feature_ids)
 
     logger.info(

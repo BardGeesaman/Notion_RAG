@@ -80,10 +80,10 @@ def _split_controls(results: List[HTSResult]) -> tuple[list[float], list[float]]
         cat = (getattr(r, "hit_category", None) or "").lower()
         if cat in ("pos", "positive", "control_pos", "pos_ctrl"):
             if r.normalized_value is not None:
-                pos_controls.append(r.normalized_value)
+                pos_controls.append(float(r.normalized_value))
         elif cat in ("neg", "negative", "control_neg", "neg_ctrl"):
             if r.normalized_value is not None:
-                neg_controls.append(r.normalized_value)
+                neg_controls.append(float(r.normalized_value))
     return pos_controls, neg_controls
 
 
@@ -114,8 +114,8 @@ def get_plate_heatmap_data(campaign_id: UUID) -> List[WellData]:
     return [
         WellData(
             well_position=r.well_position,
-            normalized_value=r.normalized_value,
-            z_score=r.z_score,
+            normalized_value=float(r.normalized_value) if r.normalized_value is not None else None,
+            z_score=float(r.z_score) if r.z_score is not None else None,
             hit_flag=r.hit_flag,
             compound_id=r.compound_id,
             result_id=r.result_id,
@@ -136,8 +136,8 @@ def get_hit_compounds(campaign_id: UUID) -> List[HitCompound]:
             result_id=h.result_id,
             compound_id=h.compound_id,
             well_position=h.well_position,
-            normalized_value=h.normalized_value,
-            z_score=h.z_score,
+            normalized_value=float(h.normalized_value) if h.normalized_value is not None else None,
+            z_score=float(h.z_score) if h.z_score is not None else None,
         )
         for h in hits
     ]

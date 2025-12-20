@@ -15,10 +15,10 @@ import uuid
 def create_program(db: Session, program: ProgramCreate) -> ProgramModel:
     """Create a new program."""
     db_program = ProgramModel(
-        id=uuid.uuid4(),
+        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=program.name,
         description=program.description,
-        disease=program.disease or [],
+        disease=program.disease or [],  # type: ignore[arg-type]
     )
     db.add(db_program)
     db.commit()

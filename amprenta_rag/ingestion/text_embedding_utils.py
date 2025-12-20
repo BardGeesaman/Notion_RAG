@@ -27,7 +27,7 @@ def _embed_batch(client, model: str, batch: List[str]) -> List[List[float]]:
         model=model,
         input=batch,
     )
-    return [d.embedding for d in resp.data]  # type: ignore[attr-defined]
+    return [d.embedding for d in resp.data]
 
 
 def embed_texts(texts: List[str], batch_size: int = 64) -> List[List[float]]:

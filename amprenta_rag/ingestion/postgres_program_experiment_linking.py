@@ -7,7 +7,7 @@ including conversion between Notion page IDs and Postgres UUIDs.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -190,7 +190,8 @@ def _convert_notion_ids_to_postgres_uuids_impl(
         for notion_id in notion_program_ids:
             program = find_program_by_notion_id(notion_id, db=db)
             if program:
-                program_uuids.append(program.id)
+                if program.id is not None:
+                    program_uuids.append(cast(UUID, program.id))
                 logger.debug(
                     "[LINK][POSTGRES] Found Postgres Program %s for Notion ID %s",
                     program.id,
@@ -206,7 +207,8 @@ def _convert_notion_ids_to_postgres_uuids_impl(
         for notion_id in notion_experiment_ids:
             experiment = find_experiment_by_notion_id(notion_id, db=db)
             if experiment:
-                experiment_uuids.append(experiment.id)
+                if experiment.id is not None:
+                    experiment_uuids.append(cast(UUID, experiment.id))
                 logger.debug(
                     "[LINK][POSTGRES] Found Postgres Experiment %s for Notion ID %s",
                     experiment.id,

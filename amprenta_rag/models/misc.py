@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import ARRAY, Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import Experiment, Project, User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -30,7 +34,7 @@ class ExperimentTemplate(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 class ScheduledEvent(Base):
@@ -49,8 +53,8 @@ class ScheduledEvent(Base):
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    experiment = relationship("Experiment", backref="scheduled_events")
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    experiment: Mapped[Optional["Experiment"]] = relationship("Experiment", backref="scheduled_events")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 class RetentionPolicy(Base):
@@ -80,7 +84,9 @@ class OntologyTerm(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    parent = relationship("OntologyTerm", remote_side=[id], backref="children")
+    parent: Mapped[Optional["OntologyTerm"]] = relationship(
+        "OntologyTerm", remote_side=[id], backref="children"
+    )
 
 
 class GeneticVariant(Base):
@@ -97,7 +103,7 @@ class GeneticVariant(Base):
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    experiment = relationship("Experiment", backref="variants")
+    experiment: Mapped[Optional["Experiment"]] = relationship("Experiment", backref="variants")
 
 
 class CostEntry(Base):
@@ -116,9 +122,9 @@ class CostEntry(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    project = relationship("Project", backref="cost_entries")
-    experiment = relationship("Experiment", backref="cost_entries")
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    project: Mapped[Optional["Project"]] = relationship("Project", backref="cost_entries")
+    experiment: Mapped[Optional["Experiment"]] = relationship("Experiment", backref="cost_entries")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 __all__ = [

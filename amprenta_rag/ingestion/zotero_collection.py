@@ -160,6 +160,9 @@ def incremental_ingest_collection(
         logger.info("=== [%d/%d] %s (%s) [%s] ===", idx, total, title, item_key, item_type)
 
         try:
+            if not isinstance(item_key, str):
+                logger.warning("Skipping item with missing key in collection %s", collection_key)
+                continue
             ingest_zotero_item(item_key=item_key, parent_type=parent_type)
         except Exception as e:  # noqa: BLE001
             logger.error("Skipping item %s due to error: %r", item_key, e)
@@ -198,6 +201,10 @@ def resync_collection(
         item_type = data.get("itemType")
 
         logger.info("=== [%d/%d] %s (%s) [%s] ===", idx, total, title, item_key, item_type)
+
+        if not isinstance(item_key, str):
+            logger.warning("Skipping item with missing key in collection %s", collection_key)
+            continue
 
         logger.info("🧹 Clearing old data for %s...", item_key)
         delete_pinecone_vectors_for_item(item_key)

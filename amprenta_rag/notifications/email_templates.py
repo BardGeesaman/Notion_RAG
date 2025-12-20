@@ -104,8 +104,8 @@ def get_digest_html(activities: List[Dict[str, Any]], period: str) -> str:
         HTML string with activity summary
     """
     # Count activities by type
-    activity_counts = {}
-    activity_items = {}
+    activity_counts: Dict[str, int] = {}
+    activity_items: Dict[str, List[Dict[str, Any]]] = {}
 
     for activity in activities:
         activity_type = activity.get("type", "unknown")

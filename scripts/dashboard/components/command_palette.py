@@ -23,6 +23,7 @@ def render_command_palette() -> None:
             # Search input
             search_query = st.text_input(
                 "Search actions...",
+                value="",
                 key="palette_search",
                 placeholder="Type to search...",
                 autofocus=True,

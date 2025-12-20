@@ -94,7 +94,7 @@ def detect_design_type(
         scores["dose_response"] = 0.7 + min(0.2, dose_matches * 0.1)
 
     # Find best match
-    best_type = max(scores, key=scores.get)
+    best_type = max(scores, key=lambda k: scores.get(k, 0.0))
     best_score = scores[best_type]
 
     if best_score < 0.5:
@@ -112,7 +112,7 @@ def extract_sample_groups(
     sample_names: List[str],
     sample_attributes: Optional[Dict[str, List[str]]] = None,
     design_type: Optional[str] = None,
-) -> Dict[str, List[str]]:
+) -> Dict[str, Any]:
     """
     Extract sample group assignments based on design type.
 
@@ -125,7 +125,7 @@ def extract_sample_groups(
         Dict mapping group name to list of sample names
         e.g., {"control": ["S1", "S2"], "case": ["S3", "S4"]}
     """
-    groups: Dict[str, List[str]] = {}
+    groups: Dict[str, Any] = {}
 
     if design_type == "case_control":
         groups = {"control": [], "case": [], "unknown": []}

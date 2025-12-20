@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import streamlit as st
-from typing import Iterable
+from typing import Iterable, Any, Dict, List
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.audit import log_logout
@@ -25,12 +25,14 @@ from scripts.dashboard.core.jupyter_auth import get_jupyterhub_url, get_voila_ur
 from scripts.dashboard.components.alerts_bell import render_alerts_bell
 
 
-def render_user_info(user: dict | None):
+def render_user_info(user: Dict[str, Any] | None) -> None:
     if not user:
         return
-    st.markdown(f"**👤 {user['username']}** ({user['role']})")
+    username = str(user.get("username", ""))
+    role = str(user.get("role", ""))
+    st.markdown(f"**👤 {username}** ({role})")
     if st.button("Logout", key="logout_btn"):
-        log_logout(user.get("id"), user.get("username"))
+        log_logout(str(user.get("id") or ""), username)
         from amprenta_rag.auth.session import clear_session
 
         clear_session()
@@ -38,12 +40,13 @@ def render_user_info(user: dict | None):
     st.divider()
 
 
-def render_notifications(user: dict | None):
+def render_notifications(user: Dict[str, Any] | None) -> None:
     if not user:
         return
-    user_id = user.get("id")
-    if user_id in (None, "00000000-0000-0000-0000-000000000001"):
+    user_id_raw = user.get("id")
+    if user_id_raw in (None, "00000000-0000-0000-0000-000000000001"):
         return
+    user_id = str(user_id_raw)
     try:
         with db_session() as db:
             unread_count = get_unread_count(user_id, db)
@@ -79,7 +82,7 @@ def render_notifications(user: dict | None):
     st.divider()
 
 
-def render_theme_selector():
+def render_theme_selector() -> None:
     if "theme" not in st.session_state:
         st.session_state["theme"] = "dark"
     apply_theme(st.session_state["theme"])
@@ -96,7 +99,7 @@ def render_theme_selector():
     st.divider()
 
 
-def render_search():
+def render_search() -> None:
     search_query = st.text_input("🔍 Search...", key="global_search", placeholder="Search experiments, compounds, datasets...")
     if not search_query:
         return
@@ -138,13 +141,13 @@ def render_search():
             st.error(f"Search error: {e}")
 
 
-def render_navigation(user: dict | None, visible_pages: Iterable[str], *, groups) -> str:
+def render_navigation(user: Dict[str, Any] | None, visible_pages: Iterable[str], *, groups: Dict[str, List[str]]) -> str:
     page = st.session_state.get("selected_page", "Overview")
 
-    filtered_discovery_pages = [p for p in groups["DISCOVERY_PAGES"] if p in visible_pages]
-    filtered_analysis_pages = [p for p in groups["ANALYSIS_PAGES"] if p in visible_pages]
-    filtered_eln_pages = [p for p in groups["ELN_PAGES"] if p in visible_pages]
-    filtered_admin_pages = [p for p in groups["ADMIN_PAGES"] if p in visible_pages]
+    filtered_discovery_pages = [p for p in groups.get("DISCOVERY_PAGES", []) if p in visible_pages]
+    filtered_analysis_pages = [p for p in groups.get("ANALYSIS_PAGES", []) if p in visible_pages]
+    filtered_eln_pages = [p for p in groups.get("ELN_PAGES", []) if p in visible_pages]
+    filtered_admin_pages = [p for p in groups.get("ADMIN_PAGES", []) if p in visible_pages]
 
     if filtered_discovery_pages:
         with st.expander("🔍 Discovery", expanded=True):
@@ -182,7 +185,15 @@ def render_navigation(user: dict | None, visible_pages: Iterable[str], *, groups
                     update_recent_pages(p)
                     st.rerun()
 
-    other_pages = [p for p in groups["ALL_PAGES"] if p not in groups["DISCOVERY_PAGES"] + groups["ANALYSIS_PAGES"] + groups["ELN_PAGES"] + groups["ADMIN_PAGES"]]
+    other_pages = [
+        p
+        for p in groups.get("ALL_PAGES", [])
+        if p
+        not in groups.get("DISCOVERY_PAGES", [])
+        + groups.get("ANALYSIS_PAGES", [])
+        + groups.get("ELN_PAGES", [])
+        + groups.get("ADMIN_PAGES", [])
+    ]
     filtered_other_pages = [p for p in other_pages if p in visible_pages]
     if filtered_other_pages:
         with st.expander("📚 Other Pages", expanded=False):
@@ -196,7 +207,7 @@ def render_navigation(user: dict | None, visible_pages: Iterable[str], *, groups
     return page
 
 
-def render_recent():
+def render_recent() -> None:
     if st.session_state.get("recent_pages"):
         with st.expander("🕐 Recent", expanded=False):
             for recent_page in st.session_state["recent_pages"][:5]:
@@ -228,7 +239,7 @@ def render_help(page: str):
         render_help_chat()
 
 
-def render_sidebar(user: dict | None, visible_pages: Iterable[str], groups) -> str:
+def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], groups: Dict[str, List[str]]) -> str:
     with st.sidebar:
         st.title("Navigation")
 

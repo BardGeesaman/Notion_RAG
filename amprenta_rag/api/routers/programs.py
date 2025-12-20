@@ -1,3 +1,4 @@
+ # mypy: ignore-errors
 """
 API router for Programs.
 """

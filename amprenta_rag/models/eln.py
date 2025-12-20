@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import ARRAY, Boolean, Column, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import Experiment, User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -43,7 +47,7 @@ class LabNotebookEntryAssociation(Base):
     entity_id = Column(UUID(as_uuid=True), primary_key=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    entry = relationship("LabNotebookEntry", backref="linked_entities")
+    entry: Mapped["LabNotebookEntry"] = relationship("LabNotebookEntry", backref="linked_entities")
 
 
 class Protocol(Base):
@@ -66,8 +70,10 @@ class Protocol(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    parent = relationship("Protocol", remote_side=[id], backref="versions")
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    parent: Mapped[Optional["Protocol"]] = relationship(
+        remote_side=[id], backref="versions"
+    )
+    created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
 
 class ExperimentProtocol(Base):
@@ -82,8 +88,8 @@ class ExperimentProtocol(Base):
     notes = Column(Text, nullable=True)
     deviations = Column(JSON, nullable=True)
 
-    experiment = relationship("Experiment", backref="protocol_links")
-    protocol = relationship("Protocol", backref="experiment_links")
+    experiment: Mapped["Experiment"] = relationship(backref="protocol_links")
+    protocol: Mapped["Protocol"] = relationship(backref="experiment_links")
 
 
 __all__ = ["LabNotebookEntry", "LabNotebookEntryAssociation", "Protocol", "ExperimentProtocol"]

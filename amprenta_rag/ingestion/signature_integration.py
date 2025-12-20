@@ -115,16 +115,16 @@ def detect_and_ingest_signatures_from_content(
 
                     with tempfile.TemporaryDirectory() as tmpdir:
                         sig_name = source_name or f"{source_type}_{source_page_id[:8]}"
-                        sig_file = save_extracted_signature_to_file(
+                        sig_file_embedded: Optional[Path] = save_extracted_signature_to_file(
                             components,
                             Path(tmpdir),
                             f"{sig_name}_signature",
                         )
 
-                        if sig_file and sig_file.exists():
+                        if sig_file_embedded and sig_file_embedded.exists():
                             # Ingest signature
                             result = ingest_signature_from_file(
-                                sig_file,
+                                sig_file_embedded,
                                 signature_type=inferred_metadata.get(
                                     "signature_type", "Literature-derived"
                                 ),
@@ -157,15 +157,15 @@ def detect_and_ingest_signatures_from_content(
 
                     with tempfile.TemporaryDirectory() as tmpdir:
                         sig_name = source_name or f"{source_type}_{source_page_id[:8]}"
-                        sig_file = save_extracted_signature_to_file(
+                        sig_file_text: Optional[Path] = save_extracted_signature_to_file(
                             components,
                             Path(tmpdir),
                             f"{sig_name}_signature",
                         )
 
-                        if sig_file and sig_file.exists():
+                        if sig_file_text and sig_file_text.exists():
                             result = ingest_signature_from_file(
-                                sig_file,
+                                sig_file_text,
                                 signature_type=inferred_metadata.get(
                                     "signature_type", "Literature-derived"
                                 ),

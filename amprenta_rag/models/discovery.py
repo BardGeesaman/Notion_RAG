@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import Experiment, User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -33,7 +37,7 @@ class DiscoveryJob(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 class DiscoveredStudy(Base):
@@ -53,8 +57,8 @@ class DiscoveredStudy(Base):
     imported_experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True)
     discovered_at = Column(DateTime, default=datetime.utcnow)
 
-    job = relationship("DiscoveryJob", backref="discovered_studies")
-    imported_experiment = relationship("Experiment")
+    job: Mapped["DiscoveryJob"] = relationship("DiscoveryJob", backref="discovered_studies")
+    imported_experiment: Mapped[Optional["Experiment"]] = relationship("Experiment")
 
 
 class HarvestSchedule(Base):
@@ -73,7 +77,7 @@ class HarvestSchedule(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    created_by = relationship("User", foreign_keys=[created_by_id])
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
 __all__ = ["DiscoveryJob", "DiscoveredStudy", "HarvestSchedule"]

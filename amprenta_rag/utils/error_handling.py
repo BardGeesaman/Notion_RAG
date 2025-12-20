@@ -263,7 +263,7 @@ class ErrorTracker:
         if not self.errors:
             return {"total_errors": 0}
 
-        error_types = {}
+        error_types: dict[str, int] = {}
         for error in self.errors:
             error_type = error["error_type"]
             error_types[error_type] = error_types.get(error_type, 0) + 1

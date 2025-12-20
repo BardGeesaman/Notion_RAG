@@ -71,8 +71,8 @@ def extract_dataset_features_by_type_from_postgres(
             )
 
             for feature in features:
-                feature_type = feature.feature_type.lower()
-                feature_name = feature.name
+                feature_type = (feature.feature_type or "").lower()
+                feature_name = feature.name or ""
 
                 type_mapping = {
                     "gene": "gene",

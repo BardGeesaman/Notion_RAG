@@ -72,17 +72,19 @@ def reciprocal_rank_fusion(
     """
     Combine BM25 and vector results using Reciprocal Rank Fusion.
     """
-    scores = {}
-    result_map = {}
+    scores: Dict[str, float] = {}
+    result_map: Dict[str, Dict[str, Any]] = {}
 
     for rank, r in enumerate(bm25_results):
-        chunk_id = r.get("chunk_id") or r.get("id")
+        chunk_id_raw = r.get("chunk_id") or r.get("id")
+        chunk_id = str(chunk_id_raw)
         rrf_score = (1 - alpha) * (1 / (k + rank + 1))
         scores[chunk_id] = scores.get(chunk_id, 0) + rrf_score
         result_map[chunk_id] = r
 
     for rank, r in enumerate(vector_results):
-        chunk_id = r.get("chunk_id") or r.get("id")
+        chunk_id_raw = r.get("chunk_id") or r.get("id")
+        chunk_id = str(chunk_id_raw)
         rrf_score = alpha * (1 / (k + rank + 1))
         scores[chunk_id] = scores.get(chunk_id, 0) + rrf_score
         if chunk_id not in result_map:

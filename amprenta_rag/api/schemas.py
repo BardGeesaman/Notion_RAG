@@ -90,7 +90,7 @@ class ExperimentBase(BaseSchema):
 
     @field_validator("disease", "matrix", "model_systems", mode="before")
     @classmethod
-    def ensure_list(cls, v):
+    def ensure_list(cls, v: Optional[List[str]]) -> List[str]:
         """Convert None to empty list for nullable array fields."""
         return v if v is not None else []
 
@@ -177,7 +177,7 @@ class Dataset(DatasetBase):
 
     @field_validator("file_paths", "file_urls", "organism", mode="before")
     @classmethod
-    def none_to_empty_list(cls, v):
+    def none_to_empty_list(cls, v: Optional[List[str]]) -> List[str]:
         return v if v is not None else []
 
 

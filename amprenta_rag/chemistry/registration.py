@@ -80,12 +80,12 @@ def register_compound(
             inchi_key=inchi_key,
             canonical_smiles=canonical,
             molecular_formula=formula,
-            molecular_weight=descriptors.get("molecular_weight"),
-            logp=descriptors.get("logp"),
-            hbd_count=descriptors.get("hbd_count"),
-            hba_count=descriptors.get("hba_count"),
-            rotatable_bonds=descriptors.get("rotatable_bonds"),
-            aromatic_rings=descriptors.get("aromatic_rings"),
+            molecular_weight=descriptors.get("molecular_weight"),  # type: ignore[arg-type]
+            logp=descriptors.get("logp"),  # type: ignore[arg-type]
+            hbd_count=descriptors.get("hbd_count"),  # type: ignore[arg-type]
+            hba_count=descriptors.get("hba_count"),  # type: ignore[arg-type]
+            rotatable_bonds=descriptors.get("rotatable_bonds"),  # type: ignore[arg-type]
+            aromatic_rings=descriptors.get("aromatic_rings"),  # type: ignore[arg-type]
         )
 
         db.add(compound)

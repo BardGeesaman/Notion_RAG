@@ -93,7 +93,7 @@ def compute_molecular_descriptors(smiles: str) -> dict[str, Optional[float | int
     Returns:
         Dictionary of descriptor values
     """
-    descriptors = {
+    descriptors: dict[str, float | int | None] = {
         "molecular_weight": None,
         "logp": None,
         "hbd_count": None,

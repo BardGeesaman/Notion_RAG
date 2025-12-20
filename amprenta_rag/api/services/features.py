@@ -16,11 +16,11 @@ import uuid
 def create_feature(db: Session, feature: FeatureCreate) -> FeatureModel:
     """Create a new feature."""
     db_feature = FeatureModel(
-        id=uuid.uuid4(),
+        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=feature.name,
         feature_type=feature.feature_type.value,
         normalized_name=feature.normalized_name,
-        aliases=feature.aliases or [],
+        aliases=feature.aliases or [],  # type: ignore[arg-type]
         external_ids=feature.external_ids or {},
     )
     db.add(db_feature)

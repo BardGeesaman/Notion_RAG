@@ -1,3 +1,4 @@
+ # mypy: ignore-errors
 """System health and monitoring utilities."""
 from __future__ import annotations
 

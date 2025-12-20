@@ -73,7 +73,7 @@ app.include_router(alerts.router, prefix="/api/v1", tags=["Alerts"])
 
 
 @app.get("/")
-async def root():
+async def root() -> dict:
     """Root endpoint."""
     return {
         "name": "Amprenta Multi-Omics Platform API",
@@ -83,7 +83,7 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict:
     """Health check endpoint."""
     return {"status": "healthy"}
 

@@ -2,7 +2,7 @@
 CRUD services for Datasets.
 """
 
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -16,15 +16,15 @@ import uuid
 def create_dataset(db: Session, dataset: DatasetCreate) -> DatasetModel:
     """Create a new dataset."""
     db_dataset = DatasetModel(
-        id=uuid.uuid4(),
+        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=dataset.name,
         omics_type=dataset.omics_type.value,
         description=dataset.description,
-        file_paths=dataset.file_paths or [],
-        file_urls=dataset.file_urls or [],
-        organism=dataset.organism or [],
-        sample_type=dataset.sample_type or [],
-        disease=dataset.disease or [],
+        file_paths=dataset.file_paths or [],  # type: ignore[arg-type]
+        file_urls=dataset.file_urls or [],  # type: ignore[arg-type]
+        organism=dataset.organism or [],  # type: ignore[arg-type]
+        sample_type=dataset.sample_type or [],  # type: ignore[arg-type]
+        disease=dataset.disease or [],  # type: ignore[arg-type]
     )
 
     # Add program relationships
@@ -154,7 +154,8 @@ def get_dataset_features_by_type(
             feature_type = FeatureType(feature.feature_type)
             if feature_type not in features_by_type:
                 features_by_type[feature_type] = []
-            features_by_type[feature_type].append(feature.id)
+            if feature.id is not None:
+                features_by_type[feature_type].append(cast(UUID, feature.id))
         except ValueError:
             # Skip invalid feature types
             continue

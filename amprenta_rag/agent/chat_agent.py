@@ -1,3 +1,4 @@
+from uuid import UUID
 import re
 from datetime import datetime
 from typing import Tuple
@@ -25,26 +26,30 @@ def run_chat_turn(session: ChatSessionState, user_text: str) -> Tuple[ChatSessio
             # Extract dataset_id explicitly (v1: expects UUID after 'dataset:')
             m = re.search(r"dataset:\s*([0-9a-f-]+)", user_text, re.I)
             if m:
-                summary = cross_omics_dataset_summary_postgres(m.group(1))
+                dataset_uuid = UUID(m.group(1))
+                summary = cross_omics_dataset_summary_postgres(dataset_uuid)
                 answer = summary
             else:
                 answer = "Please specify a dataset ID as 'dataset: <UUID>'."
         elif intent == "program_summary":
             m = re.search(r"program:\s*([-\w]+)", user_text, re.I)
             if m:
-                answer = cross_omics_program_summary_postgres(m.group(1))
+                program_uuid = UUID(m.group(1))
+                answer = cross_omics_program_summary_postgres(program_uuid)
             else:
                 answer = "Please specify a program ID as 'program: <ID>'."
         elif intent == "signature_summary":
             m = re.search(r"signature:\s*([-\w]+)", user_text, re.I)
             if m:
-                answer = cross_omics_signature_summary_postgres(m.group(1))
+                sig_uuid = UUID(m.group(1))
+                answer = cross_omics_signature_summary_postgres(sig_uuid)
             else:
                 answer = "Please specify a signature ID as 'signature: <ID>'."
         elif intent == "feature_summary":
             m = re.search(r"feature:\s*([\w]+)", user_text, re.I)
             if m:
-                answer = cross_omics_feature_summary_postgres(m.group(1), "gene")  # v1: default to gene
+                feat_uuid = UUID(m.group(1))
+                answer = cross_omics_feature_summary_postgres(feat_uuid, "gene")  # v1: default to gene
             else:
                 answer = "Please specify a feature as 'feature: <NAME>'."
         elif intent == "similar_datasets":

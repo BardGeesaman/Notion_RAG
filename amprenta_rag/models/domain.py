@@ -233,7 +233,7 @@ class Signature:
     updated_at: Optional[datetime] = None
     notion_page_id: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Auto-compute modalities from components if not provided."""
         if not self.modalities:
             self.modalities = list(

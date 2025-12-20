@@ -72,43 +72,55 @@ def build_dataset_text_content(dataset: DatasetModel) -> str:
 
     # Organism/Model systems
     if dataset.organism:
-        parts.append(f"\nOrganism: {', '.join(dataset.organism)}")
+        orgs = [str(o) for o in dataset.organism if isinstance(o, str) and o]
+        if orgs:
+            parts.append(f"\nOrganism: {', '.join(orgs)}")
 
     # Sample type/Matrix
     if dataset.sample_type:
-        parts.append(f"\nSample Type: {', '.join(dataset.sample_type)}")
+        sample_types = [str(s) for s in dataset.sample_type if isinstance(s, str) and s]
+        if sample_types:
+            parts.append(f"\nSample Type: {', '.join(sample_types)}")
 
     # Disease
     if dataset.disease:
-        parts.append(f"\nDisease: {', '.join(dataset.disease)}")
+        diseases = [str(d) for d in dataset.disease if isinstance(d, str) and d]
+        if diseases:
+            parts.append(f"\nDisease: {', '.join(diseases)}")
 
     # File URLs (repository links)
     if dataset.file_urls:
-        parts.append(f"\nData Files: {', '.join(dataset.file_urls)}")
+        urls = [u for u in dataset.file_urls if isinstance(u, str)]
+        if urls:
+            parts.append(f"\nData Files: {', '.join(urls)}")
 
     # External IDs (repository study IDs, DOI, etc.)
     if dataset.external_ids:
         external_info = []
         for key, value in dataset.external_ids.items():
-            if key == "doi" and value:
+            if not value:
+                continue
+            if key == "doi":
                 external_info.append(f"DOI: {value}")
-            elif key.endswith("_study_id") and value:
+            elif key.endswith("_study_id"):
                 repo_name = key.replace("_study_id", "").upper()
                 external_info.append(f"{repo_name} Study ID: {value}")
-            elif value:
+            else:
                 external_info.append(f"{key}: {value}")
         if external_info:
             parts.append(f"\nExternal Identifiers: {'; '.join(external_info)}")
 
     # Linked programs
     if dataset.programs:
-        program_names = [p.name for p in dataset.programs]
-        parts.append(f"\nPrograms: {', '.join(program_names)}")
+        program_names = [p.name for p in dataset.programs if getattr(p, "name", None)]
+        if program_names:
+            parts.append(f"\nPrograms: {', '.join(program_names)}")
 
     # Linked experiments
     if dataset.experiments:
-        experiment_names = [e.name for e in dataset.experiments]
-        parts.append(f"\nExperiments: {', '.join(experiment_names)}")
+        experiment_names = [e.name for e in dataset.experiments if getattr(e, "name", None)]
+        if experiment_names:
+            parts.append(f"\nExperiments: {', '.join(experiment_names)}")
 
     return "\n".join(parts)
 
@@ -341,8 +353,8 @@ def ingest_dataset_from_postgres(
         # Non-blocking - continue with base metadata
 
     # Try to fetch mwTab data if we have a Metabolomics Workbench study ID
-    mwtab_data: Optional[Dict[str, Any]] = None
-    study_id: Optional[str] = None
+    mwtab_data: Optional[Dict[str, Any]] = None  # type: ignore[no-redef]
+    study_id: Optional[str] = None  # type: ignore[no-redef]
 
     if dataset.external_ids:
         # Check for MW study ID
@@ -532,15 +544,14 @@ def ingest_dataset_from_postgres(
         try:
             feature_names = extract_features_from_mwtab(mwtab_data)
             if feature_names:
-                # Determine feature type from omics type
-                feature_type_map = {
-                    OmicsType.METABOLOMICS: FeatureType.METABOLITE,
-                    OmicsType.LIPIDOMICS: FeatureType.LIPID,
-                    OmicsType.PROTEOMICS: FeatureType.PROTEIN,
-                    OmicsType.TRANSCRIPTOMICS: FeatureType.GENE,
+                feature_type_map: Dict[OmicsType, str] = {
+                    OmicsType.METABOLOMICS: "metabolite",
+                    OmicsType.LIPIDOMICS: "lipid",
+                    OmicsType.PROTEOMICS: "protein",
+                    OmicsType.TRANSCRIPTOMICS: "gene",
                 }
                 feature_type = feature_type_map.get(
-                    OmicsType(dataset.omics_type), FeatureType.METABOLITE
+                    OmicsType(dataset.omics_type), "metabolite"
                 )
 
                 # Link features to Postgres dataset

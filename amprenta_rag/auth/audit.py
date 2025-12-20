@@ -35,7 +35,7 @@ def log_action(
         db = next(db_gen)
         try:
             audit_entry = AuditLog(
-                user_id=user_id if user_id and user_id != "test" else None,
+                user_id=user_id if user_id and user_id != "test" else None,  # type: ignore[arg-type]
                 username=username,
                 action=action,
                 entity_type=entity_type,

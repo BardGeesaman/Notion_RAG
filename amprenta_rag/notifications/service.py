@@ -15,7 +15,7 @@ def create_notification(
     title: str,
     message: Optional[str] = None,
     notification_type: str = "info",
-    db = None,
+    db=None,
 ) -> Notification:
     """
     Create a new notification for a user.
@@ -31,7 +31,7 @@ def create_notification(
         Created Notification object
     """
     notification = Notification(
-        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,
+        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,  # type: ignore[arg-type]
         title=title,
         message=message,
         notification_type=notification_type,
@@ -62,7 +62,7 @@ def get_unread_notifications(user_id: str, db, limit: int = 10) -> List[Notifica
         db.query(Notification)
         .filter(
             Notification.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
-            not Notification.is_read,
+            Notification.is_read.is_(False),
         )
         .order_by(Notification.created_at.desc())
         .limit(limit)
@@ -87,7 +87,7 @@ def get_unread_count(user_id: str, db) -> int:
         db.query(Notification)
         .filter(
             Notification.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
-            not Notification.is_read,
+            Notification.is_read.is_(False),
         )
         .count()
     )

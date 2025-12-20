@@ -42,7 +42,7 @@ def embed_query(text: str) -> List[float]:
     except Exception as e:
         logger.error("[PINECONE] OpenAI API error embedding query: %r", e)
         raise
-    return resp.data[0].embedding  # type: ignore[attr-defined]
+    return resp.data[0].embedding
 
 
 def build_meta_filter(

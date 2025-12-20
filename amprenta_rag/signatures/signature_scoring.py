@@ -228,8 +228,8 @@ def score_signature(
         if comp.direction_match == "conflict"
     ]
 
-    matched_species = [
-        comp.matched_dataset_species
+    matched_species_list = [
+        str(comp.matched_dataset_species)
         for comp in component_matches
         if comp.matched_dataset_species is not None
     ]
@@ -239,5 +239,5 @@ def score_signature(
         component_matches=component_matches,
         missing_species=missing_species,
         conflicting_species=conflicting_species,
-        matched_species=matched_species,
+        matched_species=matched_species_list,
     )

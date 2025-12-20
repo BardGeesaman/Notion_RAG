@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import uuid
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, JSON, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
+
+if TYPE_CHECKING:
+    from amprenta_rag.database.models import User
 
 
 def generate_uuid() -> uuid.UUID:
@@ -31,8 +35,10 @@ class WorkflowRule(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    created_by = relationship("User", foreign_keys=[created_by_id])
-    executions = relationship("WorkflowExecution", back_populates="rule", cascade="all, delete-orphan")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+    executions: Mapped[List["WorkflowExecution"]] = relationship(
+        "WorkflowExecution", back_populates="rule", cascade="all, delete-orphan"
+    )
 
 
 class WorkflowExecution(Base):
@@ -48,7 +54,7 @@ class WorkflowExecution(Base):
     triggered_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)
 
-    rule = relationship("WorkflowRule", back_populates="executions")
+    rule: Mapped["WorkflowRule"] = relationship("WorkflowRule", back_populates="executions")
 
 
 __all__ = ["WorkflowRule", "WorkflowExecution"]
