@@ -14,7 +14,7 @@ def find_recurring_features(
     dataset_ids: List[str],
     db,
     min_occurrence: int = 2,
-) -> List[Dict[str, any]]:
+) -> List[Dict[str, Any]]:
     """
     Find features that appear across multiple datasets.
 
@@ -82,7 +82,14 @@ def find_recurring_features(
                 })
 
         # Sort by occurrence count descending
-        results.sort(key=lambda x: x["occurrence_count"], reverse=True)
+        def _occ_key(x: Dict[str, Any]) -> int:
+            val = x.get("occurrence_count", 0)
+            try:
+                return int(val) if val is not None else 0
+            except Exception:
+                return 0
+
+        results.sort(key=_occ_key, reverse=True)
 
         logger.info("[PATTERN] Found %d recurring features (min_occurrence=%d)", len(results), min_occurrence)
         return results

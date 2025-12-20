@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, cast
 
 import pandas as pd
 import plotly.express as px
@@ -14,14 +14,23 @@ from scripts.dashboard.db_session import db_session
 
 def _list_programs(db: Session) -> List[Dict[str, str]]:
     programs = db.query(Program).order_by(Program.updated_at.desc()).limit(100).all()
-    return [{"id": str(p.id), "name": p.name} for p in programs]
+    return [
+        {"id": str(p.id), "name": str(p.name) if p.name is not None else str(p.id)}
+        for p in programs
+        if p.id is not None
+    ]
 
 
 def _list_datasets(db: Session) -> List[Dict[str, str]]:
     datasets = db.query(Dataset).order_by(Dataset.updated_at.desc()).limit(200).all()
     return [
-        {"id": str(d.id), "name": d.name, "omics_type": d.omics_type or "unknown"}
+        {
+            "id": str(d.id) if d.id is not None else "",
+            "name": str(d.name) if d.name is not None else "",
+            "omics_type": str(d.omics_type) if d.omics_type is not None else "unknown",
+        }
         for d in datasets
+        if d.id is not None and d.name is not None
     ]
 
 
@@ -32,6 +41,8 @@ def _load_dataset_info(db: Session, dataset_ids: List[str]) -> List[Dict[str, An
     objs = db.query(Dataset).filter(Dataset.id.in_(dataset_ids)).limit(200).all()
     materialized: List[Dict[str, Any]] = []
     for ds in objs:
+        if ds.id is None:
+            continue
         feat_map: Dict[str, float] = {}
         for feat in ds.features:
             val = 1.0
@@ -44,14 +55,17 @@ def _load_dataset_info(db: Session, dataset_ids: List[str]) -> List[Dict[str, An
                         except Exception:
                             pass
                         break
-            feat_map[feat.name] = val
+            feat_name = str(feat.name) if feat.name is not None else ""
+            if not feat_name:
+                continue
+            feat_map[feat_name] = val
         materialized.append(
             {
                 "id": str(ds.id),
-                "name": ds.name,
-                "omics_type": ds.omics_type or "unknown",
-                "disease": ds.disease or [],
-                "programs": [p.name for p in ds.programs] if ds.programs else [],
+                "name": str(ds.name) if ds.name is not None else str(ds.id),
+                "omics_type": str(ds.omics_type) if ds.omics_type is not None else "unknown",
+                "disease": [str(d) for d in (ds.disease or []) if d is not None],
+                "programs": [str(p.name) for p in ds.programs] if ds.programs else [],
                 "features": feat_map,
             }
         )
@@ -63,14 +77,17 @@ def _build_matrix(datasets: List[Dict[str, Any]]) -> pd.DataFrame:
         return pd.DataFrame()
     feature_names = set()
     for ds in datasets:
-        feature_names.update(ds.get("features", {}).keys())
+        feature_names.update([str(fn) for fn in ds.get("features", {}).keys()])
     if not feature_names:
         return pd.DataFrame()
 
-    matrix = pd.DataFrame(index=[ds["id"] for ds in datasets], columns=sorted(feature_names))
+    matrix = pd.DataFrame(index=[ds["id"] for ds in datasets if ds.get("id")], columns=sorted(feature_names))
     for ds in datasets:
+        ds_id = ds.get("id")
+        if not ds_id:
+            continue
         vec = ds.get("features", {})
-        matrix.loc[ds["id"]] = [vec.get(f, 0.0) for f in matrix.columns]
+        matrix.loc[ds_id] = [float(vec.get(f, 0.0) or 0.0) for f in matrix.columns]
     return matrix.astype(float)
 
 
@@ -84,19 +101,19 @@ def render() -> None:
 
     color_by = st.selectbox("Color by", ["program", "omics_type", "disease"], index=2, key="pca_color_by")
 
-    program_options = {"(none)": None}
+    program_options: Dict[str, Optional[str]] = {"(none)": None}
     program_options.update({p["name"]: p["id"] for p in programs})
     program_choice = st.selectbox("Program (optional)", list(program_options.keys()), index=0, key="pca_program")
     program_id = program_options[program_choice]
 
-    dataset_options = {f"{d['name']} ({d['omics_type']})": d["id"] for d in datasets}
+    dataset_options = {f"{d['name']} ({d['omics_type']})": d["id"] for d in datasets if d.get("id")}
 
     if program_id:
         # filter datasets in program inside session and materialize IDs
         with db_session() as db:
             program = db.query(Program).filter(Program.id == program_id).first()
             ds_filtered = program.datasets if program else []
-            dataset_options = {f"{d.name} ({d.omics_type})": str(d.id) for d in ds_filtered}
+        dataset_options = {f"{d.name} ({d.omics_type})": str(d.id) for d in ds_filtered if d.id is not None}
 
     selected_labels = st.multiselect(
         "Datasets",
@@ -126,7 +143,7 @@ def render() -> None:
 
         # color label using materialized info
         info_lookup = {d["id"]: d for d in ds_info}
-        labels = []
+        labels: List[str] = []
         for ds_id in df["dataset_id"]:
             ds = info_lookup.get(ds_id)
             if not ds:
@@ -137,7 +154,7 @@ def render() -> None:
                 labels.append(", ".join(ds.get("disease") or []) or "unknown")
             else:
                 programs = ds.get("programs") or []
-                labels.append(programs[0] if programs else "unknown")
+                labels.append(str(programs[0]) if programs else "unknown")
         df["color"] = labels
 
         fig = px.scatter(

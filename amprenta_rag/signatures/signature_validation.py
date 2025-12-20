@@ -1,4 +1,4 @@
-from typing import List, cast
+from typing import List, cast, Any
 from uuid import UUID
 
 from amprenta_rag.database.session import db_session
@@ -20,9 +20,12 @@ def validate_signature_against_all_datasets(
             if ds.id is None or sig is None:
                 continue
             res = score_signature_against_dataset(cast(Any, sig), {str(ds.id)})
-            if res and (res.overlap >= coverage_threshold):
+            overlap = getattr(res, "overlap", 0)
+            score_val = getattr(res, "score", None)
+            if res and overlap is not None and overlap >= coverage_threshold:
                 matched_ids.append(cast(UUID, ds.id))
-                scores.append(float(res.score or 0))
+                if score_val is not None:
+                    scores.append(float(score_val))
         num_match = len(matched_ids)
         num_total = len(datasets)
         coverage = num_match / num_total if num_total else 0.0
@@ -49,4 +52,8 @@ def validate_signature_against_all_datasets(
 def validate_all_signatures(coverage_threshold: float = 0.1) -> List[SignatureValidationResult]:
     with db_session() as db:
         sigs = db.query(Signature).all()
-        return [validate_signature_against_all_datasets(s.id, coverage_threshold) for s in sigs]
+        return [
+            validate_signature_against_all_datasets(cast(UUID, s.id), coverage_threshold)
+            for s in sigs
+            if s.id is not None
+        ]

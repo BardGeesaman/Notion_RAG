@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ def _build_matrix(db: Session) -> pd.DataFrame:
     if not datasets:
         return pd.DataFrame()
 
-    feature_names = set()
+    feature_names: Set[str] = set()
     rows: Dict[str, Dict[str, float]] = {}
 
     for ds in datasets:
@@ -35,9 +35,14 @@ def _build_matrix(db: Session) -> pd.DataFrame:
                             break
                         except Exception:
                             pass
-            row[feat.name] = val
-            feature_names.add(feat.name)
-        rows[ds.name or str(ds.id)] = row
+            feat_name = str(feat.name) if feat.name is not None else ""
+            if not feat_name:
+                continue
+            row[feat_name] = val
+            feature_names.add(feat_name)
+        label = str(ds.name) if ds.name is not None else str(ds.id)
+        if label:
+            rows[label] = row
 
     if not feature_names:
         return pd.DataFrame()

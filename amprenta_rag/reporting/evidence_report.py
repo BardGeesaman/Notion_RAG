@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 Evidence Report Engine.
 
@@ -12,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from amprenta_rag.database.session import db_session
@@ -54,16 +53,16 @@ def generate_program_report(program_id: UUID) -> EvidenceReport:
     """Generate an evidence report for a Program from Postgres."""
     with db_session() as db:
         program = db.query(Program).filter(Program.id == program_id).first()
-        datasets = getattr(program, "datasets", [])
-        sigs = getattr(program, "signatures", []) if hasattr(program, "signatures") else []
-        sections = []
+        datasets: List[Dataset] = list(getattr(program, "datasets", []) or [])
+        sigs: List[Signature] = list(getattr(program, "signatures", []) or [])
+        sections: List[EvidenceSection] = []
 
         overview = EvidenceSection(
             title="Overview",
             summary_text=f"Program: {program.name if program else program_id}",
-            supporting_datasets=[d.id for d in datasets],
+            supporting_datasets=[UUID(str(d.id)) for d in datasets if getattr(d, "id", None)],
             key_features=None,
-            signatures=[s.id for s in sigs],
+            signatures=[UUID(str(s.id)) for s in sigs if getattr(s, "id", None)],
             references=None,
         )
         sections.append(overview)
@@ -81,7 +80,7 @@ def generate_dataset_report(dataset_id: UUID) -> EvidenceReport:
     with db_session() as db:
         d = db.query(Dataset).filter(Dataset.id == dataset_id).first()
 
-        sections = [
+        sections: List[EvidenceSection] = [
             EvidenceSection(
                 title="Overview",
                 summary_text=f"Dataset: {d.name if d else dataset_id}",
@@ -104,7 +103,7 @@ def generate_signature_report(signature_id: UUID) -> EvidenceReport:
     with db_session() as db:
         s = db.query(Signature).filter(Signature.id == signature_id).first()
 
-        sections = [
+        sections: List[EvidenceSection] = [
             EvidenceSection(
                 title="Overview",
                 summary_text=f"Signature: {getattr(s, 'name', signature_id)}",
@@ -116,11 +115,12 @@ def generate_signature_report(signature_id: UUID) -> EvidenceReport:
         ]
 
         val = validate_signature_against_all_datasets(signature_id)
+        matched_ds = [UUID(str(d)) for d in getattr(val, "matched_dataset_ids", [])]
         sections.append(
             EvidenceSection(
                 title="Validation Metrics",
                 summary_text=val.summary,
-                supporting_datasets=val.matched_dataset_ids,
+                supporting_datasets=matched_ds,
                 key_features=None,
                 signatures=None,
                 references=None,
@@ -154,8 +154,13 @@ def generate_program_evidence_report(
     )
 
     # Use existing cross-omics summary function
+    try:
+        program_uuid = UUID(program_page_id)
+    except Exception:
+        program_uuid = UUID(int=0)
+
     summary = cross_omics_program_summary_postgres(
-        program_page_id=program_page_id,
+        program_id=program_uuid,
         top_k_per_omics=top_k_per_omics,
     )
 
@@ -189,8 +194,13 @@ def generate_experiment_evidence_report(
         experiment_page_id,
     )
 
+    try:
+        experiment_uuid = UUID(experiment_page_id)
+    except Exception:
+        experiment_uuid = UUID(int=0)
+
     summary = cross_omics_dataset_summary_postgres(
-        dataset_page_id=experiment_page_id,
+        dataset_id=experiment_uuid,
         top_k_chunks=top_k_chunks,
     )
 
@@ -224,8 +234,13 @@ def generate_dataset_evidence_report(
         dataset_page_id,
     )
 
+    try:
+        dataset_uuid = UUID(dataset_page_id)
+    except Exception:
+        dataset_uuid = UUID(int=0)
+
     summary = cross_omics_dataset_summary_postgres(
-        dataset_page_id=dataset_page_id,
+        dataset_id=dataset_uuid,
         top_k_chunks=top_k_chunks,
     )
 
@@ -261,8 +276,13 @@ def generate_signature_evidence_report(
         signature_page_id,
     )
 
+    try:
+        signature_uuid = UUID(signature_page_id)
+    except Exception:
+        signature_uuid = UUID(int=0)
+
     summary = cross_omics_signature_summary_postgres(
-        signature_page_id=signature_page_id,
+        signature_id=signature_uuid,
         top_k_datasets=top_k_datasets,
         top_k_chunks=top_k_chunks,
     )

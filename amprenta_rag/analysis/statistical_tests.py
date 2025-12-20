@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 from __future__ import annotations
 
 from typing import Dict, Iterable, Sequence, Tuple
@@ -17,7 +16,7 @@ def _validate_pairs(a: np.ndarray, b: np.ndarray, min_len: int = 1) -> bool:
     return len(a) >= min_len and len(b) >= min_len
 
 
-def ttest_independent(group1: Iterable[float], group2: Iterable[float]) -> Dict[str, float]:
+def ttest_independent(group1: Iterable[float], group2: Iterable[float]) -> Dict[str, float | str]:
     a = _to_array(group1)
     b = _to_array(group2)
     if not _validate_pairs(a, b, min_len=2):
@@ -26,7 +25,7 @@ def ttest_independent(group1: Iterable[float], group2: Iterable[float]) -> Dict[
     return _format_result(stat, p)
 
 
-def anova_oneway(*groups: Iterable[float]) -> Dict[str, float]:
+def anova_oneway(*groups: Iterable[float]) -> Dict[str, float | str]:
     arrays = [g for g in (_to_array(g) for g in groups) if len(g) > 1]
     if len(arrays) < 2:
         return {"statistic": np.nan, "pvalue": np.nan, "interpretation": "insufficient data"}
@@ -34,7 +33,7 @@ def anova_oneway(*groups: Iterable[float]) -> Dict[str, float]:
     return _format_result(stat, p)
 
 
-def mann_whitney(group1: Iterable[float], group2: Iterable[float]) -> Dict[str, float]:
+def mann_whitney(group1: Iterable[float], group2: Iterable[float]) -> Dict[str, float | str]:
     a = _to_array(group1)
     b = _to_array(group2)
     if not _validate_pairs(a, b, min_len=1):
@@ -43,7 +42,7 @@ def mann_whitney(group1: Iterable[float], group2: Iterable[float]) -> Dict[str, 
     return _format_result(stat, p)
 
 
-def pearson_corr(x: Iterable[float], y: Iterable[float]) -> Dict[str, float]:
+def pearson_corr(x: Iterable[float], y: Iterable[float]) -> Dict[str, float | str]:
     a = _to_array(x)
     b = _to_array(y)
     if len(a) < 2 or len(b) < 2 or len(a) != len(b):
@@ -71,7 +70,7 @@ def adjust_pvalues(pvalues: Sequence[float], method: str = "fdr_bh") -> Tuple[np
     return adj, reject
 
 
-def _format_result(stat: float, p: float) -> Dict[str, float]:
+def _format_result(stat: float, p: float) -> Dict[str, float | str]:
     interp = "not significant"
     if not np.isnan(p):
         if p < 0.001:

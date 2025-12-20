@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 Gene Expression Omnibus (GEO) repository implementation.
 
@@ -54,7 +53,7 @@ class GEORepository(RepositoryInterface):
 
         # Set global Entrez parameters (MANDATORY)
         if email:
-            Entrez.email = email
+            Entrez.email = email  # type: ignore[assignment]
             logger.debug("[REPO][GEO] Set Entrez.email = %s", email)
         else:
             logger.warning(
@@ -63,7 +62,7 @@ class GEORepository(RepositoryInterface):
             )
 
         if api_key:
-            Entrez.api_key = api_key
+            Entrez.api_key = api_key  # type: ignore[assignment]
             self._rate_limit_delay = 0.1  # 10 requests/second with API key
             logger.debug("[REPO][GEO] Set Entrez.api_key and rate limit to 10 req/sec")
         else:
@@ -205,7 +204,7 @@ class GEORepository(RepositoryInterface):
     def search_studies(
         self,
         keywords: List[str],
-        filters: Optional[Dict[str, any]] = None,
+        filters: Optional[Dict[str, Any]] = None,
         max_results: int = 100,
     ) -> List[str]:
         """

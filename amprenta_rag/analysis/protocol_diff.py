@@ -130,8 +130,8 @@ def audit_deviations(experiment_id: UUID) -> List[DeviationReport]:
                 DeviationReport(
                     experiment_id=experiment_id,
                     protocol_id=cast(UUID, proto.id) if proto else cast(UUID, link.protocol_id),
-                    protocol_name=proto.name if proto else str(link.protocol_id),
-                    protocol_version=proto.version if proto else 1,
+                    protocol_name=str(proto.name) if proto and proto.name is not None else str(link.protocol_id),
+                    protocol_version=int(proto.version) if proto and proto.version is not None else 1,
                     deviations=deviations if isinstance(deviations, list) else [deviations],
                 )
             )

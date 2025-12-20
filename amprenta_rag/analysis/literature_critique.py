@@ -48,7 +48,7 @@ Be thorough and critical. Focus on scientific rigor, experimental design, statis
             temperature=0.3,
         )
 
-        result = json.loads(response.choices[0].message.content)
+        result = json.loads(response.choices[0].message.content or "{}")
 
         # Ensure all required fields exist
         return {
@@ -105,7 +105,7 @@ Focus on:
             temperature=0.3,
         )
 
-        result = json.loads(response.choices[0].message.content)
+        result = json.loads(response.choices[0].message.content or "{}")
         return result.get("questions", [])
     except Exception as e:
         logger.error("[LITERATURE] Failed to extract questions: %s", e)
@@ -154,7 +154,7 @@ Focus on factual contradictions, conflicting experimental results, or opposing c
             temperature=0.3,
         )
 
-        result = json.loads(response.choices[0].message.content)
+        result = json.loads(response.choices[0].message.content or "{}")
         contradictions = result.get("contradictions", [])
 
         # Validate structure

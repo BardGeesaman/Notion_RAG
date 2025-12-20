@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 Screening data ingestion pipeline.
 

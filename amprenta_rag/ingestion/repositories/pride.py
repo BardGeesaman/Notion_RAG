@@ -192,10 +192,18 @@ class PRIDERepository(RepositoryInterface):
 
             # Paginate if needed
             if len(project_ids) < max_results:
-                total_pages = data.get("page", {}).get("totalPages", 1)
-                current_page = data.get("page", {}).get("number", 0)
+                total_pages = int(data.get("page", {}).get("totalPages", 1) or 1)
+                current_page = int(data.get("page", {}).get("number", 0) or 0)
+                ps_val = params.get("pageSize", 1)
+                if isinstance(ps_val, int):
+                    page_size = ps_val
+                else:
+                    try:
+                        page_size = int(str(ps_val))
+                    except Exception:
+                        page_size = 1
 
-                for page in range(current_page + 1, min(total_pages, (max_results // params["pageSize"]) + 1)):
+                for page in range(current_page + 1, min(total_pages, (max_results // page_size) + 1)):
                     self._rate_limit()  # Rate limit between pages
 
                     page_params = params.copy()

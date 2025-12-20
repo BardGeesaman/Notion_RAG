@@ -1,7 +1,7 @@
 """Candidate selection and TPP scoring service."""
 from __future__ import annotations
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, cast
 from uuid import UUID
 
 from amprenta_rag.database.models import Compound, TargetProductProfile, CandidateNomination
@@ -174,13 +174,13 @@ def nominate_candidate(
 
     # Create nomination
     nomination = CandidateNomination(
-        compound_id=compound_id,
-        tpp_id=tpp_id,
+        compound_id=compound_id,  # type: ignore[arg-type]
+        tpp_id=tpp_id,  # type: ignore[arg-type]
         scores=scores_dict,
         overall_score=scoring_result["overall_score"],
         status="nominated",
         notes=notes,
-        nominated_by_id=user_id,
+        nominated_by_id=user_id,  # type: ignore[arg-type]
     )
 
     db.add(nomination)

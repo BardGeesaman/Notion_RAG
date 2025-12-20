@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 CRUD services for Signatures.
 """
@@ -29,7 +28,7 @@ def create_signature(db: Session, signature: SignatureCreate) -> SignatureModel:
     for comp in signature.components:
         db_component = SignatureComponentModel(
             id=uuid.uuid4(),  # type: ignore[arg-type]
-            signature_id=cast(UUID, db_signature.id),
+            signature_id=cast(UUID, db_signature.id),  # type: ignore[arg-type]
             feature_id=comp.feature_id,  # type: ignore[arg-type]
             feature_name=comp.feature_name,
             feature_type=comp.feature_type.value,
@@ -46,7 +45,7 @@ def create_signature(db: Session, signature: SignatureCreate) -> SignatureModel:
 
     # Auto-compute modalities from components
     modalities = list(set(comp.feature_type.value for comp in signature.components))
-    db_signature.modalities = modalities
+    db_signature.modalities = modalities  # type: ignore[assignment]
 
     # Add program relationships
     if signature.program_ids:
@@ -119,7 +118,7 @@ def update_signature(
         for comp in components:
             db_component = SignatureComponentModel(
                 id=uuid.uuid4(),  # type: ignore[arg-type]
-                signature_id=cast(UUID, db_signature.id),
+                signature_id=cast(UUID, db_signature.id),  # type: ignore[arg-type]
                 feature_id=comp.feature_id,  # type: ignore[arg-type]
                 feature_name=comp.feature_name,
                 feature_type=comp.feature_type.value,
@@ -136,7 +135,7 @@ def update_signature(
                     db_signature.features.append(feature)
 
         # Update modalities
-        db_signature.modalities = list(set(modalities))
+        db_signature.modalities = list(set(modalities))  # type: ignore[assignment]
 
     # Update program relationships if provided
     if program_ids is not None:

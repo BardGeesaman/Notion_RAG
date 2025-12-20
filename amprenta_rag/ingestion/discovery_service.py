@@ -2,6 +2,7 @@
 import logging
 from datetime import datetime
 from typing import Optional, List
+from uuid import UUID
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import DiscoveryJob, DiscoveredStudy, Experiment
 from amprenta_rag.ingestion.repositories.discovery import fetch_study_metadata
@@ -127,7 +128,7 @@ def get_pending_studies(limit: int = 100) -> List[dict]:
         db_gen.close()
 
 
-def import_discovered_study(discovered_study_id: str) -> Optional[str]:
+def import_discovered_study(discovered_study_id: str) -> Optional[UUID]:
     """Import a discovered study as an experiment."""
     from amprenta_rag.ingestion.design_integration import create_experiment_from_study
 
@@ -146,7 +147,7 @@ def import_discovered_study(discovered_study_id: str) -> Optional[str]:
         exp_id = create_experiment_from_study(metadata)
         if exp_id:
             study.status = "imported"
-            study.imported_experiment_id = exp_id
+            study.imported_experiment_id = exp_id  # type: ignore[assignment]
             db.commit()
             logger.info(f"[DISCOVERY] Imported study {study.study_id} as experiment {exp_id}")
 

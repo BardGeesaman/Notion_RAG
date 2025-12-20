@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 PDF export utilities for evidence reports and markdown content.
 
@@ -9,10 +8,10 @@ WeasyPrint, with a professional layout suitable for sharing with stakeholders.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 
-import markdown
+import markdown  # type: ignore[import-untyped]
 from weasyprint import HTML
 
 from amprenta_rag.reporting.evidence_report import format_evidence_report
@@ -129,7 +128,7 @@ def markdown_to_pdf(md_content: str, output_path: Optional[Path] = None) -> byte
     return pdf_bytes
 
 
-def export_evidence_report_to_pdf(report, output_path: Optional[Path] = None) -> bytes:
+def export_evidence_report_to_pdf(report: Any, output_path: Optional[Path] = None) -> bytes:
     """
     Format an EvidenceReport to markdown and export as PDF.
     """

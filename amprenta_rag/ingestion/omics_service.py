@@ -115,7 +115,7 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
 
             from amprenta_rag.ingestion.postgres_dataset_ingestion import ingest_dataset_from_postgres
 
-            dataset_uuid = ingest_dataset_from_postgres(parsed)
+            dataset_uuid = ingest_dataset_from_postgres(parsed)  # type: ignore[func-returns-value]
 
             if AUTO_LINK_ENABLED:
                 dataset_obj = db.query(DatasetModel).get(dataset_uuid)

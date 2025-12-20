@@ -134,8 +134,8 @@ def get_activity_cliffs_for_target(
 
     fp: Dict[str, Any] = {}
     for r in data:
-        smi = r.get("smiles")
-        m = _mol_from_smiles_best_effort(smi)
+        smi = r.get("smiles") or ""
+        m = _mol_from_smiles_best_effort(str(smi))
         if not m:
             continue
         fp[r["compound_id"]] = (r, AllChem.GetMorganFingerprintAsBitVect(m, 2, nBits=2048))

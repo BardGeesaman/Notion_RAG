@@ -46,7 +46,7 @@ def _campaign_to_dict(c: HTSCampaign) -> Dict:
         "library_id": getattr(c, "library_id", None),
         "total_wells": getattr(c, "total_wells", None),
         "hit_count": getattr(c, "hit_count", None),
-        "run_date": c.run_date.isoformat() if getattr(c, "run_date", None) else None,
+        "run_date": c.run_date.isoformat() if getattr(c, "run_date", None) else None,  # type: ignore[union-attr]
     }
 
 

@@ -12,6 +12,7 @@ from amprenta_rag.analysis.enrichment import (
     enrich_signature_pathways,
 )
 from amprenta_rag.logging_utils import get_logger
+from typing import Any, Dict, List
 
 logger = get_logger(__name__)
 
@@ -76,7 +77,7 @@ def generate_pathway_aware_dataset_summary(
         summary += "\n"
 
     # Cross-omics pathway convergence
-    pathway_by_source = {}
+    pathway_by_source: Dict[str, List[Any]] = {}
     for result in enrichment_results:
         source = result.pathway.source
         if source not in pathway_by_source:

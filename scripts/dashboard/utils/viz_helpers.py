@@ -189,11 +189,12 @@ def list_datasets_for_dropdown(db: Session, limit: int = 200) -> List[Dict[str, 
     )
     return [
         {
-            "id": str(d.id),
-            "name": d.name,
-            "omics_type": d.omics_type or "unknown",
+            "id": str(d.id) if d.id is not None else "",
+            "name": str(d.name) if d.name is not None else "",
+            "omics_type": str(d.omics_type) if d.omics_type is not None else "unknown",
         }
         for d in rows
+        if d.id is not None and d.name is not None
     ]
 
 

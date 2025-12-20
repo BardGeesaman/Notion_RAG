@@ -1,9 +1,9 @@
- # mypy: ignore-errors
+from datetime import datetime
 """
 API router for Signatures.
 """
 
-from typing import List, Optional
+from typing import List, Optional, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -30,7 +30,7 @@ async def create_signature(
     db: Session = Depends(get_database_session),
 ) -> Signature:
     """Create a new signature."""
-    return signature_service.create_signature(db, signature)
+    return cast(Signature, signature_service.create_signature(db, signature))
 
 
 @router.get("/", response_model=List[Signature])
@@ -42,12 +42,15 @@ async def list_signatures(
     db: Session = Depends(get_database_session),
 ) -> List[Signature]:
     """List all signatures."""
-    return signature_service.get_signatures(
+    return cast(
+        List[Signature],
+        signature_service.get_signatures(
         db,
         skip=skip,
         limit=limit,
         name_filter=name,
         program_id=program_id,
+        ),
     )
 
 
@@ -60,7 +63,7 @@ async def get_signature(
     signature = signature_service.get_signature(db, signature_id)
     if not signature:
         raise HTTPException(status_code=404, detail="Signature not found")
-    return signature
+    return cast(Signature, signature)
 
 
 @router.post("/{signature_id}/annotations", summary="Add annotation to signature")
@@ -84,13 +87,14 @@ async def add_signature_annotation(
     db.commit()
     db.refresh(note)
 
+    created_at_val = getattr(note, "created_at", None)
     return {
         "id": str(note.id),
         "entity_type": note.entity_type,
         "entity_id": str(note.entity_id),
         "text": note.content,
         "annotation_type": note.annotation_type,
-        "created_at": note.created_at.isoformat() if getattr(note, "created_at", None) else None,
+        "created_at": created_at_val.isoformat() if isinstance(created_at_val, datetime) else None,
     }
 
 
@@ -104,7 +108,7 @@ async def update_signature(
     updated = signature_service.update_signature(db, signature_id, signature)
     if not updated:
         raise HTTPException(status_code=404, detail="Signature not found")
-    return updated
+    return cast(Signature, updated)
 
 
 @router.delete("/{signature_id}", status_code=204)
@@ -143,5 +147,5 @@ async def update_signature_status(
     db.commit()
     db.refresh(signature)
 
-    return signature
+    return Signature.model_validate(signature)
 

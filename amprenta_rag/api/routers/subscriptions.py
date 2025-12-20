@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 from __future__ import annotations
 
 from typing import List, Optional
@@ -21,13 +20,13 @@ router = APIRouter()
 @router.get("/subscriptions", response_model=List[SubscriptionResponse])
 def list_subscriptions(user_id: Optional[UUID] = Depends(get_optional_user_id)) -> List[SubscriptionResponse]:
     subs = subscription_service.list_subscriptions(user_id)
-    return subs
+    return [SubscriptionResponse.model_validate(s) for s in subs]
 
 
 @router.post("/subscriptions", response_model=SubscriptionResponse, status_code=201)
 def create_subscription(payload: SubscriptionCreate, user_id: Optional[UUID] = Depends(get_optional_user_id)) -> SubscriptionResponse:
     sub = subscription_service.create_subscription(payload, user_id)
-    return sub
+    return SubscriptionResponse.model_validate(sub)
 
 
 @router.get("/subscriptions/{sub_id}", response_model=SubscriptionResponse)
@@ -35,7 +34,7 @@ def get_subscription(sub_id: UUID, user_id: Optional[UUID] = Depends(get_optiona
     sub = subscription_service.get_subscription(sub_id, user_id)
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
-    return sub
+    return SubscriptionResponse.model_validate(sub)
 
 
 @router.put("/subscriptions/{sub_id}", response_model=SubscriptionResponse)
@@ -43,7 +42,7 @@ def update_subscription(sub_id: UUID, payload: SubscriptionUpdate, user_id: Opti
     sub = subscription_service.update_subscription(sub_id, payload, user_id)
     if not sub:
         raise HTTPException(status_code=404, detail="Subscription not found")
-    return sub
+    return SubscriptionResponse.model_validate(sub)
 
 
 @router.delete("/subscriptions/{sub_id}", status_code=204)

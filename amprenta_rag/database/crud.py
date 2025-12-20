@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 CRUD operations for Postgres database.
 

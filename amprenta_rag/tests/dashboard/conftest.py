@@ -1,23 +1,23 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Dict
+from typing import Dict, Any
 
 import pytest
 
 
 @pytest.fixture
-def test_program() -> Dict[str, str]:
+def test_program() -> Dict[str, Any]:
     return {"id": "prog-uuid-1", "name": "ALS Program", "disease": ["ALS"]}
 
 
 @pytest.fixture
-def test_dataset() -> Dict[str, str]:
+def test_dataset() -> Dict[str, Any]:
     return {"id": "ds-uuid-1", "name": "ALS CSF Lipidomics", "omics_type": "lipidomics"}
 
 
 @pytest.fixture
-def test_signature() -> Dict[str, str]:
+def test_signature() -> Dict[str, Any]:
     return {"id": "sig-uuid-1", "name": "ALS-Core-6Ceramides"}
 
 

@@ -1,8 +1,7 @@
- # mypy: ignore-errors
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict, List
+from typing import Any, Dict, List, cast
 from uuid import UUID
 
 from amprenta_rag.analysis.quality_metrics import compute_quality_score
@@ -29,15 +28,28 @@ def scan_all_datasets() -> List[DatasetQualityReport]:
     with db_session() as db:
         datasets: List[Dataset] = db.query(Dataset).all()
         for ds in datasets:
+            if ds.id is None:
+                continue
             quality = compute_quality_score(ds)
+            score_raw = quality.get("score", 0.0) if isinstance(quality, dict) else 0.0
+            score = float(score_raw) if isinstance(score_raw, (int, float)) else 0.0
+            status_raw = quality.get("status", "low") if isinstance(quality, dict) else "low"
+            status = str(status_raw) if status_raw is not None else "low"
+            issues_raw = quality.get("issues", []) if isinstance(quality, dict) else []
+            issues: List[str] = [str(i) for i in issues_raw if i is not None]
+            metrics_raw = quality.get("metrics", {}) if isinstance(quality, dict) else {}
+            metrics: Dict[str, float] = {}
+            for k, v in metrics_raw.items():
+                if isinstance(v, (int, float)):
+                    metrics[str(k)] = float(v)
             reports.append(
                 DatasetQualityReport(
-                    dataset_id=ds.id,
+                    dataset_id=cast(UUID, ds.id),
                     dataset_name=ds.name or str(ds.id),
-                    score=quality.get("score", 0.0),
-                    status=quality.get("status", "low"),
-                    issues=quality.get("issues", []),
-                    metrics=quality.get("metrics", {}),
+                    score=score,
+                    status=status,
+                    issues=issues,
+                    metrics=metrics,
                 )
             )
     return reports

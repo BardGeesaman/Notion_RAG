@@ -334,11 +334,12 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment", force: 
                 len(feature_names),
                 exp_page_id,
             )
-            link_features_to_notion_items(
-                feature_names=feature_names,
-                item_page_id=canonical_page_id,
-                item_type="experiment",
-            )
+            if callable(link_features_to_notion_items):
+                link_features_to_notion_items(
+                    feature_names=feature_names,
+                    item_page_id=canonical_page_id,
+                    item_type="experiment",
+                )
         else:
             logger.debug(
                 "[INGEST][EXPERIMENT] No metabolite features found in experiment %s",

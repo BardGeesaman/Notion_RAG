@@ -72,9 +72,9 @@ def extract_geo_features_with_geoparse(
         api_key = str(getattr(cfg, "geo_api_key", None) or os.getenv("GEO_API_KEY", "") or "")
 
         if email:
-            Entrez.email = email
+            Entrez.email = email  # type: ignore[assignment]
         if api_key:
-            Entrez.api_key = api_key
+            Entrez.api_key = api_key  # type: ignore[assignment]
 
         # Download and parse using GEOparse
         # destdir caches files locally so they aren't re-downloaded

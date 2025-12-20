@@ -1,7 +1,7 @@
 """Workflow action handlers."""
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Dict, Any, cast
 from uuid import UUID
 
 from amprenta_rag.database.models import Notification, Note
@@ -44,7 +44,7 @@ def send_notification(config: Dict[str, Any], context: Dict[str, Any], db) -> Di
     message = message.format(**context) if message else None
 
     notification = Notification(
-        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,
+        user_id=UUID(user_id) if isinstance(user_id, str) else cast(UUID, user_id),  # type: ignore[arg-type]
         title=title,
         message=message,
         notification_type=notification_type,
@@ -94,9 +94,9 @@ def add_note(config: Dict[str, Any], context: Dict[str, Any], db) -> Dict[str, A
 
     note = Note(
         entity_type=entity_type,
-        entity_id=UUID(entity_id) if isinstance(entity_id, str) else entity_id,
+        entity_id=UUID(entity_id) if isinstance(entity_id, str) else cast(UUID, entity_id),  # type: ignore[arg-type]
         content=content,
-        created_by_id=UUID(user_id) if user_id and isinstance(user_id, str) else user_id,
+        created_by_id=UUID(user_id) if user_id and isinstance(user_id, str) else cast(UUID, user_id),  # type: ignore[arg-type]
     )
 
     db.add(note)

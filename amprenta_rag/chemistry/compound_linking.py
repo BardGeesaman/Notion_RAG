@@ -69,7 +69,8 @@ def get_compounds_for_signature(signature_id: str) -> List[str]:
         for c in compounds:
             ext_ids = c.external_ids or {}
             if signature_id in ext_ids.get("signatures", []):
-                result.append(c.compound_id)
+                if c.compound_id is not None:
+                    result.append(str(c.compound_id))
         return result
     finally:
         db_gen.close()
@@ -83,6 +84,6 @@ def get_compounds_for_program(program_id: str) -> List[str]:
         program = db.query(Program).filter(Program.id == UUID(program_id)).first()
         if not program:
             return []
-        return [c.compound_id for c in program.compounds]
+        return [str(c.compound_id) for c in program.compounds if c.compound_id is not None]
     finally:
         db_gen.close()

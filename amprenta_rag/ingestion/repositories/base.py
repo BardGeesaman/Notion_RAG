@@ -133,9 +133,9 @@ class RepositoryInterface(ABC):
             output_path_obj = Path(output_path)
             output_path_obj.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(output_path, "wb") as f:
+            with open(output_path, "wb") as fh:
                 for chunk in resp.iter_content(chunk_size=8192):
-                    f.write(chunk)
+                    fh.write(chunk)
 
             return True
         except Exception as e:

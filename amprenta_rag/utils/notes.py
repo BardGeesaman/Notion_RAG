@@ -1,7 +1,7 @@
 """Notes utilities for managing user notes on entities."""
 from __future__ import annotations
 
-from typing import List
+from typing import List, cast
 from uuid import UUID
 
 from amprenta_rag.database.models import Note
@@ -26,9 +26,11 @@ def add_note(entity_type: str, entity_id: str, content: str, user_id: str, db) -
     """
     note = Note(
         entity_type=entity_type,
-        entity_id=UUID(entity_id) if isinstance(entity_id, str) else entity_id,
+        entity_id=UUID(entity_id) if isinstance(entity_id, str) else cast(UUID, entity_id),  # type: ignore[arg-type]
         content=content,
-        created_by_id=UUID(user_id) if user_id and user_id != "test" and isinstance(user_id, str) else (user_id if not isinstance(user_id, str) else None),
+        created_by_id=UUID(user_id)
+        if user_id and user_id != "test" and isinstance(user_id, str)
+        else (cast(UUID, user_id) if not isinstance(user_id, str) else None),  # type: ignore[arg-type]
     )
 
     db.add(note)

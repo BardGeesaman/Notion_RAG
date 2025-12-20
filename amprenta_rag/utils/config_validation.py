@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 Configuration validation helpers.
 
@@ -9,7 +8,7 @@ helpful error messages for common configuration issues.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import Any, Dict, List
 
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
@@ -64,7 +63,7 @@ def validate_postgres_config() -> List[str]:
         List of validation error messages (empty if valid)
     """
     issues: List[str] = []
-    cfg = get_config()
+    cfg: Any = get_config()
 
     if cfg.pipeline.use_postgres_as_sot:
         # Check if Postgres connection details are provided
@@ -88,7 +87,7 @@ def validate_feature_linking_config() -> List[str]:
         List of validation error messages (empty if valid)
     """
     issues: List[str] = []
-    cfg = get_config()
+    cfg: Any = get_config()
 
     if cfg.pipeline.enable_feature_linking:
         if cfg.pipeline.feature_linking_max_workers < 1:
@@ -108,7 +107,7 @@ def validate_notion_sync_config() -> List[str]:
         List of validation error messages (empty if valid)
     """
     issues: List[str] = []
-    cfg = get_config()
+    cfg: Any = get_config()
 
     if cfg.pipeline.enable_notion_sync or cfg.pipeline.enable_dual_write:
         # Check if Notion API key is set
@@ -119,7 +118,7 @@ def validate_notion_sync_config() -> List[str]:
     return issues
 
 
-def validate_all_config() -> dict[str, List[str]]:
+def validate_all_config() -> Dict[str, List[str]]:
     """
     Validate all configuration sections and return issues by category.
 
@@ -137,7 +136,7 @@ def print_config_summary() -> None:
     """
     Print a summary of current configuration.
     """
-    cfg = get_config()
+    cfg: Any = get_config()
 
     logger.info("=" * 60)
     logger.info("Configuration Summary")

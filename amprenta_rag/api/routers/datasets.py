@@ -1,11 +1,11 @@
- # mypy: ignore-errors
+from datetime import datetime
 """
 API router for Datasets.
 """
 
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -27,7 +27,7 @@ async def create_dataset(
     db: Session = Depends(get_database_session),
 ) -> Dataset:
     """Create a new dataset."""
-    return dataset_service.create_dataset(db, dataset)
+    return cast(Dataset, dataset_service.create_dataset(db, dataset))
 
 
 @router.get("/", response_model=List[Dataset])
@@ -42,14 +42,17 @@ async def list_datasets(
 ) -> List[Dataset]:
     """List all datasets."""
     omics_type_str = omics_type.value if omics_type else None
-    return dataset_service.get_datasets(
-        db,
-        skip=skip,
-        limit=limit,
-        name_filter=name,
-        omics_type=omics_type_str,
-        program_id=program_id,
-        experiment_id=experiment_id,
+    return cast(
+        List[Dataset],
+        dataset_service.get_datasets(
+            db,
+            skip=skip,
+            limit=limit,
+            name_filter=name,
+            omics_type=omics_type_str,
+            program_id=program_id,
+            experiment_id=experiment_id,
+        ),
     )
 
 
@@ -62,7 +65,7 @@ async def get_dataset(
     dataset = dataset_service.get_dataset(db, dataset_id)
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
-    return dataset
+    return cast(Dataset, dataset)
 
 
 @router.post("/{dataset_id}/annotations", summary="Add annotation to dataset")
@@ -86,13 +89,14 @@ async def add_dataset_annotation(
     db.commit()
     db.refresh(note)
 
+    created_at_val = getattr(note, "created_at", None)
     return {
         "id": str(note.id),
         "entity_type": note.entity_type,
         "entity_id": str(note.entity_id),
         "text": note.content,
         "annotation_type": note.annotation_type,
-        "created_at": note.created_at.isoformat() if getattr(note, "created_at", None) else None,
+        "created_at": created_at_val.isoformat() if isinstance(created_at_val, datetime) else None,
     }
 
 
@@ -127,7 +131,7 @@ async def update_dataset(
     updated = dataset_service.update_dataset(db, dataset_id, dataset)
     if not updated:
         raise HTTPException(status_code=404, detail="Dataset not found")
-    return updated
+    return cast(Dataset, updated)
 
 
 @router.delete("/{dataset_id}", status_code=204)

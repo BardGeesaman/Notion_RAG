@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """
 Main RAG query orchestration.
 
@@ -8,7 +7,7 @@ RAG pipeline: Pinecone queries, match processing, chunk collection, and answer s
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from amprenta_rag.query.semantic_cache import get_semantic_cache
 
 from amprenta_rag.logging_utils import get_logger
@@ -318,9 +317,9 @@ def query_rag(
                     break
 
     matches = [summarize_match(m) for m in raw_matches]
-    filtered = filter_matches(matches, tag=tag)
+    filtered_matches = cast(List[Any], filter_matches(matches, tag=tag))
 
-    if not filtered:
+    if not filtered_matches:
         return RAGQueryResult(
             query=user_query,
             matches=matches,
@@ -331,15 +330,15 @@ def query_rag(
 
     # Use hybrid chunk collection if Postgres is enabled
     if use_postgres:
-        chunks = collect_hybrid_chunks(filtered, prefer_postgres=True)
+        chunks = collect_hybrid_chunks(filtered_matches, prefer_postgres=True)
     else:
-        chunks = collect_chunks(filtered)
+        chunks = collect_chunks(filtered_matches)
 
     if not chunks:
         return RAGQueryResult(
             query=user_query,
             matches=matches,
-            filtered_matches=filtered,
+            filtered_matches=filtered_matches,
             context_chunks=[],
             answer="No Notion chunks could be retrieved for the filtered matches.",
         )
@@ -348,12 +347,12 @@ def query_rag(
         return RAGQueryResult(
             query=user_query,
             matches=matches,
-            filtered_matches=filtered,
+            filtered_matches=filtered_matches,
             context_chunks=chunks,
             answer="Answer generation disabled (generate_answer=False).",
         )
 
-    metadata_list = [m.metadata for m in filtered]
+    metadata_list = [m.metadata for m in filtered_matches]
     answer, citations = synthesize_answer_with_citations(user_query, chunks, metadata_list, model=model)
 
     # Check for hallucinations if enabled
@@ -375,20 +374,22 @@ def query_rag(
 
     # Get trust summary if trust scoring enabled
     trust_summary = None
-    if use_trust_scoring and filtered:
+    if use_trust_scoring and filtered_matches:
         # Convert filtered matches to dict format for trust summary
-        match_dicts = []
-        for m in filtered:
-            match_dicts.append({
-                "score": m.score,
-                "metadata": m.metadata,
-            })
+        match_dicts = [
+            {
+                "score": getattr(m, "score", None),
+                "metadata": getattr(m, "metadata", {}),
+            }
+            for m in filtered_matches
+        ]
         trust_summary = get_trust_summary(match_dicts)
 
     # Add provenance summary
     source_counts: Dict[str, int] = {}
-    for m in filtered:
-        src = m.metadata.get("source_type") or m.metadata.get("source") or "Unknown"
+    for m in filtered_matches:
+        meta = getattr(m, "metadata", {}) or {}
+        src = meta.get("source_type") or meta.get("source") or "Unknown"
         source_counts[src] = source_counts.get(src, 0) + 1
 
     provenance_lines = [
@@ -401,7 +402,7 @@ def query_rag(
     result = RAGQueryResult(
         query=user_query,
         matches=matches,
-        filtered_matches=filtered,
+        filtered_matches=filtered_matches,
         context_chunks=chunks,
         answer=answer_with_provenance,
         citations=citations,

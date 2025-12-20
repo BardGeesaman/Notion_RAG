@@ -78,7 +78,7 @@ def pathway_enrich(dataset_id: UUID) -> List[schemas.ConvergentPathway]:
 )
 def program_pathway_analysis(program_id: UUID) -> schemas.CrossOmicsEnrichmentResult:
     result = get_cross_omics_enrichment(program_id)
-    return schemas.CrossOmicsEnrichmentResult(**result.asdict())
+    return schemas.CrossOmicsEnrichmentResult.model_validate(result.asdict())
 
 
 @router.get(

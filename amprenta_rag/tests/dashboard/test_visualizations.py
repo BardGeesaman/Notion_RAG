@@ -64,17 +64,17 @@ def make_feature(name: str, ftype: str = "gene", fc: float | None = None, p: flo
         ext["log2FC"] = fc
     if p is not None:
         ext["pvalue"] = p
-    return Feature(id=uuid4(), name=name, feature_type=ftype, external_ids=ext)
+    return Feature(id=uuid4(), name=name, feature_type=ftype, external_ids=ext)  # type: ignore[arg-type]
 
 
 def make_dataset(name: str, omics: str, disease: Iterable[str], features: list[Feature]) -> Dataset:
     ds = Dataset(
-        id=uuid4(),
+        id=uuid4(),  # type: ignore[arg-type]
         name=name,
         omics_type=omics,
-        disease=list(disease),
+        disease=list(disease),  # type: ignore[arg-type]
     )
-    ds.features = list(features)
+    ds.features = list(features)  # type: ignore[assignment]
     return ds
 
 

@@ -1,9 +1,9 @@
- # mypy: ignore-errors
+from datetime import datetime
 """
 API router for Experiments.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -23,7 +23,7 @@ async def create_experiment(
     db: Session = Depends(get_database_session),
 ) -> Experiment:
     """Create a new experiment."""
-    return experiment_service.create_experiment(db, experiment)
+    return cast(Experiment, experiment_service.create_experiment(db, experiment))
 
 
 @router.get("/", response_model=List[Experiment])
@@ -35,8 +35,11 @@ async def list_experiments(
     db: Session = Depends(get_database_session),
 ) -> List[Experiment]:
     """List all experiments."""
-    return experiment_service.get_experiments(
-        db, skip=skip, limit=limit, name_filter=name, program_id=program_id
+    return cast(
+        List[Experiment],
+        experiment_service.get_experiments(
+            db, skip=skip, limit=limit, name_filter=name, program_id=program_id
+        ),
     )
 
 
@@ -49,7 +52,7 @@ async def get_experiment(
     experiment = experiment_service.get_experiment(db, experiment_id)
     if not experiment:
         raise HTTPException(status_code=404, detail="Experiment not found")
-    return experiment
+    return cast(Experiment, experiment)
 
 
 @router.post("/{experiment_id}/annotations", summary="Add annotation to experiment")
@@ -73,13 +76,14 @@ async def add_experiment_annotation(
     db.commit()
     db.refresh(note)
 
+    created_at_val = getattr(note, "created_at", None)
     return {
         "id": str(note.id),
         "entity_type": note.entity_type,
         "entity_id": str(note.entity_id),
         "text": note.content,
         "annotation_type": note.annotation_type,
-        "created_at": note.created_at.isoformat() if getattr(note, "created_at", None) else None,
+        "created_at": created_at_val.isoformat() if isinstance(created_at_val, datetime) else None,
     }
 
 
@@ -93,7 +97,7 @@ async def update_experiment(
     updated = experiment_service.update_experiment(db, experiment_id, experiment)
     if not updated:
         raise HTTPException(status_code=404, detail="Experiment not found")
-    return updated
+    return cast(Experiment, updated)
 
 
 @router.delete("/{experiment_id}", status_code=204)

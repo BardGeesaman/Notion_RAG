@@ -21,11 +21,11 @@ def save_artifact(
     with db_session() as db:
         artifact = ReportArtifact(
             entity_type=entity_type,
-            entity_id=entity_id,
+            entity_id=entity_id,  # type: ignore[arg-type]
             format=format,
             file_path=file_path,
             params_hash=params_hash,
-            created_by_id=user_id,
+            created_by_id=user_id,  # type: ignore[arg-type]
         )
         db.add(artifact)
         db.commit()

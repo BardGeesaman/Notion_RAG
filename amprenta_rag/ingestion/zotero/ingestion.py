@@ -179,11 +179,12 @@ def ingest_zotero_item(
                         len(feature_names),
                         item_key,
                     )
-                    link_features_to_notion_items(
-                        feature_names=feature_names,
-                        item_page_id=parent_page_id,
-                        item_type="literature",
-                    )
+                    if callable(link_features_to_notion_items):
+                        link_features_to_notion_items(
+                            feature_names=feature_names,
+                            item_page_id=parent_page_id,
+                            item_type="literature",
+                        )
                 else:
                     logger.debug(
                         "[INGEST][LITERATURE] No metabolite features found in item %s",

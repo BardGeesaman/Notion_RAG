@@ -1,7 +1,7 @@
 """Integrate design extraction into repository import workflow."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from amprenta_rag.database.session import db_session
@@ -92,7 +92,7 @@ def batch_apply_design_extraction(repository_filter: Optional[str] = None) -> Di
                 query = query.filter(Experiment.design_metadata["source_repository"].astext == repository_filter)
 
             experiments = query.all()
-            results = {"processed": 0, "updated": 0, "failed": 0}
+            results: Dict[str, int] = {"processed": 0, "updated": 0, "failed": 0}
 
             for exp in experiments:
                 results["processed"] += 1
@@ -112,7 +112,7 @@ def batch_apply_design_extraction(repository_filter: Optional[str] = None) -> Di
             return results
         except Exception as e:
             db.rollback()
-            return {"error": str(e)}
+            return {"processed": 0, "updated": 0, "failed": 1}
 
 
 def create_experiment_from_study(
@@ -125,7 +125,7 @@ def create_experiment_from_study(
             existing = db.query(Experiment).filter(Experiment.name == study_metadata.title).first()
             if existing:
                 logger.info("[DESIGN] Experiment already exists for study %s", study_metadata.study_id)
-                return existing.id
+                return cast(UUID, existing.id)
 
             description = getattr(study_metadata, "summary", None) or ""
             if study_metadata.study_id:
@@ -166,7 +166,7 @@ def create_experiment_from_study(
                 study_metadata.study_id,
                 experiment.design_type,
             )
-            return experiment.id
+            return cast(UUID, experiment.id)
 
         except Exception as e:
             logger.error("[DESIGN] Error creating experiment from study: %r", e)

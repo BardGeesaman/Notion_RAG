@@ -89,7 +89,7 @@ def test_decompose_rgroups_includes_no_match_error_and_rgroups(monkeypatch):
     class FakeAtom:
         def __init__(self, idx: int):
             self._idx = idx
-            self._neighbors = []
+            self._neighbors: list["FakeAtom"] = []
 
         def GetIdx(self):
             return self._idx

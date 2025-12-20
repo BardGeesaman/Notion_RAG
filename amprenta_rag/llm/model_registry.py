@@ -120,7 +120,7 @@ def call_model(model_name: str, messages: List[Dict[str, str]], temperature: flo
         try:
             response = client.chat.completions.create(
                 model=actual_model_name,
-                messages=messages,
+                messages=messages,  # type: ignore[arg-type]
                 temperature=temperature,
             )
             return response.choices[0].message.content.strip()  # type: ignore[union-attr]

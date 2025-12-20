@@ -32,7 +32,7 @@ def compare_cohorts(df: pd.DataFrame, cohort_labels: List[str]) -> pd.DataFrame:
     results: List[Dict[str, float | str]] = []
 
     # Group columns by cohort label
-    cohorts = {}
+    cohorts: Dict[str, List[int]] = {}
     for idx, label in enumerate(cohort_labels):
         cohorts.setdefault(label, []).append(idx)
 
@@ -54,7 +54,7 @@ def compare_cohorts(df: pd.DataFrame, cohort_labels: List[str]) -> pd.DataFrame:
 
 def run_pairwise_comparisons(df: pd.DataFrame, cohort_labels: List[str]) -> pd.DataFrame:
     """All pairwise t-tests between cohorts with effect sizes."""
-    cohorts = {}
+    cohorts: Dict[str, List[int]] = {}
     for idx, label in enumerate(cohort_labels):
         cohorts.setdefault(label, []).append(idx)
 
@@ -68,7 +68,8 @@ def run_pairwise_comparisons(df: pd.DataFrame, cohort_labels: List[str]) -> pd.D
             res = ttest_independent(g1, g2)
             d = compute_effect_size(g1, g2)
             interpretation = "ns"
-            if not np.isnan(res.get("pvalue", np.nan)) and res["pvalue"] < 0.05:
+            pval = res.get("pvalue", np.nan)
+            if not np.isnan(pval) and float(pval) < 0.05:
                 if d >= 0.5:
                     interpretation = "moderate+" if d < 0.8 else "large"
                 elif d <= -0.5:

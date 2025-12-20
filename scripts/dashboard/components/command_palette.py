@@ -27,7 +27,7 @@ def render_command_palette() -> None:
                 key="palette_search",
                 placeholder="Type to search...",
                 autofocus=True,
-            )
+            )  # type: ignore[call-overload]
 
             # Filter actions
             if search_query:

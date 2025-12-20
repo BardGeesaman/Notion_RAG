@@ -31,7 +31,7 @@ def _ttest_by_feature(features_df: pd.DataFrame, group_a: List[str], group_b: Li
         return {f: np.nan for f in features_df.index}
     for idx, feature in enumerate(features_df.index):
         res = ttest_independent(values_a[idx, :], values_b[idx, :])
-        pvals[feature] = res.get("pvalue", np.nan)
+        pvals[feature] = float(res.get("pvalue", np.nan) or np.nan)
     return pvals
 
 
@@ -46,7 +46,7 @@ def _anova_by_feature(features_df: pd.DataFrame, groups: Dict[str, List[str]]) -
     for idx, feature in enumerate(features_df.index):
         arrays = [arr[idx, :] for arr in group_arrays.values() if arr.shape[0] > idx]
         res = anova_oneway(*arrays)
-        pvals[feature] = res.get("pvalue", np.nan)
+        pvals[feature] = float(res.get("pvalue", np.nan) or np.nan)
     return pvals
 
 
@@ -57,7 +57,7 @@ def _dose_response_by_feature(features_df: pd.DataFrame, groups: Dict[str, List[
     pvals: Dict[str, float] = {}
     # Determine dose ordering
     dose_levels: List[str] = list(groups.keys())
-    parsed = []
+    parsed: List[float | None] = []
     for g in dose_levels:
         match = None
         try:
@@ -76,7 +76,7 @@ def _dose_response_by_feature(features_df: pd.DataFrame, groups: Dict[str, List[
                     match = None
         parsed.append(match)
     # Fallback to ordinal if parsing fails
-    dose_values = []
+    dose_values: List[float] = []
     next_ord = 1.0
     for p in parsed:
         if p is None:
@@ -99,7 +99,7 @@ def _dose_response_by_feature(features_df: pd.DataFrame, groups: Dict[str, List[
             doses.append(dose)
         if len(means) >= 2 and len(doses) == len(means):
             res = pearson_corr(doses, means)
-            pvals[feature] = res.get("pvalue", np.nan)
+            pvals[feature] = float(res.get("pvalue", np.nan) or np.nan)
         else:
             pvals[feature] = np.nan
     return pvals

@@ -191,7 +191,7 @@ class MetaboLightsRepository(RepositoryInterface):
                         break
                     continue
                 elif isinstance(study, dict):
-                    study_id = study.get("studyIdentifier", study.get("id", ""))
+                    study_id = str(study.get("studyIdentifier", study.get("id", "")) or "")
                     if not study_id:
                         continue
                     title = str(study.get("title", "")).lower()
@@ -319,7 +319,7 @@ class MetaboLightsRepository(RepositoryInterface):
                                 organism_list.append(char.get("name", ""))
 
             # Extract sample types
-            sample_type_list = []
+            sample_type_list: List[str] = []
             # Sample types may be in ISA-Tab structure
 
             # Extract submission date

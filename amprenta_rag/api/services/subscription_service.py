@@ -42,7 +42,7 @@ def create_subscription(payload: SubscriptionCreate, user_id: Optional[UUID]) ->
             notify_email=payload.notify_email,
             notify_in_app=payload.notify_in_app,
             is_active=True,
-            user_id=user_id,
+            user_id=user_id,  # type: ignore[arg-type]
         )
         db.add(sub)
         db.flush()

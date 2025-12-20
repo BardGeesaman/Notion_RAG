@@ -286,11 +286,12 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
             )
             # Use page ID with dashes for Notion API
             page_id_with_dashes = email_page["id"]
-            link_features_to_notion_items(
-                feature_names=feature_names,
-                item_page_id=page_id_with_dashes,
-                item_type="email",
-            )
+            if callable(link_features_to_notion_items):
+                link_features_to_notion_items(
+                    feature_names=feature_names,
+                    item_page_id=page_id_with_dashes,
+                    item_type="email",
+                )
         else:
             logger.debug(
                 "[INGEST][EMAIL] No metabolite features found in email %s", page_id

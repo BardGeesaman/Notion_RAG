@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List
+from typing import List, Set
 
 import pandas as pd
 import plotly.express as px
@@ -22,10 +22,16 @@ def _run_enrichment(dataset_id: str, top_n: int = 20) -> pd.DataFrame:
             .filter_by(id=dataset_id)
             .all()
         )
-    genes = [f.name for f in feats]
+    genes = [f.name for f in feats if f.name is not None]
     if not genes:
         return pd.DataFrame()
-    results = perform_pathway_enrichment(genes)
+    input_features: Set[str] = {str(g) for g in genes if g}
+    if not input_features:
+        return pd.DataFrame()
+    results = perform_pathway_enrichment(
+        input_features=input_features,
+        input_feature_types={"gene"},
+    )
     if not results:
         return pd.DataFrame()
     df = pd.DataFrame(results)

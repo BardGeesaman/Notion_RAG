@@ -65,7 +65,7 @@ class GmailClient:
             "GMAIL_TOKEN_FILE", "credentials/gmail_token.json"
         )
 
-        self.service = None
+        self.service: Any = None
         self._authenticate()
 
     def _authenticate(self) -> None:
@@ -73,7 +73,7 @@ class GmailClient:
         creds = None
 
         # Load existing token if available
-        token_path = Path(self.token_file)
+        token_path = Path(str(self.token_file))
         if token_path.exists():
             try:
                 creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
@@ -97,7 +97,7 @@ class GmailClient:
 
             if not creds:
                 # Start OAuth flow
-                creds_path = Path(self.credentials_file)
+                creds_path = Path(str(self.credentials_file))
                 if not creds_path.exists():
                     raise FileNotFoundError(
                         f"Gmail credentials file not found: {self.credentials_file}\n"

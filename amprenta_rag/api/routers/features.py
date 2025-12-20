@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 API router for Features.
 """

@@ -7,7 +7,7 @@ ensuring data consistency between systems.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -43,7 +43,7 @@ class DualWriteManager:
         self.enable_notion = enable_notion
         self.enable_postgres = enable_postgres
 
-    def create_program(self, program_data: dict, notion_page_id: Optional[str] = None) -> UUID:
+    def create_program(self, program_data: dict, notion_page_id: Optional[str] = None) -> Optional[UUID]:
         """
         Create program in both systems.
 
@@ -86,9 +86,9 @@ class DualWriteManager:
                 logger.error("[MIGRATION][DUAL-WRITE] Error creating program in Notion: %r", e)
                 # Don't fail the whole operation if Notion write fails
 
-        return postgres_id
+        return cast(Optional[UUID], postgres_id)
 
-    def create_experiment(self, experiment_data: dict, notion_page_id: Optional[str] = None) -> UUID:
+    def create_experiment(self, experiment_data: dict, notion_page_id: Optional[str] = None) -> Optional[UUID]:
         """Create experiment in both systems."""
         postgres_id = None
         if self.enable_postgres:
@@ -117,9 +117,9 @@ class DualWriteManager:
             except Exception as e:
                 logger.error("[MIGRATION][DUAL-WRITE] Error creating experiment in Notion: %r", e)
 
-        return postgres_id
+        return cast(Optional[UUID], postgres_id)
 
-    def create_dataset(self, dataset_data: dict, notion_page_id: Optional[str] = None) -> UUID:
+    def create_dataset(self, dataset_data: dict, notion_page_id: Optional[str] = None) -> Optional[UUID]:
         """Create dataset in both systems."""
         postgres_id = None
         if self.enable_postgres:
@@ -148,5 +148,5 @@ class DualWriteManager:
             except Exception as e:
                 logger.error("[MIGRATION][DUAL-WRITE] Error creating dataset in Notion: %r", e)
 
-        return postgres_id
+        return cast(Optional[UUID], postgres_id)
 

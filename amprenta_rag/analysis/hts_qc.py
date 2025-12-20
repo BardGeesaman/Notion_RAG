@@ -117,8 +117,8 @@ def get_plate_heatmap_data(campaign_id: UUID) -> List[WellData]:
             normalized_value=float(r.normalized_value) if r.normalized_value is not None else None,
             z_score=float(r.z_score) if r.z_score is not None else None,
             hit_flag=r.hit_flag,
-            compound_id=r.compound_id,
-            result_id=r.result_id,
+            compound_id=UUID(str(r.compound_id)) if r.compound_id is not None else None,
+            result_id=str(r.result_id) if r.result_id is not None else None,
         )
         for r in results
     ]
@@ -133,8 +133,8 @@ def get_hit_compounds(campaign_id: UUID) -> List[HitCompound]:
         )
     return [
         HitCompound(
-            result_id=h.result_id,
-            compound_id=h.compound_id,
+            result_id=str(h.result_id) if h.result_id is not None else "",
+            compound_id=UUID(str(h.compound_id)) if h.compound_id is not None else UUID(int=0),
             well_position=h.well_position,
             normalized_value=float(h.normalized_value) if h.normalized_value is not None else None,
             z_score=float(h.z_score) if h.z_score is not None else None,

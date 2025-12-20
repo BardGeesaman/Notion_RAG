@@ -1,4 +1,3 @@
- # mypy: ignore-errors
 """
 Postgres-based signature creation.
 

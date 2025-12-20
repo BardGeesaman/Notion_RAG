@@ -54,8 +54,8 @@ def summarize_match(raw_match: Any) -> MatchSummary:
     tags = _get_tags(meta)
 
     return MatchSummary(
-        id=_id,
-        score=_score,
+        id=str(_id or ""),
+        score=float(_score or 0.0),
         source=source,
         title=title,
         snippet=snippet,

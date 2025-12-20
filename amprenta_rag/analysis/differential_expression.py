@@ -62,7 +62,8 @@ def run_differential_expression(
         log2_fc_list.append(log2_fc)
 
         res = ttest_independent(g1_vals, g2_vals)
-        pvals.append(res.get("pvalue", np.nan))
+        pval = res.get("pvalue", np.nan)
+        pvals.append(float(pval) if pval is not None else np.nan)
 
     adj_reject, adj_pvals = adjust_pvalues(pvals)
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set, cast
 from uuid import UUID
 
 from amprenta_rag.analysis.pathway.enrichment import perform_pathway_enrichment
@@ -66,7 +66,7 @@ def score_bioactivity_evidence(compound_id: UUID, candidate: str) -> float:
     for r in results:
         for val in [r.ic50, r.ec50, r.kd, r.ki]:
             if val is not None and val > 0:
-                values.append(val)
+                values.append(float(val))
     if not values:
         return 0.1
     best = min(values)
@@ -84,7 +84,7 @@ def _collect_features(dataset_ids: List[UUID]) -> Set[str]:
             .all()
         )
     names = {f.name for f in feats if getattr(f, "name", None)}
-    return names
+    return {n for n in names if n is not None}
 
 
 def score_omics_concordance(dataset_ids: List[UUID], candidate: str) -> float:
@@ -133,10 +133,10 @@ def infer_moa(compound_id: UUID, dataset_ids: List[UUID]) -> List[MOACandidate]:
     features = _collect_features(dataset_ids)
     candidates = generate_moa_candidates(compound_id)
     ranked: List[MOACandidate] = []
-    for cand in candidates:
-        s_bio = score_bioactivity_evidence(compound_id, cand)
-        s_omics = score_omics_concordance(dataset_ids, cand)
-        s_path = score_pathway_enrichment(features, cand)
+    for cand_name in candidates:
+        s_bio = score_bioactivity_evidence(compound_id, cand_name)
+        s_omics = score_omics_concordance(dataset_ids, cand_name)
+        s_path = score_pathway_enrichment(features, cand_name)
         contributions = [
             EvidenceContribution(feature_name="bioactivity", value=s_bio, weight=0.4),
             EvidenceContribution(feature_name="omics_concordance", value=s_omics, weight=0.3),
@@ -145,7 +145,7 @@ def infer_moa(compound_id: UUID, dataset_ids: List[UUID]) -> List[MOACandidate]:
         probability = fuse_evidence_scores(contributions)
         ranked.append(
             MOACandidate(
-                candidate_id=cand,
+                candidate_id=cand_name,
                 type="target",
                 probability=round(probability, 3),
                 rank=0,
@@ -154,6 +154,6 @@ def infer_moa(compound_id: UUID, dataset_ids: List[UUID]) -> List[MOACandidate]:
         )
     ranked.sort(key=lambda x: x.probability, reverse=True)
     for idx, cand in enumerate(ranked, start=1):
-        cand.rank = idx
+        cand.rank = cast(Any, idx)  # type: ignore[assignment]
     return ranked
 

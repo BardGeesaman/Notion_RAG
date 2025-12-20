@@ -98,9 +98,10 @@ def _matches_trigger_config(trigger_config: Dict[str, Any] | None, context: Dict
 
     # Simple matching: check if context values match config filters
     for key, expected_value in trigger_config.items():
-        if key not in context:
+        context_key = str(key)
+        if context_key not in context:
             return False
-        context_value = context.get(key)
+        context_value = context.get(context_key)
 
         # Handle list/set comparisons
         if isinstance(expected_value, list):
@@ -115,10 +116,10 @@ def _matches_trigger_config(trigger_config: Dict[str, Any] | None, context: Dict
                 if context_value != value:
                     return False
             elif operator == "contains":
-                if value not in str(context_value):
+                if value is None or value not in str(context_value):
                     return False
             elif operator == "in":
-                if context_value not in value:
+                if value is None or context_value not in value:
                     return False
         else:
             if context_value != expected_value:
@@ -139,7 +140,7 @@ def execute_action(rule: WorkflowRule, context: Dict[str, Any], db) -> WorkflowE
     Returns:
         WorkflowExecution record
     """
-    handler = ACTION_REGISTRY.get(rule.action_type)
+    handler = ACTION_REGISTRY.get(rule.action_type or "")
 
     if not handler:
         raise ValueError(f"No handler registered for action type: {rule.action_type}")

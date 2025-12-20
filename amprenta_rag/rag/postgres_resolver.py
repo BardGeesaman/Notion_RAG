@@ -109,9 +109,9 @@ def fetch_postgres_context(
 
     try:
         if entity_type == "Dataset":
-            return build_dataset_rag_text(postgres_id, db=db, include_notion_narrative=include_notion_narrative)
+            return build_dataset_rag_text(postgres_id, db=db)
         if entity_type == "Program":
-            return build_program_rag_text(postgres_id, db=db, include_notion_narrative=include_notion_narrative)
+            return build_program_rag_text(postgres_id, db=db)
         if entity_type == "Experiment":
             experiment = db.query(ExperimentModel).filter(ExperimentModel.id == postgres_id).first()
             if experiment:

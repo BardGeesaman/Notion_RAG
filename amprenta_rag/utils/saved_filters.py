@@ -34,7 +34,7 @@ def save_filter(
         name=name,
         entity_type=entity_type,
         filters=filters,
-        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,
+        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,  # type: ignore[arg-type]
     )
     db.add(saved_filter)
     db.commit()

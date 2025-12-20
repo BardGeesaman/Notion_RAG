@@ -60,14 +60,15 @@ def run_scheduled_report(schedule_id: UUID) -> None:
         return
 
     phash = _params_hash(entity_type, entity_id, fmt)
-    save_artifact(
-        entity_type=entity_type,
-        entity_id=entity_id,
-        format=fmt,
-        file_path=report_path,
-        params_hash=phash,
-        user_id=created_by,
-    )
+    if entity_id:
+        save_artifact(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            format=fmt,
+            file_path=report_path,
+            params_hash=phash,
+            user_id=cast(Optional[UUID], created_by) if created_by is not None else None,  # type: ignore[arg-type]
+        )
     logger.info("[REPORT-SCHED] Generated report artifact for schedule %s", schedule_id)
 
 
@@ -119,6 +120,6 @@ def load_report_schedules() -> None:
         logger.info("[REPORT-SCHED] Loading %d enabled report schedules", len(schedules))
         for schedule in schedules:
             try:
-                add_report_schedule(schedule.id, schedule.cron_expression)
+                add_report_schedule(cast(UUID, schedule.id), schedule.cron_expression)  # type: ignore[arg-type]
             except Exception as exc:
                 logger.error("[REPORT-SCHED] Failed to schedule %s: %r", schedule.name, exc)

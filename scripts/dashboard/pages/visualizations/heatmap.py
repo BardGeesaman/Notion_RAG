@@ -24,15 +24,18 @@ def _build_matrix(db: Session, dataset_ids: List[str]) -> pd.DataFrame:
     if not datasets:
         return pd.DataFrame()
 
-    feature_names = set()
+    feature_names: set[str] = set()
     data: Dict[str, Dict[str, float]] = {}
 
     for ds in datasets:
-        col = {}
+        col: Dict[str, float] = {}
         for feat in ds.features:
             val = get_feature_value(feat)
-            col[feat.name] = val
-            feature_names.add(feat.name)
+            feat_name = str(feat.name) if feat.name is not None else ""
+            if not feat_name:
+                continue
+            col[feat_name] = val
+            feature_names.add(feat_name)
         data[str(ds.id)] = col
 
     if not feature_names:

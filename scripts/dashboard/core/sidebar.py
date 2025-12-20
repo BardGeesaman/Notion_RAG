@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import streamlit as st
-from typing import Iterable, Any, Dict, List
+from typing import Iterable, Any, Dict, List, Optional, cast
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.audit import log_logout
@@ -239,7 +239,7 @@ def render_help(page: str):
         render_help_chat()
 
 
-def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], groups: Dict[str, List[str]]) -> str:
+def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], groups: Any) -> str:
     with st.sidebar:
         st.title("Navigation")
 
@@ -266,18 +266,16 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
 
         # Allow deep-linking via URL query param, e.g. /?page=Cytoscape%20Demo
         # This is especially useful for smoke tests and bookmarking.
-        page_param: str | None = None
+    page_param: Optional[str] = None
+    try:
+        raw: Any = st.query_params.get("page")
+        page_param = raw[0] if isinstance(raw, list) else cast(Optional[str], raw)
+    except Exception:
         try:
-            # Streamlit >= 1.30
-            raw = st.query_params.get("page")
-            page_param = raw[0] if isinstance(raw, list) else raw
+            raw2: Any = st.experimental_get_query_params().get("page")
+            page_param = raw2[0] if isinstance(raw2, list) and raw2 else None
         except Exception:
-            try:
-                # Older Streamlit
-                raw = st.experimental_get_query_params().get("page")
-                page_param = raw[0] if isinstance(raw, list) and raw else None
-            except Exception:
-                page_param = None
+            page_param = None
 
         if page_param and page_param in set(visible_pages):
             if st.session_state.get("selected_page") != page_param:
@@ -310,81 +308,80 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
 
         render_command_palette()
 
-        page = render_navigation(
-            user,
-            visible_pages,
-            groups={
-                "DISCOVERY_PAGES": groups.DISCOVERY_PAGES,
-                "ANALYSIS_PAGES": groups.ANALYSIS_PAGES,
-                "ELN_PAGES": groups.ELN_PAGES,
-                "ADMIN_PAGES": groups.ADMIN_PAGES,
-                "ALL_PAGES": groups.ALL_PAGES,
-            },
-        )
+    nav_groups: Dict[str, List[str]] = {
+        "DISCOVERY_PAGES": getattr(groups, "DISCOVERY_PAGES", []),
+        "ANALYSIS_PAGES": getattr(groups, "ANALYSIS_PAGES", []),
+        "ELN_PAGES": getattr(groups, "ELN_PAGES", []),
+        "ADMIN_PAGES": getattr(groups, "ADMIN_PAGES", []),
+        "ALL_PAGES": getattr(groups, "ALL_PAGES", []),
+    }
 
-        page = st.session_state.get("selected_page", page)
+    page = render_navigation(user, visible_pages, groups=nav_groups)
 
-        if user and user.get("id") != "00000000-0000-0000-0000-000000000001":
-            favorites = get_user_favorites(user.get("id"))
-            is_fav = page in favorites
-            star_label = "⭐" if is_fav else "☆"
-            if st.button(f"{star_label} Favorite", key="toggle_favorite", use_container_width=True):
-                toggle_favorite(user.get("id"), page)
-                st.rerun()
+    page = st.session_state.get("selected_page", page)
 
-        render_help(page)
-        update_recent_pages(page)
+    if user and user.get("id") != "00000000-0000-0000-0000-000000000001":
+        user_id_str = str(user.get("id"))
+        favorites = get_user_favorites(user_id_str)
+        is_fav = page in favorites
+        star_label = "⭐" if is_fav else "☆"
+        if st.button(f"{star_label} Favorite", key="toggle_favorite", use_container_width=True):
+            toggle_favorite(user_id_str, page)
+            st.rerun()
 
-        st.sidebar.divider()
-        st.sidebar.subheader("Jupyter Notebooks")
+    render_help(page)
+    update_recent_pages(page)
 
-        # Get username from user object or default
-        username = user.get("username", "scientist") if user else "scientist"
+    st.sidebar.divider()
+    st.sidebar.subheader("Jupyter Notebooks")
 
-        # Get current page context from session state
-        experiment_id = st.session_state.get("current_experiment_id")
-        dataset_id = st.session_state.get("current_dataset_id")
-        compound_id = st.session_state.get("current_compound_id")
+    # Get username from user object or default
+    username = user.get("username", "scientist") if user else "scientist"
 
-        jupyter_url = get_jupyterhub_url(
-            username,
-            experiment_id=experiment_id,
-            dataset_id=dataset_id,
-            compound_id=compound_id
-        )
-        st.sidebar.link_button(
-            "Open in JupyterLab",
-            jupyter_url,
-            use_container_width=True
-        )
-        st.sidebar.caption("Launch notebooks with API access")
+    # Get current page context from session state
+    experiment_id = st.session_state.get("current_experiment_id")
+    dataset_id = st.session_state.get("current_dataset_id")
+    compound_id = st.session_state.get("current_compound_id")
 
-        if st.sidebar.button("Generate Report", use_container_width=True):
-            st.info("Report generation coming soon")
+    jupyter_url = get_jupyterhub_url(
+        username,
+        experiment_id=experiment_id,
+        dataset_id=dataset_id,
+        compound_id=compound_id
+    )
+    st.sidebar.link_button(
+        "Open in JupyterLab",
+        jupyter_url,
+        use_container_width=True
+    )
+    st.sidebar.caption("Launch notebooks with API access")
 
-        # Determine dashboard based on context
-        current_page = st.session_state.get("selected_page", "")
-        campaign_id = st.session_state.get("current_campaign_id")
+    if st.sidebar.button("Generate Report", use_container_width=True):
+        st.info("Report generation coming soon")
 
-        if "HTS" in current_page or "Screening" in current_page or campaign_id:
-            dashboard = "hts_plate_viewer.ipynb"
-            context = {"campaign_id": campaign_id} if campaign_id else {}
-        elif experiment_id:
-            dashboard = "experiment_dashboard.ipynb"
-            context = {"experiment_id": str(experiment_id)} if experiment_id else {}
-        else:
-            dashboard = "experiment_dashboard.ipynb"
-            context = {}
+    # Determine dashboard based on context
+    current_page = st.session_state.get("selected_page", "")
+    campaign_id = st.session_state.get("current_campaign_id")
 
-        # Extract base URL for Voila
-        jupyter_base_url = jupyter_url.split("/hub/login")[0] if "/hub/login" in jupyter_url else "http://localhost:8888"
-        voila_url = get_voila_url(username, dashboard, context if context else None, jupyter_base_url)
-        st.sidebar.link_button(
-            "View as Dashboard",
-            voila_url,
-            use_container_width=True
-        )
-        st.sidebar.caption("Login to JupyterHub first")
+    if "HTS" in current_page or "Screening" in current_page or campaign_id:
+        dashboard = "hts_plate_viewer.ipynb"
+        context = {"campaign_id": campaign_id} if campaign_id else {}
+    elif experiment_id:
+        dashboard = "experiment_dashboard.ipynb"
+        context = {"experiment_id": str(experiment_id)} if experiment_id else {}
+    else:
+        dashboard = "experiment_dashboard.ipynb"
+        context = {}
 
-        return page
+    # Extract base URL for Voila
+    jupyter_base_url = jupyter_url.split("/hub/login")[0] if "/hub/login" in jupyter_url else "http://localhost:8888"
+    voila_url = get_voila_url(username, dashboard, context if context else None, jupyter_base_url)
+    st.sidebar.link_button(
+        "View as Dashboard",
+        voila_url,
+        use_container_width=True
+    )
+    st.sidebar.caption("Login to JupyterHub first")
+
+    return page
 

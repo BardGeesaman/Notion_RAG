@@ -14,14 +14,18 @@ from scripts.dashboard.db_session import db_session
 
 def _list_signatures(db: Session) -> List[Dict[str, str]]:
     sigs = db.query(Signature).order_by(Signature.updated_at.desc()).limit(200).all()
-    return [{"id": str(s.id), "name": s.name} for s in sigs]
+    return [
+        {"id": str(s.id), "name": str(s.name) if s.name is not None else str(s.id)}
+        for s in sigs
+        if s.id is not None
+    ]
 
 
 def _build_network(db: Session, signature_id: str) -> Tuple[List[str], List[Tuple[str, str]]]:
     sig = db.query(Signature).filter(Signature.id == signature_id).first()
     if not sig or not sig.features:
         return [], []
-    nodes = [f.name for f in sig.features]
+    nodes = [str(f.name) for f in sig.features if getattr(f, "name", None)]
     edges = list(itertools.combinations(nodes, 2))
     return nodes, edges
 
@@ -50,7 +54,7 @@ def render() -> None:
         st.info("No signatures available.")
         return
 
-    sig_options = {s["name"]: s["id"] for s in signatures}
+    sig_options = {s["name"]: s["id"] for s in signatures if s.get("id")}
     sig_label = st.selectbox("Signature", list(sig_options.keys()), index=0, key="network_signature")
     sig_id = sig_options[sig_label]
 
