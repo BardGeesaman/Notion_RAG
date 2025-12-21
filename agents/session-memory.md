@@ -105,11 +105,12 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
-* [2025-12-19] – **Test Coverage Progress**:
-  - Utils test coverage: 5 modules tested (bookmarks, saved_filters, timeline, widgets, actions)
-  - Coverage improved: 37% → 39%
-  - 20 new tests added
-  - All utils modules at 96-100% coverage
+* [2025-12-19] – **Test Coverage Milestone Achieved**:
+  - Test coverage: 37% → 50% (+13%)
+  - New tests: 144 (355 → 499)
+  - Modules tested: utils, API services, analysis, chemistry, signatures, query, automation
+  - TDD workflow added to agent documentation
+  - CI coverage threshold established: 35% baseline (raising to 48%)
 
 * [2025-12-19] – **Mypy Type Checking Setup**:
   - Created mypy.ini with gradual typing config
@@ -515,7 +516,7 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 ### Summary
 
-The system has reached **production maturity** with **50+ features**, **355 unit/integration tests passing + 76 E2E tests**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Phase 1, 2, 3 code quality complete** (2025-12-19): 0 lint errors, all tests passing, database migrations applied.
+The system has reached **production maturity** with **50+ features**, **499 unit/integration tests passing + 76 E2E tests**, **50% test coverage**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Phase 1, 2, 3 code quality complete** (2025-12-19): 0 lint errors, all tests passing, database migrations applied.
 
 **JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17). **AWS deployment infrastructure COMPLETE** (2025-12-19). **Code quality Phase 1 COMPLETE** (2025-12-18).
 
@@ -523,7 +524,7 @@ The system has reached **production maturity** with **50+ features**, **355 unit
 
 *   **System Status**: Production-Ready with Cloud Deployment Capability. Code quality at 10/10 (Phase 1 & 2 complete).
 *   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (47+ pages), JupyterHub operational, AWS Terraform infrastructure.
-*   **Test Coverage**: 355 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker).
+*   **Test Coverage**: 499 unit/integration passed (50% coverage), 32 skipped, 76 E2E tests (requires_server marker).
 *   **Database**: All migrations applied (mwtab_json JSONB, validation_status enum), permissions resolved, name standardized to 'amprenta'.
 *   **JupyterHub**: All 5 phases complete (API client, write endpoints, deployment, SSO, templates).
 *   **Notebook Suite**: 10 Voila notebooks standardized with shared utilities (notebook_utils.py).

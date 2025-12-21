@@ -71,3 +71,18 @@ For **test execution reports**:
 3. **Failure Analysis** – likely causes and impacts.
 4. **Recommended Fixes** – what Implementor / Architect should do.
 5. **Additional Tests Needed** – if any.
+
+---
+
+## 5. TDD Workflow
+
+When Architect assigns new features:
+1. Design test cases based on requirements (BEFORE Implementor writes code)
+2. Provide test skeleton to Implementor
+3. Implementor writes code to pass tests
+4. Validate final implementation against full test suite
+
+For bug reports:
+1. Write failing test that reproduces bug
+2. Implementor fixes
+3. Verify test passes

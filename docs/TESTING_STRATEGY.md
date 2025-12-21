@@ -314,20 +314,26 @@ Use real data for integration tests (with proper cleanup):
 
 | Category | Current | Target |
 |----------|---------|--------|
+| Overall Coverage | 39% | 80%+ |
 | Unit Tests | ~40% | 80%+ |
 | Integration Tests | ~20% | 60%+ |
 | Edge Cases | ~10% | 50%+ |
 | Performance Tests | 0% | 100% |
+| New Modules | - | 80%+ (required) |
+
+**CI Enforcement**: 35% threshold (rising incrementally toward 80%)
 
 ## Best Practices
 
-1. **Write tests first** for new features (TDD when possible)
+1. **Write tests first** for new features (TDD required for new features)
 2. **Keep tests fast** - unit tests should run in < 1 second each
 3. **Use fixtures** for common test data
 4. **Mock external services** in unit tests
 5. **Clean up** test data after tests
 6. **Document** test purpose and assumptions
 7. **Run tests frequently** during development
+8. **Minimum 80% coverage for new modules**
+9. **CI enforces coverage threshold** (35% baseline, rising incrementally)
 
 ## Next Steps
 

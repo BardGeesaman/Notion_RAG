@@ -70,3 +70,20 @@ When you complete a task, respond to Architect in this structure (unless Archite
 4. **Notes / Assumptions** – anything non-obvious, plus any suggested follow-ups (tests, review, docs, automation).
 
 Always keep your responses focused on the implementation itself.
+
+---
+
+## 5. Test Requirements
+
+For **new features**, follow TDD (Test-Driven Development):
+1. Receive requirements from Architect
+2. Write test cases FIRST that define expected behavior
+3. Implement code to make tests pass
+4. Report: "Tests: X passed, Y% coverage"
+
+For **bug fixes**:
+1. Write a failing test that reproduces the bug
+2. Fix the bug
+3. Verify test now passes
+
+**Coverage target**: New modules should have 80%+ coverage.
