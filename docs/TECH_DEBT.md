@@ -41,3 +41,17 @@ Items identified during code reviews that are non-blocking but should be address
 | HEALTH-3 | Auto-refresh timer | completed | 2025-12-19 |
 | HEALTH-4 | Sync frequency and success rate metrics | completed | 2025-12-19 |
 
+---
+
+## Known Dependency Vulnerabilities (No Fix Available)
+
+These vulnerabilities are tracked and ignored in CI until upstream fixes are released:
+
+| Package | Version | Advisory | Issue | Mitigation |
+|---------|---------|----------|-------|------------|
+| biopython | 1.86 | GHSA-x3vf-39hj-gxr4 | XXE in Bio.Entrez | Avoid parsing untrusted XML |
+| nbconvert | 7.16.6 | GHSA-xm59-rqc7-hhvf | Windows inkscape.bat path | Not applicable (Linux servers) |
+| pdfminer-six | 20251107 | GHSA-f83h-ghpp-7wcc | Unsafe pickle deserialization | Only parse trusted PDFs |
+
+Last reviewed: 2025-12-21
+
