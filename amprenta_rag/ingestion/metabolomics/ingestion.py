@@ -59,7 +59,7 @@ def create_metabolomics_dataset_page(
 def ingest_metabolomics_file(
     file_path: str,
     notion_page_id: Optional[str] = None,
-    _create_page: bool = False,
+    create_page: bool = False,
     program_ids: Optional[List[str]] = None,
     experiment_ids: Optional[List[str]] = None,
 ) -> str:
@@ -117,6 +117,10 @@ def ingest_metabolomics_file(
         "[INGEST][METABOLOMICS] Starting ingestion of metabolomics file: %s",
         file_path,
     )
+
+    # Legacy arg kept for backwards compatibility; Notion sync may be disabled in many deployments.
+    if create_page:
+        logger.debug("[INGEST][METABOLOMICS] create_page requested (may be ignored if Notion sync is disabled)")
 
     # Validate file exists
     file_path_obj = Path(file_path)
