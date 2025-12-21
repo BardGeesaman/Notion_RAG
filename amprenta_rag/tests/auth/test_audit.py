@@ -23,13 +23,15 @@ def test_log_action_success(monkeypatch):
     monkeypatch.setattr(audit, "get_db", fake_get_db)
     
     uid = str(uuid4())
-    audit.log_action("test_action", user_id=uid, username="user", entity_type="exp", entity_id="123")
+    eid = str(uuid4())
+    audit.log_action("test_action", user_id=uid, username="user", entity_type="exp", entity_id=eid)
     
     assert len(fake_db.added) == 1
     entry = fake_db.added[0]
     assert entry.action == "test_action"
     assert entry.username == "user"
     assert entry.entity_type == "exp"
+    assert str(entry.entity_id) == eid
 
 def test_log_action_error_handling(monkeypatch, caplog):
     # Simulate DB error
