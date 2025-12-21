@@ -22,7 +22,7 @@ def test_map_features_to_kegg_pathways_happy_path(monkeypatch):
         status_code = 200
         text = "path:hsa00010\thsa:1234\npath:hsa00020\thsa:1234\n"
 
-    def fake_get(url, timeout=10):
+    def fake_get(url, timeout=10, **kwargs):
         return FakeResp()
 
     def fake_fetch(pathway_id):
@@ -31,7 +31,17 @@ def test_map_features_to_kegg_pathways_happy_path(monkeypatch):
 
     monkeypatch.setattr(mapping, "map_gene_to_kegg", fake_map_gene)
     monkeypatch.setattr(mapping, "_fetch_kegg_pathway_info", fake_fetch)
-    monkeypatch.setattr(mapping, "requests", type("R", (), {"get": fake_get})())
+
+    class FakeRequests:
+        RequestException = Exception
+        ConnectionError = Exception
+        TimeoutError = Exception
+
+        @staticmethod
+        def get(url, timeout=10, **kwargs):
+            return fake_get(url, timeout=timeout, **kwargs)
+
+    monkeypatch.setattr(mapping, "requests", FakeRequests())
     monkeypatch.setattr(mapping, "time", type("T", (), {"sleep": lambda s: None})())
 
     res = mapping.map_features_to_kegg_pathways({"A"}, feature_type="gene")
@@ -44,8 +54,17 @@ def test_map_features_to_reactome_pathways_handles_errors(monkeypatch):
     def fake_map_gene(feature, organism="human"):
         raise ValueError("bad")
 
+    class FakeRequests:
+        RequestException = Exception
+        ConnectionError = Exception
+        TimeoutError = Exception
+
+        @staticmethod
+        def get(*a, **k):
+            return type("Resp", (), {"status_code": 500, "json": lambda self: {}})()
+
     monkeypatch.setattr(mapping, "map_gene_to_reactome", fake_map_gene)
-    monkeypatch.setattr(mapping, "requests", type("R", (), {"get": lambda *a, **k: type("Resp", (), {"status_code": 500, "json": lambda self: {}})()})())
+    monkeypatch.setattr(mapping, "requests", FakeRequests())
     res = mapping.map_features_to_reactome_pathways({"A"}, feature_type="gene")
     assert res == {}
 
@@ -62,13 +81,22 @@ def test_map_features_to_reactome_pathways_happy(monkeypatch):
         def json(self):
             return self._data
 
-    def fake_get(url, timeout=10):
+    def fake_get(url, timeout=10, **kwargs):
         if "pathways" in url:
             return FakeResp([{"stId": "R-TEST", "displayName": "Pathway"}])
         return FakeResp({})
 
+    class FakeRequests:
+        RequestException = Exception
+        ConnectionError = Exception
+        TimeoutError = Exception
+
+        @staticmethod
+        def get(url, timeout=10, **kwargs):
+            return fake_get(url, timeout=timeout, **kwargs)
+
     monkeypatch.setattr(mapping, "map_gene_to_reactome", fake_map_gene)
-    monkeypatch.setattr(mapping, "requests", type("R", (), {"get": fake_get})())
+    monkeypatch.setattr(mapping, "requests", FakeRequests())
 
     res = mapping.map_features_to_reactome_pathways({"A"}, feature_type="gene")
     assert "R-TEST" in res
