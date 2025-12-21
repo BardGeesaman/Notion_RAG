@@ -59,7 +59,7 @@ def create_lipidomics_dataset_page(
 def ingest_lipidomics_file(
     file_path: str,
     notion_page_id: Optional[str] = None,
-    create_page: bool = False,
+    _create_page: bool = False,
     program_ids: Optional[List[str]] = None,
     experiment_ids: Optional[List[str]] = None,
 ) -> str:
