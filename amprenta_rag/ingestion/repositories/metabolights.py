@@ -632,7 +632,7 @@ def extract_metabolights_metabolites_from_isa_tab(
                 inv_content = inv_response.text
 
                 # Look for MAF files first (m_*_maf.tsv)
-                maf_files = re.findall(r"(m_[^\\s\\t\\n]*maf[^\\s\\t\\n]*\\.(?:tsv|txt))", inv_content, re.IGNORECASE)
+                maf_files = re.findall(r"(m_[^\s\t\n]*maf[^\s\t\n]*\.(?:tsv|txt))", inv_content, re.IGNORECASE)
                 if maf_files:
                     metabolite_file_url = f"{https_url}/{maf_files[0]}"
                     logger.info(
@@ -642,7 +642,7 @@ def extract_metabolights_metabolites_from_isa_tab(
 
                 # Fall back to other m_ files
                 if not metabolite_file_url:
-                    m_files = re.findall(r"(m_[^\\s\\t\\n]+\\.(?:tsv|txt))", inv_content)
+                    m_files = re.findall(r"(m_[^\s\t\n]+\.(?:tsv|txt))", inv_content)
                     if m_files:
                         metabolite_file_url = f"{https_url}/{m_files[0]}"
                         logger.info(
@@ -652,7 +652,7 @@ def extract_metabolights_metabolites_from_isa_tab(
 
                 # Last resort: assay files (likely sample metadata)
                 if not metabolite_file_url:
-                    a_files = re.findall(r"(a_[^\\s\\t\\n]+metabolite[^\\s\\t\\n]+\\.txt)", inv_content, re.IGNORECASE)
+                    a_files = re.findall(r"(a_[^\s\t\n]+metabolite[^\s\t\n]+\.txt)", inv_content, re.IGNORECASE)
                     if a_files:
                         metabolite_file_url = f"{https_url}/{a_files[0]}"
                         logger.warning(

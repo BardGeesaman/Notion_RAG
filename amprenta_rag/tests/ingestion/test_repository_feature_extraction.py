@@ -16,52 +16,50 @@ from amprenta_rag.ingestion import repository_feature_extraction as rfe
 
 def test_extract_geo_features_handles_error(monkeypatch):
     # Force GEOparse.get_GEO to raise to ensure graceful handling
-    monkeypatch.setattr(rfe, "GEOparse", SimpleNamespace(get_GEO=lambda *a, **k: (_ for _ in ()).throw(RuntimeError("fail"))))
+    fake_geoparse.get_GEO = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("fail"))
     genes = rfe.extract_geo_features_with_geoparse("GSE1", download_dir=Path("./tmp_geo"))
     assert genes == set()
 
 
 def test_extract_pride_proteins_no_files(monkeypatch):
-    fake_mod = ModuleType("amprenta_rag.ingestion.repositories.pride")
-
     class FakeRepo:
         def fetch_study_data_files(self, study_id):
             return []
 
-    fake_mod.PRIDERepository = lambda: FakeRepo()
-    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.pride", fake_mod)
+    import amprenta_rag.ingestion.repositories.pride as pride_mod
+
+    monkeypatch.setattr(pride_mod, "PRIDERepository", lambda: FakeRepo())
     proteins = rfe.extract_pride_proteins_from_data_files("PXD1", download_dir=Path("./tmp_pride"))
     assert proteins == set()
 
 
 def test_extract_metabolights_metabolites_no_files(monkeypatch, tmp_path):
-    fake_mod = ModuleType("amprenta_rag.ingestion.repositories.metabolights")
-
     class FakeRepo:
         def fetch_study_data_files(self, study_id):
             return []
 
-    fake_mod.MetaboLightsRepository = lambda: FakeRepo()
-    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.metabolights", fake_mod)
+    import amprenta_rag.ingestion.repositories.metabolights as mbl_mod
+
+    monkeypatch.setattr(mbl_mod, "MetaboLightsRepository", lambda: FakeRepo())
     mets = rfe.extract_metabolights_metabolites_from_isa_tab("MTBLS1", download_dir=tmp_path)
     assert mets == set()
 
 
 def test_extract_mw_metabolites_handles_error(monkeypatch):
-    # MW extraction uses requests.get + REPOSITORY_USER_AGENT; mock both.
-    fake_repo_root = ModuleType("amprenta_rag.ingestion.repositories")
-    fake_repo_root.REPOSITORY_USER_AGENT = "ua"
-    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_root)
+    import amprenta_rag.ingestion.repositories.mw as mw_mod
+    import requests
 
-    monkeypatch.setattr(rfe.requests, "get", lambda *a, **k: (_ for _ in ()).throw(rfe.requests.exceptions.RequestException("boom")))
+    monkeypatch.setattr(mw_mod, "REPOSITORY_USER_AGENT", "ua")
+    monkeypatch.setattr(
+        mw_mod.requests,
+        "get",
+        lambda *a, **k: (_ for _ in ()).throw(requests.exceptions.RequestException("boom")),
+    )
     mets = rfe.extract_mw_metabolites_from_data_endpoint("ST000001")
     assert mets == set()
 
 
 def test_extract_pride_proteins_mztab_success(monkeypatch, tmp_path):
-    # Patch PRIDERepository import target
-    fake_mod = ModuleType("amprenta_rag.ingestion.repositories.pride")
-
     file_obj = SimpleNamespace(
         filename="results.mzTab",
         file_type="SEARCH",
@@ -72,21 +70,16 @@ def test_extract_pride_proteins_mztab_success(monkeypatch, tmp_path):
         def fetch_study_data_files(self, study_id):
             return [file_obj]
 
-    fake_mod.PRIDERepository = lambda: FakeRepo()
-    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.pride", fake_mod)
+    import amprenta_rag.ingestion.repositories.pride as pride_mod
+    import requests
 
-    # Patch repositories root for user agent
-    fake_repo_root = ModuleType("amprenta_rag.ingestion.repositories")
-    fake_repo_root.REPOSITORY_USER_AGENT = "ua"
-    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_root)
+    monkeypatch.setattr(pride_mod, "PRIDERepository", lambda: FakeRepo())
+    monkeypatch.setattr(pride_mod, "REPOSITORY_USER_AGENT", "ua")
 
     # Patch proteomics normalization import target
     fake_norm = ModuleType("amprenta_rag.ingestion.proteomics.normalization")
     fake_norm.normalize_protein_identifier = lambda s: s
     monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.proteomics.normalization", fake_norm)
-
-    # Avoid sleeping in tests
-    monkeypatch.setattr(rfe.time, "sleep", lambda *_a, **_k: None)
 
     class Resp:
         status_code = 200
@@ -96,15 +89,13 @@ def test_extract_pride_proteins_mztab_success(monkeypatch, tmp_path):
         def raise_for_status(self):
             return None
 
-    monkeypatch.setattr(rfe.requests, "get", lambda *a, **k: Resp())
+    monkeypatch.setattr(requests, "get", lambda *a, **k: Resp())
 
     proteins = rfe.extract_pride_proteins_from_data_files("PXD1", download_dir=tmp_path)
     assert proteins == {"P12345", "Q9ZZZ9"}
 
 
 def test_extract_metabolights_metabolites_success(monkeypatch, tmp_path):
-    fake_mod = ModuleType("amprenta_rag.ingestion.repositories.metabolights")
-
     class FakeMeta:
         def __init__(self):
             self.raw_metadata = {"mtblsStudy": {"studyHttpUrl": "https://example.com/MTBLS1"}}
@@ -113,13 +104,10 @@ def test_extract_metabolights_metabolites_success(monkeypatch, tmp_path):
         def fetch_study_metadata(self, study_id):
             return FakeMeta()
 
-    fake_mod.MetaboLightsRepository = lambda: FakeRepo()
-    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.metabolights", fake_mod)
+    import amprenta_rag.ingestion.repositories.metabolights as mbl_mod
 
-    # repositories root for user agent
-    fake_repo_root = ModuleType("amprenta_rag.ingestion.repositories")
-    fake_repo_root.REPOSITORY_USER_AGENT = "ua"
-    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_root)
+    monkeypatch.setattr(mbl_mod, "MetaboLightsRepository", lambda: FakeRepo())
+    monkeypatch.setattr(mbl_mod, "REPOSITORY_USER_AGENT", "ua")
 
     # metabolomics normalization
     fake_norm = ModuleType("amprenta_rag.ingestion.metabolomics.normalization")
@@ -154,18 +142,18 @@ def test_extract_metabolights_metabolites_success(monkeypatch, tmp_path):
             return MafResp()
         raise AssertionError(f"unexpected url {url}")
 
-    monkeypatch.setattr(rfe.requests, "get", fake_get)
+    monkeypatch.setattr(mbl_mod.requests, "get", fake_get)
     # ensure HEAD never called (we found via investigation)
-    monkeypatch.setattr(rfe.requests, "head", lambda *a, **k: SimpleNamespace(status_code=404))
+    monkeypatch.setattr(mbl_mod.requests, "head", lambda *a, **k: SimpleNamespace(status_code=404))
 
     mets = rfe.extract_metabolights_metabolites_from_isa_tab("MTBLS1", download_dir=tmp_path)
     assert mets == {"Glucose", "Lactate"}
 
 
 def test_extract_mw_metabolites_success(monkeypatch):
-    fake_repo_root = ModuleType("amprenta_rag.ingestion.repositories")
-    fake_repo_root.REPOSITORY_USER_AGENT = "ua"
-    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_root)
+    import amprenta_rag.ingestion.repositories.mw as mw_mod
+
+    monkeypatch.setattr(mw_mod, "REPOSITORY_USER_AGENT", "ua")
 
     fake_norm = ModuleType("amprenta_rag.ingestion.metabolomics.normalization")
     fake_norm.normalize_metabolite_name = lambda s: s.strip()
@@ -180,7 +168,7 @@ def test_extract_mw_metabolites_success(monkeypatch):
                 "2": {"refmet_name": "Lactate"},
             }
 
-    monkeypatch.setattr(rfe.requests, "get", lambda *a, **k: Resp())
+    monkeypatch.setattr(mw_mod.requests, "get", lambda *a, **k: Resp())
     mets = rfe.extract_mw_metabolites_from_data_endpoint("ST000001")
     assert mets == {"Glucose", "Lactate"}
 
