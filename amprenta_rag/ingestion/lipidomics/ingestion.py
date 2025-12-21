@@ -59,7 +59,7 @@ def create_lipidomics_dataset_page(
 def ingest_lipidomics_file(
     file_path: str,
     notion_page_id: Optional[str] = None,
-    _create_page: bool = False,
+    create_page: bool = False,
     program_ids: Optional[List[str]] = None,
     experiment_ids: Optional[List[str]] = None,
 ) -> str:
@@ -80,6 +80,10 @@ def ingest_lipidomics_file(
         "[INGEST][LIPIDOMICS] Starting ingestion of lipidomics file: %s",
         file_path,
     )
+
+    # Legacy arg kept for backwards compatibility; Notion sync may be disabled in many deployments.
+    if create_page:
+        logger.debug("[INGEST][LIPIDOMICS] create_page requested (may be ignored if Notion sync is disabled)")
 
     # Validate file exists
     file_path_obj = Path(file_path)
