@@ -178,8 +178,8 @@ def test_detect_confounders_anova_path(monkeypatch):
 
     df = pd.DataFrame(
         {
-            "group": ["A", "A", "B", "B", "C", "C"],
-            "num": [1, 2, 3, 4, 5, 6],
+            "group": ["A"] * 5 + ["B"] * 5 + ["C"] * 5,
+            "num": list(range(15)),
         }
     )
     res = cd.detect_confounders(df, "group")
