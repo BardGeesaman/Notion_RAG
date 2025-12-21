@@ -5,6 +5,12 @@ from pathlib import Path
 
 import pytest
 
+import sys
+from types import ModuleType
+
+fake_geoparse = ModuleType("GEOparse")
+sys.modules["GEOparse"] = fake_geoparse
+
 from amprenta_rag.ingestion import repository_feature_extraction as rfe
 
 
