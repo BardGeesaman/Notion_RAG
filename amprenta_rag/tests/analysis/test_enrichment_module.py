@@ -15,10 +15,15 @@ def test_enrich_dataset_pathways_no_features(monkeypatch):
 
 
 def test_enrich_dataset_pathways_calls_enrichment(monkeypatch):
+    # Stub module import for multi_omics_scoring
+    mos_module = types.SimpleNamespace(
+        extract_dataset_features_by_type=lambda *a, **k: {"rna": ["A"], "protein": ["P"]},
+    )
+    sys.modules["amprenta_rag.ingestion.multi_omics_scoring"] = mos_module
     monkeypatch.setitem(
         enrichment.__dict__,
         "extract_dataset_features_by_type",
-        lambda *a, **k: {"rna": ["A"], "protein": ["P"]},
+        mos_module.extract_dataset_features_by_type,
     )
     called = {"yes": False}
 
@@ -33,7 +38,9 @@ def test_enrich_dataset_pathways_calls_enrichment(monkeypatch):
 
 
 def test_enrich_signature_pathways_missing(monkeypatch):
-    monkeypatch.setitem(enrichment.__dict__, "fetch_all_signatures_from_notion", lambda: [])
+    loader = types.SimpleNamespace(fetch_all_signatures_from_notion=lambda: [])
+    sys.modules["amprenta_rag.ingestion.signature_matching.signature_loader"] = loader
+    monkeypatch.setitem(enrichment.__dict__, "fetch_all_signatures_from_notion", loader.fetch_all_signatures_from_notion)
     res = enrichment.enrich_signature_pathways("sig1")
     assert res == []
 
