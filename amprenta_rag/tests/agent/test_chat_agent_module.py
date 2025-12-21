@@ -48,7 +48,7 @@ def test_program_signature_feature(monkeypatch):
 
     monkeypatch.setattr(chat_agent, "route_intent", lambda text: "feature_summary")
     monkeypatch.setattr(chat_agent, "cross_omics_feature_summary_postgres", lambda uid, ft: "feat-summary")
-    _, ans = chat_agent.run_chat_turn(make_session(), f"feature: {uuid4()}")
+    _, ans = chat_agent.run_chat_turn(make_session(), f"feature: {uuid4().hex}")
     assert "feat-summary" in ans
 
 
