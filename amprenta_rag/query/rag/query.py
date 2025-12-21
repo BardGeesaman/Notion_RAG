@@ -219,7 +219,7 @@ def query_rag(
         reranker = get_reranker()
         if rerank_model and hasattr(reranker, "model_name") and reranker.model_name != rerank_model:
             if getattr(reranker, "_model", None) is None:
-                reranker.model_name = rerank_model  # type: ignore[attr-defined]
+                setattr(reranker, "model_name", rerank_model)
             else:
                 logger.warning(
                     "[RAG][RERANK] Reranker already loaded with model %s; ignoring requested %s",
