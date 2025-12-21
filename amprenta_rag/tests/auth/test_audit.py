@@ -15,7 +15,12 @@ class FakeDB:
 
 def test_log_action_success(monkeypatch):
     fake_db = FakeDB()
-    monkeypatch.setattr(audit, "get_db", lambda: iter([fake_db]))
+    
+    # Use a real generator to support .close()
+    def fake_get_db():
+        yield fake_db
+        
+    monkeypatch.setattr(audit, "get_db", fake_get_db)
     
     uid = str(uuid4())
     audit.log_action("test_action", user_id=uid, username="user", entity_type="exp", entity_id="123")
@@ -51,4 +56,3 @@ def test_log_wrappers(monkeypatch):
     audit.log_delete("u1", "user", "type", "id")
     
     assert calls == ["login", "logout", "create", "update", "delete"]
-
