@@ -158,3 +158,46 @@ def test_get_confounder_report_error_path(monkeypatch):
     report = cd.get_confounder_report(df, "group")
     assert "Error:" in report["warnings"][0]
 
+
+def test_detect_confounders_anova_path(monkeypatch):
+    class FakeStats:
+        @staticmethod
+        def chi2_contingency(cont):
+            return (1.0, 0.6, None, None)
+
+        @staticmethod
+        def ttest_ind(a, b):
+            return (0.0, 0.6)
+
+        @staticmethod
+        def f_oneway(*args):
+            return (2.0, 0.01)
+
+    monkeypatch.setitem(cd.__dict__, "stats", FakeStats())
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+
+    df = pd.DataFrame(
+        {
+            "group": ["A", "A", "B", "B", "C", "C"],
+            "num": [1, 2, 3, 4, 5, 6],
+        }
+    )
+    res = cd.detect_confounders(df, "group")
+    assert any(r["test"] == "ANOVA" and r["is_confounder"] for r in res)
+
+
+def test_get_confounder_report_with_confounders(monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+
+    def fake_detect(df, grp):
+        return [
+            {"column": "c1", "test": "chi", "p_value": 0.01, "is_confounder": True},
+            {"column": "c2", "test": "ttest", "p_value": 0.2, "is_confounder": False},
+        ]
+
+    monkeypatch.setitem(cd.__dict__, "detect_confounders", fake_detect)
+    df = pd.DataFrame({"group": ["A", "B"], "c1": [1, 2], "c2": [0, 1]})
+    report = cd.get_confounder_report(df, "group")
+    assert "potential confounder" in report["summary"]
+    assert any("Found 1" in w for w in report["warnings"])
+
