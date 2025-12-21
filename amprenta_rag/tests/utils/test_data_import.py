@@ -19,14 +19,19 @@ class _Field:
     def like(self, pattern: str):
         return ("like", self.name, pattern)
 
+    def desc(self):
+        return self
+
 
 class FakeExperiment:
     id = _Field("id")
     name = _Field("name")
 
-    def __init__(self, id: Any, name: str):
+    def __init__(self, id: Any, name: str, **kwargs: Any):
         self._id_val = id
         self.name = name
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     def __getattribute__(self, name: str):
         if name == "id":
@@ -38,7 +43,7 @@ class FakeCompound:
     id = _Field("id")
     compound_id = _Field("compound_id")
 
-    def __init__(self, compound_id: str, smiles: str = "CCO", inchi_key: str | None = None):
+    def __init__(self, compound_id: str, smiles: str = "CCO", inchi_key: str | None = None, **kwargs: Any):
         self.compound_id = compound_id
         self.smiles = smiles
         self.inchi_key = inchi_key
@@ -52,15 +57,19 @@ class FakeCompound:
         self.external_ids = None
         self.created_at = None
         self.updated_at = None
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
 class FakeSample:
     id = _Field("id")
     name = _Field("name")
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, **kwargs: Any):
         self.name = name
         self.id = uuid4()
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
 class FakeStorageLocation:
