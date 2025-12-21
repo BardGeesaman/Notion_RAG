@@ -35,7 +35,7 @@ def test_map_features_to_kegg_pathways_parses(monkeypatch):
             return FakeResp("path:hsa00010\thsa:1", 200)
 
     monkeypatch.setattr(pa, "map_gene_to_kegg", fake_map_gene)
-    monkeypatch.setattr(pa, "requests", FakeRequests(), raising=False)
+    monkeypatch.setitem(sys.modules, "requests", FakeRequests())
     monkeypatch.setattr(pa, "_fetch_kegg_pathway_info", lambda pid: {"name": "p"})
     monkeypatch.setattr(pa, "time", type("T", (), {"sleep": lambda s: None})(), raising=False)
 
@@ -66,7 +66,7 @@ def test_map_features_to_reactome_pathways_parses(monkeypatch):
         def get(url, timeout=10, **kwargs):
             return fake_get(url, timeout=timeout, **kwargs)
 
-    monkeypatch.setattr(pa, "requests", FakeRequests(), raising=False)
+    monkeypatch.setitem(sys.modules, "requests", FakeRequests())
 
     res = pa.map_features_to_reactome_pathways({"A"}, feature_type="gene")
     assert "R-A" in res
