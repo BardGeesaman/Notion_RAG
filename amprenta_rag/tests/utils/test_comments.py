@@ -58,10 +58,17 @@ class FakeComment:
         return object.__getattribute__(self, name)
 
 
-@dataclass
 class FakeUser:
-    id: UUID
-    username: str
+    id = _Field("id")
+
+    def __init__(self, id: UUID, username: str):
+        self._id_val = id
+        self.username = username
+
+    def __getattribute__(self, name: str):
+        if name == "id":
+            return object.__getattribute__(self, "_id_val")
+        return object.__getattribute__(self, name)
 
 
 class FakeQuery:
