@@ -135,7 +135,9 @@ class MWRepository(RepositoryInterface):
             filtered_ids: List[str] = []
             for study_id in matching_ids:
                 # Find study in summaries
-                study = next((s for s in summaries if s.get("study_id") == study_id), {})  # type: ignore[assignment]
+                study: Dict[str, Any] = next(
+                    (s for s in summaries if s.get("study_id") == study_id), {}
+                )
                 if not study:
                     continue
 
