@@ -126,6 +126,13 @@ def send_experiment_summary(experiment_id: UUID, to: str, db=None) -> bool:
         True if email sent successfully, False otherwise
     """
     if db is None:
+        # Prefer db_session context manager if available (common pattern in codebase/tests)
+        db_session_fn = globals().get("db_session")
+        if callable(db_session_fn):
+            with db_session_fn() as session:
+                return send_experiment_summary(experiment_id=experiment_id, to=to, db=session)
+
+        # Fallback: use get_db generator
         from amprenta_rag.database.base import get_db
 
         db_gen = get_db()
@@ -193,6 +200,18 @@ def send_share_notification(
         True if email sent successfully, False otherwise
     """
     if db is None:
+        db_session_fn = globals().get("db_session")
+        if callable(db_session_fn):
+            with db_session_fn() as session:
+                return send_share_notification(
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    to=to,
+                    from_user=from_user,
+                    message=message,
+                    db=session,
+                )
+
         from amprenta_rag.database.base import get_db
 
         db_gen = get_db()
