@@ -268,7 +268,8 @@ def load_signatures_from_postgres() -> List[Signature]:
                 components=components,
                 description=db_sig.description if hasattr(db_sig, 'description') else None,
             )
-            sig.id = db_sig.id  # type: ignore[attr-defined]
+            if hasattr(sig, "__setattr__"):
+                setattr(sig, "id", db_sig.id)
             signatures.append(sig)
 
         return signatures
