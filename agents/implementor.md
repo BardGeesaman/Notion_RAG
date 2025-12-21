@@ -87,3 +87,18 @@ For **bug fixes**:
 3. Verify test now passes
 
 **Coverage target**: New modules should have 80%+ coverage.
+
+---
+
+## Save As You Go
+
+To prevent lost work from API/connection failures, commit after EACH file:
+
+1. Fix one file
+2. Save the file
+3. `git add <file>`
+4. `git commit -m "fix(<scope>): <file> - <description>"`
+5. Report progress: "`<file>` fixed and committed"
+6. Move to next file
+
+This ensures incremental progress is preserved even if the session terminates unexpectedly.
