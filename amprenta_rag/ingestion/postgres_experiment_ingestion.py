@@ -152,7 +152,7 @@ def get_experiment_metadata_from_postgres(experiment: ExperimentModel) -> Dict[s
 def ingest_experiment_from_postgres(
     experiment_id: UUID,
     force: bool = False,
-    update_notion: bool = False,
+    _update_notion: bool = False,
 ) -> None:
     """
     Ingest an experiment directly from Postgres into Pinecone.
