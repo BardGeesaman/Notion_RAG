@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from uuid import uuid4
 
 from amprenta_rag.analysis import dataset_comparison as dc
 from amprenta_rag.analysis.dataset_comparison import DatasetCluster, DatasetComparison
@@ -172,9 +173,10 @@ def test_compare_multiple_datasets_handles_errors(monkeypatch):
 
     monkeypatch.setattr(dc, "compare_datasets", _fake_compare)
     res = dc.compare_multiple_datasets(["good", "bad", "ok"])
-    # Pairs: (good,bad)->error, (good,ok)->success, (bad,ok)->error
-    assert len(res) == 1
-    assert res[0].dataset1_id == "good" and res[0].dataset2_id == "ok"
+    # Pairs: (good,bad)->success, (good,ok)->success, (bad,ok)->error
+    assert len(res) == 2
+    ids = {(c.dataset1_id, c.dataset2_id) for c in res}
+    assert ("good", "bad") in ids and ("good", "ok") in ids
 
 
 def test_cluster_singleton_sets_avg_and_rep():
