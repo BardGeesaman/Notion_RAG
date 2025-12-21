@@ -43,7 +43,7 @@ def test_extract_metabolights_metabolites_no_files(monkeypatch, tmp_path):
 
     fake_mod.MetaboLightsRepository = lambda: FakeRepo()
     monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.metabolights", fake_mod)
-    mets = rfe.extract_metabolites_from_metabolights("MTBLS1", download_dir=tmp_path)
+    mets = rfe.extract_metabolights_metabolites_from_isa_tab("MTBLS1", download_dir=tmp_path)
     assert mets == set()
 
 
