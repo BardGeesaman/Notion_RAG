@@ -173,7 +173,7 @@ def test_detect_activity_cliffs_with_fake_rdkit(monkeypatch):
     class FakeActivity:
         def __init__(self, cid, smiles, assay_id, value):
             self.compound = _FakeCompound(cid, smiles)
-            self.compound_id = UUID(int=1)
+            self.compound_id = uuid4()
             self.assay_id = UUID(assay_id)
             self.value = value
 
