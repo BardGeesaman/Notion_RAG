@@ -591,3 +591,252 @@ def search_pride_studies(
         logger.error("[REPO][PRIDE] Search error: %r", e)
         return []
 
+
+def extract_pride_proteins_from_data_files(
+    study_id: str,
+    download_dir: Optional["Path"] = None,
+) -> "set[str]":
+    """
+    Extract protein features from PRIDE data files using optimized priority-based approach.
+
+    Priority order:
+    1. *.mzTab files (Community standard)
+    2. protein_groups.txt (MaxQuant standard)
+    3. *.xls/*.xlsx (Supplied spreadsheets)
+    4. Other TSV/CSV result files (fallback)
+
+    Uses pandas for efficient data extraction.
+
+    Args:
+        study_id: PRIDE project ID (e.g., "PXD012345")
+        download_dir: Directory for temporary files (optional, for caching)
+
+    Returns:
+        Set of normalized protein identifiers (accessions)
+    """
+    import io
+    import re
+    from pathlib import Path
+
+    import pandas as pd
+    import requests
+
+    if download_dir is None:
+        download_dir = Path("/tmp")
+
+    download_dir.mkdir(parents=True, exist_ok=True)
+
+    protein_set: set[str] = set()
+
+    # Ensure study_id starts with PXD
+    if not study_id.startswith("PXD"):
+        study_id = f"PXD{study_id}"
+
+    logger.info("[FEATURE-EXTRACT][PRIDE] Finding best protein data file for %s", study_id)
+
+    try:
+        # Get repository instance
+        repo = PRIDERepository()
+
+        # Fetch ALL available data files (no filtering yet)
+        data_files = repo.fetch_study_data_files(study_id=study_id)
+
+        if not data_files:
+            logger.warning("[FEATURE-EXTRACT][PRIDE] No data files found for %s", study_id)
+            return protein_set
+
+        logger.info("[FEATURE-EXTRACT][PRIDE] Found %d files, applying priority selection...", len(data_files))
+
+        # Priority-based file selection
+        target_file = None
+
+        # Priority 1: Look for *.mzTab files (Community standard)
+        mztab_files = [f for f in data_files if f.filename.lower().endswith(".mztab")]
+        if mztab_files:
+            # Prefer protein mzTab files if multiple
+            protein_mztab = [f for f in mztab_files if "protein" in f.filename.lower()]
+            target_file = protein_mztab[0] if protein_mztab else mztab_files[0]
+            logger.info("[FEATURE-EXTRACT][PRIDE] Using mzTab file: %s", target_file.filename)
+
+        # Priority 2: Look for MaxQuant protein_groups.txt
+        if not target_file:
+            maxquant_files = [f for f in data_files if "protein_groups" in f.filename.lower()]
+            if maxquant_files:
+                target_file = maxquant_files[0]
+                logger.info("[FEATURE-EXTRACT][PRIDE] Using MaxQuant file: %s", target_file.filename)
+
+        # Priority 3: Look for Excel files
+        if not target_file:
+            excel_files = [f for f in data_files if f.filename.lower().endswith((".xls", ".xlsx"))]
+            if excel_files:
+                target_file = excel_files[0]
+                logger.info("[FEATURE-EXTRACT][PRIDE] Using Excel file: %s", target_file.filename)
+
+        # Priority 4: Fallback to other protein-related TSV/CSV
+        if not target_file:
+            # Look for files with protein-related names
+            protein_files = []
+            for f in data_files:
+                fname = f.filename.lower()
+                if fname.endswith((".tsv", ".csv", ".txt")):
+                    if any(term in fname for term in ["protein", "peptide", "identification", "result"]):
+                        protein_files.append(f)
+
+            # If none found, take any TSV/CSV
+            if not protein_files:
+                protein_files = [f for f in data_files if f.filename.lower().endswith((".tsv", ".csv", ".txt"))]
+
+            if protein_files:
+                # Prefer smaller files (likely summary tables)
+                def _size_key(df: DataFile) -> int:
+                    sz = df.size_bytes
+                    if isinstance(sz, int):
+                        return sz
+                    try:
+                        return int(str(sz))
+                    except Exception:
+                        return 10**18
+
+                protein_files.sort(key=_size_key)
+                target_file = protein_files[0]
+                logger.info("[FEATURE-EXTRACT][PRIDE] Using fallback file: %s", target_file.filename)
+
+        if not target_file:
+            logger.warning("[FEATURE-EXTRACT][PRIDE] Could not find any suitable protein file for %s", study_id)
+            return protein_set
+
+        # Download file
+        download_url = target_file.download_url
+        if not download_url:
+            logger.warning("[FEATURE-EXTRACT][PRIDE] No download URL for %s", target_file.filename)
+            return protein_set
+
+        logger.info("[FEATURE-EXTRACT][PRIDE] Downloading %s (%s)", target_file.filename, download_url)
+
+        headers = {"User-Agent": REPOSITORY_USER_AGENT}
+        response = requests.get(download_url, headers=headers, timeout=300)
+        response.raise_for_status()
+
+        df = None
+
+        # Parse based on file type using pandas
+        if target_file.filename.lower().endswith(".mztab"):
+            # Parse mzTab format
+            content = response.text
+            lines = content.split("\n")
+
+            # Find PRH (Protein Header) line
+            header_line = None
+            for line in lines:
+                if line.startswith("PRH"):
+                    header_line = line
+                    break
+
+            if header_line:
+                cols = header_line.replace("PRH\t", "").split("\t")
+                data_lines = [line.replace("PRT\t", "") for line in lines if line.startswith("PRT")]
+
+                if data_lines:
+                    df = pd.read_csv(
+                        io.StringIO("\n".join(data_lines)),
+                        sep="\t",
+                        names=cols,
+                        low_memory=False,
+                    )
+            else:
+                logger.warning("[FEATURE-EXTRACT][PRIDE] No PRH header found in mzTab file")
+
+        elif "protein_groups.txt" in target_file.filename.lower():
+            df = pd.read_csv(
+                io.StringIO(response.text),
+                sep="\t",
+                low_memory=False,
+            )
+
+        elif target_file.filename.lower().endswith((".xls", ".xlsx")):
+            try:
+                engine = "openpyxl" if target_file.filename.lower().endswith(".xlsx") else None
+                df = pd.read_excel(
+                    io.BytesIO(response.content),
+                    engine=engine,
+                )
+            except ImportError:
+                logger.warning(
+                    "[FEATURE-EXTRACT][PRIDE] openpyxl not installed, cannot parse Excel file. "
+                    "Install with: pip install openpyxl",
+                )
+                return protein_set
+
+        else:
+            separator = "\t" if target_file.filename.lower().endswith(".tsv") else ","
+            df = pd.read_csv(
+                io.StringIO(response.text),
+                sep=separator,
+                low_memory=False,
+            )
+
+        if df is None or df.empty:
+            logger.warning("[FEATURE-EXTRACT][PRIDE] Could not parse file or file is empty")
+            return protein_set
+
+        logger.info("[FEATURE-EXTRACT][PRIDE] Parsed DataFrame: %d rows x %d columns", len(df), len(df.columns))
+
+        # Find protein accession column
+        accession_col = None
+        for col in df.columns:
+            col_lower = str(col).lower().strip()
+            if any(
+                keyword in col_lower
+                for keyword in [
+                    "accession",
+                    "accessions",
+                    "protein",
+                    "protein id",
+                    "proteinid",
+                    "uniprot",
+                    "uniprot id",
+                ]
+            ):
+                accession_col = col
+                break
+
+        if not accession_col:
+            accession_col = df.columns[0]
+            logger.warning("[FEATURE-EXTRACT][PRIDE] No accession column found, using first column: %s", accession_col)
+
+        from amprenta_rag.ingestion.proteomics.normalization import normalize_protein_identifier
+
+        for protein_id in df[accession_col]:
+            if pd.isna(protein_id):
+                continue
+
+            protein_id_str = str(protein_id).strip().strip('"').strip("'")
+
+            if protein_id_str and not protein_id_str.startswith("#"):
+                # Some tables have multiple accessions in one cell; keep first token-ish.
+                # (Use a light heuristic to avoid exploding the set.)
+                parts = re.split(r"[;,\s]+", protein_id_str)
+                for part in parts:
+                    part = part.strip()
+                    if not part:
+                        continue
+                    normalized = normalize_protein_identifier(part)
+                    if normalized:
+                        protein_set.add(normalized)
+                    break
+
+        logger.info(
+            "[FEATURE-EXTRACT][PRIDE] Extracted %d unique protein accessions from %s",
+            len(protein_set),
+            target_file.filename,
+        )
+
+        return protein_set
+
+    except Exception as e:
+        logger.error("[FEATURE-EXTRACT][PRIDE] Error extracting proteins: %r", e)
+        import traceback
+
+        logger.debug("[FEATURE-EXTRACT][PRIDE] Traceback: %s", traceback.format_exc())
+        return protein_set
+
