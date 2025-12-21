@@ -71,6 +71,19 @@ class _FakeRecord:
         self.semantic_metadata = {}
         self.id = uuid4()
 
+class _Col:
+    def __init__(self, attr: str):
+        self.attr = attr
+
+    def ilike(self, value):
+        return self
+
+    def in_(self, values):
+        return self
+
+    def __eq__(self, other):
+        return self
+
 
 def test_link_features_to_dataset_appends(monkeypatch):
     dataset = _FakeDataset()
@@ -96,6 +109,9 @@ def test_find_or_create_feature_creates_when_missing(monkeypatch):
     created = {}
 
     class FakeFeatureModel:
+        name = _Col("name")
+        feature_type = _Col("feature_type")
+
         def __init__(self, name, feature_type):
             created["name"] = name
             created["feature_type"] = feature_type
@@ -116,6 +132,9 @@ def test_batch_link_features_to_dataset(monkeypatch):
     db = _FakeSession(dataset=dataset)
 
     class FakeFeatureModel:
+        name = _Col("name")
+        feature_type = _Col("feature_type")
+
         def __init__(self, name, feature_type):
             self.name = name
             self.feature_type = feature_type
