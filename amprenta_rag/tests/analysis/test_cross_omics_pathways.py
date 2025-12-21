@@ -13,12 +13,6 @@ class FakeFeature:
         self.id = uuid4()
 
 
-class FakeDataset:
-    def __init__(self, id_, features):
-        self.id = id_
-        self.features = features
-
-
 class FakeProgram:
     def __init__(self, datasets):
         self.datasets = datasets
@@ -45,10 +39,8 @@ class FakeSession:
     def __init__(self, program=None, features=None):
         self.program = program
         self.features = features or []
-        self.calls = 0
 
     def query(self, model):
-        # First call for Program in get_cross_omics_enrichment
         if model is cop.Program:
             return FakeQuery([self.program] if self.program else [])
         return FakeQuery(self.features)
