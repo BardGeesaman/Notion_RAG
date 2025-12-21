@@ -1,8 +1,10 @@
 """Notification service for managing user notifications."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Any, cast
 from uuid import UUID
+
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 from amprenta_rag.database.models import Notification
 from amprenta_rag.logging_utils import get_logger
@@ -31,7 +33,7 @@ def create_notification(
         Created Notification object
     """
     notification = Notification(
-        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,  # type: ignore[arg-type]
+        user_id=cast(Any, ensure_uuid(user_id)),
         title=title,
         message=message,
         notification_type=notification_type,
@@ -61,7 +63,7 @@ def get_unread_notifications(user_id: str, db, limit: int = 10) -> List[Notifica
     notifications = (
         db.query(Notification)
         .filter(
-            Notification.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
+            Notification.user_id == ensure_uuid(user_id),
             Notification.is_read.is_(False),
         )
         .order_by(Notification.created_at.desc())
@@ -86,7 +88,7 @@ def get_unread_count(user_id: str, db) -> int:
     count = (
         db.query(Notification)
         .filter(
-            Notification.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
+            Notification.user_id == ensure_uuid(user_id),
             Notification.is_read.is_(False),
         )
         .count()
@@ -104,7 +106,7 @@ def mark_as_read(notification_id: str, db) -> None:
         db: Database session
     """
     notification = db.query(Notification).filter(
-        Notification.id == (UUID(notification_id) if isinstance(notification_id, str) else notification_id)
+        Notification.id == ensure_uuid(notification_id)
     ).first()
 
     if notification:
@@ -126,8 +128,8 @@ def mark_all_read(user_id: str, db) -> None:
     updated = (
         db.query(Notification)
         .filter(
-            Notification.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
-            not Notification.is_read,
+            Notification.user_id == ensure_uuid(user_id),
+            Notification.is_read.is_(False),
         )
         .update({"is_read": True})
     )
