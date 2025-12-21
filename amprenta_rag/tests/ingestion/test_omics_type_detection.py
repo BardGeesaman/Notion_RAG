@@ -44,4 +44,3 @@ def test_detect_omics_type_failure(tmp_path):
 def test_detect_omics_type_read_error(monkeypatch):
     # Passing a directory path raises IsADirectoryError on open
     assert otd.detect_omics_type(".") is None
-
