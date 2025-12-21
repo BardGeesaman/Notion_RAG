@@ -162,11 +162,12 @@ def test_detect_activity_cliffs_with_fake_rdkit(monkeypatch):
     fake_rdkit.Chem = FakeChem("Chem")
     fake_rdkit.Chem.AllChem = FakeAllChem("AllChem")
     fake_rdkit.Chem.DataStructs = FakeDataStructs("DataStructs")
+    fake_rdkit.DataStructs = fake_rdkit.Chem.DataStructs
     monkeypatch.setitem(sys.modules, "rdkit", fake_rdkit)
     monkeypatch.setitem(sys.modules, "rdkit.Chem", fake_rdkit.Chem)
     monkeypatch.setitem(sys.modules, "rdkit.Chem.AllChem", fake_rdkit.Chem.AllChem)
     monkeypatch.setitem(sys.modules, "rdkit.Chem.DataStructs", fake_rdkit.Chem.DataStructs)
-    monkeypatch.setitem(sys.modules, "rdkit.DataStructs", fake_rdkit.Chem.DataStructs)
+    monkeypatch.setitem(sys.modules, "rdkit.DataStructs", fake_rdkit.DataStructs)
 
     # Fake ActivityResult and Compound rows
     class FakeActivity:
