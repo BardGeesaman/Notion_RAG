@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from uuid import uuid4
+from datetime import datetime
 
 from amprenta_rag.agent import chat_agent
 from amprenta_rag.agent.chat_types import ChatSessionState
@@ -12,7 +13,7 @@ class FakeRagResult:
 
 
 def make_session():
-    return ChatSessionState(turns=[])
+    return ChatSessionState(id=uuid4(), created_at=datetime.utcnow(), turns=[])
 
 
 def test_run_chat_turn_freeform(monkeypatch):
