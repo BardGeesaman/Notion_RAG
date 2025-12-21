@@ -6,7 +6,7 @@ This module provides functions for processing and filtering Pinecone matches.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from amprenta_rag.query.rag.models import MatchSummary
 
@@ -41,7 +41,7 @@ def summarize_match(raw_match: Any) -> MatchSummary:
         MatchSummary object with extracted fields
     """
     if isinstance(raw_match, dict):
-        meta: Dict[str, Any] = raw_match.get("metadata", {})  # type: ignore[assignment]
+        meta = cast(Dict[str, Any], raw_match.get("metadata", {}) or {})
         _id = raw_match.get("id")
         _score = raw_match.get("score", 0.0)
     else:
