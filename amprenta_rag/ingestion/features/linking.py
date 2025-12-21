@@ -10,19 +10,19 @@ without changes.
 
 from __future__ import annotations
 
+import importlib
 from typing import Any
 
-from amprenta_rag.ingestion.features import general_linking as _gl  # type: ignore[import]
-from amprenta_rag.ingestion.features import metabolite_linking as _ml  # type: ignore[import]
+_gl = importlib.import_module("amprenta_rag.ingestion.features.general_linking")
+_ml = importlib.import_module("amprenta_rag.ingestion.features.metabolite_linking")
 
-# Best-effort attribute lookups; silence missing attrs for mypy
-_add_dataset_relation: Any = getattr(_gl, "_add_dataset_relation", None)  # type: ignore[attr-defined]
-_find_or_create_feature_page: Any = getattr(_gl, "_find_or_create_feature_page", None)  # type: ignore[attr-defined]
-link_feature: Any = getattr(_gl, "link_feature", None)  # type: ignore[attr-defined]
+_add_dataset_relation: Any = getattr(_gl, "_add_dataset_relation", None)
+_find_or_create_feature_page: Any = getattr(_gl, "_find_or_create_feature_page", None)
+link_feature: Any = getattr(_gl, "link_feature", None)
 
-_add_relation_to_metabolite_page: Any = getattr(_ml, "_add_relation_to_metabolite_page", None)  # type: ignore[attr-defined]
-_find_or_create_metabolite_page: Any = getattr(_ml, "_find_or_create_metabolite_page", None)  # type: ignore[attr-defined]
-link_features_to_notion_items: Any = getattr(_ml, "link_features_to_notion_items", None)  # type: ignore[attr-defined]
+_add_relation_to_metabolite_page: Any = getattr(_ml, "_add_relation_to_metabolite_page", None)
+_find_or_create_metabolite_page: Any = getattr(_ml, "_find_or_create_metabolite_page", None)
+link_features_to_notion_items: Any = getattr(_ml, "link_features_to_notion_items", None)
 
 __all__ = [
     "_find_or_create_metabolite_page",

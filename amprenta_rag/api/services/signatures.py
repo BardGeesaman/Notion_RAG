@@ -2,7 +2,7 @@
 CRUD services for Signatures.
 """
 
-from typing import List, Optional, cast
+from typing import Any, List, Optional, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -19,21 +19,20 @@ import uuid
 def create_signature(db: Session, signature: SignatureCreate) -> SignatureModel:
     """Create a new signature."""
     db_signature = SignatureModel(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=signature.name,
         description=signature.description,
     )
 
     # Add components
     for comp in signature.components:
+        weight_value: float | None = float(comp.weight) if comp.weight is not None else None
         db_component = SignatureComponentModel(
-            id=uuid.uuid4(),  # type: ignore[arg-type]
-            signature_id=cast(UUID, db_signature.id),  # type: ignore[arg-type]
-            feature_id=comp.feature_id,  # type: ignore[arg-type]
+            signature_id=cast(Any, db_signature.id),
+            feature_id=cast(Any, comp.feature_id),
             feature_name=comp.feature_name,
             feature_type=comp.feature_type.value,
             direction=comp.direction.value if comp.direction else None,
-            weight=comp.weight or 1.0,  # type: ignore[arg-type]
+            weight=cast(Any, weight_value),
         )
         db_signature.components.append(db_component)
 
@@ -45,7 +44,7 @@ def create_signature(db: Session, signature: SignatureCreate) -> SignatureModel:
 
     # Auto-compute modalities from components
     modalities = list(set(comp.feature_type.value for comp in signature.components))
-    db_signature.modalities = modalities  # type: ignore[assignment]
+    setattr(db_signature, "modalities", modalities)
 
     # Add program relationships
     if signature.program_ids:
@@ -116,14 +115,14 @@ def update_signature(
         # Add new components
         modalities = []
         for comp in components:
+            weight_value: float | None = float(comp.weight) if comp.weight is not None else None
             db_component = SignatureComponentModel(
-                id=uuid.uuid4(),  # type: ignore[arg-type]
-                signature_id=cast(UUID, db_signature.id),  # type: ignore[arg-type]
-                feature_id=comp.feature_id,  # type: ignore[arg-type]
+                signature_id=cast(Any, db_signature.id),
+                feature_id=cast(Any, comp.feature_id),
                 feature_name=comp.feature_name,
                 feature_type=comp.feature_type.value,
                 direction=comp.direction.value if comp.direction else None,
-                weight=comp.weight or 1.0,  # type: ignore[arg-type]
+                weight=cast(Any, weight_value),
             )
             db_signature.components.append(db_component)
             modalities.append(comp.feature_type.value)
@@ -135,7 +134,7 @@ def update_signature(
                     db_signature.features.append(feature)
 
         # Update modalities
-        db_signature.modalities = list(set(modalities))  # type: ignore[assignment]
+        setattr(db_signature, "modalities", list(set(modalities)))
 
     # Update program relationships if provided
     if program_ids is not None:

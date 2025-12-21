@@ -18,7 +18,7 @@ class _Field:
 
 
 class FakeDataset:
-    id = _Field("dataset_id")
+    id: Any = _Field("dataset_id")
 
     def __init__(self, id_: str, features=None, signatures=None):
         self.id = uuid.UUID(id_)
@@ -27,7 +27,7 @@ class FakeDataset:
 
 
 class FakeSignature:
-    id = _Field("signature_id")
+    id: Any = _Field("signature_id")
     datasets: List[FakeDataset] = []
 
     def __init__(self, id_: str, datasets: List[FakeDataset]):
@@ -36,7 +36,7 @@ class FakeSignature:
 
 
 class FakeFeature:
-    id = _Field("feature_id")
+    id: Any = _Field("feature_id")
 
     def __init__(self, id_: str, name: str):
         self.id = id_
@@ -44,8 +44,8 @@ class FakeFeature:
 
 
 class FakeComponent:
-    signature_id = _Field("signature_id")
-    feature_id = _Field("feature_id")
+    signature_id: Any = _Field("signature_id")
+    feature_id: Any = _Field("feature_id")
 
     def __init__(self, signature_id: str, feature_name: str | None = None, feature_id: str | None = None):
         self.signature_id = signature_id

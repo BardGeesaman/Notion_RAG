@@ -113,16 +113,16 @@ def _create_signature_in_postgres_impl(
             existing.description = description
             updated = True
         if biomarker_roles and not existing.biomarker_role:
-            existing.biomarker_role = biomarker_roles  # type: ignore[assignment]
+            setattr(existing, "biomarker_role", biomarker_roles)
             updated = True
         if phenotype_axes and not existing.phenotype_axes:
-            existing.phenotype_axes = phenotype_axes  # type: ignore[assignment]
+            setattr(existing, "phenotype_axes", phenotype_axes)
             updated = True
         if data_ownership and not existing.data_ownership:
             existing.data_ownership = data_ownership
             updated = True
         if signature.modalities and not existing.modalities:
-            existing.modalities = signature.modalities  # type: ignore[assignment]
+            setattr(existing, "modalities", signature.modalities)
             updated = True
         if not existing.short_id:
             existing.short_id = short_id
@@ -138,10 +138,10 @@ def _create_signature_in_postgres_impl(
     new_signature = SignatureModel(
         name=signature.name,
         description=description or signature.description,
-        modalities=signature.modalities or [],  # type: ignore[arg-type]
+        modalities=signature.modalities if signature.modalities is not None else [],
         short_id=short_id,
-        biomarker_role=biomarker_roles or [],  # type: ignore[arg-type]
-        phenotype_axes=phenotype_axes or [],  # type: ignore[arg-type]
+        biomarker_role=biomarker_roles if biomarker_roles is not None else [],
+        phenotype_axes=phenotype_axes if phenotype_axes is not None else [],
         data_ownership=data_ownership,
     )
 
@@ -255,14 +255,14 @@ def _create_signature_components_in_postgres_impl(
                 )
 
                 # Create component
-                weight_value: float | None = float(weight) if weight is not None else None
+                weight_value: float = float(weight) if weight is not None else 1.0
                 new_component = SignatureComponentModel(
                     signature_id=signature_model.id,
                     feature_id=feature_model.id if feature_model else None,
                     feature_name=feature_name_raw,
                     feature_type=feature_type_str,
                     direction=direction,
-                    weight=weight_value,  # type: ignore[arg-type]
+                    weight=weight_value,
                 )
 
                 db.add(new_component)
@@ -464,13 +464,13 @@ def _link_signature_to_postgres_source_impl(
         signature = db.query(SignatureModel).filter(SignatureModel.id == signature_id).first()
         if signature:
             if not getattr(signature, "external_ids", None):
-                signature.external_ids = {}  # type: ignore[attr-defined]
+                signature.external_ids = {}
 
             source_key = f"{source_type}_source"
             if source_notion_id:
-                signature.external_ids[source_key] = source_notion_id  # type: ignore[attr-defined]
+                signature.external_ids[source_key] = source_notion_id
             elif source_id:
-                signature.external_ids[f"{source_key}_uuid"] = str(source_id)  # type: ignore[attr-defined]
+                signature.external_ids[f"{source_key}_uuid"] = str(source_id)
 
             db.commit()
             logger.debug(

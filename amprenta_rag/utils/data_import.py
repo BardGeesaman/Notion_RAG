@@ -103,7 +103,7 @@ def import_experiments(df: pd.DataFrame, db, user_id: Optional[str] = None) -> d
                 design_type=row.get("design_type"),
                 design_metadata=json.loads(row["design_metadata"]) if pd.notna(row.get("design_metadata")) else None,
                 sample_groups=json.loads(row["sample_groups"]) if pd.notna(row.get("sample_groups")) else None,
-                created_by_id=UUID(user_id) if user_id and user_id != "test" else None,  # type: ignore[arg-type]
+                created_by_id=UUID(user_id) if user_id and user_id != "test" else None,
             )
 
             db.add(experiment)
@@ -182,11 +182,11 @@ def import_compounds(df: pd.DataFrame, db) -> dict:
                 inchi_key=inchi_key,
                 canonical_smiles=canonical,
                 molecular_formula=formula,
-                molecular_weight=descriptors.get("molecular_weight"),  # type: ignore[arg-type]
-                logp=descriptors.get("logp"),  # type: ignore[arg-type]
-                hbd_count=descriptors.get("hbd_count"),  # type: ignore[arg-type]
-                hba_count=descriptors.get("hba_count"),  # type: ignore[arg-type]
-                rotatable_bonds=descriptors.get("rotatable_bonds"),  # type: ignore[arg-type]
+                molecular_weight=_to_optional_float(descriptors.get("molecular_weight")),
+                logp=_to_optional_float(descriptors.get("logp")),
+                hbd_count=_to_optional_int(descriptors.get("hbd_count")),
+                hba_count=_to_optional_int(descriptors.get("hba_count")),
+                rotatable_bonds=_to_optional_int(descriptors.get("rotatable_bonds")),
             )
 
             db.add(compound)
@@ -269,10 +269,10 @@ def import_samples(df: pd.DataFrame, db, user_id: Optional[str] = None) -> dict:
                 position=row.get("position"),
                 parent_sample_id=parent_sample_id,
                 experiment_id=experiment_id,
-                quantity=float(row["quantity"]) if pd.notna(row.get("quantity")) else None,  # type: ignore[arg-type]
+                quantity=float(row["quantity"]) if pd.notna(row.get("quantity")) else None,
                 unit=row.get("unit"),
                 status=row.get("status", "available"),
-                created_by_id=UUID(user_id) if user_id and user_id != "test" else None,  # type: ignore[arg-type]
+                created_by_id=UUID(user_id) if user_id and user_id != "test" else None,
                 notes=row.get("notes"),
             )
 

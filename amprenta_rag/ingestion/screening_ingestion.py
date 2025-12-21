@@ -174,8 +174,8 @@ def ingest_hts_hit_list(
             inchi_key=inchi_key,
             canonical_smiles=canonical_smiles,
             molecular_formula=molecular_formula,
-            molecular_weight=_to_optional_float(descriptors.get("molecular_weight")),  # type: ignore[arg-type]
-            logp=_to_optional_float(descriptors.get("logp")),  # type: ignore[arg-type]
+            molecular_weight=_to_optional_float(descriptors.get("molecular_weight")),
+            logp=_to_optional_float(descriptors.get("logp")),
             hbd_count=_to_optional_int(descriptors.get("hbd_count")),
             hba_count=_to_optional_int(descriptors.get("hba_count")),
             rotatable_bonds=_to_optional_int(descriptors.get("rotatable_bonds")),
@@ -210,11 +210,11 @@ def ingest_hts_hit_list(
 
         result = HTSResult(
             result_id=result_id,
-            campaign_id=campaign_id,  # type: ignore[arg-type]
-            compound_id=compound_id,  # type: ignore[arg-type]
+            campaign_id=str(campaign_id) if campaign_id is not None else None,
+            compound_id=str(compound_id),
             well_position=None,  # Not available in hit lists typically
-            raw_value=raw_value,  # type: ignore[arg-type]
-            normalized_value=raw_value,  # type: ignore[arg-type]  # Could add normalization logic
+            raw_value=raw_value,
+            normalized_value=raw_value,  # Could add normalization logic
             z_score=None,
             hit_flag=hit_flag,
             hit_category=hit_category,
@@ -300,8 +300,8 @@ def ingest_biochemical_results(
             inchi_key=inchi_key,
             canonical_smiles=canonical_smiles,
             molecular_formula=molecular_formula,
-            molecular_weight=_to_optional_float(descriptors.get("molecular_weight")),  # type: ignore[arg-type]
-            logp=_to_optional_float(descriptors.get("logp")),  # type: ignore[arg-type]
+            molecular_weight=_to_optional_float(descriptors.get("molecular_weight")),
+            logp=_to_optional_float(descriptors.get("logp")),
             hbd_count=_to_optional_int(descriptors.get("hbd_count")),
             hba_count=_to_optional_int(descriptors.get("hba_count")),
             rotatable_bonds=_to_optional_int(descriptors.get("rotatable_bonds")),
@@ -340,7 +340,7 @@ def ingest_biochemical_results(
 
         result = BiochemicalResult(
             result_id=result_id,
-            compound_id=compound_id,  # type: ignore[arg-type]
+            compound_id=str(compound_id),
             assay_name=assay_name,
             target=target,
             ic50=ic50,

@@ -15,7 +15,7 @@ Key Principles:
 
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Sequence, cast
 from uuid import UUID
 import uuid
 
@@ -62,11 +62,11 @@ def create_program(
     Returns:
         Created Program object
     """
+    disease_list: List[str] = list(disease) if disease else []
     program = Program(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=name,
         description=description,
-        disease=disease or [],  # type: ignore[arg-type]
+        disease=cast(Any, disease_list),
         notion_page_id=notion_page_id,
         external_ids=external_ids or {},
     )
@@ -167,16 +167,20 @@ def create_experiment(
     commit: bool = True,
 ) -> Experiment:
     """Create a new experiment in the database."""
+    disease_list: List[str] = list(disease) if disease else []
+    matrix_list: List[str] = list(matrix) if matrix else []
+    model_systems_list: List[str] = list(model_systems) if model_systems else []
+    targets_list: List[str] = list(targets) if targets else []
+    modality_list: List[str] = list(modality) if modality else []
     experiment = Experiment(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=name,
         type=experiment_type,
         description=description,
-        disease=disease or [],  # type: ignore[arg-type]
-        matrix=matrix or [],  # type: ignore[arg-type]
-        model_systems=model_systems or [],  # type: ignore[arg-type]
-        targets=targets or [],  # type: ignore[arg-type]
-        modality=modality or [],  # type: ignore[arg-type]
+        disease=cast(Any, disease_list),
+        matrix=cast(Any, matrix_list),
+        model_systems=cast(Any, model_systems_list),
+        targets=cast(Any, targets_list),
+        modality=cast(Any, modality_list),
         notion_page_id=notion_page_id,
     )
 
@@ -260,16 +264,20 @@ def create_dataset(
     commit: bool = True,
 ) -> Dataset:
     """Create a new dataset in the database."""
+    file_paths_list: List[str] = list(file_paths) if file_paths else []
+    file_urls_list: List[str] = list(file_urls) if file_urls else []
+    organism_list: List[str] = list(organism) if organism else []
+    sample_type_list: List[str] = list(sample_type) if sample_type else []
+    disease_list: List[str] = list(disease) if disease else []
     dataset = Dataset(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=name,
         omics_type=omics_type,
         description=description,
-        file_paths=file_paths or [],  # type: ignore[arg-type]
-        file_urls=file_urls or [],  # type: ignore[arg-type]
-        organism=organism or [],  # type: ignore[arg-type]
-        sample_type=sample_type or [],  # type: ignore[arg-type]
-        disease=disease or [],  # type: ignore[arg-type]
+        file_paths=cast(Any, file_paths_list),
+        file_urls=cast(Any, file_urls_list),
+        organism=cast(Any, organism_list),
+        sample_type=cast(Any, sample_type_list),
+        disease=cast(Any, disease_list),
         methods=methods,
         summary=summary,
         results=results,
@@ -374,12 +382,12 @@ def create_feature(
     commit: bool = True,
 ) -> Feature:
     """Create a new feature in the database."""
+    aliases_list: List[str] = list(aliases) if aliases else []
     feature = Feature(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=name,
         feature_type=feature_type,
         normalized_name=normalized_name or name,
-        aliases=aliases or [],  # type: ignore[arg-type]
+        aliases=cast(Any, aliases_list),
         notion_page_id=notion_page_id,
         external_ids=external_ids or {},
     )
@@ -517,14 +525,16 @@ def create_signature(
     commit: bool = True,
 ) -> Signature:
     """Create a new signature in the database."""
+    modalities_list: List[str] = list(modalities) if modalities else []
+    biomarker_list: List[str] = list(biomarker_role) if biomarker_role else []
+    phenotype_list: List[str] = list(phenotype_axes) if phenotype_axes else []
     signature = Signature(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
         name=name,
         description=description,
-        modalities=modalities or [],  # type: ignore[arg-type]
+        modalities=cast(Any, modalities_list),
         short_id=short_id,
-        biomarker_role=biomarker_role or [],  # type: ignore[arg-type]
-        phenotype_axes=phenotype_axes or [],  # type: ignore[arg-type]
+        biomarker_role=cast(Any, biomarker_list),
+        phenotype_axes=cast(Any, phenotype_list),
         data_ownership=data_ownership,
         notion_page_id=notion_page_id,
     )
@@ -554,14 +564,14 @@ def create_signature_component(
     commit: bool = True,
 ) -> SignatureComponent:
     """Create a signature component."""
+    weight_value: float | None = float(weight) if weight is not None else None
     component = SignatureComponent(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
-        signature_id=signature_id,  # type: ignore[arg-type]
-        feature_id=feature_id,  # type: ignore[arg-type]
+        signature_id=cast(Any, signature_id),
+        feature_id=cast(Any, feature_id),
         feature_name=feature_name,
         feature_type=feature_type,
         direction=direction,
-        weight=float(weight),  # type: ignore[arg-type]
+        weight=cast(Any, weight_value),
     )
 
     db.add(component)
@@ -729,8 +739,8 @@ def link_dataset_to_signature(
 
         # If match_score is provided, update the junction table
         # This requires direct SQL manipulation - simplified version for now
-        if match_score is not None:
-            dataset.signature_match_score = float(match_score)  # type: ignore[assignment]
+        if match_score is not None and hasattr(dataset, "signature_match_score"):
+            setattr(dataset, "signature_match_score", float(match_score))
 
         if commit:
             db.commit()
