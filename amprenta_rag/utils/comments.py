@@ -3,7 +3,7 @@
 from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.orm import Session
-from amprenta_rag.database.models import Comment, User  # type: ignore[attr-defined]
+from amprenta_rag.database.models import Comment, User
 
 
 def add_comment(
