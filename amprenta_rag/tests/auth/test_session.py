@@ -1,49 +1,85 @@
-from unittest.mock import patch
+from __future__ import annotations
 
 import pytest
+import time
+from amprenta_rag.auth import session
 
-from amprenta_rag.auth import session as session_mod
+def test_get_current_user(monkeypatch):
+    monkeypatch.setattr(session.st, "session_state", {"user": {"name": "test"}})
+    assert session.get_current_user() == {"name": "test"}
+    
+    monkeypatch.setattr(session.st, "session_state", {})
+    assert session.get_current_user() is None
 
+def test_set_current_user(monkeypatch):
+    state = {}
+    monkeypatch.setattr(session.st, "session_state", state)
+    session.set_current_user({"name": "new"})
+    assert state["user"] == {"name": "new"}
 
-@pytest.fixture
-def mock_session_state():
-    with patch("amprenta_rag.auth.session.st") as mock_st:
-        mock_st.session_state = {}
-        yield mock_st.session_state
+def test_clear_session(monkeypatch):
+    state = {"user": "exists"}
+    monkeypatch.setattr(session.st, "session_state", state)
+    session.clear_session()
+    assert "user" not in state
 
+def test_is_authenticated(monkeypatch):
+    monkeypatch.setattr(session.st, "session_state", {"user": "exists"})
+    assert session.is_authenticated() is True
+    
+    monkeypatch.setattr(session.st, "session_state", {})
+    assert session.is_authenticated() is False
 
-def test_set_and_get_current_user(mock_session_state):
-    user = {"id": "u1", "username": "dev"}
-    session_mod.set_current_user(user)
-    assert session_mod.get_current_user() == user
+def test_require_auth(monkeypatch):
+    # Mirrors is_authenticated for now
+    monkeypatch.setattr(session.st, "session_state", {"user": "exists"})
+    assert session.require_auth() is True
 
+def test_update_last_activity(monkeypatch):
+    state = {}
+    monkeypatch.setattr(session.st, "session_state", state)
+    session.update_last_activity()
+    assert "last_activity" in state
+    assert isinstance(state["last_activity"], float)
 
-def test_clear_session(mock_session_state):
-    session_mod.set_current_user({"id": "u1"})
-    assert session_mod.is_authenticated() is True
-    session_mod.clear_session()
-    assert session_mod.is_authenticated() is False
-    assert session_mod.get_current_user() is None
+def test_check_session_timeout(monkeypatch):
+    state = {"user": "u"}
+    monkeypatch.setattr(session.st, "session_state", state)
+    
+    # 1. Not authenticated
+    monkeypatch.setattr(session.st, "session_state", {})
+    assert session.check_session_timeout() is False
+    
+    # 2. Authenticated, no last activity -> initializes it, not timed out
+    state = {"user": "u"}
+    monkeypatch.setattr(session.st, "session_state", state)
+    assert session.check_session_timeout() is False
+    assert "last_activity" in state
+    
+    # 3. Authenticated, recent activity -> not timed out
+    state["last_activity"] = time.time()
+    assert session.check_session_timeout(timeout_minutes=30) is False
+    
+    # 4. Authenticated, old activity -> timed out
+    state["last_activity"] = time.time() - (31 * 60) # 31 mins ago
+    assert session.check_session_timeout(timeout_minutes=30) is True
 
-
-def test_is_authenticated(mock_session_state):
-    assert session_mod.is_authenticated() is False
-    session_mod.set_current_user({"id": "u1"})
-    assert session_mod.is_authenticated() is True
-
-
-def test_check_session_timeout(mock_session_state):
-    # Authenticate user
-    session_mod.set_current_user({"id": "u1"})
-
-    # If last_activity missing, it should initialize and not time out
-    with patch("amprenta_rag.auth.session.time.time", return_value=1000.0):
-        assert session_mod.check_session_timeout(timeout_minutes=30) is False
-        assert "last_activity" in mock_session_state
-
-    # If last_activity is old enough, should time out
-    mock_session_state["last_activity"] = 0.0
-    with patch("amprenta_rag.auth.session.time.time", return_value=(31 * 60) + 1.0):
-        assert session_mod.check_session_timeout(timeout_minutes=30) is True
-
-
+def test_get_session_remaining(monkeypatch):
+    # 1. Not authenticated
+    monkeypatch.setattr(session.st, "session_state", {})
+    assert session.get_session_remaining() == 0
+    
+    # 2. Authenticated, no activity
+    state = {"user": "u"}
+    monkeypatch.setattr(session.st, "session_state", state)
+    assert session.get_session_remaining(30) == 30
+    
+    # 3. Authenticated, 10 mins elapsed
+    state["last_activity"] = time.time() - (10 * 60)
+    # roughly 20 mins remaining
+    rem = session.get_session_remaining(30)
+    assert 19 <= rem <= 20
+    
+    # 4. Authenticated, timed out
+    state["last_activity"] = time.time() - (40 * 60)
+    assert session.get_session_remaining(30) == 0
