@@ -68,9 +68,24 @@ def test_discover_signatures_overlap_clustering():
     # Cluster 1: {A, B} (co-occur in d1, d2)
     # Cluster 2: {X, Y} (co-occur in d2, d3)
     
-    ds1 = DiscoveryDatasetSummary(d1, "gene", {"A", "B"}, "d")
-    ds2 = DiscoveryDatasetSummary(d2, "gene", {"A", "B", "X", "Y"}, "d")
-    ds3 = DiscoveryDatasetSummary(d3, "gene", {"X", "Y"}, "d")
+    ds1 = DiscoveryDatasetSummary(
+        dataset_id=d1, 
+        omics_type="gene", 
+        features={"A", "B"}, 
+        disease="d"
+    )
+    ds2 = DiscoveryDatasetSummary(
+        dataset_id=d2, 
+        omics_type="gene", 
+        features={"A", "B", "X", "Y"}, 
+        disease="d"
+    )
+    ds3 = DiscoveryDatasetSummary(
+        dataset_id=d3, 
+        omics_type="gene", 
+        features={"X", "Y"}, 
+        disease="d"
+    )
     
     res = sd.discover_signatures_from_datasets([ds1, ds2, ds3], min_support=2, min_overlap=0.9)
     
@@ -79,4 +94,3 @@ def test_discover_signatures_overlap_clustering():
     
     sigs = sorted([sorted([c.feature for c in s.components]) for s in res])
     assert sigs == [["A", "B"], ["X", "Y"]]
-
