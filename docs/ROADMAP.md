@@ -65,10 +65,12 @@ Simple status legend:
 ### Testing & Development
 - ✅ Comprehensive Test Data Seeding Suite (all domains, size presets, deterministic)
 - ✅ Phase 2 Code Quality (2025-12-19): ruff.toml config, 6,252 whitespace fixes, 213 F401 fixes, 22 E712 fixes, model re-exports restored
-- ✅ Test Suite: 499 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker)
+- ✅ Test Suite: 796 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker, in CI)
 - ✅ Playwright E2E Separation (2025-12-19): chromium installed, server-dependent tests marked and deselected from default runs
 - ✅ Mypy Type Checking Setup (2025-12-19): gradual typing with strict API layer, 54% error reduction (597→273), type stubs installed
-- ✅ Test Coverage Milestone (2025-12-19): 50% achieved (+13% in one session), 144 new tests, TDD workflow documented, CI threshold 35%→48%
+- ✅ Code Quality Optimization (2025-12-21): 70% coverage achieved, type ignores reduced 69%, pre-commit hooks, Bandit security scanning, E2E tests in CI
+- ❌ Dependency Audit: Detect outdated/vulnerable dependencies (future)
+- ❌ Dead Code Detection: Identify and remove unused code (future)
 
 ---
 
