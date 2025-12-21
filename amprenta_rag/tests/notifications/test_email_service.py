@@ -1,11 +1,32 @@
 from __future__ import annotations
 
 from uuid import uuid4
-
 import pytest
-
 from amprenta_rag.notifications import email_service as es
 
+# Define FakeDB at module level so it's available to test_send_share_notification_unknown
+class FakeQuery:
+    def __init__(self, obj=None):
+        self.obj = obj
+
+    def filter(self, *a, **k):
+        return self
+
+    def first(self):
+        return self.obj
+
+class FakeDB:
+    def __init__(self, obj=None):
+        self.obj = obj
+
+    def query(self, model):
+        return FakeQuery(self.obj)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
 
 class _FakeSMTP:
     def __init__(self):
@@ -67,31 +88,13 @@ def test_send_email_success_with_attachment(monkeypatch):
 
 def test_send_experiment_summary_missing(monkeypatch):
     monkeypatch.setattr(es, "send_email", lambda *a, **k: True)
-
-    class FakeQuery:
-        def filter(self, *a, **k):
-            return self
-
-        def first(self):
-            return None
-
-    class FakeDB:
-        def query(self, model):
-            return FakeQuery()
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *exc):
-            return False
-
-    es.db_session = lambda: FakeDB()
+    # Inject db_session into module globals for the service to pick up
+    monkeypatch.setitem(es.__dict__, "db_session", lambda: FakeDB())
     assert es.send_experiment_summary(uuid4(), "to@example.com", None) is False
 
 
 def test_send_experiment_summary_happy(monkeypatch):
     calls = {}
-
     class FakeExperiment:
         def __init__(self):
             self.id = uuid4()
@@ -101,31 +104,8 @@ def test_send_experiment_summary_happy(monkeypatch):
             self.organism = "human"
             self.datasets = []
 
-    class FakeQuery:
-        def __init__(self, obj):
-            self.obj = obj
-
-        def filter(self, *a, **k):
-            return self
-
-        def first(self):
-            return self.obj
-
-    class FakeDB:
-        def __init__(self, obj):
-            self.obj = obj
-
-        def query(self, model):
-            return FakeQuery(self.obj)
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *exc):
-            return False
-
     fake_exp = FakeExperiment()
-    es.db_session = lambda: FakeDB(fake_exp)
+    monkeypatch.setitem(es.__dict__, "db_session", lambda: FakeDB(fake_exp))
     monkeypatch.setattr(es, "get_experiment_summary_html", lambda exp, ds: "html")
     monkeypatch.setattr(es, "send_email", lambda to, subj, body, html_body=None: calls.setdefault("sent", True))
 
@@ -135,37 +115,13 @@ def test_send_experiment_summary_happy(monkeypatch):
 
 def test_send_share_notification_compound(monkeypatch):
     calls = {}
-
     class FakeCompound:
         def __init__(self):
             self.id = uuid4()
             self.compound_id = "CID"
             self.name = "Name"
 
-    class FakeQuery:
-        def __init__(self, obj):
-            self.obj = obj
-
-        def filter(self, *a, **k):
-            return self
-
-        def first(self):
-            return self.obj
-
-    class FakeDB:
-        def __init__(self, obj):
-            self.obj = obj
-
-        def query(self, model):
-            return FakeQuery(self.obj)
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *exc):
-            return False
-
-    es.db_session = lambda: FakeDB(FakeCompound())
+    monkeypatch.setitem(es.__dict__, "db_session", lambda: FakeDB(FakeCompound()))
     monkeypatch.setattr(es, "get_share_email_html", lambda *a, **k: "html")
     monkeypatch.setattr(es, "send_email", lambda to, subj, body, html_body=None: calls.setdefault("sent", True))
 
@@ -174,8 +130,7 @@ def test_send_share_notification_compound(monkeypatch):
 
 
 def test_send_share_notification_unknown(monkeypatch):
-    es.db_session = lambda: FakeDB()
+    monkeypatch.setitem(es.__dict__, "db_session", lambda: FakeDB())
     monkeypatch.setattr(es, "get_share_email_html", lambda *a, **k: "html")
     monkeypatch.setattr(es, "send_email", lambda *a, **k: True)
     assert es.send_share_notification("unknown", uuid4(), "to@example.com", "user", None, None) is True
-
