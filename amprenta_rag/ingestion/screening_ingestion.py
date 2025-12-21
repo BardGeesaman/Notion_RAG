@@ -8,7 +8,7 @@ and optionally creates/updates Notion pages for promoted compounds.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any, cast
 
 import pandas as pd
 
@@ -19,6 +19,7 @@ from amprenta_rag.chemistry.normalization import (
 )
 from amprenta_rag.database.models import Compound, HTSCampaign, HTSResult, BiochemicalResult
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 from amprenta_rag.ingestion.screening_ingestion_helpers import (
     insert_compound_pg,
     insert_hts_campaign_pg,
@@ -174,8 +175,8 @@ def ingest_hts_hit_list(
             inchi_key=inchi_key,
             canonical_smiles=canonical_smiles,
             molecular_formula=molecular_formula,
-            molecular_weight=_to_optional_float(descriptors.get("molecular_weight")),
-            logp=_to_optional_float(descriptors.get("logp")),
+            molecular_weight=cast(Any, _to_optional_float(descriptors.get("molecular_weight"))),
+            logp=cast(Any, _to_optional_float(descriptors.get("logp"))),
             hbd_count=_to_optional_int(descriptors.get("hbd_count")),
             hba_count=_to_optional_int(descriptors.get("hba_count")),
             rotatable_bonds=_to_optional_int(descriptors.get("rotatable_bonds")),
@@ -210,11 +211,11 @@ def ingest_hts_hit_list(
 
         result = HTSResult(
             result_id=result_id,
-            campaign_id=str(campaign_id) if campaign_id is not None else None,
-            compound_id=str(compound_id),
+            campaign_id=cast(Any, ensure_uuid(campaign_id)) if campaign_id else None,
+            compound_id=cast(Any, ensure_uuid(compound_id)),
             well_position=None,  # Not available in hit lists typically
-            raw_value=raw_value,
-            normalized_value=raw_value,  # Could add normalization logic
+            raw_value=cast(Any, raw_value),
+            normalized_value=cast(Any, raw_value),  # Could add normalization logic
             z_score=None,
             hit_flag=hit_flag,
             hit_category=hit_category,
@@ -300,8 +301,8 @@ def ingest_biochemical_results(
             inchi_key=inchi_key,
             canonical_smiles=canonical_smiles,
             molecular_formula=molecular_formula,
-            molecular_weight=_to_optional_float(descriptors.get("molecular_weight")),
-            logp=_to_optional_float(descriptors.get("logp")),
+            molecular_weight=cast(Any, _to_optional_float(descriptors.get("molecular_weight"))),
+            logp=cast(Any, _to_optional_float(descriptors.get("logp"))),
             hbd_count=_to_optional_int(descriptors.get("hbd_count")),
             hba_count=_to_optional_int(descriptors.get("hba_count")),
             rotatable_bonds=_to_optional_int(descriptors.get("rotatable_bonds")),
@@ -340,13 +341,13 @@ def ingest_biochemical_results(
 
         result = BiochemicalResult(
             result_id=result_id,
-            compound_id=str(compound_id),
+            compound_id=cast(Any, ensure_uuid(compound_id)),
             assay_name=assay_name,
             target=target,
-            ic50=ic50,
-            ec50=ec50,
-            ki=ki,
-            kd=kd,
+            ic50=cast(Any, ic50),
+            ec50=cast(Any, ec50),
+            ki=cast(Any, ki),
+            kd=cast(Any, kd),
             activity_type=activity_type,
             units=row.get("units") or row.get("Units", "nM"),
             run_date=row.get("run_date") or row.get("date"),
