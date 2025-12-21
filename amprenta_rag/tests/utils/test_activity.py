@@ -59,12 +59,20 @@ class FakeDataset:
 
 
 class FakeUser:
-    is_active = True
+    id = _Field("id")
+    is_active = _Field("is_active")
 
     def __init__(self, username: str, is_active: bool = True):
-        self.id = uuid4()
+        self._id_val = uuid4()
         self.username = username
-        self.is_active = is_active
+        self._is_active_val = is_active
+
+    def __getattribute__(self, name: str):
+        if name == "id":
+            return object.__getattribute__(self, "_id_val")
+        if name == "is_active":
+            return object.__getattribute__(self, "_is_active_val")
+        return object.__getattribute__(self, name)
 
 
 class FakeQuery:
@@ -78,6 +86,8 @@ class FakeQuery:
             if isinstance(pred, tuple):
                 field, val = pred
                 filtered = [obj for obj in filtered if getattr(obj, field, None) == val]
+            elif isinstance(pred, _Field):
+                filtered = [obj for obj in filtered if getattr(obj, pred.name, None)]
             elif isinstance(pred, bool):
                 if not pred:
                     filtered = []
