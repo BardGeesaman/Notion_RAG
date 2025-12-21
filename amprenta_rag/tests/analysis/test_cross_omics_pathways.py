@@ -3,6 +3,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+
 from amprenta_rag.analysis import cross_omics_pathways as cop
 
 
@@ -108,6 +110,25 @@ def test_get_cross_omics_enrichment_happy(monkeypatch):
     res = cop.get_cross_omics_enrichment(uuid4())
     assert res.pathways[0].pathway_id == "P1"
     assert res.features.transcriptomics == ["g1"]
+
+
+def test_dataclass_helpers():
+    fs = cop.OmicsFeatureSet(["g1"], ["p1"], [], [])
+    assert fs.all_features() == {"g1", "p1"}
+    assert fs.feature_types() == {"gene", "protein"}
+
+    cp = cop.ConvergentPathway(
+        pathway_id="p1",
+        name="Path",
+        source="KEGG",
+        adjusted_p_value=0.01,
+        enrichment_ratio=2.0,
+        matched_by_omics={"transcriptomics": ["g1"], "proteomics": [], "metabolomics": [], "lipidomics": []},
+    )
+    assert cp.asdict()["pathway_id"] == "p1"
+
+    enr = cop.CrossOmicsEnrichmentResult(program_id=uuid4(), pathways=[cp], features=fs)
+    assert "program_id" in enr.asdict()
 from __future__ import annotations
 
 from contextlib import contextmanager
