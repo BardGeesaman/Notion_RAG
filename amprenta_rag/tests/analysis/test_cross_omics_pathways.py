@@ -3,8 +3,6 @@ from __future__ import annotations
 from types import SimpleNamespace
 from uuid import uuid4
 
-import pytest
-
 from amprenta_rag.analysis import cross_omics_pathways as cop
 
 
