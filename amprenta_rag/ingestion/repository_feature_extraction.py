@@ -18,148 +18,22 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import List, Optional, Set, Tuple, Dict, Any
+from typing import List, Optional, Set, Tuple, Dict, Any, cast
 from uuid import UUID
 
-import GEOparse
 import pandas as pd
 import requests
-from Bio import Entrez
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset
 from amprenta_rag.ingestion.features.postgres_linking import (
     batch_link_features_to_dataset_in_postgres,
 )
-from amprenta_rag.ingestion.transcriptomics.normalization import normalize_gene_identifier
+from amprenta_rag.ingestion.repositories.geo import extract_geo_features_with_geoparse
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.domain import FeatureType
 
 logger = get_logger(__name__)
-
-
-def extract_geo_features_with_geoparse(
-    study_id: str,
-    download_dir: Optional[Path] = None,
-) -> Set[str]:
-    """
-    Extract gene features from GEO study using GEOparse library.
-
-    This is the recommended approach - cleaner and more robust than custom parsing.
-
-    Args:
-        study_id: GEO Series ID (e.g., "GSE12251")
-        download_dir: Directory for caching downloaded files
-
-    Returns:
-        Set of normalized gene identifiers
-    """
-    if download_dir is None:
-        download_dir = Path("/tmp/geo_cache")
-
-    download_dir.mkdir(parents=True, exist_ok=True)
-
-    gene_set: Set[str] = set()
-
-    logger.info("[FEATURE-EXTRACT][GEO] Extracting genes from %s using GEOparse", study_id)
-
-    try:
-        # Configure Entrez (for GEOparse's internal use)
-        from amprenta_rag.config import get_config
-        cfg = get_config()
-
-        email = str(getattr(cfg, "ncbi_email", None) or os.getenv("NCBI_EMAIL", "") or "")
-        api_key = str(getattr(cfg, "geo_api_key", None) or os.getenv("GEO_API_KEY", "") or "")
-
-        if email:
-            Entrez.email = email  # type: ignore[assignment]
-        if api_key:
-            Entrez.api_key = api_key  # type: ignore[assignment]
-
-        # Download and parse using GEOparse
-        # destdir caches files locally so they aren't re-downloaded
-        gse = GEOparse.get_GEO(geo=study_id, destdir=str(download_dir), silent=True)
-
-        logger.info("[FEATURE-EXTRACT][GEO] Successfully parsed %s: %s", study_id, gse.name)
-
-        # Extract genes from expression matrix
-        # GEOparse provides pivot_samples('VALUE') which gives expression matrix
-        # Rows = probes/genes, Columns = samples
-        try:
-            expression_matrix = gse.pivot_samples('VALUE')
-
-            if expression_matrix is not None and not expression_matrix.empty:
-                logger.info(
-                    "[FEATURE-EXTRACT][GEO] Expression matrix: %d probes/genes x %d samples",
-                    len(expression_matrix),
-                    len(expression_matrix.columns),
-                )
-
-                # Extract gene IDs from row index
-                for gene_id in expression_matrix.index:
-                    if pd.isna(gene_id):
-                        continue
-
-                    gene_id_str = str(gene_id).strip()
-                    if not gene_id_str:
-                        continue
-
-                    # Normalize gene identifier
-                    normalized = normalize_gene_identifier(gene_id_str)
-                    if normalized:
-                        gene_set.add(normalized)
-
-                logger.info(
-                    "[FEATURE-EXTRACT][GEO] Extracted %d unique genes from expression matrix",
-                    len(gene_set),
-                )
-            else:
-                logger.warning("[FEATURE-EXTRACT][GEO] Expression matrix is empty for %s", study_id)
-
-                # Try to get genes from platform annotation if available
-                if hasattr(gse, 'gpls') and gse.gpls:
-                    for gpl_id, gpl in gse.gpls.items():
-                        if hasattr(gpl, 'table') and gpl.table is not None:
-                            # Platform table might have gene annotations
-                            logger.info("[FEATURE-EXTRACT][GEO] Checking platform %s for gene annotations", gpl_id)
-                            # Could extract genes from platform table if needed
-
-        except Exception as e:
-            logger.warning("[FEATURE-EXTRACT][GEO] Could not extract expression matrix: %r", e)
-
-            # Fallback: Try to extract from platform data
-            if hasattr(gse, 'gpls') and gse.gpls:
-                logger.info("[FEATURE-EXTRACT][GEO] Attempting fallback extraction from platform data")
-                for gpl_id, gpl in gse.gpls.items():
-                    if hasattr(gpl, 'table') and gpl.table is not None:
-                        # Try to find gene column in platform table
-                        table = gpl.table
-                        gene_columns = ['GENE', 'Gene Symbol', 'GENE_SYMBOL', 'GENE_NAME', 'ID']
-
-                        for col in gene_columns:
-                            if col in table.columns:
-                                for gene_id in table[col]:
-                                    if pd.isna(gene_id):
-                                        continue
-                                    gene_id_str = str(gene_id).strip()
-                                    if gene_id_str:
-                                        normalized = normalize_gene_identifier(gene_id_str)
-                                        if normalized:
-                                            gene_set.add(normalized)
-                                break
-
-                        if gene_set:
-                            logger.info(
-                                "[FEATURE-EXTRACT][GEO] Extracted %d genes from platform annotation",
-                                len(gene_set),
-                            )
-                            break
-
-        return gene_set
-
-    except Exception as e:
-        logger.error("[FEATURE-EXTRACT][GEO] Error extracting genes with GEOparse: %r", e)
-        return gene_set
 
 
 def extract_pride_proteins_from_data_files(

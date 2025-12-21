@@ -9,13 +9,16 @@ STRICT PROTOCOL: Uses Biopython's Bio.Entrez module following NCBI guidelines.
 
 from __future__ import annotations
 
+import os
 import time
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
 from urllib.error import HTTPError
 
 from Bio import Entrez
 
 from amprenta_rag.ingestion.repositories.base import RepositoryInterface
+from amprenta_rag.ingestion.transcriptomics.normalization import normalize_gene_identifier
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.repository import DataFile, StudyMetadata
 
@@ -23,6 +26,128 @@ logger = get_logger(__name__)
 
 # GEO web URL for direct access
 GEO_WEB_URL = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
+
+
+def extract_geo_features_with_geoparse(
+    study_id: str,
+    download_dir: Optional[Path] = None,
+) -> Set[str]:
+    """
+    Extract gene features from GEO study using GEOparse library.
+
+    This is the recommended approach - cleaner and more robust than custom parsing.
+
+    Args:
+        study_id: GEO Series ID (e.g., "GSE12251")
+        download_dir: Directory for caching downloaded files
+
+    Returns:
+        Set of normalized gene identifiers
+    """
+    # Heavy imports kept inside the function to avoid import-time overhead.
+    import GEOparse
+    import pandas as pd
+
+    if download_dir is None:
+        download_dir = Path("/tmp/geo_cache")
+
+    download_dir.mkdir(parents=True, exist_ok=True)
+
+    gene_set: Set[str] = set()
+
+    logger.info("[FEATURE-EXTRACT][GEO] Extracting genes from %s using GEOparse", study_id)
+
+    try:
+        # Configure Entrez (for GEOparse's internal use)
+        from amprenta_rag.config import get_config
+
+        cfg = get_config()
+
+        email = str(getattr(cfg, "ncbi_email", None) or os.getenv("NCBI_EMAIL", "") or "")
+        api_key = str(getattr(cfg, "geo_api_key", None) or os.getenv("GEO_API_KEY", "") or "")
+
+        if email:
+            setattr(Entrez, "email", email)
+        if api_key:
+            setattr(Entrez, "api_key", api_key)
+
+        # Download and parse using GEOparse
+        # destdir caches files locally so they aren't re-downloaded
+        gse = GEOparse.get_GEO(geo=study_id, destdir=str(download_dir), silent=True)
+
+        logger.info("[FEATURE-EXTRACT][GEO] Successfully parsed %s: %s", study_id, gse.name)
+
+        # Extract genes from expression matrix
+        try:
+            expression_matrix = gse.pivot_samples("VALUE")
+
+            if expression_matrix is not None and not expression_matrix.empty:
+                logger.info(
+                    "[FEATURE-EXTRACT][GEO] Expression matrix: %d probes/genes x %d samples",
+                    len(expression_matrix),
+                    len(expression_matrix.columns),
+                )
+
+                for gene_id in expression_matrix.index:
+                    if pd.isna(gene_id):
+                        continue
+
+                    gene_id_str = str(gene_id).strip()
+                    if not gene_id_str:
+                        continue
+
+                    normalized = normalize_gene_identifier(gene_id_str)
+                    if normalized:
+                        gene_set.add(normalized)
+
+                logger.info(
+                    "[FEATURE-EXTRACT][GEO] Extracted %d unique genes from expression matrix",
+                    len(gene_set),
+                )
+            else:
+                logger.warning("[FEATURE-EXTRACT][GEO] Expression matrix is empty for %s", study_id)
+
+                # Try to get genes from platform annotation if available
+                if hasattr(gse, "gpls") and gse.gpls:
+                    for gpl_id, gpl in gse.gpls.items():
+                        if hasattr(gpl, "table") and gpl.table is not None:
+                            logger.info("[FEATURE-EXTRACT][GEO] Checking platform %s for gene annotations", gpl_id)
+
+        except Exception as e:
+            logger.warning("[FEATURE-EXTRACT][GEO] Could not extract expression matrix: %r", e)
+
+            # Fallback: Try to extract from platform data
+            if hasattr(gse, "gpls") and gse.gpls:
+                logger.info("[FEATURE-EXTRACT][GEO] Attempting fallback extraction from platform data")
+                for _gpl_id, gpl in gse.gpls.items():
+                    if hasattr(gpl, "table") and gpl.table is not None:
+                        table = gpl.table
+                        gene_columns = ["GENE", "Gene Symbol", "GENE_SYMBOL", "GENE_NAME", "ID"]
+
+                        for col in gene_columns:
+                            if col in table.columns:
+                                for gene_id in table[col]:
+                                    if pd.isna(gene_id):
+                                        continue
+                                    gene_id_str = str(gene_id).strip()
+                                    if gene_id_str:
+                                        normalized = normalize_gene_identifier(gene_id_str)
+                                        if normalized:
+                                            gene_set.add(normalized)
+                                break
+
+                        if gene_set:
+                            logger.info(
+                                "[FEATURE-EXTRACT][GEO] Extracted %d genes from platform annotation",
+                                len(gene_set),
+                            )
+                            break
+
+        return gene_set
+
+    except Exception as e:
+        logger.error("[FEATURE-EXTRACT][GEO] Error extracting genes with GEOparse: %r", e)
+        return gene_set
 
 
 class GEORepository(RepositoryInterface):
