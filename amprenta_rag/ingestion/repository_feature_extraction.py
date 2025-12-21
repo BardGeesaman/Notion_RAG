@@ -13,16 +13,9 @@ Supports:
 
 from __future__ import annotations
 
-import io
-import os
-import re
-import time
 from pathlib import Path
-from typing import List, Optional, Set, Tuple, Dict, Any, cast
+from typing import List, Optional, Tuple
 from uuid import UUID
-
-import pandas as pd
-import requests
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Dataset
@@ -32,125 +25,11 @@ from amprenta_rag.ingestion.features.postgres_linking import (
 from amprenta_rag.ingestion.repositories.geo import extract_geo_features_with_geoparse
 from amprenta_rag.ingestion.repositories.pride import extract_pride_proteins_from_data_files
 from amprenta_rag.ingestion.repositories.metabolights import extract_metabolights_metabolites_from_isa_tab
+from amprenta_rag.ingestion.repositories.mw import extract_mw_metabolites_from_data_endpoint
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.domain import FeatureType
 
 logger = get_logger(__name__)
-
-
-def extract_mw_metabolites_from_data_endpoint(
-    study_id: str,
-) -> Set[str]:
-    """
-    Extract metabolite features from Metabolomics Workbench using the cleaner /data endpoint.
-
-    This is much more robust than MetaboLights because:
-    - Returns clean JSON directly (no file parsing)
-    - No brittle API endpoints
-    - More stable (NIH-hosted)
-
-    Args:
-        study_id: MW study ID (e.g., "ST000001")
-
-    Returns:
-        Set of normalized metabolite identifiers
-    """
-    metabolite_set: Set[str] = set()
-
-    # Ensure study_id format
-    study_id = study_id.upper()
-    if not study_id.startswith("ST"):
-        logger.error("[FEATURE-EXTRACT][MW] Invalid study ID format: %s", study_id)
-        return metabolite_set
-
-    logger.info("[FEATURE-EXTRACT][MW] Extracting metabolites from %s using /data endpoint", study_id)
-
-    try:
-        # Use the cleaner REST API endpoint
-        base_url = "https://www.metabolomicsworkbench.org/rest"
-        url = f"{base_url}/study/study_id/{study_id}/data"
-
-        logger.info("[FEATURE-EXTRACT][MW] Fetching data from: %s", url)
-
-        from amprenta_rag.ingestion.repositories import REPOSITORY_USER_AGENT
-        headers = {"User-Agent": REPOSITORY_USER_AGENT}
-        response = requests.get(url, headers=headers, timeout=30)
-
-        # CASE 1: Success
-        if response.status_code == 200:
-            data = response.json()
-
-            # MW API returns a dictionary where keys are row numbers (e.g., '1', '2', '3')
-            # Each value is a dict with metabolite information including:
-            # - 'metabolite_name': The metabolite name
-            # - 'refmet_name': Reference metabolite name
-            # - 'metabolite_id': Metabolite ID
-            # - 'DATA': Quantification values
-
-            from amprenta_rag.ingestion.metabolomics.normalization import normalize_metabolite_name
-
-            if isinstance(data, dict):
-                # Iterate through all rows in the data dictionary
-                for row_key, metabolite_data in data.items():
-                    if isinstance(metabolite_data, dict):
-                        # Extract metabolite name from various possible fields
-                        metabolite_id = (
-                            metabolite_data.get('refmet_name') or  # Reference metabolite name (preferred)
-                            metabolite_data.get('metabolite_name') or  # Metabolite name
-                            metabolite_data.get('metabolite_identification') or
-                            metabolite_data.get('database_identifier') or
-                            metabolite_data.get('name') or
-                            metabolite_data.get('chemical_name')
-                        )
-
-                        if metabolite_id:
-                            # Normalize metabolite identifier
-                            normalized = normalize_metabolite_name(str(metabolite_id))
-                            if normalized and len(normalized) > 1:
-                                metabolite_set.add(normalized)
-
-            elif isinstance(data, list):
-                # Alternative structure: list of metabolite dictionaries
-                for item in data:
-                    if isinstance(item, dict):
-                        metabolite_id = (
-                            item.get('refmet_name') or
-                            item.get('metabolite_name') or
-                            item.get('metabolite_identification') or
-                            item.get('database_identifier') or
-                            item.get('name')
-                        )
-                        if metabolite_id:
-                            from amprenta_rag.ingestion.metabolomics.normalization import normalize_metabolite_name
-                            normalized = normalize_metabolite_name(str(metabolite_id))
-                            if normalized and len(normalized) > 1:
-                                metabolite_set.add(normalized)
-
-        # CASE 2: Known error codes
-        elif response.status_code in [403, 404]:
-            logger.warning("[FEATURE-EXTRACT][MW] Study %s not found or is private (403/404)", study_id)
-
-        # CASE 3: Server error
-        elif response.status_code >= 500:
-            logger.warning("[FEATURE-EXTRACT][MW] Server error (500) for study %s - skipping", study_id)
-
-        else:
-            logger.warning("[FEATURE-EXTRACT][MW] Unexpected status %d for study %s", response.status_code, study_id)
-
-        logger.info(
-            "[FEATURE-EXTRACT][MW] Extracted %d unique metabolites from %s",
-            len(metabolite_set),
-            study_id,
-        )
-
-        return metabolite_set
-
-    except requests.exceptions.RequestException as e:
-        logger.error("[FEATURE-EXTRACT][MW] Connection error for study %s: %r", study_id, e)
-        return metabolite_set
-    except Exception as e:
-        logger.error("[FEATURE-EXTRACT][MW] Error extracting metabolites from %s: %r", study_id, e)
-        return metabolite_set
 
 
 def extract_features_from_repository_dataset(

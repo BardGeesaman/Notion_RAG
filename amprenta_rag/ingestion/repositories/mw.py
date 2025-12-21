@@ -424,3 +424,94 @@ def search_mw_studies(
     logger.info("[REPO][MW] Search returned %d results", len(results))
     return results
 
+
+def extract_mw_metabolites_from_data_endpoint(study_id: str) -> "set[str]":
+    """
+    Extract metabolite features from Metabolomics Workbench using the cleaner /data endpoint.
+
+    This is much more robust than parsing files because:
+    - Returns clean JSON directly (no file parsing)
+    - Stable endpoint
+
+    Args:
+        study_id: MW study ID (e.g., "ST000001")
+
+    Returns:
+        Set of normalized metabolite identifiers
+    """
+    metabolite_set: set[str] = set()
+
+    # Ensure study_id format
+    study_id = study_id.upper()
+    if not study_id.startswith("ST"):
+        logger.error("[FEATURE-EXTRACT][MW] Invalid study ID format: %s", study_id)
+        return metabolite_set
+
+    logger.info("[FEATURE-EXTRACT][MW] Extracting metabolites from %s using /data endpoint", study_id)
+
+    try:
+        url = f"{MW_BASE_URL}/study/study_id/{study_id}/data"
+        logger.info("[FEATURE-EXTRACT][MW] Fetching data from: %s", url)
+
+        headers = {"User-Agent": REPOSITORY_USER_AGENT}
+        response = requests.get(url, headers=headers, timeout=30)
+
+        if response.status_code == 200:
+            data = response.json()
+
+            from amprenta_rag.ingestion.metabolomics.normalization import normalize_metabolite_name
+
+            if isinstance(data, dict):
+                for _row_key, metabolite_data in data.items():
+                    if not isinstance(metabolite_data, dict):
+                        continue
+                    metabolite_id = (
+                        metabolite_data.get("refmet_name")
+                        or metabolite_data.get("metabolite_name")
+                        or metabolite_data.get("metabolite_identification")
+                        or metabolite_data.get("database_identifier")
+                        or metabolite_data.get("name")
+                        or metabolite_data.get("chemical_name")
+                    )
+                    if metabolite_id:
+                        normalized = normalize_metabolite_name(str(metabolite_id))
+                        if normalized and len(normalized) > 1:
+                            metabolite_set.add(normalized)
+            elif isinstance(data, list):
+                for item in data:
+                    if not isinstance(item, dict):
+                        continue
+                    metabolite_id = (
+                        item.get("refmet_name")
+                        or item.get("metabolite_name")
+                        or item.get("metabolite_identification")
+                        or item.get("database_identifier")
+                        or item.get("name")
+                    )
+                    if metabolite_id:
+                        normalized = normalize_metabolite_name(str(metabolite_id))
+                        if normalized and len(normalized) > 1:
+                            metabolite_set.add(normalized)
+
+        elif response.status_code in [403, 404]:
+            logger.warning("[FEATURE-EXTRACT][MW] Study %s not found or is private (403/404)", study_id)
+        elif response.status_code >= 500:
+            logger.warning("[FEATURE-EXTRACT][MW] Server error for study %s - skipping", study_id)
+        else:
+            logger.warning("[FEATURE-EXTRACT][MW] Unexpected status %d for study %s", response.status_code, study_id)
+
+        logger.info(
+            "[FEATURE-EXTRACT][MW] Extracted %d unique metabolites from %s",
+            len(metabolite_set),
+            study_id,
+        )
+        return metabolite_set
+
+    except requests.exceptions.RequestException as e:
+        logger.error("[FEATURE-EXTRACT][MW] Connection error for study %s: %r", study_id, e)
+        return metabolite_set
+    except Exception as e:
+        logger.error("[FEATURE-EXTRACT][MW] Error extracting metabolites from %s: %r", study_id, e)
+        return metabolite_set
+
+
