@@ -27,8 +27,8 @@ class FakeExperiment:
     id = _Field("id")
     name = _Field("name")
 
-    def __init__(self, id: Any, name: str, **kwargs: Any):
-        self._id_val = id
+    def __init__(self, id: Any | None = None, name: str | None = None, **kwargs: Any):
+        self._id_val = id or uuid4()
         self.name = name
         for k, v in kwargs.items():
             setattr(self, k, v)
