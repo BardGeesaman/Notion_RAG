@@ -1,3 +1,10 @@
+"""
+Protocol API routes.
+
+These endpoints expose protocol history and diffing utilities, plus per-experiment
+deviation auditing.
+"""
+
 from __future__ import annotations
 
 from typing import List
@@ -18,6 +25,7 @@ router = APIRouter()
 
 
 def _get_protocol_or_404(db, protocol_id: UUID) -> Protocol:
+    """Load a protocol by ID or raise a 404 error."""
     proto = db.query(Protocol).filter(Protocol.id == protocol_id).first()
     if not proto:
         raise HTTPException(status_code=404, detail="Protocol not found")
@@ -30,6 +38,7 @@ def _get_protocol_or_404(db, protocol_id: UUID) -> Protocol:
     response_model=List[schemas.ProtocolHistoryItem],
 )
 def protocol_history(protocol_id: UUID) -> List[schemas.ProtocolHistoryItem]:
+    """Return the version history for a protocol."""
     return [schemas.ProtocolHistoryItem(**item.asdict()) for item in get_protocol_history(protocol_id)]
 
 
@@ -39,6 +48,7 @@ def protocol_history(protocol_id: UUID) -> List[schemas.ProtocolHistoryItem]:
     response_model=schemas.ProtocolDiff,
 )
 def protocol_diff(protocol_id: UUID, other_id: UUID) -> schemas.ProtocolDiff:
+    """Compute a diff between two protocol versions."""
     with db_session() as db:
         p1 = _get_protocol_or_404(db, protocol_id)
         p2 = _get_protocol_or_404(db, other_id)
@@ -52,6 +62,7 @@ def protocol_diff(protocol_id: UUID, other_id: UUID) -> schemas.ProtocolDiff:
     response_model=List[schemas.DeviationReport],
 )
 def experiment_deviations(experiment_id: UUID) -> List[schemas.DeviationReport]:
+    """Audit and return protocol deviations detected for an experiment."""
     reports = audit_deviations(experiment_id)
     return [schemas.DeviationReport(**r.asdict()) for r in reports]
 
