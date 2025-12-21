@@ -1,3 +1,11 @@
+"""
+Pathway analysis API routes.
+
+These endpoints provide pathway enrichment for datasets and cross-omics pathway
+analysis for programs, plus convenience helpers for mapping features to a
+pathway context.
+"""
+
 from __future__ import annotations
 
 from typing import List, Set
@@ -18,6 +26,13 @@ router = APIRouter()
 
 
 def _load_dataset_features(dataset_id: UUID) -> tuple[Set[str], Set[str]]:
+    """
+    Load a dataset's features and derive a canonical set of feature type tokens.
+
+    Returns:
+        Tuple of (feature_names, type_tokens) where type_tokens are normalized to
+        {"gene","protein","metabolite","lipid"}.
+    """
     with db_session() as db:
         feats: List[Feature] = (
             db.query(Feature)
@@ -51,6 +66,7 @@ def _load_dataset_features(dataset_id: UUID) -> tuple[Set[str], Set[str]]:
     response_model=List[schemas.ConvergentPathway],
 )
 def pathway_enrich(dataset_id: UUID) -> List[schemas.ConvergentPathway]:
+    """Run pathway enrichment for a dataset and return convergent pathway results."""
     features, types = _load_dataset_features(dataset_id)
     if not features:
         raise HTTPException(status_code=404, detail="No features for dataset")
@@ -77,6 +93,7 @@ def pathway_enrich(dataset_id: UUID) -> List[schemas.ConvergentPathway]:
     response_model=schemas.CrossOmicsEnrichmentResult,
 )
 def program_pathway_analysis(program_id: UUID) -> schemas.CrossOmicsEnrichmentResult:
+    """Run cross-omics pathway analysis for a program."""
     result = get_cross_omics_enrichment(program_id)
     return schemas.CrossOmicsEnrichmentResult.model_validate(result.asdict())
 
@@ -87,6 +104,7 @@ def program_pathway_analysis(program_id: UUID) -> schemas.CrossOmicsEnrichmentRe
     response_model=schemas.PathwayFeatures,
 )
 def pathway_features(pathway_id: str, dataset_ids: List[UUID]) -> schemas.PathwayFeatures:
+    """Return features grouped by omics type for the provided datasets (placeholder mapping)."""
     # Combine features across provided datasets
     combined = combine_omics_features(dataset_ids)
     # Simple filter: return all combined features grouped by omics for now
