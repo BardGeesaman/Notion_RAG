@@ -95,7 +95,7 @@ def test_get_confounder_report_imbalance_warning(monkeypatch):
     df = pd.DataFrame(
         {
             "group": ["A"] * 5 + ["B"] * 5,
-            "cat": ["x"] * 9 + ["y"],
+            "cat": ["x"] * 5 + ["y"] * 5,
         }
     )
 
