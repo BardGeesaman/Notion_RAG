@@ -84,36 +84,38 @@ def test_ingest_content_direct_to_pinecone_success(monkeypatch):
     monkeypatch.setattr(pci, "chunk_text", lambda t: ["chunk1", "chunk2"])
     monkeypatch.setattr(pci, "embed_texts", lambda texts: [[0.1]*1536, [0.2]*1536])
     monkeypatch.setattr(pci, "extract_features_from_text", lambda t: {"diseases": ["d1"]})
+    monkeypatch.setattr(pci, "sanitize_metadata", lambda m: m)
     
+    content = "some content " * 10  # ensure >= 50 chars
     res = pci.ingest_content_direct_to_pinecone(
-        content="some content",
-        content_id="cid",
+        content=content,
+        source_type="email",
         title="Title",
-        source_url="http://url",
-        content_type="email",
-        metadata={"extra": "val"}
+        metadata={"extra": "val", "source_url": "http://url"},
+        content_id="cid",
     )
     
-    assert res is True
+    assert res == ["cid_chunk_000", "cid_chunk_001"]
     assert len(idx.upserted) == 2
     # Check metadata structure of first chunk
     meta = idx.upserted[0]["metadata"]
     assert meta["content_id"] == "cid"
     assert meta["title"] == "Title"
-    assert meta["content_type"] == "email"
+    assert meta["source_type"] == "email"
     assert meta["chunk_index"] == 0
-    assert meta["features_diseases"] == ["d1"]
+    assert meta["source_url"] == "http://url"
 
 def test_ingest_content_direct_to_pinecone_skipped(monkeypatch):
     monkeypatch.setattr(pci, "_content_already_ingested", lambda *a, **k: (True, "hash"))
-    res = pci.ingest_content_direct_to_pinecone("content", "cid")
-    assert res is True # Considered success (idempotent)
+    content = "content " * 10
+    res = pci.ingest_content_direct_to_pinecone(content, source_type="email", title="T", content_id="cid")
+    assert res == []  # idempotent skip returns empty list
 
 def test_ingest_content_direct_to_pinecone_error(monkeypatch):
     monkeypatch.setattr(pci, "_content_already_ingested", lambda *a, **k: (False, None))
     # Chunking fails
     monkeypatch.setattr(pci, "chunk_text", lambda t: (_ for _ in range(1)).throw(ValueError("boom")))
-    
-    res = pci.ingest_content_direct_to_pinecone("content", "cid")
-    assert res is False
+    content = "content " * 10
+    with pytest.raises(ValueError, match="boom"):
+        pci.ingest_content_direct_to_pinecone(content, source_type="email", title="T", content_id="cid")
 
