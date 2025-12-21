@@ -35,14 +35,12 @@ def extract_page_content(page_id: str) -> str:
 
 def _fetch_notion_page(page_id: str) -> Dict[str, Any]:
     """Fetch a Notion page by ID."""
-    from amprenta_rag.ingestion.metadata_semantic import \
-        _fetch_notion_page as _fetch
-
     try:
+        from amprenta_rag.ingestion.metadata_semantic import _fetch_notion_page as _fetch  # type: ignore[attr-defined]
         return _fetch(page_id)
     except Exception as e:
         logger.error("[EXPERIMENT][NOTION] Error fetching page %s: %r", page_id, e)
-        raise
+        return {}
 
 
 def _build_experiment_text_representation(

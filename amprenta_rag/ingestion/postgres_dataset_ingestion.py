@@ -112,13 +112,13 @@ def build_dataset_text_content(dataset: DatasetModel) -> str:
 
     # Linked programs
     if dataset.programs:
-        program_names = [p.name for p in dataset.programs if getattr(p, "name", None)]
+        program_names = [str(p.name) for p in dataset.programs if getattr(p, "name", None)]
         if program_names:
             parts.append(f"\nPrograms: {', '.join(program_names)}")
 
     # Linked experiments
     if dataset.experiments:
-        experiment_names = [e.name for e in dataset.experiments if getattr(e, "name", None)]
+        experiment_names = [str(e.name) for e in dataset.experiments if getattr(e, "name", None)]
         if experiment_names:
             parts.append(f"\nExperiments: {', '.join(experiment_names)}")
 

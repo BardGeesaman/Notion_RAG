@@ -154,7 +154,7 @@ def find_matching_signatures_for_postgres_dataset(
 
                 match_result = SignatureMatchResult(
                     signature_page_id=signature_id_str,  # UUID string for compatibility
-                    signature_name=sig_model.name,
+                    signature_name=str(sig_model.name or ""),
                     score=score_result.total_score,
                     overlap_fraction=overlap_fraction,
                     matched_components=score_result.matched_species,

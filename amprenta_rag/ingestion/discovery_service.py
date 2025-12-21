@@ -36,7 +36,7 @@ def run_discovery_job(
             query=query,
             status="running",
             started_at=datetime.utcnow(),
-            created_by_id=user_id if user_id and user_id != "test" else None
+            created_by_id=UUID(user_id) if user_id and user_id != "test" else None,  # type: ignore[arg-type]
         )
         db.add(job)
         db.commit()
@@ -140,7 +140,7 @@ def import_discovered_study(discovered_study_id: str) -> Optional[UUID]:
             return None
 
         # Fetch full metadata and create experiment
-        metadata = fetch_study_metadata(study.study_id, study.repository)
+        metadata = fetch_study_metadata(str(study.study_id), str(study.repository))
         if not metadata:
             return None
 

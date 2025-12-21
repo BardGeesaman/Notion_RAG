@@ -31,13 +31,21 @@ def scan_all_datasets() -> List[DatasetQualityReport]:
             if ds.id is None:
                 continue
             quality = compute_quality_score(ds)
-            score_raw = quality.get("score", 0.0) if isinstance(quality, dict) else 0.0
+            metrics_raw: Dict[str, Any]
+            if isinstance(quality, dict):
+                score_raw = quality.get("score", 0.0)
+                status_raw = quality.get("status", "low")
+                issues_raw: Any = quality.get("issues", [])
+                metrics_candidate = quality.get("metrics", {})
+                metrics_raw = metrics_candidate if isinstance(metrics_candidate, dict) else {}
+            else:
+                score_raw = 0.0
+                status_raw = "low"
+                issues_raw = []
+                metrics_raw = {}
             score = float(score_raw) if isinstance(score_raw, (int, float)) else 0.0
-            status_raw = quality.get("status", "low") if isinstance(quality, dict) else "low"
             status = str(status_raw) if status_raw is not None else "low"
-            issues_raw = quality.get("issues", []) if isinstance(quality, dict) else []
             issues: List[str] = [str(i) for i in issues_raw if i is not None]
-            metrics_raw = quality.get("metrics", {}) if isinstance(quality, dict) else {}
             metrics: Dict[str, float] = {}
             for k, v in metrics_raw.items():
                 if isinstance(v, (int, float)):

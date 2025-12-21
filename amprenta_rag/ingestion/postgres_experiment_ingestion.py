@@ -8,7 +8,8 @@ No Notion dependencies - works entirely with Postgres data.
 from __future__ import annotations
 
 import textwrap
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
+from uuid import UUID
 from uuid import UUID
 
 from amprenta_rag.clients.pinecone_client import get_pinecone_index
@@ -53,36 +54,51 @@ def build_experiment_text_content(experiment: ExperimentModel) -> str:
 
     # Disease
     if experiment.disease:
-        parts.append(f"Disease: {', '.join(experiment.disease)}")
+        diseases = [d for d in experiment.disease if d]
+        if diseases:
+            parts.append(f"Disease: {', '.join(diseases)}")
 
     # Matrix
     if experiment.matrix:
-        parts.append(f"Matrix: {', '.join(experiment.matrix)}")
+        matrices = [m for m in experiment.matrix if m]
+        if matrices:
+            parts.append(f"Matrix: {', '.join(matrices)}")
 
     # Model systems
     if experiment.model_systems:
-        parts.append(f"Model Systems: {', '.join(experiment.model_systems)}")
+        systems = [m for m in experiment.model_systems if m]
+        if systems:
+            parts.append(f"Model Systems: {', '.join(systems)}")
 
     # Additional experiment fields
     if experiment.targets:
-        parts.append(f"Targets: {', '.join(experiment.targets)}")
+        targets = [t for t in experiment.targets if t]
+        if targets:
+            parts.append(f"Targets: {', '.join(targets)}")
     if experiment.modality:
-        parts.append(f"Modality: {', '.join(experiment.modality)}")
+        mods = [m for m in experiment.modality if m]
+        if mods:
+            parts.append(f"Modality: {', '.join(mods)}")
     if experiment.stage:
         parts.append(f"Stage: {experiment.stage}")
     if experiment.biomarker_role:
-        parts.append(f"Biomarker Role: {', '.join(experiment.biomarker_role)}")
+        biomarker_roles = [b for b in experiment.biomarker_role if b]
+        if biomarker_roles:
+            parts.append(f"Biomarker Role: {', '.join(biomarker_roles)}")
     if experiment.treatment_arms:
-        parts.append(f"Treatment Arms: {', '.join(experiment.treatment_arms)}")
+        arms = [a for a in experiment.treatment_arms if a]
+        if arms:
+            parts.append(f"Treatment Arms: {', '.join(arms)}")
 
     # Linked programs
     if experiment.programs:
-        program_names = [p.name for p in experiment.programs]
-        parts.append(f"Programs: {', '.join(program_names)}")
+        program_names = [str(p.name) for p in experiment.programs if getattr(p, "name", None)]
+        if program_names:
+            parts.append(f"Programs: {', '.join(program_names)}")
 
     # Linked datasets
     if experiment.datasets:
-        dataset_names = [d.name for d in experiment.datasets]
+        dataset_names = [d.name for d in experiment.datasets if d.name]
         parts.append(f"Related Datasets: {', '.join(dataset_names)}")
         parts.append(f"({len(dataset_names)} dataset(s) linked)")
 
@@ -108,11 +124,11 @@ def get_experiment_metadata_from_postgres(experiment: ExperimentModel) -> Dict[s
 
     # Add array fields
     if experiment.disease:
-        metadata["diseases"] = experiment.disease
+        metadata["diseases"] = [d for d in experiment.disease if d]
     if experiment.matrix:
-        metadata["matrix"] = experiment.matrix
+        metadata["matrix"] = [m for m in experiment.matrix if m]
     if experiment.model_systems:
-        metadata["model_systems"] = experiment.model_systems
+        metadata["model_systems"] = [m for m in experiment.model_systems if m]
 
     # Add type
     if experiment.type:
@@ -310,11 +326,11 @@ def ingest_experiment_from_postgres(
             # For now, just log that features were found
             for dataset in experiment.datasets:
                 # Link features to dataset if they exist
-                features_to_link = [(name, FeatureType.METABOLITE) for name in feature_names]
+                features_to_link = [(str(name), str(FeatureType.METABOLITE)) for name in feature_names]
                 try:
                     batch_link_features_to_dataset_in_postgres(
                         features=features_to_link,
-                        dataset_id=dataset.id,
+                        dataset_id=cast(UUID, dataset.id) if dataset.id is not None else UUID(int=0),  # type: ignore[arg-type]
                         db=db,
                     )
                     logger.info(

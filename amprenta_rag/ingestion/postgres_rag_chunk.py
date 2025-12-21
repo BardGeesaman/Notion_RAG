@@ -118,7 +118,7 @@ def create_rag_chunk_in_postgres(
         chunk_index=chunk_index,
         snippet=snippet,
         source_type=source_type,
-        source_id=source_id,
+        source_id=source_id,  # type: ignore[arg-type]
         source_name=source_name,
         zotero_item_key=zotero_item_key,
         note_key=note_key,
@@ -126,8 +126,8 @@ def create_rag_chunk_in_postgres(
         note_hash=note_hash,
         attachment_hash=attachment_hash,
         chunk_metadata=chunk_metadata,
-        literature_id=literature_id,
-        email_id=email_id,
+        literature_id=literature_id,  # type: ignore[arg-type]
+        email_id=email_id,  # type: ignore[arg-type]
         notion_page_id=notion_page_id,
     )
 

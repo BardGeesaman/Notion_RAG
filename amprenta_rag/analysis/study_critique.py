@@ -1,7 +1,7 @@
 """Automated study quality critique service."""
 from __future__ import annotations
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Protocol, runtime_checkable
 from uuid import UUID
 
 from amprenta_rag.database.models import Experiment
@@ -67,7 +67,7 @@ def assess_study_quality(experiment_id: UUID, db) -> Dict[str, Any]:
     }
 
 
-def detect_design_flaws(experiment: Experiment, db) -> List[Dict[str, str]]:
+def detect_design_flaws(experiment: Any, db) -> List[Dict[str, str]]:
     """
     Detect design flaws in an experiment.
 
@@ -135,7 +135,7 @@ def detect_design_flaws(experiment: Experiment, db) -> List[Dict[str, str]]:
     return flaws
 
 
-def identify_data_gaps(experiment: Experiment, db) -> List[str]:
+def identify_data_gaps(experiment: Any, db) -> List[str]:
     """
     Identify missing data fields for an experiment.
 

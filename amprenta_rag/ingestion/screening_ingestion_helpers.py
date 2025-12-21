@@ -45,22 +45,22 @@ def insert_hts_results_pg(results: List[HTSResult]) -> None:
     if not results:
         return
     with db_session() as db:
-        campaign_ids = {r.campaign_id for r in results if getattr(r, "campaign_id", None)}
+        campaign_ids = {str(r.campaign_id) for r in results if getattr(r, "campaign_id", None)}
         campaign_map = {}
         if campaign_ids:
             db_campaigns = db.query(HTSCampaign).filter(HTSCampaign.campaign_id.in_(campaign_ids)).all()
-            campaign_map = {c.campaign_id: c.id for c in db_campaigns}
+            campaign_map = {str(c.campaign_id): c.id for c in db_campaigns}
 
-        compound_ids = {r.compound_id for r in results if getattr(r, "compound_id", None)}
+        compound_ids = {str(r.compound_id) for r in results if getattr(r, "compound_id", None)}
         compound_map = {}
         if compound_ids:
             db_compounds = db.query(Compound).filter(Compound.compound_id.in_(compound_ids)).all()
-            compound_map = {c.compound_id: c.id for c in db_compounds}
+            compound_map = {str(c.compound_id): c.id for c in db_compounds}
 
         objects = []
         for r in results:
-            campaign_uuid = campaign_map.get(r.campaign_id)
-            compound_uuid = compound_map.get(r.compound_id)
+            campaign_uuid = campaign_map.get(str(r.campaign_id)) if getattr(r, "campaign_id", None) else None
+            compound_uuid = compound_map.get(str(r.compound_id)) if getattr(r, "compound_id", None) else None
             obj = HTSResult(
                 result_id=r.result_id,
                 campaign_id=campaign_uuid,
@@ -83,15 +83,15 @@ def insert_biochemical_results_pg(results: List[BiochemicalResult]) -> None:
     if not results:
         return
     with db_session() as db:
-        compound_ids = {r.compound_id for r in results if getattr(r, "compound_id", None)}
+        compound_ids = {str(r.compound_id) for r in results if getattr(r, "compound_id", None)}
         compound_map = {}
         if compound_ids:
             db_compounds = db.query(Compound).filter(Compound.compound_id.in_(compound_ids)).all()
-            compound_map = {c.compound_id: c.id for c in db_compounds}
+            compound_map = {str(c.compound_id): c.id for c in db_compounds}
 
         objects = []
         for r in results:
-            compound_uuid = compound_map.get(r.compound_id)
+            compound_uuid = compound_map.get(str(r.compound_id)) if getattr(r, "compound_id", None) else None
             obj = BiochemicalResult(
                 result_id=r.result_id,
                 compound_id=compound_uuid,

@@ -15,33 +15,32 @@ class _Field:
     def __init__(self, name: str):
         self.name = name
 
-    def __eq__(self, other: object) -> tuple[str, object]:
+    def __eq__(self, other: object):  # type: ignore[override]
         return (self.name, other)
 
     def desc(self) -> "_Field":
         return self
 
 
-@dataclass
 class FakeBookmark:
     """Simple bookmark record used for tests."""
 
-    user_id: UUID
-    entity_type: str
-    entity_id: UUID
-
     # class-level fields to support comparisons in filters/order_by
-    user_id_field = _Field("user_id")
-    entity_type_field = _Field("entity_type")
-    entity_id_field = _Field("entity_id")
+    user_id = _Field("user_id")
+    entity_type = _Field("entity_type")
+    entity_id = _Field("entity_id")
     created_at = _Field("created_at")
 
-    # Expose field names the way SQLAlchemy models are used in the module
-    user_id = user_id_field  # type: ignore[assignment]
-    entity_type = entity_type_field  # type: ignore[assignment]
-    entity_id = entity_id_field  # type: ignore[assignment]
+    def __init__(self, user_id: UUID, entity_type: str, entity_id: UUID, id: UUID | None = None):
+        self._user_id_val = user_id
+        self._entity_type_val = entity_type
+        self._entity_id_val = entity_id
+        self.id: UUID | None = id
 
-    id: UUID | None = None
+    def __getattribute__(self, name: str):
+        if name in ("user_id", "entity_type", "entity_id"):
+            return object.__getattribute__(self, f"_{name}_val")
+        return object.__getattribute__(self, name)
 
 
 class FakeQuery:

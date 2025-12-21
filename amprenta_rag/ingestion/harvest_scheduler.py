@@ -83,14 +83,15 @@ def run_harvest(schedule_id: str) -> None:
         # Run discovery job
         try:
             run_discovery_job(
-                repository=schedule.repository,
-                query=schedule.query,
+                repository=str(schedule.repository or ""),
+                query=str(schedule.query or ""),
                 max_results=50,
                 user_id=str(schedule.created_by_id) if schedule.created_by_id else None,
             )
 
             # Calculate next_run
-            schedule.next_run = datetime.utcnow() + timedelta(hours=schedule.interval_hours)
+            interval_hours = float(schedule.interval_hours or 0)
+            schedule.next_run = datetime.utcnow() + timedelta(hours=interval_hours)
             db.commit()
             logger.info("[HARVEST] Harvest completed, next run: %s", schedule.next_run)
         except Exception as e:
@@ -126,14 +127,14 @@ def schedule_harvest(schedule_id: str) -> None:
         if schedule.next_run:
             start_date = schedule.next_run
         elif schedule.last_run:
-            start_date = schedule.last_run + timedelta(hours=schedule.interval_hours)
+            start_date = schedule.last_run + timedelta(hours=float(schedule.interval_hours or 0))
         else:
             start_date = datetime.utcnow()
 
         # Add job
         scheduler.add_job(
             run_harvest,
-            trigger=IntervalTrigger(hours=schedule.interval_hours),
+            trigger=IntervalTrigger(hours=float(schedule.interval_hours or 0)),
             args=[str(schedule.id)],
             id=job_id,
             name=f"Harvest: {schedule.name}",
@@ -150,7 +151,7 @@ def load_active_schedules() -> None:
     db_gen = get_db()
     db = next(db_gen)
     try:
-        schedules = db.query(HarvestSchedule).filter(HarvestSchedule.is_active).all()
+        schedules = db.query(HarvestSchedule).filter(HarvestSchedule.is_active == True).all()  # noqa: E712
         logger.info("[HARVEST] Loading %d active schedules", len(schedules))
 
         for schedule in schedules:

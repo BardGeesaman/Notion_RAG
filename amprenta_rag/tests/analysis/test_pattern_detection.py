@@ -10,7 +10,7 @@ class _Field:
     def __init__(self, name: str):
         self.name = name
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):  # type: ignore[override]
         return ("eq", self.name, other)
 
     def in_(self, items: List[Any]):
@@ -27,6 +27,7 @@ class FakeDataset:
 
 
 class FakeSignature:
+    id = _Field("signature_id")
     datasets: List[FakeDataset] = []
 
     def __init__(self, id_: str, datasets: List[FakeDataset]):
@@ -44,6 +45,7 @@ class FakeFeature:
 
 class FakeComponent:
     signature_id = _Field("signature_id")
+    feature_id = _Field("feature_id")
 
     def __init__(self, signature_id: str, feature_name: str | None = None, feature_id: str | None = None):
         self.signature_id = signature_id
@@ -64,7 +66,7 @@ class FakeQuery:
         return self
 
     def filter(self, condition):
-        if isinstance(condition, tuple):
+        if isinstance(condition, tuple) and len(condition) == 3:
             kind, name, value = condition
             if kind == "in" and name == "dataset_id":
                 self.dataset_filter = {str(v) for v in value}

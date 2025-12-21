@@ -13,7 +13,7 @@ class _Field:
     def __init__(self, name: str):
         self.name = name
 
-    def __eq__(self, other: object) -> tuple[str, object]:
+    def __eq__(self, other: object):  # type: ignore[override]
         return (self.name, other)
 
     def desc(self):
@@ -34,6 +34,11 @@ class FakeSavedFilter:
         self._user_id_val = user_id
         self.filters = filters
         self.id = id
+
+    def __getattribute__(self, name: str):
+        if name in ("entity_type", "user_id", "id"):
+            return object.__getattribute__(self, f"_{name}_val") if f"_{name}_val" in object.__getattribute__(self, "__dict__") else object.__getattribute__(self, name)
+        return object.__getattribute__(self, name)
 
 
 class FakeQuery:

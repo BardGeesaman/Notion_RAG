@@ -168,15 +168,15 @@ def compute_program_signature_scores(
                     dataset_features_by_type=features_by_type,
                 )
 
-                if score_result and score_result.total_score > 0:
+                if score_result and getattr(score_result, "total_score", 0) > 0:
                     scores_by_dataset[dataset_id] = score_result.total_score
                     matching_datasets.append(dataset_id)
 
                     # Track scores by omics type
-                    for comp_match in score_result.component_matches:
-                        if comp_match.matched:
-                            omics_type = comp_match.feature_type
-                            scores_by_omics[omics_type].append(comp_match.match_score)
+                    for comp_match in getattr(score_result, "component_matches", []):
+                        if getattr(comp_match, "matched", False):
+                            omics_type = getattr(comp_match, "feature_type", "unknown")
+                            scores_by_omics[omics_type].append(getattr(comp_match, "match_score", 0.0))
 
             except Exception as e:
                 logger.debug(
