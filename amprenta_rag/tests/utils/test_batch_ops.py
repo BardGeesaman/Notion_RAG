@@ -53,9 +53,9 @@ def test_batch_export_datasets_json(monkeypatch):
     monkeypatch.setattr(batch_ops, "export_experiments", lambda ids, fmt, db: b"exp")
     monkeypatch.setattr(batch_ops, "export_compounds", lambda ids, fmt, db: b"cmp")
     monkeypatch.setattr(batch_ops, "export_signatures", lambda ids, fmt, db: b"sig")
-    monkeypatch.setattr(batch_ops, "export_to_csv", lambda df: b"csv")
-    monkeypatch.setattr(batch_ops, "export_to_json", lambda df: b"json")
-    monkeypatch.setattr(batch_ops, "export_to_excel", lambda df: b"xlsx")
+    monkeypatch.setattr(batch_ops, "export_to_csv", lambda df: b"csv", raising=False)
+    monkeypatch.setattr(batch_ops, "export_to_json", lambda df: b"json", raising=False)
+    monkeypatch.setattr(batch_ops, "export_to_excel", lambda df: b"xlsx", raising=False)
 
     out = batch_ops.batch_export("dataset", [str(db.datasets[0].id)], db, format="json")
     assert out == b"json"
@@ -73,10 +73,22 @@ def test_batch_delete_counts(monkeypatch):
     def fake_delete(*args, **kwargs):
         return db.deleted
 
-    monkeypatch.setattr(batch_ops, "Experiment", type("E", (), {}))
-    monkeypatch.setattr(batch_ops, "Compound", type("C", (), {}))
-    monkeypatch.setattr(batch_ops, "Signature", type("S", (), {}))
-    monkeypatch.setattr(batch_ops, "Dataset", type("D", (), {}))
+    class E:
+        id = "id"
+
+    class C:
+        id = "id"
+
+    class S:
+        id = "id"
+
+    class D:
+        id = "id"
+
+    monkeypatch.setattr(batch_ops, "Experiment", E)
+    monkeypatch.setattr(batch_ops, "Compound", C)
+    monkeypatch.setattr(batch_ops, "Signature", S)
+    monkeypatch.setattr(batch_ops, "Dataset", D)
 
     class Q:
         def __init__(self, deleted):
