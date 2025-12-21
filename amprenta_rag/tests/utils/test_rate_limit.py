@@ -8,7 +8,7 @@ from amprenta_rag.utils import rate_limit
 def test_rate_limiter_allows_then_blocks(monkeypatch):
     rl = rate_limit.RateLimiter()
     base = time.time()
-    times = [base, base + 1, base + 2, base + 3]
+    times = [base, base + 1, base + 2, base + 3, base + 4]
     monkeypatch.setattr(time, "time", lambda: times.pop(0))
 
     assert rl.check_rate_limit("u", "a", limit=2, window_seconds=5) is True
