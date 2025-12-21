@@ -154,6 +154,6 @@ def infer_moa(compound_id: UUID, dataset_ids: List[UUID]) -> List[MOACandidate]:
         )
     ranked.sort(key=lambda x: x.probability, reverse=True)
     for idx, cand in enumerate(ranked, start=1):
-        cand.rank = cast(Any, idx)  # type: ignore[assignment]
+        cand.rank = idx
     return ranked
 
