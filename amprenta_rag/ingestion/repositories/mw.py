@@ -135,29 +135,29 @@ class MWRepository(RepositoryInterface):
             filtered_ids: List[str] = []
             for study_id in matching_ids:
                 # Find study in summaries
-                study: Dict[str, Any] = next(
+                study_record: Dict[str, Any] = next(
                     (s for s in summaries if s.get("study_id") == study_id), {}
                 )
-                if not study:
+                if not study_record:
                     continue
 
                 # Check disease filter
                 if "disease" in filters:
-                    study_disease = str(study.get("disease", "") or "").lower()
+                    study_disease = str(study_record.get("disease", "") or "").lower()
                     filter_disease = str(filters["disease"]).lower()
                     if filter_disease not in study_disease:
                         continue
 
                 # Check organism filter
                 if "organism" in filters:
-                    study_organism = str(study.get("organism", "") or "").lower()
+                    study_organism = str(study_record.get("organism", "") or "").lower()
                     filter_organism = str(filters["organism"]).lower()
                     if filter_organism not in study_organism:
                         continue
 
                 # Check sample_type filter
                 if "sample_type" in filters:
-                    study_sample_type = str(study.get("sample_type", "") or "").lower()
+                    study_sample_type = str(study_record.get("sample_type", "") or "").lower()
                     filter_sample_type = str(filters["sample_type"]).lower()
                     if filter_sample_type not in study_sample_type:
                         continue
