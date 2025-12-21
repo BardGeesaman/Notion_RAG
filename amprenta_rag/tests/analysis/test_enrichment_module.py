@@ -38,7 +38,10 @@ def test_enrich_dataset_pathways_calls_enrichment(monkeypatch):
 
 
 def test_enrich_signature_pathways_missing(monkeypatch):
-    loader = types.SimpleNamespace(fetch_all_signatures_from_notion=lambda: [])
+    loader = types.SimpleNamespace(
+        fetch_all_signatures_from_notion=lambda: [],
+        load_signature_from_notion_page=lambda p: None,
+    )
     sys.modules["amprenta_rag.ingestion.signature_matching.signature_loader"] = loader
     monkeypatch.setitem(enrichment.__dict__, "fetch_all_signatures_from_notion", loader.fetch_all_signatures_from_notion)
     res = enrichment.enrich_signature_pathways("sig1")
