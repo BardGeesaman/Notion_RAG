@@ -181,7 +181,7 @@ def get_dataset_metadata_from_postgres(dataset: DatasetModel) -> Dict[str, Any]:
 def ingest_dataset_from_postgres(
     dataset_id: UUID,
     force: bool = False,
-    update_notion: bool = False,
+    _update_notion: bool = False,
 ) -> None:
     """
     Ingest a dataset directly from Postgres into Pinecone.
