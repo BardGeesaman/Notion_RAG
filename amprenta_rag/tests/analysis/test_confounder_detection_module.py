@@ -117,3 +117,44 @@ def test_get_confounder_report_imbalance_warning(monkeypatch):
     report = cd.get_confounder_report(df, "group")
     assert any("imbalance" in w for w in report["warnings"])
 
+
+def test_detect_confounders_handles_chi_square_failure(monkeypatch):
+    class FakeStats:
+        @staticmethod
+        def chi2_contingency(cont):
+            raise RuntimeError("bad chi")
+
+        @staticmethod
+        def ttest_ind(a, b):
+            return (0.0, 0.5)
+
+        @staticmethod
+        def f_oneway(*args):
+            return (0.0, 0.5)
+
+    monkeypatch.setitem(cd.__dict__, "stats", FakeStats())
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+    df = pd.DataFrame({"group": ["A", "B"], "cat": ["x", "y"]})
+    res = cd.detect_confounders(df, "group")
+    assert res == []
+
+
+def test_get_confounder_report_no_confounders_summary(monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+    monkeypatch.setitem(cd.__dict__, "detect_confounders", lambda df, grp: [])
+    df = pd.DataFrame({"group": ["A", "B"], "x": [1, 2]})
+    report = cd.get_confounder_report(df, "group")
+    assert "No confounders" in report["summary"]
+
+
+def test_get_confounder_report_error_path(monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+
+    def boom(*a, **k):
+        raise RuntimeError("fail")
+
+    monkeypatch.setitem(cd.__dict__, "detect_confounders", boom)
+    df = pd.DataFrame({"group": ["A", "B"], "x": [1, 2]})
+    report = cd.get_confounder_report(df, "group")
+    assert "Error:" in report["warnings"][0]
+
