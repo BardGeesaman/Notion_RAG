@@ -181,7 +181,7 @@ def get_dataset_metadata_from_postgres(dataset: DatasetModel) -> Dict[str, Any]:
 def ingest_dataset_from_postgres(
     dataset_id: UUID,
     force: bool = False,
-    _update_notion: bool = False,
+    update_notion: bool = False,
 ) -> None:
     """
     Ingest a dataset directly from Postgres into Pinecone.
@@ -211,6 +211,10 @@ def ingest_dataset_from_postgres(
         "[INGEST][POSTGRES] Starting Postgres-only ingestion for dataset %s",
         dataset_id,
     )
+
+    # Legacy arg kept for backwards compatibility; Notion sync is generally disabled in Postgres-first mode.
+    if update_notion:
+        logger.debug("[INGEST][POSTGRES] update_notion requested (currently ignored)")
 
     with db_session() as db:
         dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
