@@ -105,6 +105,12 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-19] – **Test Coverage Progress**:
+  - Utils test coverage: 5 modules tested (bookmarks, saved_filters, timeline, widgets, actions)
+  - Coverage improved: 37% → 39%
+  - 20 new tests added
+  - All utils modules at 96-100% coverage
+
 * [2025-12-19] – **Mypy Type Checking Setup**:
   - Created mypy.ini with gradual typing config
   - Lenient global, strict for API layer (amprenta_rag.api.*)

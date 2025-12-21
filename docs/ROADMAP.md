@@ -68,6 +68,7 @@ Simple status legend:
 - ✅ Test Suite: 355 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker)
 - ✅ Playwright E2E Separation (2025-12-19): chromium installed, server-dependent tests marked and deselected from default runs
 - ✅ Mypy Type Checking Setup (2025-12-19): gradual typing with strict API layer, 54% error reduction (597→273), type stubs installed
+- ⏳ Test Coverage Progress (2025-12-19): Utils tests complete (96-100%), baseline 39%, CI threshold 35%
 
 ---
 
