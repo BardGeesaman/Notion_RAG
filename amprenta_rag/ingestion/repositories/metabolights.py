@@ -555,3 +555,241 @@ def search_metabolights_studies(
         logger.error("[REPO][MetaboLights] Search error: %r", e)
         return []
 
+
+def extract_metabolights_metabolites_from_isa_tab(
+    study_id: str,
+    download_dir: "Path | None" = None,
+) -> "set[str]":
+    """
+    Extract metabolite features from MetaboLights ISA-Tab files.
+
+    Uses the study details to get HTTP URL and finds metabolite data files (m_*.tsv).
+    Parses ISA-Tab format to extract metabolite identifiers.
+
+    Args:
+        study_id: MetaboLights study ID (e.g., "MTBLS1")
+        download_dir: Directory for temporary files
+
+    Returns:
+        Set of normalized metabolite identifiers
+    """
+    from pathlib import Path
+    import re
+    import zlib
+
+    import pandas as pd
+
+    if download_dir is None:
+        download_dir = Path("/tmp")
+
+    download_dir.mkdir(parents=True, exist_ok=True)
+
+    metabolite_set: set[str] = set()
+
+    # Ensure study_id format
+    study_id = study_id.upper()
+    if not study_id.startswith("MTBLS"):
+        logger.error("[FEATURE-EXTRACT][METABOLIGHTS] Invalid study ID format: %s", study_id)
+        return metabolite_set
+
+    logger.info("[FEATURE-EXTRACT][METABOLIGHTS] Extracting metabolites from %s", study_id)
+
+    try:
+        repo = MetaboLightsRepository()
+
+        # Fetch study metadata to get HTTP URL
+        metadata = repo.fetch_study_metadata(study_id)
+        if not metadata or not metadata.raw_metadata:
+            logger.warning("[FEATURE-EXTRACT][METABOLIGHTS] Could not fetch metadata for %s", study_id)
+            return metabolite_set
+
+        # Get HTTP URL from study details
+        mtbls_study = metadata.raw_metadata.get("mtblsStudy", {}) if isinstance(metadata.raw_metadata, dict) else {}
+        http_url = str(mtbls_study.get("studyHttpUrl", "") or "")
+
+        if not http_url:
+            logger.warning("[FEATURE-EXTRACT][METABOLIGHTS] No HTTP URL found for %s", study_id)
+            return metabolite_set
+
+        # Convert FTP to HTTPS
+        if http_url.startswith("ftp://"):
+            https_url = http_url.replace("ftp://", "https://")
+        elif http_url.startswith("http://ftp."):
+            https_url = http_url.replace("http://ftp.", "https://ftp.")
+        else:
+            https_url = http_url
+
+        logger.info("[FEATURE-EXTRACT][METABOLIGHTS] Study directory: %s", https_url)
+
+        metabolite_file_url: str | None = None
+
+        # Check investigation file to find actual file names
+        inv_url = f"{https_url}/i_Investigation.txt"
+        try:
+            headers = {"User-Agent": REPOSITORY_USER_AGENT}
+            inv_response = requests.get(inv_url, headers=headers, timeout=30)
+            if inv_response.status_code == 200:
+                inv_content = inv_response.text
+
+                # Look for MAF files first (m_*_maf.tsv)
+                maf_files = re.findall(r"(m_[^\\s\\t\\n]*maf[^\\s\\t\\n]*\\.(?:tsv|txt))", inv_content, re.IGNORECASE)
+                if maf_files:
+                    metabolite_file_url = f"{https_url}/{maf_files[0]}"
+                    logger.info(
+                        "[FEATURE-EXTRACT][METABOLIGHTS] Found MAF file from investigation: %s",
+                        maf_files[0],
+                    )
+
+                # Fall back to other m_ files
+                if not metabolite_file_url:
+                    m_files = re.findall(r"(m_[^\\s\\t\\n]+\\.(?:tsv|txt))", inv_content)
+                    if m_files:
+                        metabolite_file_url = f"{https_url}/{m_files[0]}"
+                        logger.info(
+                            "[FEATURE-EXTRACT][METABOLIGHTS] Found metabolite data file from investigation: %s",
+                            m_files[0],
+                        )
+
+                # Last resort: assay files (likely sample metadata)
+                if not metabolite_file_url:
+                    a_files = re.findall(r"(a_[^\\s\\t\\n]+metabolite[^\\s\\t\\n]+\\.txt)", inv_content, re.IGNORECASE)
+                    if a_files:
+                        metabolite_file_url = f"{https_url}/{a_files[0]}"
+                        logger.warning(
+                            "[FEATURE-EXTRACT][METABOLIGHTS] Using assay file (may contain sample metadata, not metabolite data): %s",
+                            a_files[0],
+                        )
+        except Exception as e:
+            logger.debug("[FEATURE-EXTRACT][METABOLIGHTS] Could not read investigation file: %r", e)
+
+        # If not found, try common patterns
+        if not metabolite_file_url:
+            metabolite_file_patterns = [
+                f"m_{study_id}_LC-MS_positive_maf.tsv",
+                f"m_{study_id}_LC-MS_negative_maf.tsv",
+                f"m_{study_id}_GC-MS_maf.tsv",
+                f"m_{study_id}_NMR_maf.tsv",
+                f"m_{study_id}_metabolite_profiling_mass_spectrometry.tsv",
+                f"m_{study_id}_metabolite_profiling_NMR_spectroscopy.tsv",
+            ]
+
+            for pattern in metabolite_file_patterns:
+                test_url = f"{https_url}/{pattern}"
+                test_response = requests.head(test_url, timeout=10)
+                if test_response.status_code == 200:
+                    metabolite_file_url = test_url
+                    logger.info("[FEATURE-EXTRACT][METABOLIGHTS] Found metabolite file: %s", pattern)
+                    break
+
+        if not metabolite_file_url:
+            logger.warning("[FEATURE-EXTRACT][METABOLIGHTS] No metabolite data file found for %s", study_id)
+            return metabolite_set
+
+        logger.info("[FEATURE-EXTRACT][METABOLIGHTS] Downloading metabolite file: %s", metabolite_file_url)
+
+        headers = {"User-Agent": REPOSITORY_USER_AGENT}
+        response = requests.get(metabolite_file_url, headers=headers, timeout=120, stream=True)
+        response.raise_for_status()
+
+        # Parse ISA-Tab metabolite file
+        is_gzipped = metabolite_file_url.endswith(".gz") or metabolite_file_url.endswith(".gzip")
+        decompressor = zlib.decompressobj(zlib.MAX_WBITS | 32) if is_gzipped else None
+
+        buffer = b""
+        lines_processed = 0
+        max_rows = 50000
+        header_skipped = False
+        metabolite_column_idx: int | None = None
+
+        from amprenta_rag.ingestion.metabolomics.normalization import normalize_metabolite_name
+
+        logger.info("[FEATURE-EXTRACT][METABOLIGHTS] Streaming file and extracting metabolites...")
+
+        for chunk in response.iter_content(chunk_size=8192):
+            buffer += chunk
+
+            if is_gzipped:
+                try:
+                    assert decompressor is not None
+                    decompressed = decompressor.decompress(buffer)
+                    buffer = decompressor.unconsumed_tail
+                except Exception as e:
+                    logger.warning("[FEATURE-EXTRACT][METABOLIGHTS] Decompression error, continuing: %r", e)
+                    continue
+            else:
+                decompressed = buffer
+                buffer = b""
+
+            if not decompressed:
+                continue
+
+            text = decompressed.decode("utf-8", errors="ignore")
+
+            for line in text.split("\n"):
+                if lines_processed >= max_rows:
+                    break
+
+                line = line.strip()
+                if not line:
+                    continue
+
+                parts = line.split("\t")
+
+                if not header_skipped:
+                    header_skipped = True
+                    # Find best metabolite identification column in metadata section
+                    for i, col in enumerate(parts):
+                        col_lower = col.lower().strip()
+
+                        if col_lower in ["sample name", "sample_name"] or col_lower.startswith("sample_"):
+                            break
+
+                        if any(
+                            keyword in col_lower
+                            for keyword in [
+                                "metabolite identification",
+                                "metabolite_identification",
+                                "refmet_name",
+                                "metabolite name",
+                                "metabolite_name",
+                                "database identifier",
+                                "database_identifier",
+                                "chemical name",
+                                "chemical_name",
+                            ]
+                        ):
+                            metabolite_column_idx = i
+                            break
+
+                    if metabolite_column_idx is None:
+                        metabolite_column_idx = 0
+                    continue
+
+                if metabolite_column_idx is None or metabolite_column_idx >= len(parts):
+                    continue
+
+                metabolite_id = parts[metabolite_column_idx].strip()
+                if not metabolite_id:
+                    continue
+
+                normalized = normalize_metabolite_name(metabolite_id)
+                if normalized and len(normalized) > 1:
+                    metabolite_set.add(normalized)
+
+                lines_processed += 1
+
+            if lines_processed >= max_rows:
+                break
+
+        logger.info(
+            "[FEATURE-EXTRACT][METABOLIGHTS] Extracted %d unique metabolites from %d rows",
+            len(metabolite_set),
+            lines_processed,
+        )
+
+        return metabolite_set
+
+    except Exception as e:
+        logger.error("[FEATURE-EXTRACT][METABOLIGHTS] Error extracting metabolites: %r", e)
+        return metabolite_set
+
