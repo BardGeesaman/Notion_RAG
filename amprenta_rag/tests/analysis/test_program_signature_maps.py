@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+from types import ModuleType
+
 from amprenta_rag.analysis import program_signature_maps as psm
 
 
@@ -34,10 +37,9 @@ def test_compute_program_signature_scores(monkeypatch) -> None:
             component_matches=[FakeCompMatch("gene", 0.5, True)],
         )
 
-    monkeypatch.setattr(
-        "amprenta_rag.ingestion.multi_omics_scoring.score_multi_omics_signature_against_dataset",
-        _score,
-    )
+    fake_mos = ModuleType("amprenta_rag.ingestion.multi_omics_scoring")
+    fake_mos.score_multi_omics_signature_against_dataset = _score
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.multi_omics_scoring", fake_mos)
 
     scores = psm.compute_program_signature_scores("prog1", use_cache=False)
 
