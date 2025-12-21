@@ -33,7 +33,7 @@ def test_get_ena_fastqs_returns_runs(monkeypatch):
 
     fake_repo_mod.ENARepository = FakeENA
     fake_repo_mod.REPOSITORY_USER_AGENT = "ua"
-    sys.modules["amprenta_rag.ingestion.repositories"] = fake_repo_mod
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_mod)
     runs = gp.get_ena_fastqs("human", limit=1)
     assert runs and runs[0]["URL"].startswith("http://")
     assert runs[0]["FTP"].startswith("ftp://")
@@ -48,7 +48,7 @@ def test_get_ena_fastqs_empty(monkeypatch):
 
     fake_repo_mod.ENARepository = FakeENA
     fake_repo_mod.REPOSITORY_USER_AGENT = "ua"
-    sys.modules["amprenta_rag.ingestion.repositories"] = fake_repo_mod
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_mod)
     assert gp.get_ena_fastqs("none") == []
 
 
