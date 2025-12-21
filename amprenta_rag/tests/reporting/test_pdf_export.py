@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-import pytest
-from pathlib import Path
 import sys
 from types import ModuleType
+import pytest
+from pathlib import Path
+
+# Mock weasyprint BEFORE importing the module under test
+fake_weasyprint = ModuleType("weasyprint")
+fake_weasyprint.HTML = None  # Will be mocked in tests
+sys.modules["weasyprint"] = fake_weasyprint
 
 from amprenta_rag.reporting import pdf_export as pe
 
@@ -25,7 +30,9 @@ def test_html_to_pdf(monkeypatch):
         def write_pdf(self):
             return b"PDF_BYTES"
 
+    # Patch the imported HTML class in pdf_export module
     monkeypatch.setattr(pe, "HTML", FakeHTML)
+    
     pdf = pe.html_to_pdf("<html></html>")
     assert pdf == b"PDF_BYTES"
 
@@ -55,4 +62,3 @@ def test_export_evidence_report_to_pdf(monkeypatch):
 
     pdf = pe.export_evidence_report_to_pdf(FakeReport())
     assert pdf == b"EVIDENCE_PDF"
-
