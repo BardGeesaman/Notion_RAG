@@ -3,6 +3,43 @@ from __future__ import annotations
 import pytest
 
 from amprenta_rag.analysis import dataset_comparison as dc
+
+
+def test_compute_jaccard_similarity_basic():
+    assert dc.compute_jaccard_similarity(set(), set()) == 1.0
+    assert dc.compute_jaccard_similarity({"a"}, {"a"}) == 1.0
+    assert dc.compute_jaccard_similarity({"a"}, {"b"}) == 0.0
+
+
+def test_compare_datasets_happy(monkeypatch):
+    monkeypatch.setattr(dc, "_get_dataset_name", lambda did: f"name-{did}")
+
+    def fake_extract(dataset_id, use_cache=True):
+        if dataset_id == "d1":
+            return {"gene": {"a", "b"}, "protein": {"p1"}}
+        return {"gene": {"b", "c"}, "metabolite": {"m1"}}
+
+    monkeypatch.setattr(dc, "extract_dataset_features_by_type", fake_extract)
+
+    res = dc.compare_datasets("d1", "d2", use_cache=False)
+    assert res.dataset1_name == "name-d1"
+    assert pytest.approx(res.similarity_by_omics["gene"], 0.01) == 1 / 3
+    assert pytest.approx(res.overall_similarity, 0.01) == 4 / 18  # ~0.22 weighted
+    assert pytest.approx(res.jaccard_similarity, 0.01) == 0.2
+
+
+def test_compare_datasets_no_features(monkeypatch):
+    monkeypatch.setattr(dc, "_get_dataset_name", lambda did: did)
+    monkeypatch.setattr(dc, "extract_dataset_features_by_type", lambda did, use_cache=True: {})
+
+    res = dc.compare_datasets("d1", "d2")
+    assert res.overall_similarity == 0.0
+    assert res.jaccard_similarity == 1.0
+from __future__ import annotations
+
+import pytest
+
+from amprenta_rag.analysis import dataset_comparison as dc
 from amprenta_rag.analysis.dataset_comparison import (
     DatasetCluster,
     DatasetComparison,
