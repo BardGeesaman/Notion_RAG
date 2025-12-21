@@ -19,16 +19,38 @@ class _Field:
 
 @dataclass
 class FakeExperiment:
-    id: Any
+    id = _Field("id")
+    _id_val: Any
     name: str | None = None
     design_type: str | None = None
+
+    def __init__(self, id: Any, name: str | None = None, design_type: str | None = None):
+        self._id_val = id
+        self.name = name
+        self.design_type = design_type
+
+    def __getattribute__(self, name: str):
+        if name == "id":
+            return object.__getattribute__(self, "_id_val")
+        return object.__getattribute__(self, name)
 
 
 @dataclass
 class FakeCompound:
-    id: Any
+    id = _Field("id")
+    _id_val: Any
     smiles: str | None = None
     molecular_weight: float | None = None
+
+    def __init__(self, id: Any, smiles: str | None = None, molecular_weight: float | None = None):
+        self._id_val = id
+        self.smiles = smiles
+        self.molecular_weight = molecular_weight
+
+    def __getattribute__(self, name: str):
+        if name == "id":
+            return object.__getattribute__(self, "_id_val")
+        return object.__getattribute__(self, name)
 
 
 class FakeQuery:
