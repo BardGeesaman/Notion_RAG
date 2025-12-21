@@ -132,6 +132,7 @@ def test_generate_dataset_slides(monkeypatch):
             self.data_origin = None
             self.summary = None
             self.sample_groups = []
+        self.sample_group = None
 
     db = _FakeDB(FakeDataset())
     result = sg.generate_dataset_slides(uuid4(), db)
