@@ -21,7 +21,12 @@ def test_health_check_configuration_only(monkeypatch):
 
     fake_cfg = type("Cfg", (), {"notion": type("N", (), {"base_url": "", "api_key": "", "version": ""})(), "pinecone": type("P", (), {"index_name": "idx"})(), "openai": type("O", (), {"api_key": "k"})()})
     monkeypatch.setattr(health_check, "get_config", lambda: fake_cfg)
-    monkeypatch.setattr(health_check, "requests", type("R", (), {"get": lambda *a, **k: FakeResp(401)})())
+    class FakeRequests:
+        @staticmethod
+        def get(*a, **k):
+            return FakeResp(401)
+
+    monkeypatch.setitem(health_check.__dict__, "requests", FakeRequests)
     monkeypatch.setattr(health_check, "get_pinecone_index", lambda: None, raising=False)
     monkeypatch.setattr(health_check, "openai", type("O", (), {"OpenAI": lambda api_key: type("C", (), {"models": type("M", (), {"list": lambda self: []})()})()})(), raising=False)
 
