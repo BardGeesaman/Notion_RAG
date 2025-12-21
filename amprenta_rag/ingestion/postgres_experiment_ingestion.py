@@ -330,7 +330,7 @@ def ingest_experiment_from_postgres(
                 try:
                     batch_link_features_to_dataset_in_postgres(
                         features=features_to_link,
-                        dataset_id=cast(UUID, dataset.id) if dataset.id is not None else UUID(int=0),  # type: ignore[arg-type]
+                        dataset_id=cast(UUID, dataset.id) if dataset.id is not None else UUID(int=0),
                         db=db,
                     )
                     logger.info(

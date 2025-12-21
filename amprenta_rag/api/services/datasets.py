@@ -2,7 +2,7 @@
 CRUD services for Datasets.
 """
 
-from typing import List, Optional, Dict, cast
+from typing import List, Optional, Dict, Any, Sequence, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -16,15 +16,15 @@ import uuid
 def create_dataset(db: Session, dataset: DatasetCreate) -> DatasetModel:
     """Create a new dataset."""
     db_dataset = DatasetModel(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
+        id=cast(Any, uuid.uuid4()),
         name=dataset.name,
         omics_type=dataset.omics_type.value,
         description=dataset.description,
-        file_paths=dataset.file_paths or [],  # type: ignore[arg-type]
-        file_urls=dataset.file_urls or [],  # type: ignore[arg-type]
-        organism=dataset.organism or [],  # type: ignore[arg-type]
-        sample_type=dataset.sample_type or [],  # type: ignore[arg-type]
-        disease=dataset.disease or [],  # type: ignore[arg-type]
+        file_paths=cast(Any, dataset.file_paths if dataset.file_paths is not None else []),
+        file_urls=cast(Any, dataset.file_urls if dataset.file_urls is not None else []),
+        organism=cast(Any, dataset.organism if dataset.organism is not None else []),
+        sample_type=cast(Any, dataset.sample_type if dataset.sample_type is not None else []),
+        disease=cast(Any, dataset.disease if dataset.disease is not None else []),
     )
 
     # Add program relationships

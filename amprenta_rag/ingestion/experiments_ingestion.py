@@ -36,11 +36,18 @@ def extract_page_content(page_id: str) -> str:
 def _fetch_notion_page(page_id: str) -> Dict[str, Any]:
     """Fetch a Notion page by ID."""
     try:
-        from amprenta_rag.ingestion.metadata_semantic import _fetch_notion_page as _fetch  # type: ignore[attr-defined]
-        return _fetch(page_id)
+        from amprenta_rag.ingestion import metadata_semantic as meta  # type: ignore[attr-defined]
+        fetch_func = getattr(meta, "_fetch_notion_page", None)
     except Exception as e:
-        logger.error("[EXPERIMENT][NOTION] Error fetching page %s: %r", page_id, e)
-        return {}
+        logger.error("[EXPERIMENT][NOTION] Error importing notion fetcher: %r", e)
+        fetch_func = None
+
+    if callable(fetch_func):
+        try:
+            return fetch_func(page_id)
+        except Exception as e:
+            logger.error("[EXPERIMENT][NOTION] Error fetching page %s: %r", page_id, e)
+    return {}
 
 
 def _build_experiment_text_representation(

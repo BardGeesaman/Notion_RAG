@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, cast
 
 from amprenta_rag.clients.openai_client import get_openai_client
 from amprenta_rag.logging_utils import get_logger
@@ -120,7 +120,7 @@ def call_model(model_name: str, messages: List[Dict[str, str]], temperature: flo
         try:
             response = client.chat.completions.create(
                 model=actual_model_name,
-                messages=messages,  # type: ignore[arg-type]
+                messages=cast(Any, messages),
                 temperature=temperature,
             )
             return response.choices[0].message.content.strip()  # type: ignore[union-attr]

@@ -1,7 +1,7 @@
 """Automated discovery service for repository scanning."""
 import logging
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Any, cast
 from uuid import UUID
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import DiscoveryJob, DiscoveredStudy, Experiment
@@ -36,7 +36,7 @@ def run_discovery_job(
             query=query,
             status="running",
             started_at=datetime.utcnow(),
-            created_by_id=UUID(user_id) if user_id and user_id != "test" else None,  # type: ignore[arg-type]
+            created_by_id=cast(Any, UUID(user_id)) if user_id and user_id != "test" else None,
         )
         db.add(job)
         db.commit()

@@ -112,13 +112,16 @@ def create_rag_chunk_in_postgres(
         return cast(UUID, existing.id)
 
     # Create new chunk
+    src_id: Any = source_id if source_id is None or isinstance(source_id, UUID) else UUID(str(source_id))
+    lit_id: Any = literature_id if literature_id is None or isinstance(literature_id, UUID) else UUID(str(literature_id))
+    mail_id: Any = email_id if email_id is None or isinstance(email_id, UUID) else UUID(str(email_id))
     chunk = RAGChunk(
         chunk_id=chunk_id,
         chunk_text=chunk_text,
         chunk_index=chunk_index,
         snippet=snippet,
         source_type=source_type,
-        source_id=source_id,  # type: ignore[arg-type]
+        source_id=cast(Any, src_id),
         source_name=source_name,
         zotero_item_key=zotero_item_key,
         note_key=note_key,
@@ -126,8 +129,8 @@ def create_rag_chunk_in_postgres(
         note_hash=note_hash,
         attachment_hash=attachment_hash,
         chunk_metadata=chunk_metadata,
-        literature_id=literature_id,  # type: ignore[arg-type]
-        email_id=email_id,  # type: ignore[arg-type]
+        literature_id=cast(Any, lit_id),
+        email_id=cast(Any, mail_id),
         notion_page_id=notion_page_id,
     )
 

@@ -6,7 +6,7 @@ Creates signatures and signature components directly in Postgres without Notion 
 
 from __future__ import annotations
 
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple, Any, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -138,10 +138,10 @@ def _create_signature_in_postgres_impl(
     new_signature = SignatureModel(
         name=signature.name,
         description=description or signature.description,
-        modalities=signature.modalities if signature.modalities is not None else [],
+        modalities=cast(Any, signature.modalities if signature.modalities is not None else []),
         short_id=short_id,
-        biomarker_role=biomarker_roles if biomarker_roles is not None else [],
-        phenotype_axes=phenotype_axes if phenotype_axes is not None else [],
+        biomarker_role=cast(Any, biomarker_roles if biomarker_roles is not None else []),
+        phenotype_axes=cast(Any, phenotype_axes if phenotype_axes is not None else []),
         data_ownership=data_ownership,
     )
 
@@ -262,7 +262,7 @@ def _create_signature_components_in_postgres_impl(
                     feature_name=feature_name_raw,
                     feature_type=feature_type_str,
                     direction=direction,
-                    weight=weight_value,
+                    weight=cast(Any, weight_value),
                 )
 
                 db.add(new_component)
@@ -462,16 +462,15 @@ def _link_signature_to_postgres_source_impl(
 
         # Store source reference in signature's external_ids for now
         signature = db.query(SignatureModel).filter(SignatureModel.id == signature_id).first()
-        if signature:
-            if not getattr(signature, "external_ids", None):
-                signature.external_ids = {}
-
+        if signature and hasattr(signature, "external_ids"):
+            ext_ids = getattr(signature, "external_ids", {}) or {}
             source_key = f"{source_type}_source"
             if source_notion_id:
-                signature.external_ids[source_key] = source_notion_id
+                ext_ids[source_key] = source_notion_id
             elif source_id:
-                signature.external_ids[f"{source_key}_uuid"] = str(source_id)
+                ext_ids[f"{source_key}_uuid"] = str(source_id)
 
+            setattr(signature, "external_ids", ext_ids)
             db.commit()
             logger.debug(
                 "[POSTGRES-SIGNATURE] Stored source reference for signature %s",

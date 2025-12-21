@@ -2,7 +2,7 @@
 CRUD services for Experiments.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Any, Sequence, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -15,13 +15,13 @@ import uuid
 def create_experiment(db: Session, experiment: ExperimentCreate) -> ExperimentModel:
     """Create a new experiment."""
     db_experiment = ExperimentModel(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
+        id=cast(Any, uuid.uuid4()),
         name=experiment.name,
         type=experiment.type,
         description=experiment.description,
-        disease=experiment.disease or [],  # type: ignore[arg-type]
-        matrix=experiment.matrix or [],  # type: ignore[arg-type]
-        model_systems=experiment.model_systems or [],  # type: ignore[arg-type]
+        disease=cast(Any, experiment.disease if experiment.disease is not None else []),
+        matrix=cast(Any, experiment.matrix if experiment.matrix is not None else []),
+        model_systems=cast(Any, experiment.model_systems if experiment.model_systems is not None else []),
     )
 
     # Add program relationships

@@ -1,7 +1,7 @@
 """Compound registration and duplicate checking utilities."""
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Any, cast
 
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import Compound
@@ -74,18 +74,26 @@ def register_compound(
     try:
         corporate_id = _get_next_corporate_id(db)
 
+        def _as_float(key: str) -> Optional[float]:
+            val = descriptors.get(key)
+            return float(val) if isinstance(val, (int, float)) else None
+
+        def _as_int(key: str) -> Optional[int]:
+            val = descriptors.get(key)
+            return int(val) if isinstance(val, (int, float)) else None
+
         compound = Compound(
             compound_id=corporate_id,
             smiles=canonical or smiles,
             inchi_key=inchi_key,
             canonical_smiles=canonical,
             molecular_formula=formula,
-            molecular_weight=descriptors.get("molecular_weight"),  # type: ignore[arg-type]
-            logp=descriptors.get("logp"),  # type: ignore[arg-type]
-            hbd_count=descriptors.get("hbd_count"),  # type: ignore[arg-type]
-            hba_count=descriptors.get("hba_count"),  # type: ignore[arg-type]
-            rotatable_bonds=descriptors.get("rotatable_bonds"),  # type: ignore[arg-type]
-            aromatic_rings=descriptors.get("aromatic_rings"),  # type: ignore[arg-type]
+            molecular_weight=cast(Any, _as_float("molecular_weight")),
+            logp=cast(Any, _as_float("logp")),
+            hbd_count=_as_int("hbd_count"),
+            hba_count=_as_int("hba_count"),
+            rotatable_bonds=_as_int("rotatable_bonds"),
+            aromatic_rings=_as_int("aromatic_rings"),
         )
 
         db.add(compound)

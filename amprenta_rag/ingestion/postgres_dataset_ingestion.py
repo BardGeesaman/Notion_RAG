@@ -353,8 +353,7 @@ def ingest_dataset_from_postgres(
         # Non-blocking - continue with base metadata
 
     # Try to fetch mwTab data if we have a Metabolomics Workbench study ID
-    mwtab_data: Optional[Dict[str, Any]] = None  # type: ignore[no-redef]
-    study_id: Optional[str] = None  # type: ignore[no-redef]
+    # reuse mwtab_data/study_id if needed; no redeclarations
 
     if dataset.external_ids:
         # Check for MW study ID
