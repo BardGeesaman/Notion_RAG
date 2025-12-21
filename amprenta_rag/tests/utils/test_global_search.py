@@ -10,10 +10,10 @@ class _Col:
         self.name = name
 
     def ilike(self, val):
-        return ("ilike", self.name, val)
+        return self
 
     def __or__(self, other):
-        return ("or", self, other)
+        return self
 
 
 class FakeExperiment:
