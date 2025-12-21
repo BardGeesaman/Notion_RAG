@@ -120,13 +120,14 @@ def batch_add_dataset_relations(
         max_workers,
     )
 
-    from amprenta_rag.ingestion.features.general_linking import _add_dataset_relation  # type: ignore[attr-defined]
+    from amprenta_rag.ingestion.features import general_linking as _gl
+    _add_dataset_relation = getattr(_gl, "_add_dataset_relation", None)
 
     # Process in parallel
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = []
         for feature_type, feature_name, page_id in feature_page_ids:
-            if page_id:  # Only process if page was found/created
+            if page_id and callable(_add_dataset_relation):  # Only process if page was found/created
                 future = executor.submit(
                     _add_dataset_relation,
                     page_id,
