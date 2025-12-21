@@ -82,3 +82,38 @@ def test_get_confounder_report_without_scipy(monkeypatch):
     report = cd.get_confounder_report(pd.DataFrame(), "group")
     assert report["warnings"]
 
+
+def test_detect_confounders_raises_without_scipy(monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", False)
+    with pytest.raises(ImportError):
+        cd.detect_confounders(pd.DataFrame(), "group")
+
+
+def test_get_confounder_report_imbalance_warning(monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+
+    df = pd.DataFrame(
+        {
+            "group": ["A"] * 5 + ["B"] * 5,
+            "cat": ["x"] * 9 + ["y"],
+        }
+    )
+
+    # reuse real detect_confounders but speed by bypassing stats functions
+    class FakeStats:
+        @staticmethod
+        def chi2_contingency(cont):
+            return (1.0, 0.1, None, None)
+
+        @staticmethod
+        def ttest_ind(a, b):
+            return (0.0, 0.5)
+
+        @staticmethod
+        def f_oneway(*args):
+            return (0.0, 0.5)
+
+    monkeypatch.setitem(cd.__dict__, "stats", FakeStats())
+    report = cd.get_confounder_report(df, "group")
+    assert any("imbalance" in w for w in report["warnings"])
+
