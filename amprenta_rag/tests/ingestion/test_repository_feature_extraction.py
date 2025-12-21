@@ -22,31 +22,38 @@ def test_extract_geo_features_handles_error(monkeypatch):
 
 
 def test_extract_pride_proteins_no_files(monkeypatch):
+    fake_mod = ModuleType("amprenta_rag.ingestion.repositories.pride")
+
     class FakeRepo:
         def fetch_study_data_files(self, study_id):
             return []
 
-    monkeypatch.setattr(rfe, "PRIDERepository", FakeRepo)
+    fake_mod.PRIDERepository = lambda: FakeRepo()
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.pride", fake_mod)
     proteins = rfe.extract_pride_proteins_from_data_files("PXD1", download_dir=Path("./tmp_pride"))
     assert proteins == set()
 
 
 def test_extract_metabolights_metabolites_no_files(monkeypatch, tmp_path):
+    fake_mod = ModuleType("amprenta_rag.ingestion.repositories.metabolights")
+
     class FakeRepo:
         def fetch_study_data_files(self, study_id):
             return []
 
-    monkeypatch.setattr(rfe, "MetaboLightsRepository", FakeRepo)
+    fake_mod.MetaboLightsRepository = lambda: FakeRepo()
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.metabolights", fake_mod)
     mets = rfe.extract_metabolites_from_metabolights("MTBLS1", download_dir=tmp_path)
     assert mets == set()
 
 
 def test_extract_mw_metabolites_handles_error(monkeypatch):
-    class FakeRepo:
-        def fetch_metabolites(self, study_id):
-            raise RuntimeError("boom")
+    # MW extraction uses requests.get + REPOSITORY_USER_AGENT; mock both.
+    fake_repo_root = ModuleType("amprenta_rag.ingestion.repositories")
+    fake_repo_root.REPOSITORY_USER_AGENT = "ua"
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_root)
 
-    monkeypatch.setattr(rfe, "MWRepository", FakeRepo)
-    mets = rfe.extract_mw_metabolites("MW1")
+    monkeypatch.setattr(rfe.requests, "get", lambda *a, **k: (_ for _ in ()).throw(rfe.requests.exceptions.RequestException("boom")))
+    mets = rfe.extract_mw_metabolites_from_data_endpoint("ST000001")
     assert mets == set()
 
