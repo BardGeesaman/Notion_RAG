@@ -1,6 +1,6 @@
 """Comment service for contextual commenting on entities."""
 
-from typing import List, Optional, cast
+from typing import Any, List, Optional, cast
 from uuid import UUID
 from sqlalchemy.orm import Session
 from amprenta_rag.database.models import Comment, User
@@ -18,10 +18,10 @@ def add_comment(
     """Add a comment to an entity."""
     comment = Comment(
         entity_type=entity_type,
-        entity_id=ensure_uuid(entity_id),
+        entity_id=cast(Any, ensure_uuid(entity_id)),
         content=content,
-        created_by_id=ensure_uuid(user_id),
-        parent_id=ensure_uuid(parent_id),
+        created_by_id=cast(Any, ensure_uuid(user_id)),
+        parent_id=cast(Any, ensure_uuid(parent_id)),
     )
     db.add(comment)
     db.commit()
@@ -45,6 +45,7 @@ def get_comments(entity_type: str, entity_id: UUID, db: Session) -> List[dict]:
     result = []
     for c in comments:
         user = db.query(User).filter(User.id == c.created_by_id).first()
+        parent_uuid = cast(UUID, ensure_uuid(cast(UUID | None, c.id)))
         result.append(
             {
                 "id": str(c.id),
@@ -52,7 +53,7 @@ def get_comments(entity_type: str, entity_id: UUID, db: Session) -> List[dict]:
                 "author": user.username if user else "Unknown",
                 "author_id": str(c.created_by_id) if c.created_by_id else None,
                 "created_at": c.created_at,
-                "replies": _get_replies(ensure_uuid(cast(UUID | None, c.id)), db),
+                "replies": _get_replies(parent_uuid, db),
             }
         )
     return result
