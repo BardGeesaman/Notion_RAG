@@ -58,7 +58,7 @@ def test_batch_export_datasets_json(monkeypatch):
     monkeypatch.setattr(batch_ops, "export_to_excel", lambda df: b"xlsx", raising=False)
 
     out = batch_ops.batch_export("dataset", [str(db.datasets[0].id)], db, format="json")
-    assert out == b"json"
+    assert b"ds1" in out
 
 
 def test_batch_export_unsupported():
@@ -74,16 +74,16 @@ def test_batch_delete_counts(monkeypatch):
         return db.deleted
 
     class E:
-        id = "id"
+        id = type("col", (), {"in_": staticmethod(lambda ids: ("in", ids))})
 
-    class C:
-        id = "id"
+    class C(E):
+        pass
 
-    class S:
-        id = "id"
+    class S(E):
+        pass
 
-    class D:
-        id = "id"
+    class D(E):
+        pass
 
     monkeypatch.setattr(batch_ops, "Experiment", E)
     monkeypatch.setattr(batch_ops, "Compound", C)
