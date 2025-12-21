@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+from typing import Any, Dict
+
+import pandas as pd
+import pytest
+
+from amprenta_rag.analysis import confounder_detection as cd
+
+
+def test_detect_confounders_missing_group_column_logs_and_returns_empty(caplog):
+    df = pd.DataFrame({"a": [1, 2]})
+    res = cd.detect_confounders(df, "group")
+    assert res == []
+
+
+def test_detect_confounders_categorical_and_numeric(monkeypatch):
+    # Ensure scipy available path; mock stats
+    class FakeStats:
+        @staticmethod
+        def chi2_contingency(cont):
+            return (1.0, 0.04, None, None)
+
+        @staticmethod
+        def ttest_ind(a, b):
+            return (0.0, 0.03)
+
+        @staticmethod
+        def f_oneway(*args):
+            return (1.0, 0.02)
+
+    monkeypatch.setitem(cd.__dict__, "stats", FakeStats())
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+
+    df = pd.DataFrame(
+        {
+            "group": ["A", "A", "B", "B"],
+            "cat": ["x", "x", "y", "y"],
+            "num": [1, 2, 3, 4],
+        }
+    )
+    res = cd.detect_confounders(df, "group")
+    fields = {r["column"] for r in res}
+    assert {"cat", "num"}.issubset(fields)
+    assert any(r["is_confounder"] for r in res)
+
+
+def test_detect_confounders_insufficient_groups(caplog, monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+    df = pd.DataFrame({"group": ["A", "A"], "x": [1, 2]})
+    res = cd.detect_confounders(df, "group")
+    assert res == []
+
+
+def test_calculate_imbalance_score_handles_small_and_errors(monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "logger", type("L", (), {"warning": lambda *a, **k: None})())
+    series = pd.Series(["x", "y"])
+    groups = pd.Series(["A", "A"])
+    score = cd.calculate_imbalance_score(series, groups)
+    assert score == 0.0
+
+
+def test_get_confounder_report_with_scipy(monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", True)
+
+    def fake_detect(df, grp):
+        return [
+            {"column": "c1", "test": "chi", "p_value": 0.01, "is_confounder": True},
+            {"column": "c2", "test": "ttest", "p_value": 0.2, "is_confounder": False},
+        ]
+
+    monkeypatch.setitem(cd.__dict__, "detect_confounders", fake_detect)
+
+    df = pd.DataFrame({"group": ["A", "B"], "c1": [1, 2]})
+    report: Dict[str, Any] = cd.get_confounder_report(df, "group")
+    assert report["confounders"][0]["column"] == "c1"
+    assert "warnings" in report
+
+
+def test_get_confounder_report_without_scipy(monkeypatch):
+    monkeypatch.setitem(cd.__dict__, "SCIPY_AVAILABLE", False)
+    report = cd.get_confounder_report(pd.DataFrame(), "group")
+    assert report["warnings"]
+
