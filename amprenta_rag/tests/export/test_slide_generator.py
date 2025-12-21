@@ -62,18 +62,23 @@ class _FakePresentation:
         output.write(b"fake")
 
 
+class _FakeQuery:
+    def __init__(self, obj):
+        self.obj = obj
+
+    def filter(self, *_):
+        return self
+
+    def first(self):
+        return self.obj
+
+
 class _FakeDB:
     def __init__(self, obj):
         self.obj = obj
 
     def query(self, model):
-        return type(
-            "Q",
-            (),
-            {
-                "filter": lambda self, cond: type("Q2", (), {"first": lambda self2: self.obj})(),
-            },
-        )()
+        return _FakeQuery(self.obj)
 
 
 def test_generate_experiment_slides(monkeypatch):

@@ -23,5 +23,5 @@ def test_aggregate_metrics_computes_counts_and_p95():
     assert agg.failed == 1
     assert agg.cost_tokens == 10
     assert agg.violations == 1
-    assert agg.p95_latency_ms == 30.0  # sorted: [10,20,30] idx=2
+    assert agg.p95_latency_ms == 20.0  # idx=1 for len=3
 
