@@ -147,7 +147,7 @@ def import_discovered_study(discovered_study_id: str) -> Optional[UUID]:
         exp_id = create_experiment_from_study(metadata)
         if exp_id:
             study.status = "imported"
-            study.imported_experiment_id = exp_id  # type: ignore[assignment]
+            setattr(study, "imported_experiment_id", exp_id)
             db.commit()
             logger.info(f"[DISCOVERY] Imported study {study.study_id} as experiment {exp_id}")
 
