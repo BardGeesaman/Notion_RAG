@@ -37,20 +37,22 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: "sqlite:///:memory:"
-      DISABLE_AUTH: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
-          cache-dependency-path: "requirements.txt"
       - name: Install dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
-      - name: Run tests
-        run: pytest --ignore=amprenta_rag/tests/dashboard/
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pytest-cov
+      - name: Run tests with coverage
+        run: pytest -m "not requires_server" --ignore=amprenta_rag/tests/dashboard/ --cov=amprenta_rag --cov-report=term --cov-fail-under=35
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
+          DISABLE_AUTH: "true"
 
   terraform-validate:
     runs-on: ubuntu-latest
