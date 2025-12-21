@@ -25,6 +25,7 @@ myenv/
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 
 # Environment variables

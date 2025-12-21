@@ -19,6 +19,8 @@ def test_no_notion_references():
         "context",
         "ChatGPT context",
         "tests",
+        "htmlcov",
+        ".coverage",
     }
 
     for path in root.rglob("*"):
