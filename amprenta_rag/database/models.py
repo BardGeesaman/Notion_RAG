@@ -506,6 +506,7 @@ from amprenta_rag.models.user_prefs import (  # noqa: F401
     UserFavorite,
     EmailSubscription,
     SavedFilter,
+    Comment,
 )
 from amprenta_rag.models.content import Email  # noqa: F401
 from amprenta_rag.models.sample import (  # noqa: F401
