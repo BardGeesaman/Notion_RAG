@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import types
+import sys
+
 from amprenta_rag.analysis import enrichment
 
 
@@ -39,16 +42,13 @@ def test_enrich_signature_pathways_loads(monkeypatch):
     comps = [type("C", (), {"feature_name": "A", "feature_type": "rna"})()]
     sig = type("S", (), {"components": comps})()
 
-    monkeypatch.setitem(
-        enrichment.__dict__,
-        "fetch_all_signatures_from_notion",
-        lambda: [{"id": "sig1"}],
+    # Provide import stubs for signature_loader module
+    fake_loader = types.SimpleNamespace(
+        fetch_all_signatures_from_notion=lambda: [{"id": "sig1"}],
+        load_signature_from_notion_page=lambda p: sig if p.get("id") == "sig1" else None,
     )
-    monkeypatch.setitem(
-        enrichment.__dict__,
-        "load_signature_from_notion_page",
-        lambda p: sig if p.get("id") == "sig1" else None,
-    )
+    sys.modules["amprenta_rag.ingestion.signature_matching.signature_loader"] = fake_loader
+
     monkeypatch.setitem(
         enrichment.__dict__,
         "perform_pathway_enrichment",
