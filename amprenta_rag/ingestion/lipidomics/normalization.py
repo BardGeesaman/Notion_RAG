@@ -161,9 +161,3 @@ def normalize_lipid_species(raw_name: str) -> Optional[str]:
 
     return raw_name
 
-    logger.warning(
-        "[INGEST][LIPIDOMICS] WARNING: Could not normalize raw lipid '%s'",
-        raw_name,
-    )
-    return None
-
