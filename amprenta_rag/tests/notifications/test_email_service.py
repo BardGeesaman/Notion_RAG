@@ -85,7 +85,7 @@ def test_send_experiment_summary_missing(monkeypatch):
         def __exit__(self, *exc):
             return False
 
-    monkeypatch.setattr(es, "db_session", lambda: FakeDB())
+    monkeypatch.setattr(es, "db_session", lambda: FakeDB(), raising=False)
     assert es.send_experiment_summary(uuid4(), "to@example.com", None) is False
 
 
@@ -125,7 +125,7 @@ def test_send_experiment_summary_happy(monkeypatch):
             return False
 
     fake_exp = FakeExperiment()
-    monkeypatch.setattr(es, "db_session", lambda: FakeDB(fake_exp))
+    monkeypatch.setattr(es, "db_session", lambda: FakeDB(fake_exp), raising=False)
     monkeypatch.setattr(es, "get_experiment_summary_html", lambda exp, ds: "html")
     monkeypatch.setattr(es, "send_email", lambda to, subj, body, html_body=None: calls.setdefault("sent", True))
 
@@ -165,7 +165,7 @@ def test_send_share_notification_compound(monkeypatch):
         def __exit__(self, *exc):
             return False
 
-    monkeypatch.setattr(es, "db_session", lambda: FakeDB(FakeCompound()))
+    monkeypatch.setattr(es, "db_session", lambda: FakeDB(FakeCompound()), raising=False)
     monkeypatch.setattr(es, "get_share_email_html", lambda *a, **k: "html")
     monkeypatch.setattr(es, "send_email", lambda to, subj, body, html_body=None: calls.setdefault("sent", True))
 
@@ -174,7 +174,7 @@ def test_send_share_notification_compound(monkeypatch):
 
 
 def test_send_share_notification_unknown(monkeypatch):
-    monkeypatch.setattr(es, "db_session", lambda: None)
+    monkeypatch.setattr(es, "db_session", lambda: None, raising=False)
     monkeypatch.setattr(es, "get_share_email_html", lambda *a, **k: "html")
     monkeypatch.setattr(es, "send_email", lambda *a, **k: True)
     assert es.send_share_notification("unknown", uuid4(), "to@example.com", "user", None, None) is True

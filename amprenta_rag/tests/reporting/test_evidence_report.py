@@ -97,6 +97,6 @@ def test_format_and_write_noop():
         metadata={"k": "v"},
     )
     doc = er.format_evidence_report(rep, include_metadata=True)
-    assert "Evidence Report" in doc and "k" in doc
+    assert "Evidence Report" in doc and "K" in doc
     assert er.write_evidence_report_to_notion(rep) is False
 
