@@ -115,3 +115,114 @@ def test_cluster_datasets_by_similarity():
     # One cluster should contain the high-similarity pair d1/d2
     assert any({"d1", "d2"}.issubset(set(cluster.dataset_ids)) for cluster in clusters)
 
+
+def test_get_dataset_name_uuid_and_fallback(monkeypatch):
+    class _Q:
+        def __init__(self, obj):
+            self.obj = obj
+
+        def filter(self, *a, **k):
+            return self
+
+        def first(self):
+            return self.obj
+
+    class _DB:
+        def __init__(self, obj):
+            self.obj = obj
+
+        def query(self, model):
+            return _Q(self.obj)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    ds = type("D", (), {"name": "Nice"})()
+    monkeypatch.setattr(dc, "db_session", lambda: _DB(ds))
+    assert dc._get_dataset_name(str(uuid4())) == "Nice"
+
+    # Fallback when no name found
+    ds_none = type("D", (), {"name": None})()
+    monkeypatch.setattr(dc, "db_session", lambda: _DB(ds_none))
+    assert dc._get_dataset_name("not-a-uuid")[:7] == "Dataset"
+
+
+def test_compare_multiple_datasets_handles_errors(monkeypatch):
+    calls = []
+
+    def _fake_compare(d1, d2, use_cache=True):
+        calls.append((d1, d2))
+        if d1 == "bad":
+            raise RuntimeError("boom")
+        return DatasetComparison(
+            dataset1_id=d1,
+            dataset2_id=d2,
+            dataset1_name=d1,
+            dataset2_name=d2,
+            overall_similarity=0.1,
+            similarity_by_omics={},
+            shared_features={},
+            unique_to_dataset1={},
+            unique_to_dataset2={},
+            jaccard_similarity=0.0,
+        )
+
+    monkeypatch.setattr(dc, "compare_datasets", _fake_compare)
+    res = dc.compare_multiple_datasets(["good", "bad", "ok"])
+    # Pairs: (good,bad)->error, (good,ok)->success, (bad,ok)->error
+    assert len(res) == 1
+    assert res[0].dataset1_id == "good" and res[0].dataset2_id == "ok"
+
+
+def test_cluster_singleton_sets_avg_and_rep():
+    comp = DatasetComparison(
+        dataset1_id="solo",
+        dataset2_id="other",
+        dataset1_name="Solo",
+        dataset2_name="Other",
+        overall_similarity=0.2,
+        similarity_by_omics={},
+        shared_features={},
+        unique_to_dataset1={},
+        unique_to_dataset2={},
+        jaccard_similarity=0.0,
+    )
+    clusters = dc.cluster_datasets_by_similarity([comp], similarity_threshold=0.9)
+    # With high threshold, two singletons
+    assert len(clusters) == 2
+    assert all(c.average_similarity in (1.0, 0.0, 0.2) for c in clusters)
+
+
+def test_generate_reports():
+    comparison = DatasetComparison(
+        dataset1_id="d1",
+        dataset2_id="d2",
+        dataset1_name="D1",
+        dataset2_name="D2",
+        overall_similarity=0.5,
+        similarity_by_omics={"gene": 0.5},
+        shared_features={"gene": {"A", "B"}},
+        unique_to_dataset1={"gene": {"C"}},
+        unique_to_dataset2={"gene": {"D"}},
+        jaccard_similarity=0.4,
+    )
+    report = dc.generate_comparison_report(comparison)
+    assert "Dataset Comparison Report" in report
+    assert "Shared Features" in report
+
+    clusters = [
+        DatasetCluster(
+            cluster_id=0,
+            dataset_ids=["d1", "d2"],
+            dataset_names=["D1", "D2"],
+            average_similarity=0.5,
+            representative_dataset="d1",
+        )
+    ]
+    clustering_report = dc.generate_clustering_report(clusters)
+    assert "Dataset Clustering Report" in clustering_report
+    assert "Cluster 1" in clustering_report
+
