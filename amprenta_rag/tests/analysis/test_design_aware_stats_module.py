@@ -9,13 +9,9 @@ from amprenta_rag.analysis import design_aware_stats as das
 
 
 def _make_df():
-    return pd.DataFrame(
-        {
-            "f1": [1, 2, 3],
-            "f2": [2, 2, 2],
-        },
-        index=["f1", "f2"],
-    )
+    # Two features x three samples
+    data = [[1, 2, 3], [2, 2, 2]]
+    return pd.DataFrame(data, index=["f1", "f2"], columns=["s1", "s2", "s3"])
 
 
 def test_extract_group_values_filters_missing():
