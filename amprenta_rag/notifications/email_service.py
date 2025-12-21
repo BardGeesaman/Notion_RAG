@@ -113,7 +113,7 @@ def send_email(
         return False
 
 
-def send_experiment_summary(experiment_id: UUID, to: str, db) -> bool:
+def send_experiment_summary(experiment_id: UUID, to: str, db=None) -> bool:
     """
     Send an experiment summary email.
 
@@ -125,6 +125,17 @@ def send_experiment_summary(experiment_id: UUID, to: str, db) -> bool:
     Returns:
         True if email sent successfully, False otherwise
     """
+    if db is None:
+        from amprenta_rag.database.base import get_db
+
+        db_gen = get_db()
+        session = next(db_gen)
+        try:
+            return send_experiment_summary(experiment_id=experiment_id, to=to, db=session)
+        finally:
+            session.close()
+            next(db_gen, None)
+
     try:
         from amprenta_rag.database.models import Experiment
 
@@ -165,7 +176,7 @@ def send_share_notification(
     to: str,
     from_user: str,
     message: Optional[str],
-    db,
+    db=None,
 ) -> bool:
     """
     Send a share notification email.
@@ -181,6 +192,24 @@ def send_share_notification(
     Returns:
         True if email sent successfully, False otherwise
     """
+    if db is None:
+        from amprenta_rag.database.base import get_db
+
+        db_gen = get_db()
+        session = next(db_gen)
+        try:
+            return send_share_notification(
+                entity_type=entity_type,
+                entity_id=entity_id,
+                to=to,
+                from_user=from_user,
+                message=message,
+                db=session,
+            )
+        finally:
+            session.close()
+            next(db_gen, None)
+
     try:
         from amprenta_rag.database.models import Experiment, Compound
 
