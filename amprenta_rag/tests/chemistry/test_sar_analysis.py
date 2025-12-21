@@ -9,23 +9,38 @@ import pandas as pd
 from amprenta_rag.chemistry import sar_analysis as sa
 
 
+class _FakeDBGen:
+    def __init__(self, session):
+        self.session = session
+        self.used = False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.used:
+            raise StopIteration
+        self.used = True
+        return self.session
+
+    def close(self):
+        if hasattr(self.session, "close"):
+            self.session.close()
+
+
 class _FakeQuery:
-    def __init__(self, rows):
+    def __init__(self, rows, allowed_ids=None):
         self.rows = rows
         self._limit = None
-        self._filter = None
+        self.allowed_ids = allowed_ids
 
     def limit(self, n):
         self._limit = n
         return self
 
-    def filter(self, predicate):
-        # predicate is lambda or condition; for this fake, accept sequences
-        if callable(predicate):
-            self.rows = [r for r in self.rows if predicate(r)]
-        else:
-            ids = getattr(predicate, "__self__", None) or []
-            self.rows = [r for r in self.rows if r.compound_id in ids]
+    def filter(self, *args, **kwargs):
+        if self.allowed_ids is not None:
+            self.rows = [r for r in self.rows if r.compound_id in self.allowed_ids]
         return self
 
     def all(self):
@@ -35,12 +50,13 @@ class _FakeQuery:
 
 
 class _FakeSession:
-    def __init__(self, rows):
+    def __init__(self, rows, allowed_ids=None):
         self.rows = rows
+        self.allowed_ids = allowed_ids
         self.closed = False
 
     def query(self, model):
-        return _FakeQuery(self.rows)
+        return _FakeQuery(self.rows, allowed_ids=self.allowed_ids)
 
     def close(self):
         self.closed = True
@@ -60,20 +76,20 @@ class _FakeCompound:
 def test_get_compound_properties(monkeypatch):
     rows = [_FakeCompound("c1", "C"), _FakeCompound("c2", "CC")]
     sess = _FakeSession(rows)
-    monkeypatch.setattr(sa, "get_db", lambda: iter([sess]))
+    monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(sess))
     df = sa.get_compound_properties(limit=10)
     assert set(df["compound_id"]) == {"c1", "c2"}
 
     # Empty path
     sess_empty = _FakeSession([])
-    monkeypatch.setattr(sa, "get_db", lambda: iter([sess_empty]))
+    monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(sess_empty))
     assert sa.get_compound_properties().empty
 
 
 def test_get_activity_data_filters(monkeypatch):
     rows = [_FakeCompound("c1", "C"), _FakeCompound("c2", "CC")]
-    sess = _FakeSession(rows)
-    monkeypatch.setattr(sa, "get_db", lambda: iter([sess]))
+    sess = _FakeSession(rows, allowed_ids=["c2"])
+    monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(sess))
     df = sa.get_activity_data(compound_ids=["c2"])
     assert list(df["compound_id"]) == ["c2"]
 
@@ -188,7 +204,7 @@ def test_detect_activity_cliffs_with_fake_rdkit(monkeypatch):
         def close(self):
             pass
 
-    monkeypatch.setattr(sa, "get_db", lambda: iter([FakeSession(results)]))
+    monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(FakeSession(results)))
 
     cliffs = sa.detect_activity_cliffs()
     assert cliffs
