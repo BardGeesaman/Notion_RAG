@@ -61,6 +61,12 @@ def test_help_and_unknown(monkeypatch):
     assert "I'm not sure" in ans
 
 
+def test_similar_datasets_branch(monkeypatch):
+    monkeypatch.setattr(chat_agent, "route_intent", lambda text: "similar_datasets")
+    _, ans = chat_agent.run_chat_turn(make_session(), "find similar")
+    assert "Similarity" in ans
+
+
 def test_error_handling(monkeypatch):
     monkeypatch.setattr(chat_agent, "route_intent", lambda text: "freeform_rag")
 
