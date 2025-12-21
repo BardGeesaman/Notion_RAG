@@ -49,7 +49,7 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install pytest-cov
       - name: Run tests with coverage
-        run: pytest -m "not requires_server" --ignore=amprenta_rag/tests/dashboard/ --cov=amprenta_rag --cov-report=term --cov-fail-under=48
+        run: pytest -m "not requires_server" --ignore=amprenta_rag/tests/dashboard/ --cov=amprenta_rag --cov-report=term --cov-fail-under=70
         env:
           DATABASE_URL: "sqlite:///:memory:"
           DISABLE_AUTH: "true"
