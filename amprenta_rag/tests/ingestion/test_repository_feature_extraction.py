@@ -57,3 +57,130 @@ def test_extract_mw_metabolites_handles_error(monkeypatch):
     mets = rfe.extract_mw_metabolites_from_data_endpoint("ST000001")
     assert mets == set()
 
+
+def test_extract_pride_proteins_mztab_success(monkeypatch, tmp_path):
+    # Patch PRIDERepository import target
+    fake_mod = ModuleType("amprenta_rag.ingestion.repositories.pride")
+
+    file_obj = SimpleNamespace(
+        filename="results.mzTab",
+        file_type="SEARCH",
+        download_url="https://example.com/results.mzTab",
+    )
+
+    class FakeRepo:
+        def fetch_study_data_files(self, study_id):
+            return [file_obj]
+
+    fake_mod.PRIDERepository = lambda: FakeRepo()
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.pride", fake_mod)
+
+    # Patch repositories root for user agent
+    fake_repo_root = ModuleType("amprenta_rag.ingestion.repositories")
+    fake_repo_root.REPOSITORY_USER_AGENT = "ua"
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_root)
+
+    # Patch proteomics normalization import target
+    fake_norm = ModuleType("amprenta_rag.ingestion.proteomics.normalization")
+    fake_norm.normalize_protein_identifier = lambda s: s
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.proteomics.normalization", fake_norm)
+
+    # Avoid sleeping in tests
+    monkeypatch.setattr(rfe.time, "sleep", lambda *_a, **_k: None)
+
+    class Resp:
+        status_code = 200
+        text = "PRH\taccession\tother\nPRT\tP12345\tX\nPRT\tQ9ZZZ9\tY\n"
+        content = text.encode("utf-8")
+
+        def raise_for_status(self):
+            return None
+
+    monkeypatch.setattr(rfe.requests, "get", lambda *a, **k: Resp())
+
+    proteins = rfe.extract_pride_proteins_from_data_files("PXD1", download_dir=tmp_path)
+    assert proteins == {"P12345", "Q9ZZZ9"}
+
+
+def test_extract_metabolights_metabolites_success(monkeypatch, tmp_path):
+    fake_mod = ModuleType("amprenta_rag.ingestion.repositories.metabolights")
+
+    class FakeMeta:
+        def __init__(self):
+            self.raw_metadata = {"mtblsStudy": {"studyHttpUrl": "https://example.com/MTBLS1"}}
+
+    class FakeRepo:
+        def fetch_study_metadata(self, study_id):
+            return FakeMeta()
+
+    fake_mod.MetaboLightsRepository = lambda: FakeRepo()
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories.metabolights", fake_mod)
+
+    # repositories root for user agent
+    fake_repo_root = ModuleType("amprenta_rag.ingestion.repositories")
+    fake_repo_root.REPOSITORY_USER_AGENT = "ua"
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_root)
+
+    # metabolomics normalization
+    fake_norm = ModuleType("amprenta_rag.ingestion.metabolomics.normalization")
+    fake_norm.normalize_metabolite_name = lambda s: s.strip()
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.metabolomics.normalization", fake_norm)
+
+    inv_url = "https://example.com/MTBLS1/i_Investigation.txt"
+    maf_url = "https://example.com/MTBLS1/m_MTBLS1_maf.tsv"
+
+    class InvResp:
+        status_code = 200
+        text = "some stuff m_MTBLS1_maf.tsv other"
+
+    class MafResp:
+        status_code = 200
+
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, chunk_size=8192):
+            data = (
+                "metabolite_identification\tsample name\tS1\n"
+                "Glucose\ts1\t1\n"
+                "Lactate\ts1\t2\n"
+            ).encode("utf-8")
+            yield data
+
+    def fake_get(url, *a, **k):
+        if url == inv_url:
+            return InvResp()
+        if url == maf_url:
+            return MafResp()
+        raise AssertionError(f"unexpected url {url}")
+
+    monkeypatch.setattr(rfe.requests, "get", fake_get)
+    # ensure HEAD never called (we found via investigation)
+    monkeypatch.setattr(rfe.requests, "head", lambda *a, **k: SimpleNamespace(status_code=404))
+
+    mets = rfe.extract_metabolights_metabolites_from_isa_tab("MTBLS1", download_dir=tmp_path)
+    assert mets == {"Glucose", "Lactate"}
+
+
+def test_extract_mw_metabolites_success(monkeypatch):
+    fake_repo_root = ModuleType("amprenta_rag.ingestion.repositories")
+    fake_repo_root.REPOSITORY_USER_AGENT = "ua"
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.repositories", fake_repo_root)
+
+    fake_norm = ModuleType("amprenta_rag.ingestion.metabolomics.normalization")
+    fake_norm.normalize_metabolite_name = lambda s: s.strip()
+    monkeypatch.setitem(sys.modules, "amprenta_rag.ingestion.metabolomics.normalization", fake_norm)
+
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {
+                "1": {"metabolite_name": "Glucose"},
+                "2": {"refmet_name": "Lactate"},
+            }
+
+    monkeypatch.setattr(rfe.requests, "get", lambda *a, **k: Resp())
+    mets = rfe.extract_mw_metabolites_from_data_endpoint("ST000001")
+    assert mets == {"Glucose", "Lactate"}
+
