@@ -207,7 +207,7 @@ def test_detect_activity_cliffs_with_fake_rdkit(monkeypatch):
 
     monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(FakeSession(results)))
 
-    cliffs = sa.detect_activity_cliffs()
+    cliffs = sa.detect_activity_cliffs(similarity_threshold=0.0, activity_fold_change=1.0)
     assert cliffs
     assert cliffs[0]["fold_change"] >= 10.0
 
