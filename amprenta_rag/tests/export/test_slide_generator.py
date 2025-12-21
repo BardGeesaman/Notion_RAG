@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 from uuid import uuid4
+import importlib
+import sys
+from types import ModuleType
 
 import pytest
 
-from amprenta_rag.export import slide_generator as sg
+
+def _install_fake_pptx():
+    fake_pptx = ModuleType("pptx")
+    fake_pptx.util = ModuleType("pptx.util")
+    fake_pptx.util.Pt = lambda x: x
+    fake_pptx.Presentation = None  # will be set later
+    sys.modules["pptx"] = fake_pptx
+    sys.modules["pptx.util"] = fake_pptx.util
+    return fake_pptx
 
 
 class _FakeTextFrame:
@@ -66,8 +77,12 @@ class _FakeDB:
 
 
 def test_generate_experiment_slides(monkeypatch):
+    fake_pptx = _install_fake_pptx()
+    import amprenta_rag.export.slide_generator as sg
+
     monkeypatch.setattr(sg, "Presentation", _FakePresentation)
     monkeypatch.setattr(sg, "Pt", lambda x: x)
+    fake_pptx.Presentation = _FakePresentation
 
     class FakeDataset:
         def __init__(self, organism=None):
@@ -91,8 +106,12 @@ def test_generate_experiment_slides(monkeypatch):
 
 
 def test_generate_dataset_slides(monkeypatch):
+    fake_pptx = _install_fake_pptx()
+    import amprenta_rag.export.slide_generator as sg
+
     monkeypatch.setattr(sg, "Presentation", _FakePresentation)
     monkeypatch.setattr(sg, "Pt", lambda x: x)
+    fake_pptx.Presentation = _FakePresentation
 
     class FakeDataset:
         def __init__(self):
@@ -115,8 +134,12 @@ def test_generate_dataset_slides(monkeypatch):
 
 
 def test_generate_experiment_slides_missing(monkeypatch):
+    fake_pptx = _install_fake_pptx()
+    import amprenta_rag.export.slide_generator as sg
+
     monkeypatch.setattr(sg, "Presentation", _FakePresentation)
     monkeypatch.setattr(sg, "Pt", lambda x: x)
+    fake_pptx.Presentation = _FakePresentation
 
     db = _FakeDB(None)
     with pytest.raises(ValueError):
