@@ -234,7 +234,7 @@ def embed_signature_with_postgres_id(
         signature_id: Postgres UUID of the signature
         signature: Signature object with components
     """
-    from amprenta_rag.clients.pinecone_client import get_pinecone_index
+    from amprenta_rag.clients.vector_store import get_vector_store
     from amprenta_rag.config import get_config
     from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
     from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
@@ -283,8 +283,8 @@ def embed_signature_with_postgres_id(
 
         embeddings = embed_texts(chunks)
 
-        # Prepare vectors for Pinecone
-        index = get_pinecone_index()
+        # Prepare vectors for vector store
+        store = get_vector_store()
         vectors = []
         signature_id_str = str(signature_id).replace("-", "")
 
@@ -310,7 +310,7 @@ def embed_signature_with_postgres_id(
 
         # Upsert to Pinecone
         if vectors:
-            index.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
+            store.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
             logger.info(
                 "[POSTGRES-SIGNATURE-EMBED] Embedded signature %s with %d chunk(s)",
                 signature_id,

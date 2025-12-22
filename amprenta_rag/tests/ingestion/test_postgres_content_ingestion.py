@@ -66,7 +66,7 @@ def test_content_already_ingested_found_hash_mismatch(monkeypatch):
 
 def test_delete_content_vectors(monkeypatch):
     idx = FakeIndex()
-    monkeypatch.setattr(pci, "get_pinecone_index", lambda: idx)
+    monkeypatch.setattr(pci, "get_vector_store", lambda: idx)
     monkeypatch.setattr(pci, "get_config", lambda: SimpleNamespace(pinecone=SimpleNamespace(namespace="ns")))
     
     pci._delete_content_vectors("id1")
@@ -75,7 +75,7 @@ def test_delete_content_vectors(monkeypatch):
 
 def test_ingest_content_direct_to_pinecone_success(monkeypatch):
     idx = FakeIndex()
-    monkeypatch.setattr(pci, "get_pinecone_index", lambda: idx)
+    monkeypatch.setattr(pci, "get_vector_store", lambda: idx)
     monkeypatch.setattr(pci, "get_config", lambda: SimpleNamespace(pinecone=SimpleNamespace(namespace="ns")))
     
     # Mock helpers

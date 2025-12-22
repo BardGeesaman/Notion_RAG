@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
@@ -58,29 +58,20 @@ def sanitize_metadata(meta: Dict[str, Any]) -> Dict[str, Any]:
 
 def _query_pinecone_by_filter(filter_obj: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Helper: query Pinecone by metadata filter using a dummy vector of
-    the right dimension. We rely on the index being 3072-dim (current index).
+    Helper: query vector store by metadata filter using a dummy vector of
+    the right dimension (3072).
     """
-    index = get_pinecone_index()
     cfg = get_config()
+    store = get_vector_store()
 
     dummy = [0.0] * 3072
     try:
-        res = index.query(
-            vector=dummy,
-            top_k=10,
-            include_metadata=True,
-            namespace=cfg.pinecone.namespace,
-            filter=filter_obj,
-        )
+        res = store.query(vector=dummy, top_k=10, filter=filter_obj, namespace=cfg.pinecone.namespace)
     except Exception as e:
-        logger.error("[PINECONE] Pinecone API error querying by filter: %r", e)
+        logger.error("[PINECONE] Vector store error querying by filter: %r", e)
         raise
 
-    matches = getattr(res, "matches", None)
-    if matches is None:
-        matches = res.get("matches", [])
-    return list(matches)
+    return list(res)
 
 
 def attachment_already_ingested(
@@ -108,8 +99,8 @@ def attachment_already_ingested(
     meta = getattr(m0, "metadata", None) or m0.get("metadata", {})
     stored_md5 = meta.get("attachment_md5")
 
-    index = get_pinecone_index()
     cfg = get_config()
+    store = get_vector_store()
 
     if (not stored_md5) or (stored_md5 != current_md5):
         logger.warning(
@@ -121,7 +112,7 @@ def attachment_already_ingested(
             current_md5,
         )
         try:
-            index.delete(
+            store.delete(
                 filter={
                     "zotero_item_key": {"$eq": item_key},
                     "attachment_key": {"$eq": attachment_key},
@@ -163,8 +154,8 @@ def note_already_ingested(
     meta = getattr(m0, "metadata", None) or m0.get("metadata", {})
     stored_hash = meta.get("note_hash")
 
-    index = get_pinecone_index()
     cfg = get_config()
+    store = get_vector_store()
 
     if (not stored_hash) or (stored_hash != note_hash):
         logger.warning(
@@ -175,7 +166,7 @@ def note_already_ingested(
             note_hash,
         )
         try:
-            index.delete(
+            store.delete(
                 filter={
                     "zotero_item_key": {"$eq": item_key},
                     "note_key": {"$eq": note_key},

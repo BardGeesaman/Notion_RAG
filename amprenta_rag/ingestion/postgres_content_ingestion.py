@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.feature_extraction import extract_features_from_text
 from amprenta_rag.ingestion.pinecone_utils import _query_pinecone_by_filter, sanitize_metadata
@@ -93,11 +93,11 @@ def _content_already_ingested(
 
 def _delete_content_vectors(content_id: str) -> None:
     """Delete all vectors for a given content_id from Pinecone."""
-    index = get_pinecone_index()
     cfg = get_config()
+    store = get_vector_store()
 
     try:
-        index.delete(
+        store.delete(
             filter={
                 "content_id": {"$eq": content_id},
             },
@@ -225,8 +225,8 @@ def ingest_content_direct_to_pinecone(
         raise
 
     # Prepare vectors for Pinecone
-    index = get_pinecone_index()
     cfg = get_config()
+    store = get_vector_store()
 
     vectors: List[Dict[str, Any]] = []
     embedding_ids: List[str] = []
@@ -273,7 +273,7 @@ def ingest_content_direct_to_pinecone(
             batch_num = (i // batch_size) + 1
             total_batches = (len(vectors) + batch_size - 1) // batch_size
 
-            index.upsert(vectors=batch, namespace=cfg.pinecone.namespace)
+            store.upsert(vectors=batch, namespace=cfg.pinecone.namespace)
 
             if batch_num % 10 == 0 or batch_num == total_batches:
                 logger.info(

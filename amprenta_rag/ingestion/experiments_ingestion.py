@@ -12,7 +12,7 @@ from __future__ import annotations
 import textwrap
 from typing import Any, Dict, List
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.feature_extraction import (
     extract_features_from_text, link_features_to_notion_items)
@@ -255,8 +255,8 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment", force: 
         )
         raise
 
-    index = get_pinecone_index()
     cfg = get_config()
+    store = get_vector_store()
 
     vectors: List[Dict[str, Any]] = []
     canonical_page_id = page.get("id", exp_page_id)
@@ -297,7 +297,7 @@ def ingest_experiment(exp_page_id: str, parent_type: str = "Experiment", force: 
     )
 
     try:
-        index.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
+        store.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
     except Exception as e:
         logger.error(
             "[INGEST][EXPERIMENT] Error upserting vectors for %s: %r",

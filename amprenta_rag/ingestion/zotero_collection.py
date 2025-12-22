@@ -12,7 +12,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 
 import requests
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.zotero_ingest import ingest_zotero_item
 from amprenta_rag.logging_utils import get_logger
@@ -98,8 +98,9 @@ def delete_pinecone_vectors_for_item(item_key: str) -> None:
     """
     Delete all Pinecone vectors whose metadata.zotero_item_key == item_key.
     """
-    index = get_pinecone_index()
-    index.delete(filter={"zotero_item_key": {"$eq": item_key}})
+    cfg = get_config()
+    store = get_vector_store()
+    store.delete(filter={"zotero_item_key": {"$eq": item_key}}, namespace=cfg.pinecone.namespace)
 
 
 # ---------- High-level collection operations ---------- #

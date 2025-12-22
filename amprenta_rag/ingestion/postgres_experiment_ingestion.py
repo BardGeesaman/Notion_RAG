@@ -12,7 +12,7 @@ from typing import Any, Dict, List, cast
 from uuid import UUID
 from uuid import UUID
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Experiment as ExperimentModel
@@ -241,8 +241,8 @@ def ingest_experiment_from_postgres(
         raise
 
     # Prepare vectors for Pinecone
-    index = get_pinecone_index()
     cfg = get_config()
+    store = get_vector_store()
 
     vectors: List[Dict[str, Any]] = []
     embedding_ids: List[str] = []
@@ -297,7 +297,7 @@ def ingest_experiment_from_postgres(
                 experiment_id,
             )
 
-            index.upsert(vectors=batch, namespace=cfg.pinecone.namespace)
+            store.upsert(vectors=batch, namespace=cfg.pinecone.namespace)
 
             if batch_num % 10 == 0 or batch_num == total_batches:
                 logger.info(

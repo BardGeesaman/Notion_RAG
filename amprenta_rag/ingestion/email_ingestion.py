@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.feature_extraction import (
     extract_features_from_text, link_features_to_notion_items)
@@ -98,8 +98,8 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
         email_page: Notion page object from Email DB query
         parent_type: Type label ("Email" or "Note") for the parent
     """
-    index = get_pinecone_index()
     cfg = get_config()
+    store = get_vector_store()
 
     page_id = email_page["id"].replace("-", "")
     props = email_page.get("properties", {})
@@ -254,7 +254,7 @@ def ingest_email(email_page: Dict[str, Any], parent_type: str = "Email") -> None
         page_id,
     )
     try:
-        index.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
+        store.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
     except Exception as e:
         logger.error(
             "[INGEST][EMAIL] Pinecone API error upserting vectors for email %s: %r",

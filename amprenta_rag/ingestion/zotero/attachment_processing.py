@@ -11,7 +11,7 @@ import textwrap
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 # DEPRECATED: Notion imports removed - Postgres is now source of truth
 # from amprenta_rag.ingestion.notion_pages import create_rag_chunk_page
@@ -64,7 +64,7 @@ def process_attachments(
         Tuple of (list of extracted text strings, whether any were ingested)
     """
     cfg = get_config()
-    index = get_pinecone_index()
+    store = get_vector_store()
     now = datetime.now(timezone.utc).isoformat()
     any_ingested = False
     all_text_parts: List[str] = []
@@ -216,7 +216,7 @@ def process_attachments(
                 att_key,
             )
             try:
-                index.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
+                store.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
             except Exception as e:
                 logger.error(
                     "[INGEST][ZOTERO] Pinecone API error upserting vectors for attachment %s: %r",

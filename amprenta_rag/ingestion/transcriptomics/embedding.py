@@ -11,7 +11,7 @@ from typing import List, Optional, Set
 
 import pandas as pd
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 # DEPRECATED: Notion imports removed - Postgres is now source of truth
 # from amprenta_rag.ingestion.dataset_notion_utils import update_dataset_embedding_metadata
@@ -68,8 +68,8 @@ def embed_transcriptomics_dataset(
 
         embeddings = embed_texts(chunks)
 
-        # Upsert to Pinecone
-        index = get_pinecone_index()
+        # Upsert to vector store
+        store = get_vector_store()
         vectors = []
         for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
             chunk_id = f"{page_id.replace('-', '')}_trans_chunk_{order:03d}"
@@ -96,7 +96,7 @@ def embed_transcriptomics_dataset(
         batch_size = 100
         for i in range(0, len(vectors), batch_size):
             batch = vectors[i : i + batch_size]
-            index.upsert(vectors=batch, namespace=cfg.pinecone.namespace)
+            store.upsert(vectors=batch, namespace=cfg.pinecone.namespace)
 
         # DEPRECATED: Notion metadata update removed - Postgres is now source of truth
         # Embedding metadata is stored in Pinecone

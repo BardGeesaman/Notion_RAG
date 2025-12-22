@@ -9,7 +9,7 @@ from __future__ import annotations
 import textwrap
 from typing import Any, Dict, List
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
@@ -85,7 +85,7 @@ def embed_signature(
         embeddings = embed_texts(chunks)
 
         # Upsert to Pinecone
-        index = get_pinecone_index()
+        store = get_vector_store()
 
         vectors: List[Dict[str, Any]] = []
         for order, (chunk, emb) in enumerate(zip(chunks, embeddings)):
@@ -107,7 +107,7 @@ def embed_signature(
                 }
             )
 
-        index.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
+        store.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
 
         logger.info(
             "[INGEST][SIGNATURES] Embedded signature '%s' to Pinecone (%d vectors)",

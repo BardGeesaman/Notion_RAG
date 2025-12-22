@@ -6,7 +6,9 @@ from uuid import UUID
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Email, Literature
-from amprenta_rag.ingestion.pinecone_utils import get_pinecone_index, sanitize_metadata
+from amprenta_rag.clients.vector_store import get_vector_store
+from amprenta_rag.config import get_config
+from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
 from amprenta_rag.ingestion.postgres_rag_chunk import create_rag_chunk_in_postgres
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.ingestion.text_extraction import extract_text_from_pdf_bytes
@@ -95,8 +97,9 @@ def ingest_local_document(
                 ),
             }
         )
-    pinecone_index = get_pinecone_index()
-    pinecone_index.upsert(vectors=vectors)
+    cfg = get_config()
+    store = get_vector_store()
+    store.upsert(vectors=vectors, namespace=cfg.pinecone.namespace)
     # Mark embedding/ingestion as complete
     with db_session() as db:
         model: Union[type[Literature], type[Email]] = Literature if doc_type.lower() == "literature" else Email
