@@ -352,6 +352,10 @@ def _render_edit_tab() -> None:
                 st.session_state[f"conflict_{experiment.id}"] = {"expected": e.expected, "actual": e.actual}
                 st.rerun()
 
+        def _handle_reload(exp_id: int, actual_version: int) -> None:
+            st.session_state[f"edit_version_{exp_id}"] = actual_version
+            st.session_state.pop(f"conflict_{exp_id}", None)
+
         conflict_key = f"conflict_{experiment.id}"
         if conflict_key in st.session_state:
             conflict = st.session_state[conflict_key]
@@ -359,15 +363,19 @@ def _render_edit_tab() -> None:
             st.warning(f"Your version: {conflict['expected']}, Current version: {conflict['actual']}")
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Reload Latest", key=f"reload_{experiment.id}"):
-                    st.session_state[f"edit_version_{experiment.id}"] = conflict["actual"]
-                    del st.session_state[conflict_key]
-                    st.rerun()
+                st.button(
+                    "Reload Latest",
+                    key=f"reload_{experiment.id}",
+                    on_click=_handle_reload,
+                    args=(experiment.id, conflict["actual"]),
+                )
             with col2:
-                if st.button("Force Save", key=f"force_{experiment.id}"):
-                    del st.session_state[conflict_key]
-                    st.session_state[f"edit_version_{experiment.id}"] = conflict["actual"]
-                    st.rerun()
+                st.button(
+                    "Force Save",
+                    key=f"force_{experiment.id}",
+                    on_click=_handle_reload,
+                    args=(experiment.id, conflict["actual"]),
+                )
 
 
 def _render_templates_tab() -> None:
