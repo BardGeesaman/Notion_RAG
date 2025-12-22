@@ -126,6 +126,7 @@ class TestOptimisticLocking:
             # Now saving should succeed (no conflict) because the version was refreshed.
             _set_sample_groups_json(page2, f'{{\"_e2e\": \"after-reload-{t}\"}}')
             _click_save_design(page2)
+            page2.screenshot(path="/tmp/e2e_after_reload_save.png")
             expect(page2.locator("text=Saved successfully!").first).to_be_visible(timeout=10000)
         finally:
             ctx2.close()
