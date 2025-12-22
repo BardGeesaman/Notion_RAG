@@ -102,6 +102,7 @@ class ExperimentCreate(ExperimentBase):
 
 class ExperimentUpdate(BaseSchema):
     """Schema for updating an experiment."""
+    version: int = Field(..., ge=1, description="Current entity version for optimistic locking")
     name: Optional[str] = None
     type: Optional[str] = None
     description: Optional[str] = None
@@ -119,6 +120,7 @@ class Experiment(ExperimentBase):
     created_at: datetime
     updated_at: datetime
     notion_page_id: Optional[str] = None
+    version: int = 1
 
 
 # ============================================================================

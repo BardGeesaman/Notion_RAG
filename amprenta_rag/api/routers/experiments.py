@@ -13,6 +13,8 @@ from amprenta_rag.api.dependencies import get_database_session
 from amprenta_rag.api.schemas import AnnotationCreate, Experiment, ExperimentCreate, ExperimentUpdate
 from amprenta_rag.api.services import experiments as experiment_service
 from amprenta_rag.database.models import Note
+from amprenta_rag.utils.optimistic_lock import ConflictError, update_with_lock
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 router = APIRouter()
 
@@ -68,7 +70,7 @@ async def add_experiment_annotation(
 
     note = Note(
         entity_type="experiment",
-        entity_id=experiment_id,  # type: ignore[arg-type]
+        entity_id=cast(Any, ensure_uuid(experiment_id)),
         annotation_type=annotation.annotation_type,
         content=annotation.text,
     )
@@ -93,10 +95,36 @@ async def update_experiment(
     experiment: ExperimentUpdate,
     db: Session = Depends(get_database_session),
 ) -> Experiment:
-    """Update an experiment."""
-    updated = experiment_service.update_experiment(db, experiment_id, experiment)
-    if not updated:
+    """
+    Update an experiment using optimistic locking.
+
+    Clients must provide the current `version` of the experiment. If the stored
+    version differs, the request fails with HTTP 409 to prevent lost updates.
+    """
+    db_experiment = experiment_service.get_experiment(db, experiment_id)
+    if not db_experiment:
         raise HTTPException(status_code=404, detail="Experiment not found")
+
+    update_data = experiment.model_dump(exclude_unset=True)
+    expected_version = cast(int, update_data.pop("version"))
+    program_ids = update_data.pop("program_ids", None)
+
+    # Update program relationships (if provided) in the same transaction/version bump.
+    if program_ids is not None:
+        from amprenta_rag.api.services.programs import get_program
+
+        db_experiment.programs.clear()
+        for program_id in program_ids:
+            program = get_program(db, program_id)
+            if program:
+                db_experiment.programs.append(program)
+
+    try:
+        updated = update_with_lock(db_experiment, cast(Dict[str, Any], update_data), expected_version, db)
+    except ConflictError:
+        raise HTTPException(status_code=409, detail="Version conflict")
+
+    db.refresh(updated)
     return cast(Experiment, updated)
 
 
