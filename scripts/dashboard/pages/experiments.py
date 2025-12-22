@@ -25,6 +25,12 @@ from amprenta_rag.utils.optimistic_lock import update_with_lock, ConflictError
 from scripts.dashboard.db_session import db_session
 
 
+def _handle_reload(exp_id: int, actual_version: int) -> None:
+    """Callback for Reload Latest button - updates version in session state."""
+    st.session_state[f"edit_version_{exp_id}"] = actual_version
+    st.session_state.pop(f"conflict_{exp_id}", None)
+
+
 def _render_browse_tab() -> None:
     with db_session() as db:
         # Saved Filters section
@@ -351,10 +357,6 @@ def _render_edit_tab() -> None:
             except ConflictError as e:
                 st.session_state[f"conflict_{experiment.id}"] = {"expected": e.expected, "actual": e.actual}
                 st.rerun()
-
-        def _handle_reload(exp_id: int, actual_version: int) -> None:
-            st.session_state[f"edit_version_{exp_id}"] = actual_version
-            st.session_state.pop(f"conflict_{exp_id}", None)
 
         conflict_key = f"conflict_{experiment.id}"
         if conflict_key in st.session_state:
