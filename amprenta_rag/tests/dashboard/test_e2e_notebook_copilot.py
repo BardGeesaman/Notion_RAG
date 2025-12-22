@@ -21,7 +21,10 @@ def _goto_notebook_copilot(page: Page, base_url: str) -> None:
     page.wait_for_timeout(5000)
 
     # Wait for page content
-    expect(page.get_by_role("button", name="Generate code").first).to_be_visible(timeout=20000)
+    main = page.locator('[data-testid="stAppViewContainer"]').first
+    expect(
+        main.locator('h1:has-text("Notebook Co-Pilot"), h2:has-text("Notebook Co-Pilot")').first
+    ).to_be_visible(timeout=20000)
 
 
 def _skip_if_no_datasets(page: Page) -> None:
@@ -35,7 +38,10 @@ class TestNotebookCopilotE2E:
         """Verify Notebook Co-Pilot page renders with key elements."""
         _goto_notebook_copilot(page, streamlit_server)
 
-        expect(page.locator("text=Notebook Co-Pilot").first).to_be_visible(timeout=10000)
+        main = page.locator('[data-testid="stAppViewContainer"]').first
+        expect(
+            main.locator('h1:has-text("Notebook Co-Pilot"), h2:has-text("Notebook Co-Pilot")').first
+        ).to_be_visible(timeout=10000)
         expect(page.get_by_role("button", name="Load Dataset").first).to_be_visible()
         expect(page.get_by_role("button", name="HTS QC").first).to_be_visible()
         expect(page.get_by_role("button", name="Dose-response").first).to_be_visible()
@@ -50,7 +56,8 @@ class TestNotebookCopilotE2E:
         page.wait_for_timeout(500)
 
         # Ensure the dataset selector is present; if none exist, skip.
-        expect(page.locator("text=Dataset").first).to_be_visible(timeout=10000)
+        main = page.locator('[data-testid="stAppViewContainer"]').first
+        expect(main.locator('label:has-text("Dataset")').first).to_be_visible(timeout=10000)
         _skip_if_no_datasets(page)
 
         page.get_by_role("button", name="Generate code").first.click()
@@ -76,6 +83,12 @@ class TestNotebookCopilotE2E:
         if page.locator("text=Copilot failed:").count() > 0:
             pytest.skip("Copilot generation unavailable (missing LLM credentials/config).")
 
-        expect(page.get_by_role("button", name="Copy").first).to_be_visible(timeout=20000)
+        main = page.locator('[data-testid="stAppViewContainer"]').first
+        # Streamlit shows the copy button on hover for code blocks; hover first.
+        pre = main.locator("css=pre").first
+        expect(pre).to_be_visible(timeout=20000)
+        pre.hover()
+        page.wait_for_timeout(300)
+        expect(main.locator('[data-testid="stCodeCopyButton"]').first).to_be_visible(timeout=20000)
 
 
