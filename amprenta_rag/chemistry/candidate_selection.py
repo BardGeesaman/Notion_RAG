@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Dict, Any, Optional, cast
 from uuid import UUID
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 from amprenta_rag.database.models import Compound, TargetProductProfile, CandidateNomination
 from amprenta_rag.logging_utils import get_logger
@@ -174,13 +175,13 @@ def nominate_candidate(
 
     # Create nomination
     nomination = CandidateNomination(
-        compound_id=compound_id,  # type: ignore[arg-type]
-        tpp_id=tpp_id,  # type: ignore[arg-type]
+        compound_id=cast(Any, ensure_uuid(compound_id)),
+        tpp_id=cast(Any, ensure_uuid(tpp_id)),
         scores=scores_dict,
         overall_score=scoring_result["overall_score"],
         status="nominated",
         notes=notes,
-        nominated_by_id=user_id,  # type: ignore[arg-type]
+        nominated_by_id=cast(Any, ensure_uuid(user_id)) if user_id is not None else None,
     )
 
     db.add(nomination)

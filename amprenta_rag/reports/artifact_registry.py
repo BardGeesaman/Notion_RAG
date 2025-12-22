@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Any, cast
 from uuid import UUID
+
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 from amprenta_rag.database.models import ReportArtifact
 from amprenta_rag.database.session import db_session
@@ -21,11 +23,11 @@ def save_artifact(
     with db_session() as db:
         artifact = ReportArtifact(
             entity_type=entity_type,
-            entity_id=entity_id,  # type: ignore[arg-type]
+            entity_id=cast(Any, ensure_uuid(entity_id)),
             format=format,
             file_path=file_path,
             params_hash=params_hash,
-            created_by_id=user_id,  # type: ignore[arg-type]
+            created_by_id=cast(Any, ensure_uuid(user_id)) if user_id is not None else None,
         )
         db.add(artifact)
         db.commit()

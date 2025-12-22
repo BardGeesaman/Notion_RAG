@@ -334,10 +334,16 @@ Implementation:
 - "Publish to Program" button
 
 ### 2) AWS Deployment / Infrastructure Hardening
-- ✅ IaC (Terraform) — Lightsail + RDS configuration
+- ✅ IaC (Terraform) — Lightsail + RDS configuration (Phase 1)
+- ✅ ECS/RDS/ALB deployment architecture (Phase 2, 2025-12-21)
+  - VPC with public/private subnets
+  - ECS Fargate cluster (API + Dashboard services)
+  - Application Load Balancer with path-based routing
+  - RDS PostgreSQL in private subnets
+  - AWS Secrets Manager integration
+  - CloudWatch Logs and monitoring
 - ✅ CI/CD pipeline (GitHub Actions → deploy)
   - **Note**: CD workflow requires GitHub secrets (LIGHTSAIL_HOST, LIGHTSAIL_SSH_KEY) - pending infrastructure setup
-- ❌ ECS/RDS/ElastiCache deployment architecture (containerized alternative)
 
 ### 3) Advanced Visualization Suite
 - ✅ Cytoscape.js networks (relationships/lineage)

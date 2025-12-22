@@ -1,8 +1,10 @@
 """Bookmarks service for managing user bookmarks."""
 from __future__ import annotations
 
-from typing import List
+from typing import List, Any, cast
 from uuid import UUID
+
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 from amprenta_rag.database.models import Bookmark
 from amprenta_rag.logging_utils import get_logger
@@ -24,9 +26,9 @@ def add_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> Bookmark
         Created Bookmark object
     """
     bookmark = Bookmark(
-        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,  # type: ignore[arg-type]
+        user_id=cast(Any, ensure_uuid(user_id)),
         entity_type=entity_type,
-        entity_id=UUID(entity_id) if isinstance(entity_id, str) else entity_id,  # type: ignore[arg-type]
+        entity_id=cast(Any, ensure_uuid(entity_id)),
     )
 
     db.add(bookmark)
@@ -50,9 +52,9 @@ def remove_bookmark(user_id: str, entity_type: str, entity_id: str, db) -> None:
     bookmark = (
         db.query(Bookmark)
         .filter(
-            Bookmark.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
+            Bookmark.user_id == ensure_uuid(user_id),
             Bookmark.entity_type == entity_type,
-            Bookmark.entity_id == (UUID(entity_id) if isinstance(entity_id, str) else entity_id),
+            Bookmark.entity_id == ensure_uuid(entity_id),
         )
         .first()
     )
@@ -78,7 +80,7 @@ def get_user_bookmarks(user_id: str, db) -> List[Bookmark]:
     """
     bookmarks = (
         db.query(Bookmark)
-        .filter(Bookmark.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id))
+        .filter(Bookmark.user_id == ensure_uuid(user_id))
         .order_by(Bookmark.created_at.desc())
         .all()
     )
@@ -102,9 +104,9 @@ def is_bookmarked(user_id: str, entity_type: str, entity_id: str, db) -> bool:
     bookmark = (
         db.query(Bookmark)
         .filter(
-            Bookmark.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id),
+            Bookmark.user_id == ensure_uuid(user_id),
             Bookmark.entity_type == entity_type,
-            Bookmark.entity_id == (UUID(entity_id) if isinstance(entity_id, str) else entity_id),
+            Bookmark.entity_id == ensure_uuid(entity_id),
         )
         .first()
     )

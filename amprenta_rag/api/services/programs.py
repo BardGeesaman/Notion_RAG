@@ -2,7 +2,7 @@
 CRUD services for Programs.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Any, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -15,10 +15,10 @@ import uuid
 def create_program(db: Session, program: ProgramCreate) -> ProgramModel:
     """Create a new program."""
     db_program = ProgramModel(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
+        id=cast(Any, uuid.uuid4()),
         name=program.name,
         description=program.description,
-        disease=program.disease or [],  # type: ignore[arg-type]
+        disease=cast(Any, program.disease or []),
     )
     db.add(db_program)
     db.commit()

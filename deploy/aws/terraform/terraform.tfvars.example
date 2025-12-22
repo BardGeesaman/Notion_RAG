@@ -1,13 +1,22 @@
 # Example Terraform variables (do not use real secrets here)
+
+# AWS Configuration
 aws_region          = "us-east-1"
 project_name        = "amprenta"
+environment         = "dev"
+
+# VPC Configuration
+vpc_cidr            = "10.0.0.0/16"
+
+# Database Configuration
 db_name             = "amprenta"
 db_username         = "amprenta_user"
-db_password         = "example-password"
+db_password         = "example-password-change-me"
 db_instance_class   = "db.t3.micro"
-db_allowed_cidrs    = ["10.0.0.0/16"]
-lightsail_blueprint_id = "ubuntu_22_04"
-lightsail_bundle_id    = "nano_2_0"
-allowed_ssh_cidrs      = ["0.0.0.0/0"]
-environment            = "dev"
 
+# ECS Service Configuration
+desired_count       = 1      # Number of tasks per service
+api_cpu             = 512    # 0.5 vCPU
+api_memory          = 1024   # 1 GB
+dashboard_cpu       = 512    # 0.5 vCPU
+dashboard_memory    = 1024   # 1 GB

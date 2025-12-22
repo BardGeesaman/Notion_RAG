@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Any, cast
 from uuid import UUID
+
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 from amprenta_rag.api.schemas import SubscriptionCreate, SubscriptionUpdate
 from amprenta_rag.database.models import RepositorySubscription
@@ -42,7 +44,7 @@ def create_subscription(payload: SubscriptionCreate, user_id: Optional[UUID]) ->
             notify_email=payload.notify_email,
             notify_in_app=payload.notify_in_app,
             is_active=True,
-            user_id=user_id,  # type: ignore[arg-type]
+            user_id=cast(Any, ensure_uuid(user_id)),
         )
         db.add(sub)
         db.flush()

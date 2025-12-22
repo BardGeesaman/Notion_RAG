@@ -1,8 +1,10 @@
 """Notes utilities for managing user notes on entities."""
 from __future__ import annotations
 
-from typing import List, cast
+from typing import List, cast, Any
 from uuid import UUID
+
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 from amprenta_rag.database.models import Note
 from amprenta_rag.logging_utils import get_logger
@@ -26,11 +28,9 @@ def add_note(entity_type: str, entity_id: str, content: str, user_id: str, db) -
     """
     note = Note(
         entity_type=entity_type,
-        entity_id=UUID(entity_id) if isinstance(entity_id, str) else cast(UUID, entity_id),  # type: ignore[arg-type]
+        entity_id=cast(Any, ensure_uuid(entity_id)),
         content=content,
-        created_by_id=UUID(user_id)
-        if user_id and user_id != "test" and isinstance(user_id, str)
-        else (cast(UUID, user_id) if not isinstance(user_id, str) else None),  # type: ignore[arg-type]
+        created_by_id=cast(Any, ensure_uuid(user_id)) if user_id and user_id != "test" else None,
     )
 
     db.add(note)
@@ -57,7 +57,7 @@ def get_notes(entity_type: str, entity_id: str, db) -> List[Note]:
         db.query(Note)
         .filter(
             Note.entity_type == entity_type,
-            Note.entity_id == (UUID(entity_id) if isinstance(entity_id, str) else entity_id),
+            Note.entity_id == ensure_uuid(entity_id),
         )
         .order_by(Note.created_at.desc())
         .all()
@@ -78,7 +78,7 @@ def delete_note(note_id: str, db) -> bool:
         True if deleted, False if not found
     """
     note = db.query(Note).filter(
-        Note.id == (UUID(note_id) if isinstance(note_id, str) else note_id)
+        Note.id == ensure_uuid(note_id)
     ).first()
 
     if note:

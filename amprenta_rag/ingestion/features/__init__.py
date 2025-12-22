@@ -17,12 +17,12 @@ from amprenta_rag.ingestion.features.extraction import extract_features_from_mwt
 link_feature: Any = None
 link_features_to_notion_items: Any = None
 try:
-    from amprenta_rag.ingestion.features import general_linking as _gl  # type: ignore[import]
+    from amprenta_rag.ingestion.features import general_linking as _gl
     link_feature = getattr(_gl, "link_feature", None)
 except Exception:
     link_feature = None
 try:
-    from amprenta_rag.ingestion.features import metabolite_linking as _ml  # type: ignore[import]
+    from amprenta_rag.ingestion.features import metabolite_linking as _ml
     link_features_to_notion_items = getattr(_ml, "link_features_to_notion_items", None)
 except Exception:
     link_features_to_notion_items = None

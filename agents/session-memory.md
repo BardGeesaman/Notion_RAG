@@ -105,16 +105,15 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
-* [2025-12-21] – **Code Quality Optimization Complete**:
-  - Type ignores: 203 → 63 (-69%)
-  - Test coverage: 51% → 70% (+19%)
-  - Tests: 486 → 796 (+310 new tests)
-  - E2E tests added to CI workflow
-  - Pre-commit hooks configured (.pre-commit-config.yaml)
-  - Bandit security scanning added to CI
-  - CI coverage threshold raised to 70%
-  - New files: amprenta_rag/utils/uuid_utils.py, 30+ test files
-  - Workflow improvements: "Save as you go" pattern (implementor.md), Reviewer usage guidelines (architect.md)
+* [2025-12-21] – **Code Quality Sprint Complete**:
+  - **Metrics**: 796 tests, 70% coverage, 8 CI jobs (lint, mypy, bandit, pytest, E2E, coverage, pre-commit, security audit)
+  - **Type safety**: Type ignores 203 → 63 (-69%)
+  - **Test coverage**: 51% → 70% (+19%, +310 tests)
+  - **CI/CD**: E2E tests in CI, pre-commit hooks, Bandit security scanning, coverage threshold 70%
+  - **Refactoring**: E2E test split (requires_server marker), CRUD services extracted, repository pattern implemented
+  - **New files**: amprenta_rag/utils/uuid_utils.py, 30+ test files, .pre-commit-config.yaml
+  - **Workflow improvements**: "Save as you go" pattern (implementor.md), Reviewer usage guidelines (architect.md)
+  - **Security**: Dependency vulnerability tracking in TECH_DEBT.md
 
 * [2025-12-19] – **Test Coverage Milestone Achieved**:
   - Test coverage: 37% → 50% (+13%)

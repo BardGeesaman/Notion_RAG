@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import Dict, Any, cast
 from uuid import UUID
 
+from amprenta_rag.utils.uuid_utils import ensure_uuid
+
 from amprenta_rag.database.models import Notification, Note
 from amprenta_rag.utils.validation import validate_experiment, validate_compound
 from amprenta_rag.automation.engine import register_action
@@ -44,7 +46,7 @@ def send_notification(config: Dict[str, Any], context: Dict[str, Any], db) -> Di
     message = message.format(**context) if message else None
 
     notification = Notification(
-        user_id=UUID(user_id) if isinstance(user_id, str) else cast(UUID, user_id),  # type: ignore[arg-type]
+        user_id=ensure_uuid(user_id),
         title=title,
         message=message,
         notification_type=notification_type,
@@ -94,9 +96,9 @@ def add_note(config: Dict[str, Any], context: Dict[str, Any], db) -> Dict[str, A
 
     note = Note(
         entity_type=entity_type,
-        entity_id=UUID(entity_id) if isinstance(entity_id, str) else cast(UUID, entity_id),  # type: ignore[arg-type]
+        entity_id=ensure_uuid(entity_id),
         content=content,
-        created_by_id=UUID(user_id) if user_id and isinstance(user_id, str) else cast(UUID, user_id),  # type: ignore[arg-type]
+        created_by_id=ensure_uuid(user_id) if user_id else None,
     )
 
     db.add(note)

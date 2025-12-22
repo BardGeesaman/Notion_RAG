@@ -66,8 +66,9 @@ def collect_chunks(matches: List[MatchSummary]) -> List[str]:
     # 2) Return in the original order, skipping missing content
     out: List[str] = []
     for idx, m in enumerate(matches):
-        if snippets[idx]:
-            out.append(snippets[idx])  # type: ignore[arg-type]
+        snippet_val = snippets[idx]
+        if snippet_val:
+            out.append(snippet_val)
             continue
         mid = _get_match_chunk_id(m)
         if mid and mid in id_to_text:

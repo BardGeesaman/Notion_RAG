@@ -1,7 +1,8 @@
 """Audit logging utilities."""
 import logging
-from typing import Optional
+from typing import Optional, Any, cast
 from datetime import datetime
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import AuditLog
@@ -35,11 +36,11 @@ def log_action(
         db = next(db_gen)
         try:
             audit_entry = AuditLog(
-                user_id=user_id if user_id and user_id != "test" else None,  # type: ignore[arg-type]
+                user_id=cast(Any, ensure_uuid(user_id)) if user_id and user_id != "test" else None,
                 username=username,
                 action=action,
                 entity_type=entity_type,
-                entity_id=entity_id,
+                entity_id=str(ensure_uuid(entity_id)) if entity_id else entity_id,
                 details=details,
                 ip_address=ip_address,
                 timestamp=datetime.utcnow()

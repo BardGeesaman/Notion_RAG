@@ -20,6 +20,7 @@ from amprenta_rag.api.schemas import (
 from amprenta_rag.api.services import signatures as signature_service
 from amprenta_rag.database.models import Note
 from typing import Any, Dict
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 router = APIRouter()
 
@@ -79,7 +80,7 @@ async def add_signature_annotation(
 
     note = Note(
         entity_type="signature",
-        entity_id=signature_id,  # type: ignore[arg-type]
+        entity_id=cast(Any, ensure_uuid(signature_id)),
         annotation_type=annotation.annotation_type,
         content=annotation.text,
     )
@@ -138,7 +139,7 @@ async def update_signature_status(
     note_content = status_update.reviewer_notes or f"Status changed to {status_update.status}"
     note = Note(
         entity_type="signature",
-        entity_id=signature_id,  # type: ignore[arg-type]
+        entity_id=cast(Any, ensure_uuid(signature_id)),
         annotation_type="validation",
         content=note_content,
     )

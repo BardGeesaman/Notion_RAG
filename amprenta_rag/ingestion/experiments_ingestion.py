@@ -36,7 +36,7 @@ def extract_page_content(page_id: str) -> str:
 def _fetch_notion_page(page_id: str) -> Dict[str, Any]:
     """Fetch a Notion page by ID."""
     try:
-        from amprenta_rag.ingestion import metadata_semantic as meta  # type: ignore[attr-defined]
+        from amprenta_rag.ingestion import metadata_semantic as meta
         fetch_func = getattr(meta, "_fetch_notion_page", None)
     except Exception as e:
         logger.error("[EXPERIMENT][NOTION] Error importing notion fetcher: %r", e)

@@ -82,8 +82,8 @@ def test_map_features_to_reactome_pathways_happy(monkeypatch):
             return self._data
 
     def fake_get(url, timeout=10, **kwargs):
-        if "pathways" in url:
-            return FakeResp([{"stId": "R-TEST", "displayName": "Pathway"}])
+        if "mapping" in url:
+            return FakeResp({"pathways": [{"stId": "R-TEST", "displayName": "Pathway", "summary": "s"}]})
         return FakeResp({})
 
     class FakeRequests:

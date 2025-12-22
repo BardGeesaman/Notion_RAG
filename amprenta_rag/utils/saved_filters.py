@@ -1,8 +1,10 @@
 """Saved filter utilities."""
 from __future__ import annotations
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, cast
 from uuid import UUID
+
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 from amprenta_rag.database.models import SavedFilter
 from amprenta_rag.logging_utils import get_logger
@@ -34,7 +36,7 @@ def save_filter(
         name=name,
         entity_type=entity_type,
         filters=filters,
-        user_id=UUID(user_id) if isinstance(user_id, str) else user_id,  # type: ignore[arg-type]
+        user_id=cast(Any, ensure_uuid(user_id)),
     )
     db.add(saved_filter)
     db.commit()
@@ -62,7 +64,7 @@ def get_user_filters(
     """
     filters = db.query(SavedFilter).filter(
         SavedFilter.entity_type == entity_type,
-        SavedFilter.user_id == (UUID(user_id) if isinstance(user_id, str) else user_id)
+        SavedFilter.user_id == ensure_uuid(user_id)
     ).order_by(SavedFilter.created_at.desc()).all()
 
     return filters
@@ -80,7 +82,7 @@ def delete_filter(filter_id: str, db) -> bool:
         True if deleted, False if not found
     """
     filter_obj = db.query(SavedFilter).filter(
-        SavedFilter.id == (UUID(filter_id) if isinstance(filter_id, str) else filter_id)
+        SavedFilter.id == ensure_uuid(filter_id)
     ).first()
 
     if filter_obj:

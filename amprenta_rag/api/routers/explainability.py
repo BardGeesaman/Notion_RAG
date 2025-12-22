@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Set, Any
+from typing import List, Optional, Set, Any, cast
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
@@ -48,7 +48,7 @@ def explain_signature_match(
         # Build signature definition
         components: List[SignatureComponent] = []
         if sig_model.components:
-            components_source: List[dict[str, Any]] = list(sig_model.components or [])  # type: ignore[arg-type]
+            components_source: List[dict[str, Any]] = cast(List[dict[str, Any]], list(sig_model.components or []))
             for comp_data in components_source:
                 if isinstance(comp_data, dict):
                     components.append(

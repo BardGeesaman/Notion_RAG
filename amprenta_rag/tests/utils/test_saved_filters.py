@@ -33,11 +33,14 @@ class FakeSavedFilter:
         self._filters_val = filters
         self._user_id_val = user_id
         self.filters = filters
-        self.id = id
+        self._id_val = id
 
     def __getattribute__(self, name: str):
         if name in ("entity_type", "user_id", "id"):
-            return object.__getattribute__(self, f"_{name}_val") if f"_{name}_val" in object.__getattribute__(self, "__dict__") else object.__getattribute__(self, name)
+            stored = object.__getattribute__(self, "__dict__").get(f"_{name}_val", None)
+            if stored is not None:
+                return stored
+            return object.__getattribute__(self, name)
         return object.__getattribute__(self, name)
 
 
@@ -76,7 +79,7 @@ class FakeSession:
         self.data: List[FakeSavedFilter] = []
 
     def add(self, obj: FakeSavedFilter) -> None:
-        obj.id = obj.id or uuid4()
+        obj._id_val = obj._id_val or uuid4()
         self.data.append(obj)
 
     def commit(self) -> None:

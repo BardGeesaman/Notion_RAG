@@ -16,6 +16,7 @@ from amprenta_rag.database.models import ReportSchedule
 from amprenta_rag.ingestion.harvest_scheduler import get_scheduler, start_scheduler
 from amprenta_rag.reports.generator import generate_report
 from amprenta_rag.reports.artifact_registry import save_artifact
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def run_scheduled_report(schedule_id: UUID) -> None:
             return
 
         entity_type = schedule.entity_type or ""
-        entity_id = cast(Optional[UUID], schedule.entity_id)
+        entity_id = ensure_uuid(schedule.entity_id)
         fmt = schedule.format or ""
         created_by = schedule.created_by_id
         schedule.last_run_at = datetime.utcnow()
@@ -67,7 +68,7 @@ def run_scheduled_report(schedule_id: UUID) -> None:
             format=fmt,
             file_path=report_path,
             params_hash=phash,
-            user_id=cast(Optional[UUID], created_by) if created_by is not None else None,  # type: ignore[arg-type]
+            user_id=ensure_uuid(created_by) if created_by is not None else None,
         )
     logger.info("[REPORT-SCHED] Generated report artifact for schedule %s", schedule_id)
 
@@ -120,6 +121,8 @@ def load_report_schedules() -> None:
         logger.info("[REPORT-SCHED] Loading %d enabled report schedules", len(schedules))
         for schedule in schedules:
             try:
-                add_report_schedule(cast(UUID, schedule.id), schedule.cron_expression)  # type: ignore[arg-type]
+                sched_id = ensure_uuid(schedule.id)
+                if sched_id:
+                    add_report_schedule(sched_id, schedule.cron_expression)
             except Exception as exc:
                 logger.error("[REPORT-SCHED] Failed to schedule %s: %r", schedule.name, exc)

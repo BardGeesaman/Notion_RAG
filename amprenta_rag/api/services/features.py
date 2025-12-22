@@ -2,7 +2,7 @@
 CRUD services for Features.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Any, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -16,11 +16,11 @@ import uuid
 def create_feature(db: Session, feature: FeatureCreate) -> FeatureModel:
     """Create a new feature."""
     db_feature = FeatureModel(
-        id=uuid.uuid4(),  # type: ignore[arg-type]
+        id=cast(Any, uuid.uuid4()),
         name=feature.name,
         feature_type=feature.feature_type.value,
         normalized_name=feature.normalized_name,
-        aliases=feature.aliases or [],  # type: ignore[arg-type]
+        aliases=cast(Any, feature.aliases or []),
         external_ids=feature.external_ids or {},
     )
     db.add(db_feature)

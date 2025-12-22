@@ -260,6 +260,24 @@ After Implementor completes changes:
 - Escalate to Debugger only if runtime investigation needed
 - Debugger uses Cursor Debug Mode for runtime behavior
 
+### Reviewer Usage Guidelines
+
+**When to USE Reviewer:**
+- Complex changes needing verification
+- After fixes to check for regressions  
+- When uncertain about approach
+- Code quality gates (before major commits)
+- New patterns or architectural decisions
+
+**When to SKIP Reviewer (delegate directly):**
+- Straightforward tasks with clear next steps
+- Already have recent analysis from Reviewer
+- Simple repetitive work (same pattern as before)
+- Quick fixes with obvious solutions
+- Continuing work from a previous batch
+
+This reduces unnecessary round-trips and speeds up iteration.
+
 ### Change Isolation Protocol (avoid combinatorial debugging)
 When debugging cross-system features (API + notebooks + containers + frontend), **do not stack changes**.
 
