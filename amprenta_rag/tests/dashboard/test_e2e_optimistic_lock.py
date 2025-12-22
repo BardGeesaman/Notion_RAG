@@ -59,14 +59,14 @@ def _click_save_design(page: Page) -> None:
 
 
 class TestOptimisticLocking:
-    def test_concurrent_experiment_edit_shows_conflict(self, page: Page, browser: Browser, base_url: str):
+    def test_concurrent_experiment_edit_shows_conflict(self, page: Page, browser: Browser, streamlit_server: str):
         """Two users editing same experiment - second save shows conflict."""
-        _goto_experiment_edit_design(page, base_url)
+        _goto_experiment_edit_design(page, streamlit_server)
 
         ctx2 = browser.new_context()
         page2 = ctx2.new_page()
         try:
-            _goto_experiment_edit_design(page2, base_url)
+            _goto_experiment_edit_design(page2, streamlit_server)
 
             t = int(time.time())
             _set_sample_groups_json(page, f'{{\"_e2e\": \"first-{t}\"}}')
@@ -79,14 +79,14 @@ class TestOptimisticLocking:
         finally:
             ctx2.close()
 
-    def test_reload_after_conflict_shows_updated_version(self, page: Page, browser: Browser, base_url: str):
+    def test_reload_after_conflict_shows_updated_version(self, page: Page, browser: Browser, streamlit_server: str):
         """After conflict, reload button refreshes data and allows saving."""
-        _goto_experiment_edit_design(page, base_url)
+        _goto_experiment_edit_design(page, streamlit_server)
 
         ctx2 = browser.new_context()
         page2 = ctx2.new_page()
         try:
-            _goto_experiment_edit_design(page2, base_url)
+            _goto_experiment_edit_design(page2, streamlit_server)
 
             t = int(time.time())
             first_payload = f'{{\"_e2e\": \"first-{t}\"}}'
@@ -115,9 +115,9 @@ class TestOptimisticLocking:
         finally:
             ctx2.close()
 
-    def test_sequential_edits_succeed(self, page: Page, base_url: str):
+    def test_sequential_edits_succeed(self, page: Page, streamlit_server: str):
         """Sequential edits in one session succeed (no conflict)."""
-        _goto_experiment_edit_design(page, base_url)
+        _goto_experiment_edit_design(page, streamlit_server)
 
         t = int(time.time())
         _set_sample_groups_json(page, f'{{\"_e2e\": \"seq-1-{t}\"}}')
