@@ -17,14 +17,18 @@ pytestmark = pytest.mark.requires_server
 def _goto_notebook_copilot(page: Page, base_url: str) -> None:
     page.goto(base_url)
     page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(3000)
+
+    # Click Analysis section to expand (try text-based locator)
+    analysis_btn = page.locator("text=Analysis").first
+    analysis_btn.wait_for(state="visible", timeout=10000)
+    analysis_btn.click()
     page.wait_for_timeout(2000)
 
-    # Click Analysis section to expand
-    page.locator('button:has-text("Analysis")').first.click()
-    page.wait_for_timeout(1000)
-
     # Click Notebook Co-Pilot
-    page.locator('button:has-text("Notebook Co-Pilot")').first.click()
+    copilot_btn = page.locator("text=Notebook Co-Pilot").first
+    copilot_btn.wait_for(state="visible", timeout=10000)
+    copilot_btn.click()
     page.wait_for_timeout(2000)
 
     # Verify page loaded
