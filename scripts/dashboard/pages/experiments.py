@@ -351,9 +351,10 @@ def _render_edit_tab() -> None:
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Reload Latest", key=f"reload_{experiment.id}"):
+                    db.expire(experiment)
+                    db.refresh(experiment)
                     del st.session_state[conflict_key]
-                    if f"edit_version_{experiment.id}" in st.session_state:
-                        del st.session_state[f"edit_version_{experiment.id}"]
+                    st.session_state[f"edit_version_{experiment.id}"] = experiment.version
                     st.rerun()
             with col2:
                 if st.button("Force Save", key=f"force_{experiment.id}"):
