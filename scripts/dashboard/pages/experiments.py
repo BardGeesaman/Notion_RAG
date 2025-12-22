@@ -340,21 +340,26 @@ def _render_edit_tab() -> None:
                 # Update stored version
                 st.session_state[f"edit_version_{experiment.id}"] = experiment.version
             except ConflictError as e:
-                st.error("⚠️ Conflict: This record was modified by another user.")
-                st.warning(f"Your version: {e.expected}, Current version: {e.actual}")
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("Reload Latest", key=f"reload_{experiment.id}"):
-                        if f"edit_version_{experiment.id}" in st.session_state:
-                            del st.session_state[f"edit_version_{experiment.id}"]
-                        st.rerun()
-                with col2:
-                    if st.button("Force Save", key=f"force_{experiment.id}"):
-                        # Update with current version
-                        update_with_lock(experiment, updates, experiment.version, db)
-                        st.success("Force saved!")
-                        st.session_state[f"edit_version_{experiment.id}"] = experiment.version
-                        st.rerun()
+                st.session_state[f"conflict_{experiment.id}"] = {"expected": e.expected, "actual": e.actual}
+                st.rerun()
+
+        conflict_key = f"conflict_{experiment.id}"
+        if conflict_key in st.session_state:
+            conflict = st.session_state[conflict_key]
+            st.error("⚠️ Conflict: This record was modified by another user.")
+            st.warning(f"Your version: {conflict['expected']}, Current version: {conflict['actual']}")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Reload Latest", key=f"reload_{experiment.id}"):
+                    del st.session_state[conflict_key]
+                    if f"edit_version_{experiment.id}" in st.session_state:
+                        del st.session_state[f"edit_version_{experiment.id}"]
+                    st.rerun()
+            with col2:
+                if st.button("Force Save", key=f"force_{experiment.id}"):
+                    del st.session_state[conflict_key]
+                    st.session_state[f"edit_version_{experiment.id}"] = conflict["actual"]
+                    st.rerun()
 
 
 def _render_templates_tab() -> None:
