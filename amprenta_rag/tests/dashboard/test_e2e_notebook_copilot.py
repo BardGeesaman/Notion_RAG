@@ -15,9 +15,20 @@ pytestmark = pytest.mark.requires_server
 
 
 def _goto_notebook_copilot(page: Page, base_url: str) -> None:
-    page.goto(f"{base_url}/?page=Notebook%20Co-Pilot")
+    page.goto(base_url)
     page.wait_for_load_state("networkidle")
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(2000)
+
+    # Click Analysis section to expand
+    page.locator('button:has-text("Analysis")').first.click()
+    page.wait_for_timeout(1000)
+
+    # Click Notebook Co-Pilot
+    page.locator('button:has-text("Notebook Co-Pilot")').first.click()
+    page.wait_for_timeout(2000)
+
+    # Verify page loaded
+    expect(page.locator("text=Notebook Co-Pilot").first).to_be_visible(timeout=10000)
 
 
 def _skip_if_no_datasets(page: Page) -> None:
