@@ -269,8 +269,9 @@ def _render_edit_tab() -> None:
         selected_name = st.selectbox("Select experiment", list(exp_options.keys()))
         experiment = exp_options[selected_name]
 
-        # Store version for optimistic locking
-        st.session_state[f"edit_version_{experiment.id}"] = experiment.version
+        # Store version for optimistic locking (only on first load, not reruns)
+        if f"edit_version_{experiment.id}" not in st.session_state:
+            st.session_state[f"edit_version_{experiment.id}"] = experiment.version
 
         design_type = st.selectbox(
             "Design type",
