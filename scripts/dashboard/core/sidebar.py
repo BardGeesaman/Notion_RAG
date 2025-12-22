@@ -277,11 +277,11 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
         except Exception:
             page_param = None
 
-        if page_param and page_param in set(visible_pages):
-            if st.session_state.get("selected_page") != page_param:
-                st.session_state["selected_page"] = page_param
-                update_recent_pages(page_param)
-                st.rerun()
+    if page_param and page_param in set(visible_pages):
+        if st.session_state.get("selected_page") != page_param:
+            st.session_state["selected_page"] = page_param
+            update_recent_pages(page_param)
+            st.rerun()
 
         inject_shortcuts_js()
         shortcut_actions = [
