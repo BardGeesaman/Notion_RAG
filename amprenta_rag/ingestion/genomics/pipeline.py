@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import requests
 
@@ -121,6 +121,7 @@ def download_fastq(
     confirm: bool = False,
     subset: bool = False,
     max_lines: int = 1000,
+    progress_callback: Callable[[int], None] = None,
 ) -> Optional[Path]:
     """
     Step 2: Download FASTQ file from ENA.
@@ -228,11 +229,29 @@ def download_fastq(
             resp.raise_for_status()
 
             total_size = 0
+            total_len_header = resp.headers.get("Content-Length")
+            total_len = int(total_len_header) if total_len_header and total_len_header.isdigit() else None
+            last_percent = -1
+            if progress_callback:
+                try:
+                    progress_callback(0)
+                except Exception:
+                    pass
             with open(fastq_path, "wb") as f:
                 for chunk in resp.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
                         total_size += len(chunk)
+
+                        if total_len and progress_callback:
+                            pct = int((total_size / total_len) * 100)
+                            pct = max(0, min(99, pct))
+                            if pct != last_percent:
+                                last_percent = pct
+                                try:
+                                    progress_callback(pct)
+                                except Exception:
+                                    pass
 
                         # Log progress every 100MB
                         if total_size % (100 * 1024 * 1024) == 0:
@@ -247,6 +266,11 @@ def download_fastq(
                 total_size / (1024 * 1024),
                 fastq_path,
             )
+            if progress_callback:
+                try:
+                    progress_callback(100)
+                except Exception:
+                    pass
 
         return fastq_path
 
@@ -256,6 +280,38 @@ def download_fastq(
         if fastq_path.exists():
             fastq_path.unlink()
         return None
+
+
+def run_salmon_quant(
+    fastq_path: Path,
+    index_path: Path,
+    output_dir: Path = None,
+    progress_callback: Callable[[int], None] = None,
+) -> Optional[Path]:
+    """Run Salmon quantification with optional progress callback."""
+    if progress_callback:
+        try:
+            progress_callback(50)
+        except Exception:
+            pass
+
+    out = quantify_with_salmon(fastq_path=fastq_path, index_path=index_path, output_dir=output_dir)
+
+    if out and progress_callback:
+        try:
+            progress_callback(100)
+        except Exception:
+            pass
+    return out
+
+
+def run_kallisto_quant(
+    fastq_path: Path,
+    index_path: Path,
+    output_dir: Path = None,
+) -> Optional[Path]:
+    """Run Kallisto quantification."""
+    return quantify_with_kallisto(fastq_path=fastq_path, index_path=index_path, output_dir=output_dir)
 
 
 def check_salmon_installed() -> bool:

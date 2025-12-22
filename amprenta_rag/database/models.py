@@ -11,7 +11,20 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, relationship
 
@@ -445,6 +458,46 @@ class Alert(Base):
 
     subscription: Mapped["RepositorySubscription"] = relationship("RepositorySubscription")
     dataset: Mapped["Dataset"] = relationship("Dataset")
+
+
+class GenomicsIndex(Base):
+    """Reference transcriptome index for Salmon/Kallisto."""
+
+    __tablename__ = "genomics_indices"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organism = Column(String(100), nullable=False)  # "Homo sapiens"
+    tool = Column(String(20), nullable=False)  # "salmon" | "kallisto"
+    version = Column(String(50), nullable=False)  # "GRCh38_v110"
+    file_path = Column(String(500), nullable=False)
+    file_size_bytes = Column(BigInteger)
+    uploaded_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    metadata_ = Column("metadata", JSON)
+
+    __table_args__ = (UniqueConstraint("organism", "tool", "version", name="uix_index_org_tool_ver"),)
+
+
+class PipelineJob(Base):
+    """Track genomics pipeline job execution."""
+
+    __tablename__ = "pipeline_jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    status = Column(String(20), default="pending")  # pending|running|complete|failed
+    tool = Column(String(20), nullable=False)  # "salmon" | "kallisto"
+    input_fastq_path = Column(String(500))
+    index_id = Column(UUID(as_uuid=True), ForeignKey("genomics_indices.id"))
+    output_dir = Column(String(500))
+    result_file = Column(String(500))
+    progress_percent = Column(Integer, default=0)
+    error_message = Column(Text)
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    index = relationship("GenomicsIndex")
 
 
 gene_protein_map = Table(
