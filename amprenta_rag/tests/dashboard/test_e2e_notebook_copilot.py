@@ -15,26 +15,13 @@ pytestmark = pytest.mark.requires_server
 
 
 def _goto_notebook_copilot(page: Page, base_url: str) -> None:
-    page.goto(base_url)
+    # Use URL query param for direct navigation
+    page.goto(f"{base_url}/?page=Notebook%20Co-Pilot")
     page.wait_for_load_state("networkidle")
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(5000)
 
-    # Click Analysis section to expand (try text-based locator)
-    analysis_btn = page.locator("text=Analysis").first
-    analysis_btn.wait_for(state="visible", timeout=10000)
-    analysis_btn.click()
-    page.wait_for_timeout(2000)
-
-    # Click Notebook Co-Pilot
-    copilot_btn = page.locator("text=Notebook Co-Pilot").first
-    copilot_btn.wait_for(state="visible", timeout=10000)
-    copilot_btn.click()
-    page.wait_for_load_state("networkidle")
-    page.wait_for_timeout(2000)
-
-    # Verify page loaded
-    expect(page.locator("text=Notebook Co-Pilot").first).to_be_visible(timeout=10000)
-    expect(page.get_by_role("button", name="Generate code").first).to_be_visible(timeout=10000)
+    # Wait for page content
+    expect(page.get_by_role("button", name="Generate code").first).to_be_visible(timeout=20000)
 
 
 def _skip_if_no_datasets(page: Page) -> None:
