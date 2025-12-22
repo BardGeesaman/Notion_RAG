@@ -22,25 +22,25 @@ def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
     """Navigate to Experiments -> Edit Design tab."""
     page.goto(base_url)
     page.wait_for_load_state("networkidle")
-    page.wait_for_timeout(5000)
-
-    # Click Experiments in sidebar using text selector
-    experiments_btn = page.locator('button:has-text("Experiments")').first
-    experiments_btn.wait_for(state="visible", timeout=10000)
-    experiments_btn.click()
     page.wait_for_timeout(3000)
 
-    # Click Edit Design tab using text
-    edit_tab = page.locator('button:has-text("Edit Design")').first
-    edit_tab.wait_for(state="visible", timeout=10000)
-    edit_tab.click()
+    # Click Experiments button
+    page.locator('button:has-text("Experiments")').first.click()
+    
+    # Wait for Experiments page to load (unique header)
+    expect(page.locator("text=🔬 Experiments").first).to_be_visible(timeout=10000)
+    page.wait_for_timeout(1000)
+
+    # Click Edit Design tab
+    page.locator('button:has-text("Edit Design")').first.click()
+    
+    # Wait for tab content
     page.wait_for_timeout(2000)
 
     # Skip if no experiments
     if page.locator("text=No experiments available to edit.").count() > 0:
         pytest.skip("No experiments available to edit in this environment.")
 
-    # Verify edit controls present
     expect(page.locator("text=Select experiment").first).to_be_visible()
 
 
