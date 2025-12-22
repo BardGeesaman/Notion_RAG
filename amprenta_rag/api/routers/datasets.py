@@ -17,6 +17,8 @@ from amprenta_rag.api.services import datasets as dataset_service
 from amprenta_rag.database.models import Note
 from amprenta_rag.models.domain import OmicsType
 from amprenta_rag.notebooks import generate_dataset_notebook
+from amprenta_rag.utils.optimistic_lock import ConflictError, update_with_lock
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 
 router = APIRouter()
 
@@ -81,7 +83,7 @@ async def add_dataset_annotation(
 
     note = Note(
         entity_type="dataset",
-        entity_id=dataset_id,  # type: ignore[arg-type]
+        entity_id=cast(Any, ensure_uuid(dataset_id)),
         annotation_type=annotation.annotation_type,
         content=annotation.text,
     )
@@ -127,10 +129,51 @@ async def update_dataset(
     dataset: DatasetUpdate,
     db: Session = Depends(get_database_session),
 ) -> Dataset:
-    """Update a dataset."""
-    updated = dataset_service.update_dataset(db, dataset_id, dataset)
-    if not updated:
+    """
+    Update a dataset using optimistic locking.
+
+    Clients must provide the current `version` of the dataset. If the stored
+    version differs, the request fails with HTTP 409 to prevent lost updates.
+    """
+    db_dataset = dataset_service.get_dataset(db, dataset_id)
+    if not db_dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
+
+    update_data = dataset.model_dump(exclude_unset=True)
+    expected_version = cast(int, update_data.pop("version"))
+    program_ids = update_data.pop("program_ids", None)
+    experiment_ids = update_data.pop("experiment_ids", None)
+
+    # Handle omics_type enum conversion
+    if "omics_type" in update_data and update_data["omics_type"]:
+        update_data["omics_type"] = update_data["omics_type"].value
+
+    # Update program relationships if provided
+    if program_ids is not None:
+        from amprenta_rag.api.services.programs import get_program
+
+        db_dataset.programs.clear()
+        for program_id in program_ids:
+            program = get_program(db, program_id)
+            if program:
+                db_dataset.programs.append(program)
+
+    # Update experiment relationships if provided
+    if experiment_ids is not None:
+        from amprenta_rag.api.services.experiments import get_experiment
+
+        db_dataset.experiments.clear()
+        for experiment_id in experiment_ids:
+            experiment = get_experiment(db, experiment_id)
+            if experiment:
+                db_dataset.experiments.append(experiment)
+
+    try:
+        updated = update_with_lock(db_dataset, cast(Dict[str, Any], update_data), expected_version, db)
+    except ConflictError:
+        raise HTTPException(status_code=409, detail="Version conflict")
+
+    db.refresh(updated)
     return cast(Dataset, updated)
 
 

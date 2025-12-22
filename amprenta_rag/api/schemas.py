@@ -148,6 +148,7 @@ class DatasetCreate(DatasetBase):
 
 class DatasetUpdate(BaseSchema):
     """Schema for updating a dataset."""
+    version: int = Field(..., ge=1, description="Current entity version for optimistic locking")
     name: Optional[str] = None
     omics_type: Optional[OmicsType] = None
     description: Optional[str] = None
@@ -176,6 +177,7 @@ class Dataset(DatasetBase):
     file_paths: List[str] = Field(default_factory=list)
     file_urls: List[str] = Field(default_factory=list)
     organism: List[str] = Field(default_factory=list)
+    version: int = 1
 
     @field_validator("file_paths", "file_urls", "organism", mode="before")
     @classmethod
