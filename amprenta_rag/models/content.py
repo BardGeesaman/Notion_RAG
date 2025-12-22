@@ -10,6 +10,12 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, TSVECTOR
 from sqlalchemy.orm import Mapped, relationship
 
+try:
+    from pgvector.sqlalchemy import Vector
+except ImportError:
+    # Fallback for environments without pgvector installed
+    Vector = None  # type: ignore
+
 from amprenta_rag.database.base import Base
 
 if TYPE_CHECKING:
@@ -94,6 +100,8 @@ class RAGChunk(Base):
     attachment_hash = Column(String(32), nullable=True)
     chunk_metadata = Column(JSON, nullable=True)
     search_vector = Column(TSVECTOR, nullable=True)
+    embedding = Column(Vector(3072) if Vector is not None else Text, nullable=True)
+    embedding_model = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)

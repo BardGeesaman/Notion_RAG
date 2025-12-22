@@ -36,6 +36,7 @@ except ImportError:
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")
+VECTOR_BACKEND = os.getenv("VECTOR_BACKEND", "pinecone")
 
 # Notion API key - OPTIONAL (only required if ENABLE_NOTION_SYNC=true)
 ENABLE_NOTION_SYNC_ENV = os.getenv("ENABLE_NOTION_SYNC", "false").lower() == "true"
@@ -281,6 +282,7 @@ class AppConfig:
     feature_cache: FeatureCacheConfig
     postgres: PostgresConfig
     server: ServerConfig
+    vector_backend: str = VECTOR_BACKEND
 
 
 # ---------------------------------------------------------
@@ -319,5 +321,6 @@ def get_config() -> AppConfig:
             feature_cache=FeatureCacheConfig(),
             postgres=PostgresConfig(),
             server=ServerConfig(),
+            vector_backend=VECTOR_BACKEND,
         )
     return _config_singleton

@@ -148,3 +148,6 @@ numpy<2.0  # rdkit compatibility
 # Notebooks / Voila (local dev)
 ipywidgets>=8.0.0
 ipycytoscape>=1.3.0
+
+# Vector search (pgvector)
+pgvector>=0.2.0
