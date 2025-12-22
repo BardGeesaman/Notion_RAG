@@ -16,7 +16,7 @@ GEN_ENDPOINT = f"{API_BASE}/api/notebook/notebook/generate-from-query"
 
 
 def _post_generate(query: str) -> Dict[str, Any]:
-    with httpx.Client(timeout=60) as client:
+    with httpx.Client(timeout=120) as client:
         resp = client.post(GEN_ENDPOINT, json={"query": query})
         resp.raise_for_status()
         return resp.json()

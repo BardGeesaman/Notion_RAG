@@ -87,11 +87,20 @@ def _resolve_by_name(db: Any, model: Any, names: Sequence[str]) -> List[str]:
         if _looks_like_uuid(name):
             out.append(str(uuid.UUID(name)))
             continue
+        # Determine name column per model (some models don't use `.name`).
+        name_col = {
+            "Dataset": "name",
+            "Experiment": "name",
+            "Compound": "compound_id",
+            "HTSCampaign": "campaign_name",
+        }.get(getattr(model, "__name__", ""), "name")
+
+        column = getattr(model, name_col)
         # Best-effort match by name (case-insensitive)
-        q = db.query(model).filter(model.name.ilike(name))  # exact-ish
+        q = db.query(model).filter(column.ilike(name))  # exact-ish
         row = q.first()
         if row is None:
-            q2 = db.query(model).filter(model.name.ilike(f"%{name}%"))
+            q2 = db.query(model).filter(column.ilike(f"%{name}%"))
             row = q2.first()
         if row is not None:
             out.append(str(getattr(row, "id")))

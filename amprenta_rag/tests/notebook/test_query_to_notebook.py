@@ -11,6 +11,97 @@ import amprenta_rag.notebook.query_to_notebook as query_to_notebook
 from amprenta_rag.notebook.context import AnalysisContext
 
 
+class _FakeColumn:
+    def __init__(self, name: str):
+        self.name = name
+
+    def ilike(self, pattern: str):
+        return (self.name, pattern)
+
+
+class _FakeRow:
+    def __init__(self, row_id: str):
+        self.id = row_id
+
+
+class _FakeQuery:
+    def __init__(self, model, db):
+        self.model = model
+        self.db = db
+        self.expr = None
+
+    def filter(self, expr):
+        self.expr = expr
+        return self
+
+    def first(self):
+        return self.db.matches.get((self.model.__name__, self.expr))
+
+
+class _FakeDB:
+    def __init__(self, matches):
+        self.matches = matches
+
+    def query(self, model):
+        return _FakeQuery(model, self)
+
+
+def test_entity_extraction_compound_by_compound_id():
+    class Compound:
+        compound_id = _FakeColumn("compound_id")
+        name = _FakeColumn("name")  # present but should NOT be used
+
+    db = _FakeDB(
+        {
+            ("Compound", ("compound_id", "CMPD-123")): _FakeRow("00000000-0000-0000-0000-0000000000c1"),
+        }
+    )
+    out = entity_extractor._resolve_by_name(db, Compound, ["CMPD-123"])
+    assert out == ["00000000-0000-0000-0000-0000000000c1"]
+
+
+def test_entity_extraction_campaign_by_campaign_name():
+    class HTSCampaign:
+        campaign_name = _FakeColumn("campaign_name")
+        name = _FakeColumn("name")  # present but should NOT be used
+
+    db = _FakeDB(
+        {
+            ("HTSCampaign", ("campaign_name", "ALS Screen")): _FakeRow("00000000-0000-0000-0000-0000000000h1"),
+        }
+    )
+    out = entity_extractor._resolve_by_name(db, HTSCampaign, ["ALS Screen"])
+    assert out == ["00000000-0000-0000-0000-0000000000h1"]
+
+
+def test_entity_extraction_no_entities_found(monkeypatch: pytest.MonkeyPatch):
+    def fake_llm(query: str):
+        return {"datasets": [], "experiments": [], "compounds": [], "campaigns": [], "primary": {"type": None, "value": None}}
+
+    class DummyDB:
+        pass
+
+    class DummySession:
+        def __enter__(self):
+            return DummyDB()
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr(entity_extractor, "_llm_extract_candidates", fake_llm)
+    monkeypatch.setattr(entity_extractor, "_resolve_by_name", lambda db, model, names: [])
+    monkeypatch.setattr(entity_extractor, "db_session", lambda: DummySession())
+
+    out = entity_extractor.extract_entities("some random query with nothing")
+    assert out["dataset_ids"] == []
+    assert out["experiment_ids"] == []
+    assert out["compound_ids"] == []
+    assert out["campaign_ids"] == []
+    ctx = AnalysisContext.from_dict(out["context"])
+    assert ctx.entity_type == "dataset"
+    assert ctx.entity_id == "unknown"
+
+
 def test_entity_extraction_resolves_and_returns_context(monkeypatch: pytest.MonkeyPatch):
     # Fake LLM output with names
     def fake_llm(query: str):
