@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 import httpx
@@ -33,6 +33,16 @@ def fetch_dataset(dataset_id: str) -> Optional[dict]:
     except httpx.HTTPError as e:  # noqa: BLE001
         st.error(f"Failed to load dataset: {e}")
         return None
+
+
+def patch_dataset(dataset_id: str, payload: dict) -> httpx.Response:
+    """Patch a dataset via the API."""
+    with httpx.Client(timeout=15) as client:
+        return client.patch(f"{DATASET_ENDPOINT}/{dataset_id}", json=payload)
+
+
+def _parse_csv_list(value: str) -> list[str]:
+    return [v.strip() for v in value.split(",") if v.strip()]
 
 
 def get_external_link(source: Optional[str], accession: Optional[str]) -> Optional[str]:
@@ -101,12 +111,80 @@ def render_metadata(dataset: dict):
 
 
 def render_dataset_details(dataset: dict):
+    version = int(dataset.get("version") or 1)
+    st.session_state["dataset_version"] = version
+
     st.header(dataset.get("name") or "Dataset")
+    st.caption(f"v{version}")
     col1, col2 = st.columns([2, 1])
     with col1:
         render_metadata(dataset)
     with col2:
         render_feature_summary(dataset)
+
+    st.markdown("---")
+    st.subheader("Edit Dataset")
+
+    with st.form("dataset_update_form"):
+        name = st.text_input("Name", value=dataset.get("name") or "")
+        description = st.text_area("Description", value=dataset.get("description") or "")
+        organism_csv = st.text_input(
+            "Organism (comma-separated)",
+            value=", ".join(dataset.get("organism") or []),
+        )
+        sample_type_csv = st.text_input(
+            "Sample type (comma-separated)",
+            value=", ".join(dataset.get("sample_type") or []),
+        )
+        disease_csv = st.text_input(
+            "Disease (comma-separated)",
+            value=", ".join(dataset.get("disease") or []),
+        )
+        submitted = st.form_submit_button("Save", type="primary")
+
+    if submitted:
+        payload: dict[str, Any] = {
+            "version": int(st.session_state.get("dataset_version", version)),
+            "name": name.strip() or None,
+            "description": description.strip() or None,
+            "organism": _parse_csv_list(organism_csv) if organism_csv.strip() else [],
+            "sample_type": _parse_csv_list(sample_type_csv) if sample_type_csv.strip() else [],
+            "disease": _parse_csv_list(disease_csv) if disease_csv.strip() else [],
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+
+        try:
+            resp = patch_dataset(str(dataset.get("id") or ""), payload)
+        except httpx.HTTPError as e:  # noqa: BLE001
+            st.error(f"Failed to update dataset: {e}")
+            return
+
+        if resp.status_code == 409:
+            st.error("This dataset was modified. Please reload.")
+            if st.button("🔄 Reload", type="secondary"):
+                fetch_dataset.clear()
+                st.rerun()
+            return
+
+        if resp.status_code == 404:
+            st.error("Dataset not found.")
+            return
+
+        if resp.status_code >= 500:
+            st.error("Server error - please try again.")
+            return
+
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPError as e:  # noqa: BLE001
+            st.error(f"Update failed: {e}")
+            return
+
+        updated = resp.json()
+        st.session_state["dataset_version"] = int(updated.get("version") or (version + 1))
+        st.success("Saved.")
+        fetch_dataset.clear()
+        st.rerun()
 
 
 def render_selection():
