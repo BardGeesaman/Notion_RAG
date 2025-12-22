@@ -42,11 +42,12 @@ def _reset_demo_data() -> Tuple[int, int, int, int]:
     return prog_deleted, exp_deleted, ds_deleted, user_deleted
 
 
-def _get_or_create_user(email: str, name: str, dry_run: bool) -> User:
+def _get_or_create_user(email: str, name: str, dry_run: bool) -> int | None:
+    """Return user ID (or None if dry_run)."""
     with db_session() as db:
         user = db.query(User).filter(User.email == email).first()
         if user:
-            return user
+            return user.id
         # Current User model requires username + password_hash.
         base_username = re.sub(r"[^a-zA-Z0-9_]+", "_", email.split("@", 1)[0]).strip("_") or "demo"
         username = base_username
@@ -66,12 +67,13 @@ def _get_or_create_user(email: str, name: str, dry_run: bool) -> User:
         db.add(user)
         # Flush so user.id is available to reference as created_by_id even in dry-run.
         db.flush()
+        user_id = user.id  # capture ID before session closes
         if dry_run:
             db.rollback()
+            return None
         else:
             db.commit()
-            db.refresh(user)
-        return user
+            return user_id
 
 
 def _seed_entities(size: str, seed_value: int, dry_run: bool) -> Tuple[int, int, int]:
@@ -79,8 +81,7 @@ def _seed_entities(size: str, seed_value: int, dry_run: bool) -> Tuple[int, int,
     prog_target, exp_target, ds_target = SIZE_PRESETS[size]
     prog_created = exp_created = ds_created = 0
 
-    creator = _get_or_create_user("demo-seed@demo.local", "Demo Seed User", dry_run)
-    creator_id = None if dry_run else creator.id
+    creator_id = _get_or_create_user("demo-seed@demo.local", "Demo Seed User", dry_run)
 
     with db_session() as db:
         # Programs
