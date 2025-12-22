@@ -275,9 +275,12 @@ def _render_edit_tab() -> None:
 
         # Debug: show current version tracking
         st.caption(
-            f"[DEBUG] edit_version={st.session_state.get(f'edit_version_{experiment.id}', 'NOT SET')}, "
+            f"[DEBUG] exp_id={experiment.id}, edit_version={st.session_state.get(f'edit_version_{experiment.id}', 'NOT SET')}, "
             f"db_version={experiment.version}"
         )
+        conflict_key = f"conflict_{experiment.id}"
+        if conflict_key in st.session_state:
+            st.caption(f"[DEBUG] conflict_state={st.session_state[conflict_key]}")
 
         design_type = st.selectbox(
             "Design type",
