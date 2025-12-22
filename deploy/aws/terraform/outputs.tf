@@ -24,3 +24,13 @@ output "environment" {
   description = "Deployment environment"
 }
 
+output "ecr_api_repository_url" {
+  value       = aws_ecr_repository.api.repository_url
+  description = "ECR repository URL for the FastAPI backend image"
+}
+
+output "ecr_dashboard_repository_url" {
+  value       = aws_ecr_repository.dashboard.repository_url
+  description = "ECR repository URL for the Streamlit dashboard image"
+}
+
