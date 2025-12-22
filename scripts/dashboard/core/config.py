@@ -7,7 +7,17 @@ import os
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow", "Variant Tracking"]
-ANALYSIS_PAGES = ["Analysis Tools", "Chemistry", "Visualizations", "Literature Analysis", "Candidate Selection", "HTS QC", "MOA Inference", "Cross-Omics Pathways"]
+ANALYSIS_PAGES = [
+    "Analysis Tools",
+    "Chemistry",
+    "Visualizations",
+    "Literature Analysis",
+    "Candidate Selection",
+    "HTS QC",
+    "MOA Inference",
+    "Cross-Omics Pathways",
+    "Notebook Co-Pilot",
+]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
     "Audit Logs",
@@ -88,6 +98,7 @@ ALL_PAGES = [
     "Entity Explorer",
     "Data Grid",
     "Genome Browser",
+    "Notebook Co-Pilot",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -153,5 +164,6 @@ PAGE_REGISTRY = {
     "Data Retention": ("scripts.dashboard.pages.retention", "render_retention_page"),
     "Ontology Management": ("scripts.dashboard.pages.ontology", "render_ontology_page"),
     "Report History": ("scripts.dashboard.pages.report_history", "render_report_history_page"),
+    "Notebook Co-Pilot": ("scripts.dashboard.pages.notebook_copilot", "render_notebook_copilot_page"),
 }
 
