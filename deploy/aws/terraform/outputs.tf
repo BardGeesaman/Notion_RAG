@@ -13,6 +13,26 @@ output "lightsail_ip" {
   description = "Lightsail public IP"
 }
 
+output "vpc_id" {
+  value       = aws_vpc.main.id
+  description = "VPC ID for ECS resources"
+}
+
+output "ecs_cluster_arn" {
+  value       = aws_ecs_cluster.main.arn
+  description = "ECS cluster ARN"
+}
+
+output "api_service_name" {
+  value       = aws_ecs_service.api.name
+  description = "ECS service name for FastAPI"
+}
+
+output "dashboard_service_name" {
+  value       = aws_ecs_service.dashboard.name
+  description = "ECS service name for Streamlit dashboard"
+}
+
 output "connection_string" {
   value       = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/${var.db_name}"
   description = "Connection string for convenience"

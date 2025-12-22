@@ -10,6 +10,42 @@ variable "project_name" {
   default     = "amprenta"
 }
 
+variable "vpc_cidr" {
+  description = "CIDR block for the ECS VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "desired_count" {
+  description = "Desired task count per service"
+  type        = number
+  default     = 1
+}
+
+variable "api_cpu" {
+  description = "CPU units for API task"
+  type        = number
+  default     = 256
+}
+
+variable "api_memory" {
+  description = "Memory (MiB) for API task"
+  type        = number
+  default     = 512
+}
+
+variable "dashboard_cpu" {
+  description = "CPU units for dashboard task"
+  type        = number
+  default     = 256
+}
+
+variable "dashboard_memory" {
+  description = "Memory (MiB) for dashboard task"
+  type        = number
+  default     = 512
+}
+
 variable "db_name" {
   description = "RDS database name"
   type        = string
