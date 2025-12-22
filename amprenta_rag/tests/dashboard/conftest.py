@@ -58,6 +58,7 @@ def streamlit_server():
 
     env = os.environ.copy()
     env["PYTHONPATH"] = project_root
+    env["DISABLE_AUTH"] = "1"
 
     proc = subprocess.Popen(
         ["streamlit", "run", "scripts/dashboard/app.py", f"--server.port={port}", "--server.headless=true"],
