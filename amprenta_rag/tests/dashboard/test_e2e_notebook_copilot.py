@@ -29,10 +29,12 @@ def _goto_notebook_copilot(page: Page, base_url: str) -> None:
     copilot_btn = page.locator("text=Notebook Co-Pilot").first
     copilot_btn.wait_for(state="visible", timeout=10000)
     copilot_btn.click()
+    page.wait_for_load_state("networkidle")
     page.wait_for_timeout(2000)
 
     # Verify page loaded
     expect(page.locator("text=Notebook Co-Pilot").first).to_be_visible(timeout=10000)
+    expect(page.get_by_role("button", name="Generate code").first).to_be_visible(timeout=10000)
 
 
 def _skip_if_no_datasets(page: Page) -> None:
