@@ -94,3 +94,32 @@ def test_pgvector_store_query_executes_sql(monkeypatch: pytest.MonkeyPatch):
     assert out[0]["metadata"] == {"k": "v"}
 
 
+def test_pgvector_store_query_includes_namespace_filter():
+    executed = {}
+
+    class FakeResult:
+        def mappings(self):
+            return self
+
+        def all(self):
+            return []
+
+    class FakeDB:
+        def execute(self, stmt, params):
+            executed["sql"] = str(stmt)
+            executed["params"] = params
+            return FakeResult()
+
+        def commit(self):
+            return None
+
+    @contextmanager
+    def fake_db_session():
+        yield FakeDB()
+
+    store = vs.PgVectorStore(session_factory=fake_db_session)
+    store.query([0.0, 1.0], top_k=1, namespace="ns1")
+    assert "namespace" in executed["params"]
+    assert executed["params"]["namespace"] == "ns1"
+
+

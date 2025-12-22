@@ -171,12 +171,19 @@ def _filter_to_sql(where: Optional[PineconeFilter]) -> tuple[str, Dict[str, Any]
                 p = next_param(cond["$eq"])
                 parts2.append(f"(chunk_metadata::jsonb ->> '{field}') = :{p}")
             elif isinstance(cond, dict) and "$in" in cond:
-                # If metadata is an array, check membership; otherwise compare string value.
-                # This handles most common patterns in our ingestion metadata.
+                # If metadata is an array, check membership via jsonb_array_elements_text;
+                # otherwise compare scalar value via ANY(array).
                 vals = list(cond["$in"] or [])
                 p = next_param(vals)
                 parts2.append(
-                    f"((chunk_metadata::jsonb -> '{field}') ?| :{p} OR (chunk_metadata::jsonb ->> '{field}') = ANY(:{p}))"
+                    "("
+                    f"EXISTS ("
+                    f"  SELECT 1 "
+                    f"  FROM jsonb_array_elements_text(chunk_metadata::jsonb -> '{field}') AS elem(val) "
+                    f"  WHERE elem.val = ANY(:{p})"
+                    f") "
+                    f"OR (chunk_metadata::jsonb ->> '{field}') = ANY(:{p})"
+                    ")"
                 )
             else:
                 # treat scalar value as equality
@@ -204,7 +211,6 @@ class PgVectorStore:
         filter: Optional[PineconeFilter] = None,  # noqa: A002
         namespace: Optional[str] = None,
     ) -> List[VectorMatch]:
-        # namespace currently ignored for pgvector backend (single DB).
         where_sql, params = _filter_to_sql(filter)
 
         sql = """
@@ -215,6 +221,9 @@ class PgVectorStore:
         FROM rag_chunks
         WHERE embedding IS NOT NULL
         """
+        if namespace:
+            params["namespace"] = namespace
+            sql += " AND (chunk_metadata::jsonb ->> 'namespace') = :namespace"
         if where_sql:
             sql += f" AND {where_sql}"
         sql += " ORDER BY embedding <=> :vector LIMIT :top_k"
@@ -236,7 +245,6 @@ class PgVectorStore:
         return out
 
     def upsert(self, vectors: List[VectorRecord], namespace: Optional[str] = None) -> None:
-        # namespace currently ignored for pgvector backend.
         if not vectors:
             return
 
@@ -245,6 +253,8 @@ class PgVectorStore:
                 chunk_id = v.get("id")
                 values = v.get("values")
                 metadata = cast(Dict[str, Any], v.get("metadata") or {})
+                if namespace:
+                    metadata = {**metadata, "namespace": namespace}
                 if not chunk_id or values is None:
                     continue
 
@@ -255,13 +265,15 @@ class PgVectorStore:
                         """
                         UPDATE rag_chunks
                         SET embedding = :embedding,
-                            embedding_model = :embedding_model
+                            embedding_model = :embedding_model,
+                            chunk_metadata = (COALESCE(chunk_metadata::jsonb, '{}'::jsonb) || :chunk_metadata::jsonb)
                         WHERE chunk_id = :chunk_id
                         """
                     ),
                     {
                         "embedding": list(values),
                         "embedding_model": embedding_model,
+                        "chunk_metadata": metadata,
                         "chunk_id": chunk_id,
                     },
                 )
@@ -280,6 +292,10 @@ class PgVectorStore:
         if ids:
             where_parts.append("chunk_id = ANY(:ids)")
             params["ids"] = ids
+
+        if namespace:
+            where_parts.append("(chunk_metadata::jsonb ->> 'namespace') = :namespace")
+            params["namespace"] = namespace
 
         where_sql, filter_params = _filter_to_sql(filter)
         if where_sql:
