@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from amprenta_rag.notebook.context import AnalysisContext
 from amprenta_rag.notebook.copilot import explain_cell, fix_cell, synthesize_cell
+from amprenta_rag.notebook.query_to_notebook import default_filename, generate_notebook
 
 router = APIRouter()
 
@@ -130,5 +131,32 @@ def list_templates(entity_type: Optional[str] = None) -> List[NotebookTemplate]:
             return [t for t in templates if t.id in {"context", "publish"}]
 
     return templates
+
+
+class GenerateNotebookFromQueryRequest(BaseModel):
+    query: str = Field(..., min_length=1)
+
+
+class GenerateNotebookFromQueryResponse(BaseModel):
+    notebook_json: Dict[str, Any]
+    filename: str
+
+
+@router.post("/notebook/generate-from-query", response_model=GenerateNotebookFromQueryResponse)
+def generate_from_query(payload: GenerateNotebookFromQueryRequest) -> GenerateNotebookFromQueryResponse:
+    """Generate a full Jupyter notebook from a natural language query."""
+    try:
+        nb = generate_notebook(payload.query)
+        # NotebookNode is dict-like but not always plain-JSON; normalize via nbformat serialization.
+        import nbformat as _nbformat
+        import json as _json
+
+        nb_json = _json.loads(_nbformat.writes(nb))
+        fname = default_filename(payload.query)
+        return GenerateNotebookFromQueryResponse(notebook_json=nb_json, filename=fname)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Notebook generation failed: {e}")
 
 
