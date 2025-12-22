@@ -120,7 +120,7 @@ Core Features (Completed):
 - ✅ Shared Template Library with Parameters
 
 AI/LLM Integrations (Next):
-- ⏳ Notebook Co-Pilot (cell synthesizer/fixer)
+- ✅ Notebook Co-Pilot (cell synthesizer/fixer) (2025-12-22)
 - ⏳ Query→Notebook Generator
 - ⏳ Auto-Explain + Summarize Notebook
 
@@ -351,7 +351,7 @@ Implementation:
 - ✅ Ag-Grid for large-table browsing/editing
 
 ### 4) Testing Closure (Implemented-but-Untested)
-- ⏳ Playwright E2E: **Concurrent Editing / optimistic locking** flow
+- ✅ Playwright E2E: **Concurrent Editing / optimistic locking** flow (2025-12-22)
 
 ### 5) Multi-Company Support (Multi-Tenancy)
 - ❌ Company model + admin roles
@@ -364,7 +364,7 @@ Implementation:
 
 - ❌ Bioinformatics pipeline orchestrator (Nextflow/Snakemake)
 - ❌ Data Version Control (DVC)
-- ❌ **Pinecone → pgvector migration** - Self-host vector search in Postgres for reduced costs and latency
+- ⏳ **Pinecone → pgvector migration** - Self-host vector search in Postgres for reduced costs and latency
 - ❌ Bayesian inference & optimization workflows
 - ❌ ML/AI model registry + predictive ADMET
 - ❌ OOP Refactoring Review
