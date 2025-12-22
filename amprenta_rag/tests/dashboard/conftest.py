@@ -51,7 +51,49 @@ pytestmark = pytest.mark.ui
 
 
 @pytest.fixture(scope="session")
-def streamlit_server():
+def fastapi_server():
+    """Start FastAPI server for E2E tests."""
+    port = 8000
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+    env = os.environ.copy()
+    env["PYTHONPATH"] = project_root
+    env["DISABLE_AUTH"] = "1"
+
+    proc = subprocess.Popen(
+        ["uvicorn", "amprenta_rag.api.main:app", f"--port={port}", "--host=0.0.0.0"],
+        cwd=project_root,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    # Wait for server to be ready
+    max_wait = 30
+    for _ in range(max_wait):
+        try:
+            resp = requests.get(f"http://localhost:{port}/health", timeout=1)
+            if resp.status_code == 200:
+                break
+        except requests.exceptions.RequestException:
+            pass
+        time.sleep(1)
+    else:
+        proc.terminate()
+        raise RuntimeError(f"FastAPI server failed to start on port {port}")
+
+    try:
+        yield f"http://localhost:{port}"
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
+@pytest.fixture(scope="session")
+def streamlit_server(fastapi_server):
     """Start Streamlit server for E2E tests, stop when done."""
     port = 8502
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
