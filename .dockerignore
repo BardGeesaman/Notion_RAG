@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.env
+.git/
+*.md
+tests/
+amprenta_rag/tests/
+htmlcov/
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+md_archive/
+ChatGPT context/
+data/
+tmp_geo/
+tmp_pride/
+
+
