@@ -112,14 +112,21 @@ class TestOptimisticLocking:
             reload_btn = page2.get_by_role("button", name="Reload Latest").first
             expect(reload_btn).to_be_visible()
             reload_btn.click()
-            page2.wait_for_timeout(2500)
+            
+            # Wait for page to fully reload after st.rerun()
+            page2.wait_for_load_state("networkidle")
+            page2.wait_for_timeout(2000)
+            
+            # Verify form is ready (sample groups textarea visible)
+            ta = page2.locator('textarea[aria-label="Sample groups (JSON)"]')
+            expect(ta).to_be_visible(timeout=10000)
 
             expect(page2.locator("text=⚠️ Conflict").first).to_have_count(0)
 
             # Now saving should succeed (no conflict) because the version was refreshed.
             _set_sample_groups_json(page2, f'{{\"_e2e\": \"after-reload-{t}\"}}')
             _click_save_design(page2)
-            expect(page2.locator("text=Saved successfully!").first).to_be_visible()
+            expect(page2.locator("text=Saved successfully!").first).to_be_visible(timeout=10000)
         finally:
             ctx2.close()
 
