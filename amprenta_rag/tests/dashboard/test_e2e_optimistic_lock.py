@@ -20,18 +20,31 @@ pytestmark = pytest.mark.requires_server
 
 def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
     """Navigate to Experiments -> Edit Design tab."""
-    # Navigate directly to experiments page via URL
-    page.goto(f"{base_url}/experiments")
+    page.goto(base_url)
     page.wait_for_load_state("networkidle")
-    page.wait_for_timeout(3000)
-
-    # Debug screenshot
-    page.screenshot(path="/tmp/e2e_experiments_page.png")
-
-    # Wait for page to load - look for tabs
-    page.locator('button:has-text("Edit Design")').first.wait_for(state="visible", timeout=10000)
-    page.locator('button:has-text("Edit Design")').first.click()
+    page.wait_for_timeout(5000)
+    
+    # Click Experiments button - may need multiple clicks for Streamlit
+    experiments_btn = page.locator('button:has-text("Experiments")').first
+    experiments_btn.wait_for(state="visible", timeout=10000)
+    experiments_btn.click()
     page.wait_for_timeout(2000)
+    
+    # Check if page changed, if not click again
+    if page.locator("text=Browse Experiments").count() == 0:
+        experiments_btn.click()
+        page.wait_for_timeout(3000)
+    
+    # Screenshot for debugging
+    page.screenshot(path="/tmp/e2e_after_experiments.png")
+    
+    # Now look for Edit Design tab
+    edit_tab = page.locator('button:has-text("Edit Design")').first
+    if edit_tab.count() > 0:
+        edit_tab.click()
+        page.wait_for_timeout(2000)
+    else:
+        raise Exception("Edit Design tab not found - navigation may have failed")
 
     if page.locator("text=No experiments available to edit.").count() > 0:
         pytest.skip("No experiments available to edit in this environment.")
