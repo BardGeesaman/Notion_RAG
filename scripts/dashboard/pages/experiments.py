@@ -273,6 +273,12 @@ def _render_edit_tab() -> None:
         if f"edit_version_{experiment.id}" not in st.session_state:
             st.session_state[f"edit_version_{experiment.id}"] = experiment.version
 
+        # Debug: show current version tracking
+        st.caption(
+            f"[DEBUG] edit_version={st.session_state.get(f'edit_version_{experiment.id}', 'NOT SET')}, "
+            f"db_version={experiment.version}"
+        )
+
         design_type = st.selectbox(
             "Design type",
             [
