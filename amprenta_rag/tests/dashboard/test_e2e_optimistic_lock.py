@@ -20,35 +20,19 @@ pytestmark = pytest.mark.requires_server
 
 def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
     """Navigate to Experiments -> Edit Design tab."""
-    page.goto(base_url)
+    # Navigate directly to experiments page via URL
+    page.goto(f"{base_url}/experiments")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(3000)
 
-    # Debug: screenshot before clicking
-    page.screenshot(path="/tmp/e2e_before_click.png")
+    # Debug screenshot
+    page.screenshot(path="/tmp/e2e_experiments_page.png")
 
-    # Click Experiments button
-    page.locator('button:has-text("Experiments")').first.click()
-    page.wait_for_timeout(2000)
-    
-    # Debug: screenshot after clicking
-    page.screenshot(path="/tmp/e2e_after_click.png")
-    
-    # Wait for Experiments page to load
-    try:
-        expect(page.locator("text=🔬 Experiments").first).to_be_visible(timeout=10000)
-    except Exception as e:
-        page.screenshot(path="/tmp/e2e_failed.png")
-        raise e
-    page.wait_for_timeout(1000)
-
-    # Click Edit Design tab
+    # Wait for page to load - look for tabs
+    page.locator('button:has-text("Edit Design")').first.wait_for(state="visible", timeout=10000)
     page.locator('button:has-text("Edit Design")').first.click()
-    
-    # Wait for tab content
     page.wait_for_timeout(2000)
 
-    # Skip if no experiments
     if page.locator("text=No experiments available to edit.").count() > 0:
         pytest.skip("No experiments available to edit in this environment.")
 
