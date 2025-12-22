@@ -26,8 +26,8 @@ from scripts.dashboard.db_session import db_session
 
 
 def _handle_reload(exp_id: int, actual_version: int) -> None:
-    """Callback for Reload Latest button - updates version in session state."""
-    st.session_state[f"edit_version_{exp_id}"] = actual_version
+    """Set flag to reload version on next render."""
+    st.session_state[f"_reload_pending_{exp_id}"] = actual_version
     st.session_state.pop(f"conflict_{exp_id}", None)
 
 
@@ -278,6 +278,12 @@ def _render_edit_tab() -> None:
         # Store version for optimistic locking (only on first load, not reruns)
         if f"edit_version_{experiment.id}" not in st.session_state:
             st.session_state[f"edit_version_{experiment.id}"] = experiment.version
+
+        # Process pending reload
+        reload_flag_key = f"_reload_pending_{experiment.id}"
+        if reload_flag_key in st.session_state:
+            st.session_state[f"edit_version_{experiment.id}"] = st.session_state[reload_flag_key]
+            del st.session_state[reload_flag_key]
 
         # Debug: show current version tracking
         st.caption(
