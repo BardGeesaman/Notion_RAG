@@ -15,12 +15,25 @@ from playwright.sync_api import Page, expect
 pytestmark = pytest.mark.requires_server
 
 
+def _main_container(page: Page):
+    """
+    Return the best locator for the Streamlit *main content* region.
+
+    Streamlit's outer container (`stAppViewContainer`) includes sidebar content,
+    which can cause E2E selectors like `text=...` to match hidden sidebar items.
+    """
+    main = page.locator('[data-testid="stMainBlockContainer"]')
+    if main.count() > 0:
+        return main.first
+    return page.locator('[data-testid="stAppViewContainer"]').first
+
+
 def _goto_notebook_generator(page: Page, base_url: str) -> None:
     page.goto(f"{base_url}/?page=Notebook%20Generator")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(5000)
 
-    main = page.locator('[data-testid="stAppViewContainer"]').first
+    main = _main_container(page)
     expect(
         main.locator('h1:has-text("Notebook Generator"), h2:has-text("Notebook Generator")').first
     ).to_be_visible(timeout=20000)
@@ -31,7 +44,7 @@ def _try_generate(page: Page) -> bool:
     page.get_by_role("button", name="Generate Notebook").first.click()
 
     # LLM-backed generation can take a while; allow up to 90s.
-    main = page.locator('[data-testid="stAppViewContainer"]').first
+    main = _main_container(page)
     preview = main.locator('text=Preview').first
     err = main.locator("text=Failed to generate notebook:").first
 
@@ -61,11 +74,13 @@ class TestNotebookGeneratorE2E:
             pytest.skip("OPENAI_API_KEY not set; skipping LLM-backed notebook generation test.")
 
         page.locator('textarea[aria-label="Question"]').first.fill("Analyze transcriptomics dataset")
+        page.keyboard.press("Tab")
+        expect(page.get_by_role("button", name="Generate Notebook").first).to_be_enabled(timeout=10000)
         ok = _try_generate(page)
         if not ok:
             pytest.skip("Notebook generation unavailable (missing/invalid LLM credentials or backend config).")
 
-        main = page.locator('[data-testid="stAppViewContainer"]').first
+        main = _main_container(page)
         expect(main.locator("text=Preview").first).to_be_visible(timeout=20000)
 
     def test_download_button_visible_after_generation(self, page: Page, streamlit_server: str):
@@ -75,11 +90,13 @@ class TestNotebookGeneratorE2E:
             pytest.skip("OPENAI_API_KEY not set; skipping LLM-backed notebook generation test.")
 
         page.locator('textarea[aria-label="Question"]').first.fill("Analyze transcriptomics dataset")
+        page.keyboard.press("Tab")
+        expect(page.get_by_role("button", name="Generate Notebook").first).to_be_enabled(timeout=10000)
         ok = _try_generate(page)
         if not ok:
             pytest.skip("Notebook generation unavailable (missing/invalid LLM credentials or backend config).")
 
-        main = page.locator('[data-testid="stAppViewContainer"]').first
+        main = _main_container(page)
         expect(page.get_by_role("button", name="Download .ipynb").first).to_be_visible(timeout=20000)
         expect(main.locator("text=Filename:").first).to_be_visible(timeout=20000)
 

@@ -105,6 +105,19 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-22] – **Pinecone → pgvector Migration Complete**:
+  - **Commits**: ee98a48, 7a348db, 2d4da64, 04ef84e, 770e2e1, 47c8bf6
+  - **Key files created**:
+    - amprenta_rag/clients/vector_store.py (VectorStore abstraction)
+    - scripts/migrate_pinecone_to_pgvector.py (data migration script)
+    - scripts/benchmark_vector_stores.py (performance comparison)
+    - docs/PGVECTOR_MIGRATION.md (migration runbook)
+    - alembic/versions/a1b2c3_add_pgvector_embedding.py
+  - **Configuration**: VECTOR_BACKEND env var: "pinecone" (default) or "pgvector"
+  - **Database**: RAGChunk model with embedding (Vector 3072), embedding_model columns
+  - **Migration status**: Abstraction layer complete, ingestion updated (95 tests), query updated (32 tests), migration script with checkpointing
+  - **Production steps**: Alembic upgrade → migrate data → benchmark (recall >= 95%) → switch backend → monitor → remove Pinecone
+
 * [2025-12-21] – **Code Quality Sprint Complete**:
   - **Metrics**: 796 tests, 70% coverage, 8 CI jobs (lint, mypy, bandit, pytest, E2E, coverage, pre-commit, security audit)
   - **Type safety**: Type ignores 203 → 63 (-69%)

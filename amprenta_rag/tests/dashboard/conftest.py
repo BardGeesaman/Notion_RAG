@@ -6,9 +6,29 @@ from typing import Dict, Any
 import os
 import subprocess
 import time
+from pathlib import Path
 
 import pytest
 import requests
+
+
+def _kill_port(port: int) -> None:
+    """Best-effort kill any process listening on a TCP port (avoids E2E port conflicts)."""
+    try:
+        res = subprocess.run(
+            ["lsof", "-ti", f":{port}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        pids = [p.strip() for p in (res.stdout or "").splitlines() if p.strip()]
+        for pid in pids:
+            subprocess.run(["kill", "-9", pid], capture_output=True, text=True, check=False)
+        if pids:
+            time.sleep(0.5)
+    except Exception:
+        # Best-effort; don't fail the test suite if we can't kill the port.
+        return
 
 
 @pytest.fixture
@@ -59,13 +79,18 @@ def fastapi_server():
     env = os.environ.copy()
     env["PYTHONPATH"] = project_root
     env["DISABLE_AUTH"] = "1"
+    env.setdefault("AMPRENTA_DEBUG_NAV", "1")
 
+    log_path = Path("/tmp/fastapi_e2e.log")
+    log_f = log_path.open("w", encoding="utf-8")
+
+    _kill_port(port)
     proc = subprocess.Popen(
         ["uvicorn", "amprenta_rag.api.main:app", f"--port={port}", "--host=0.0.0.0"],
         cwd=project_root,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=log_f,
+        stderr=log_f,
     )
 
     # Wait for server to be ready
@@ -79,8 +104,25 @@ def fastapi_server():
             pass
         time.sleep(1)
     else:
+        try:
+            log_f.flush()
+        except Exception:
+            pass
         proc.terminate()
-        raise RuntimeError(f"FastAPI server failed to start on port {port}")
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        try:
+            log_f.close()
+        except Exception:
+            pass
+        tail = ""
+        try:
+            tail = log_path.read_text(encoding="utf-8")[-4000:]
+        except Exception:
+            pass
+        raise RuntimeError(f"FastAPI server failed to start on port {port}\n{tail}")
 
     try:
         yield f"http://localhost:{port}"
@@ -90,6 +132,10 @@ def fastapi_server():
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
+        try:
+            log_f.close()
+        except Exception:
+            pass
 
 
 @pytest.fixture(scope="session")
@@ -101,13 +147,18 @@ def streamlit_server(fastapi_server):
     env = os.environ.copy()
     env["PYTHONPATH"] = project_root
     env["DISABLE_AUTH"] = "1"
+    env["AMPRENTA_DEBUG_NAV"] = "1"
 
+    log_path = Path("/tmp/streamlit_e2e.log")
+    log_f = log_path.open("w", encoding="utf-8")
+
+    _kill_port(port)
     proc = subprocess.Popen(
         ["streamlit", "run", "scripts/dashboard/app.py", f"--server.port={port}", "--server.headless=true"],
         cwd=project_root,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=log_f,
+        stderr=log_f,
     )
 
     # Wait for server to be ready
@@ -121,8 +172,25 @@ def streamlit_server(fastapi_server):
             pass
         time.sleep(1)
     else:
+        try:
+            log_f.flush()
+        except Exception:
+            pass
         proc.terminate()
-        raise RuntimeError(f"Streamlit server failed to start on port {port}")
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        try:
+            log_f.close()
+        except Exception:
+            pass
+        tail = ""
+        try:
+            tail = log_path.read_text(encoding="utf-8")[-4000:]
+        except Exception:
+            pass
+        raise RuntimeError(f"Streamlit server failed to start on port {port}\n{tail}")
 
     try:
         yield f"http://localhost:{port}"
@@ -133,14 +201,21 @@ def streamlit_server(fastapi_server):
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
+        try:
+            log_f.close()
+        except Exception:
+            pass
 
 
 @pytest.fixture(scope="session")
 def browser_type_launch_args(browser_type_launch_args):
     """
-    Force Playwright to run headed for E2E debugging.
+    Optionally force Playwright to run headed for E2E debugging.
 
-    This overrides pytest-playwright's default launch args.
+    Default behavior should remain whatever pytest-playwright chooses (typically
+    headless in CI). To force headed, set `E2E_HEADED=1`.
     """
-    return {**browser_type_launch_args, "headless": False}
+    if os.getenv("E2E_HEADED") == "1":
+        return {**browser_type_launch_args, "headless": False}
+    return browser_type_launch_args
 

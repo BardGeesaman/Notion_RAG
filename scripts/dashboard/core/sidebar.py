@@ -268,15 +268,29 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
         # Allow deep-linking via URL query param, e.g. /?page=Cytoscape%20Demo
         # This is especially useful for smoke tests and bookmarking.
     page_param: Optional[str] = None
-    try:
-        raw: Any = st.query_params.get("page")
-        page_param = raw[0] if isinstance(raw, list) else cast(Optional[str], raw)
-    except Exception:
+
+    # Debug: show raw query params if enabled
+    if os.environ.get("AMPRENTA_DEBUG_NAV", "").lower() in ("1", "true", "yes"):
         try:
-            raw2: Any = st.experimental_get_query_params().get("page")
+            st.sidebar.caption(f"raw_query_params: {dict(st.query_params)}")
+        except Exception as e:  # noqa: BLE001
+            st.sidebar.caption(f"query_params error: {e}")
+
+    # Streamlit 1.30+ query param reading
+    try:
+        if hasattr(st, "query_params") and "page" in st.query_params:
+            raw = st.query_params["page"]
+            page_param = raw[0] if isinstance(raw, list) else (str(raw) if raw else None)
+    except Exception:
+        pass
+
+    # Fallback for older Streamlit
+    if page_param is None:
+        try:
+            raw2 = st.experimental_get_query_params().get("page")
             page_param = raw2[0] if isinstance(raw2, list) and raw2 else None
         except Exception:
-            page_param = None
+            pass
 
     # Normalize query param (some setups return URL-encoded values).
     if page_param:

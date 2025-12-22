@@ -14,6 +14,19 @@ from playwright.sync_api import Page, expect
 pytestmark = pytest.mark.requires_server
 
 
+def _main_container(page: Page):
+    """
+    Return the best locator for the Streamlit *main content* region.
+
+    Streamlit's outer container (`stAppViewContainer`) includes sidebar content,
+    which can cause E2E selectors like `text=...` to match hidden sidebar items.
+    """
+    main = page.locator('[data-testid="stMainBlockContainer"]')
+    if main.count() > 0:
+        return main.first
+    return page.locator('[data-testid="stAppViewContainer"]').first
+
+
 def _goto_notebook_copilot(page: Page, base_url: str) -> None:
     # Use URL query param for direct navigation
     page.goto(f"{base_url}/?page=Notebook%20Co-Pilot")
@@ -21,7 +34,7 @@ def _goto_notebook_copilot(page: Page, base_url: str) -> None:
     page.wait_for_timeout(5000)
 
     # Wait for page content
-    main = page.locator('[data-testid="stAppViewContainer"]').first
+    main = _main_container(page)
     expect(
         main.locator('h1:has-text("Notebook Co-Pilot"), h2:has-text("Notebook Co-Pilot")').first
     ).to_be_visible(timeout=20000)
@@ -29,7 +42,8 @@ def _goto_notebook_copilot(page: Page, base_url: str) -> None:
 
 def _skip_if_no_datasets(page: Page) -> None:
     # The selector displays a placeholder option when none exist.
-    if page.locator("text=(no datasets found)").count() > 0:
+    main = _main_container(page)
+    if main.locator("text=(no datasets found)").count() > 0:
         pytest.skip("No datasets available in this environment.")
 
 
@@ -38,7 +52,7 @@ class TestNotebookCopilotE2E:
         """Verify Notebook Co-Pilot page renders with key elements."""
         _goto_notebook_copilot(page, streamlit_server)
 
-        main = page.locator('[data-testid="stAppViewContainer"]').first
+        main = _main_container(page)
         expect(
             main.locator('h1:has-text("Notebook Co-Pilot"), h2:has-text("Notebook Co-Pilot")').first
         ).to_be_visible(timeout=10000)
@@ -56,7 +70,7 @@ class TestNotebookCopilotE2E:
         page.wait_for_timeout(500)
 
         # Ensure the dataset selector is present; if none exist, skip.
-        main = page.locator('[data-testid="stAppViewContainer"]').first
+        main = _main_container(page)
         expect(main.locator('label:has-text("Dataset")').first).to_be_visible(timeout=10000)
         _skip_if_no_datasets(page)
 
@@ -83,7 +97,7 @@ class TestNotebookCopilotE2E:
         if page.locator("text=Copilot failed:").count() > 0:
             pytest.skip("Copilot generation unavailable (missing LLM credentials/config).")
 
-        main = page.locator('[data-testid="stAppViewContainer"]').first
+        main = _main_container(page)
         # Streamlit shows the copy button on hover for code blocks; hover first.
         pre = main.locator("css=pre").first
         expect(pre).to_be_visible(timeout=20000)
