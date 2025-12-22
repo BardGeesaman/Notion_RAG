@@ -281,9 +281,13 @@ def _render_edit_tab() -> None:
 
         # Process pending reload
         reload_flag_key = f"_reload_pending_{experiment.id}"
+        st.caption(f"[DEBUG] Checking for reload flag: {reload_flag_key} exists={reload_flag_key in st.session_state}")
         if reload_flag_key in st.session_state:
             st.session_state[f"edit_version_{experiment.id}"] = st.session_state[reload_flag_key]
             del st.session_state[reload_flag_key]
+            st.caption(
+                f"[DEBUG] RELOAD FLAG PROCESSED - set edit_version to {st.session_state[f'edit_version_{experiment.id}']}"
+            )
 
         # Debug: show current version tracking
         st.caption(
