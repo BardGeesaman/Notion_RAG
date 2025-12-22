@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from amprenta_rag.clients.openai_client import (get_default_models,
                                                 get_openai_client)
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
+from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
@@ -113,9 +113,9 @@ def query_pinecone(
     Returns:
         List of match dictionaries with metadata from Pinecone
     """
-    index = get_pinecone_index()
     vector = embed_query(user_query)
     cfg = get_config()
+    store = get_vector_store()
 
     # Build combined filter
     combined_filter: Dict[str, Any] = {}
@@ -126,17 +126,13 @@ def query_pinecone(
     if source_types:
         combined_filter["source_type"] = {"$in": source_types}
 
-    kwargs: Dict[str, Any] = {
-        "vector": vector,
-        "top_k": top_k,
-        "include_metadata": True,
-        "namespace": cfg.pinecone.namespace,  # use same namespace as upserts
-    }
-    if combined_filter:
-        kwargs["filter"] = combined_filter
-
     try:
-        res = index.query(**kwargs)
+        return store.query(
+            vector=vector,
+            top_k=top_k,
+            filter=combined_filter or None,
+            namespace=cfg.pinecone.namespace,
+        )
     except Exception as e:
         logger.error(
             "[PINECONE] Pinecone API error querying (top_k=%d, filter=%s): %r",
@@ -145,5 +141,3 @@ def query_pinecone(
             e,
         )
         raise
-    matches = getattr(res, "matches", None) or res.get("matches", [])
-    return matches

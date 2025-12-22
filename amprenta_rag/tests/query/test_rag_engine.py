@@ -254,7 +254,7 @@ class TestQueryRAG:
     """Tests for the main query_rag function."""
 
     @patch("amprenta_rag.query.rag.query.collect_hybrid_chunks")
-    @patch("amprenta_rag.query.rag.synthesis.synthesize_answer")
+    @patch("amprenta_rag.query.rag.query.synthesize_answer_with_citations")
     @patch("amprenta_rag.query.rag.query.query_pinecone")
     def test_query_rag_basic(self, mock_pinecone, mock_synthesize, mock_chunks):
         """query_rag should orchestrate pinecone query and synthesis."""
@@ -271,7 +271,7 @@ class TestQueryRAG:
         }
         mock_pinecone.return_value = [mock_match]
         mock_chunks.return_value = ["chunk content"]
-        mock_synthesize.return_value = "Synthesized answer"
+        mock_synthesize.return_value = ("Synthesized answer", [])
 
         result = query_rag("test query", top_k=5)
 

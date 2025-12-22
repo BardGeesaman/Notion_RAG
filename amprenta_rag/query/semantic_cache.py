@@ -31,7 +31,13 @@ class SemanticCache:
 
     def get(self, query: str) -> Optional[Any]:
         """Find cached result for semantically similar query."""
-        query_embedding = self._get_embedding(query)
+        try:
+            query_embedding = self._get_embedding(query)
+        except Exception as e:
+            # Cache is an optimization; if embedding fails (e.g., missing/invalid API key),
+            # treat as a cache miss rather than failing the request/tests.
+            logger.warning("[CACHE] Disabled (embedding error): %s", e)
+            return None
         now = time.time()
 
         for cache_key, (cached_embedding, result, timestamp) in list(self._cache.items()):
@@ -50,7 +56,11 @@ class SemanticCache:
 
     def set(self, query: str, result: Any) -> None:
         """Store result in cache."""
-        embedding = self._get_embedding(query)
+        try:
+            embedding = self._get_embedding(query)
+        except Exception as e:
+            logger.warning("[CACHE] Skip set (embedding error): %s", e)
+            return
         self._cache[query] = (embedding, result, time.time())
         logger.info("[CACHE] Stored result for query: %s", query[:50])
 

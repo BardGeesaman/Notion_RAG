@@ -126,7 +126,7 @@ def query_rag(
     else:
         search_query = user_query
 
-    logger.info("[RAG] Querying Pinecone (top_k=%d) for: %s", top_k, user_query)
+    logger.info("[RAG] Querying vector store (top_k=%d) for: %s", top_k, user_query)
     meta_filter = build_meta_filter(
         disease=disease,
         target=target,
