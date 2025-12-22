@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import streamlit as st
 
 from amprenta_rag.notebook.context import AnalysisContext
-from amprenta_rag.notebook.copilot import synthesize_cell
+from amprenta_rag.notebook.copilot import explain_cell, synthesize_cell
 from scripts.dashboard.db_session import db_session
 
 
@@ -120,6 +120,8 @@ def render_copilot_sidebar() -> Optional[str]:
         st.session_state["copilot_action"] = "load_dataset"
     if "copilot_generated_code" not in st.session_state:
         st.session_state["copilot_generated_code"] = ""
+    if "copilot_code_explanation" not in st.session_state:
+        st.session_state["copilot_code_explanation"] = ""
 
     # Quick actions
     c1, c2 = st.columns(2)
@@ -219,6 +221,7 @@ def render_copilot_sidebar() -> Optional[str]:
             with st.spinner("Generating..."):
                 try:
                     st.session_state["copilot_generated_code"] = synthesize_cell(intent=intent, context=ctx)
+                    st.session_state["copilot_code_explanation"] = ""
                 except Exception as e:
                     st.error(f"Copilot failed: {e}")
 
@@ -228,6 +231,18 @@ def render_copilot_sidebar() -> Optional[str]:
         st.code(code, language="python")
         if st.button("Copy", use_container_width=True, key="copilot_copy_btn"):
             _copy_code(code)
+
+        if st.button("Explain", use_container_width=True, key="copilot_explain_btn"):
+            with st.spinner("Explaining..."):
+                try:
+                    st.session_state["copilot_code_explanation"] = explain_cell(code)
+                except Exception as e:
+                    st.error(f"Explain failed: {e}")
+
+        explanation = st.session_state.get("copilot_code_explanation", "")
+        if explanation:
+            with st.expander("Explanation", expanded=True):
+                st.write(explanation)
 
     return code or None
 

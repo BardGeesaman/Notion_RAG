@@ -122,7 +122,7 @@ Core Features (Completed):
 AI/LLM Integrations (Next):
 - ✅ Notebook Co-Pilot (cell synthesizer/fixer) (2025-12-22)
 - ✅ Query→Notebook Generator (2025-12-22)
-- ⏳ Auto-Explain + Summarize Notebook
+- ✅ Auto-Explain + Summarize Notebook (2025-12-22)
 
 Drug Discovery-Specific (Completed):
 - ✅ Weekly Compound Triage Digest

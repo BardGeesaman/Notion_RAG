@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from amprenta_rag.notebook.context import AnalysisContext
-from amprenta_rag.notebook.copilot import explain_cell, fix_cell, synthesize_cell
+from amprenta_rag.notebook.copilot import explain_cell, fix_cell, summarize_notebook, synthesize_cell
 from amprenta_rag.notebook.query_to_notebook import default_filename, generate_notebook
 
 router = APIRouter()
@@ -158,5 +158,37 @@ def generate_from_query(payload: GenerateNotebookFromQueryRequest) -> GenerateNo
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Notebook generation failed: {e}")
+
+
+class SummarizeNotebookRequest(BaseModel):
+    notebook_json: Dict[str, Any]
+
+
+class SummarizeNotebookResponse(BaseModel):
+    title: str
+    entity_summary: str
+    methods: str
+    key_findings: str
+    cell_count: int
+
+
+@router.post("/notebook/summarize", response_model=SummarizeNotebookResponse)
+def summarize(payload: SummarizeNotebookRequest) -> SummarizeNotebookResponse:
+    """Summarize a Jupyter notebook JSON payload into a structured summary."""
+    try:
+        import nbformat as _nbformat
+
+        nb = _nbformat.from_dict(payload.notebook_json)
+        _nbformat.validate(nb)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Invalid notebook: {e}")
+
+    try:
+        summary = summarize_notebook(nb)
+        return SummarizeNotebookResponse(**summary)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Notebook summarization failed: {e}")
 
 
