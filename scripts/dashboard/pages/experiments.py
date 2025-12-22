@@ -281,22 +281,9 @@ def _render_edit_tab() -> None:
 
         # Process pending reload
         reload_flag_key = f"_reload_pending_{experiment.id}"
-        st.caption(f"[DEBUG] Checking for reload flag: {reload_flag_key} exists={reload_flag_key in st.session_state}")
         if reload_flag_key in st.session_state:
             st.session_state[f"edit_version_{experiment.id}"] = st.session_state[reload_flag_key]
             del st.session_state[reload_flag_key]
-            st.caption(
-                f"[DEBUG] RELOAD FLAG PROCESSED - set edit_version to {st.session_state[f'edit_version_{experiment.id}']}"
-            )
-
-        # Debug: show current version tracking
-        st.caption(
-            f"[DEBUG] exp_id={experiment.id}, edit_version={st.session_state.get(f'edit_version_{experiment.id}', 'NOT SET')}, "
-            f"db_version={experiment.version}"
-        )
-        conflict_key = f"conflict_{experiment.id}"
-        if conflict_key in st.session_state:
-            st.caption(f"[DEBUG] conflict_state={st.session_state[conflict_key]}")
 
         design_type = st.selectbox(
             "Design type",
