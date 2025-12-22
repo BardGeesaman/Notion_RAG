@@ -24,11 +24,22 @@ def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(3000)
 
+    # Debug: screenshot before clicking
+    page.screenshot(path="/tmp/e2e_before_click.png")
+
     # Click Experiments button
     page.locator('button:has-text("Experiments")').first.click()
+    page.wait_for_timeout(2000)
     
-    # Wait for Experiments page to load (unique header)
-    expect(page.locator("text=🔬 Experiments").first).to_be_visible(timeout=10000)
+    # Debug: screenshot after clicking
+    page.screenshot(path="/tmp/e2e_after_click.png")
+    
+    # Wait for Experiments page to load
+    try:
+        expect(page.locator("text=🔬 Experiments").first).to_be_visible(timeout=10000)
+    except Exception as e:
+        page.screenshot(path="/tmp/e2e_failed.png")
+        raise e
     page.wait_for_timeout(1000)
 
     # Click Edit Design tab
