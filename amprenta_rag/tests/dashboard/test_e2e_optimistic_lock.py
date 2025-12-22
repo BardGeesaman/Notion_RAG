@@ -29,18 +29,22 @@ def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
     page.mouse.wheel(0, 400)
     page.wait_for_timeout(1000)
 
-    # Discovery section is expanded by default; click Experiments.
+    # Click Experiments button (role-based selector)
     page.get_by_role("button", name="Experiments").click()
     page.wait_for_timeout(2000)
 
+    # Wait for tabs to render
+    page.locator('[role="tab"]').first.wait_for(state="visible", timeout=5000)
+    
+    # Click Edit Design tab
     page.get_by_role("tab", name="Edit Design").click()
     page.wait_for_timeout(2000)
 
-    # If the environment has no seeded experiments, skip rather than fail.
+    # Skip if no experiments
     if page.locator("text=No experiments available to edit.").count() > 0:
         pytest.skip("No experiments available to edit in this environment.")
 
-    # Basic sanity check: edit controls are present.
+    # Verify edit controls present
     expect(page.get_by_text("Select experiment").first).to_be_visible()
 
 
