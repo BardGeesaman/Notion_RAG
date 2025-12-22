@@ -30,7 +30,7 @@ def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
     page.wait_for_timeout(1000)
 
     # Discovery section is expanded by default; click Experiments.
-    sidebar.locator('button:has-text("Experiments")').click()
+    page.get_by_role("button", name="Experiments").click()
     page.wait_for_timeout(2000)
 
     page.get_by_role("tab", name="Edit Design").click()
@@ -41,7 +41,7 @@ def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
         pytest.skip("No experiments available to edit in this environment.")
 
     # Basic sanity check: edit controls are present.
-    expect(page.locator("text=Select experiment").first).to_be_visible()
+    expect(page.get_by_text("Select experiment").first).to_be_visible()
 
 
 def _set_sample_groups_json(page: Page, payload: str) -> None:
