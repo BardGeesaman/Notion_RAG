@@ -22,22 +22,18 @@ def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
     """Navigate to Experiments -> Edit Design tab."""
     page.goto(base_url)
     page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(5000)
+
+    # Click Experiments in sidebar using text selector
+    experiments_btn = page.locator('button:has-text("Experiments")').first
+    experiments_btn.wait_for(state="visible", timeout=10000)
+    experiments_btn.click()
     page.wait_for_timeout(3000)
 
-    sidebar = page.locator('[data-testid="stSidebar"]').first
-    sidebar.hover()
-    page.mouse.wheel(0, 400)
-    page.wait_for_timeout(1000)
-
-    # Click Experiments button (role-based selector)
-    page.get_by_role("button", name="Experiments").click()
-    page.wait_for_timeout(2000)
-
-    # Wait for tabs to render
-    page.locator('[role="tab"]').first.wait_for(state="visible", timeout=5000)
-    
-    # Click Edit Design tab
-    page.get_by_role("tab", name="Edit Design").click()
+    # Click Edit Design tab using text
+    edit_tab = page.locator('button:has-text("Edit Design")').first
+    edit_tab.wait_for(state="visible", timeout=10000)
+    edit_tab.click()
     page.wait_for_timeout(2000)
 
     # Skip if no experiments
@@ -45,7 +41,7 @@ def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
         pytest.skip("No experiments available to edit in this environment.")
 
     # Verify edit controls present
-    expect(page.get_by_text("Select experiment").first).to_be_visible()
+    expect(page.locator("text=Select experiment").first).to_be_visible()
 
 
 def _set_sample_groups_json(page: Page, payload: str) -> None:
