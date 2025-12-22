@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import streamlit as st
 from typing import Iterable, Any, Dict, List, Optional, cast
 
@@ -276,6 +277,25 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
             page_param = raw2[0] if isinstance(raw2, list) and raw2 else None
         except Exception:
             page_param = None
+
+    # Normalize query param (some setups return URL-encoded values).
+    if page_param:
+        try:
+            from urllib.parse import unquote_plus
+
+            page_param = unquote_plus(str(page_param)).strip()
+        except Exception:
+            page_param = str(page_param).strip()
+
+    if os.environ.get("AMPRENTA_DEBUG_NAV", "").lower() in ("1", "true", "yes"):
+        in_visible = bool(page_param and page_param in set(visible_pages))
+        st.sidebar.caption(
+            f"nav_debug: page_param={page_param!r} "
+            f"selected={st.session_state.get('selected_page')!r} "
+            f"in_visible={in_visible}"
+        )
+        if page_param and not in_visible:
+            st.sidebar.warning(f"nav_debug: unknown page param {page_param!r}")
 
     if page_param and page_param in set(visible_pages):
         if st.session_state.get("selected_page") != page_param:
