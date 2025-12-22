@@ -27,6 +27,7 @@ from amprenta_rag.api.routers import (
     catalog,
     subscriptions,
     alerts,
+    notebook,
 )
 from amprenta_rag.config import get_config
 
@@ -70,6 +71,7 @@ app.include_router(moa.router, prefix="/api/v1", tags=["MOA"])
 app.include_router(catalog.router, prefix="/api/v1", tags=["Catalog"])
 app.include_router(subscriptions.router, prefix="/api/v1", tags=["Subscriptions"])
 app.include_router(alerts.router, prefix="/api/v1", tags=["Alerts"])
+app.include_router(notebook.router, prefix="/api/notebook", tags=["Notebook"])
 
 
 @app.get("/")
