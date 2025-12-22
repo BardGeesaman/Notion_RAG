@@ -17,6 +17,7 @@ ANALYSIS_PAGES = [
     "MOA Inference",
     "Cross-Omics Pathways",
     "Notebook Co-Pilot",
+    "Notebook Generator",
 ]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
@@ -99,6 +100,7 @@ ALL_PAGES = [
     "Data Grid",
     "Genome Browser",
     "Notebook Co-Pilot",
+    "Notebook Generator",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -165,5 +167,6 @@ PAGE_REGISTRY = {
     "Ontology Management": ("scripts.dashboard.pages.ontology", "render_ontology_page"),
     "Report History": ("scripts.dashboard.pages.report_history", "render_report_history_page"),
     "Notebook Co-Pilot": ("scripts.dashboard.pages.notebook_copilot", "render_notebook_copilot_page"),
+    "Notebook Generator": ("scripts.dashboard.pages.notebook_generator", "render_notebook_generator_page"),
 }
 

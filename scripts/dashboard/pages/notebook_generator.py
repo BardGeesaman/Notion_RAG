@@ -67,6 +67,7 @@ def render_notebook_generator_page() -> None:
                 st.code(src, language="python")
 
     st.subheader("Download")
+    st.caption(f"Filename: {filename}")
     nb_bytes = nbformat.writes(nb).encode("utf-8")
     st.download_button(
         "Download .ipynb",
