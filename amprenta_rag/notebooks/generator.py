@@ -166,3 +166,56 @@ def generate_dataset_notebook(dataset_id: str) -> dict:
     return nb
 
 
+def generate_context_cell(context) -> str:
+    """Generate Python code for a notebook cell that sets analysis context."""
+    from amprenta_rag.notebook.context import generate_context_cell as _generate_context_cell
+
+    return _generate_context_cell(context)
+
+
+def generate_hts_qc_cell(campaign_id: str) -> str:
+    """Generate Python code for an HTS QC analysis cell."""
+    return dedent(
+        f"""\
+        # HTS QC
+        from amprenta_rag.notebook import run_hts_qc
+
+        qc = run_hts_qc("{campaign_id}")
+        qc
+        """
+    )
+
+
+def generate_dose_response_cell(compound_id: str) -> str:
+    """Generate Python code for a dose-response analysis cell."""
+    return dedent(
+        f"""\
+        # Dose-response fit
+        from amprenta_rag.notebook import fit_dose_response
+
+        dr = fit_dose_response("{compound_id}")
+        dr
+        """
+    )
+
+
+def generate_publish_cell() -> str:
+    """Generate Python code for publishing results to the RAG index."""
+    return dedent(
+        """\
+        # Publish analysis to RAG (edit placeholders as needed)
+        from amprenta_rag.notebook import publish_to_rag
+
+        RESULTS = {}  # populate with your analysis output
+
+        publish_result = publish_to_rag(
+            data=RESULTS,
+            tags=["analysis"],
+            title="Analysis Results",
+            entity_type=None,
+            entity_id=None,
+        )
+        publish_result
+        """
+    )
+
