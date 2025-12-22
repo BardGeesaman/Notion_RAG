@@ -14,6 +14,14 @@ resource "aws_ecs_task_definition" "api" {
       name      = "api"
       image     = "${aws_ecr_repository.api.repository_url}:latest"
       essential = true
+      environment = [
+        { name = "ENVIRONMENT", value = var.environment }
+      ]
+      secrets = [
+        { name = "DATABASE_URL", valueFrom = aws_secretsmanager_secret.db_url.arn },
+        { name = "OPENAI_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:OPENAI_API_KEY::" },
+        { name = "PINECONE_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:PINECONE_API_KEY::" }
+      ]
       portMappings = [
         {
           containerPort = 8000
@@ -60,6 +68,10 @@ resource "aws_ecs_task_definition" "dashboard" {
       name      = "dashboard"
       image     = "${aws_ecr_repository.dashboard.repository_url}:latest"
       essential = true
+      environment = [
+        { name = "ENVIRONMENT", value = var.environment },
+        { name = "API_URL", value = "http://${aws_lb.main.dns_name}" }
+      ]
       portMappings = [
         {
           containerPort = 8501

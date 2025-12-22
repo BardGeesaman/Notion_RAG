@@ -33,6 +33,16 @@ output "dashboard_service_name" {
   description = "ECS service name for Streamlit dashboard"
 }
 
+output "alb_dns_name" {
+  value       = aws_lb.main.dns_name
+  description = "ALB DNS name for accessing the application"
+}
+
+output "alb_arn" {
+  value       = aws_lb.main.arn
+  description = "ALB ARN"
+}
+
 output "connection_string" {
   value       = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/${var.db_name}"
   description = "Connection string for convenience"
