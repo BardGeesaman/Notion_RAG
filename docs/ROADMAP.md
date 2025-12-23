@@ -447,7 +447,11 @@ Implementation:
 - ✅ Phenotype→Gene Mapping (2025-12-23) - HPO gene associations, query expansion API
 - ❌ CRISPR Screen Analysis (6-9 days) - MAGeCK pipeline for functional genomics
 - ❌ Multi-Omics Latent Factors (7-10 days) - MOFA2/PLS integration
-- ❌ Lipidomics Spectral Matching (6-9 days) - MS/MS library matching
+- ✅ Lipidomics Spectral Matching (2025-12-23)
+  - MGF parser for LipidBlast/GNPS spectral libraries
+  - Greedy cosine similarity with precursor filtering (10 ppm)
+  - Confidence scoring (cosine > 0.7, m/z error < 10 ppm)
+  - 5 API endpoints + 2-tab dashboard with Accept/Reject review
 
 #### Structural Biology & Virtual Screening (Track B, 2 weeks)
 - ✅ B1: Protein Structure Store (2025-12-23)

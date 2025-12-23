@@ -455,6 +455,84 @@ class CellTypeMarker(Base):
     )
 
 
+class SpectralLibrary(Base):
+    """Reference spectral library (e.g., MGF) for lipidomics matching."""
+
+    __tablename__ = "spectral_libraries"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(200), nullable=False, index=True)
+    version = Column(String(100), nullable=True, index=True)
+    source_url = Column(String(500), nullable=True)
+    file_path = Column(String(500), nullable=True)
+    n_spectra = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    references: Mapped[List["SpectralReference"]] = relationship(
+        "SpectralReference", back_populates="library", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("name", "version", name="uq_spectral_library_name_version"),
+    )
+
+
+class SpectralReference(Base):
+    """A single reference spectrum entry from a spectral library."""
+
+    __tablename__ = "spectral_references"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    library_id = Column(UUID(as_uuid=True), ForeignKey("spectral_libraries.id"), nullable=False, index=True)
+
+    lipid_name = Column(String(500), nullable=False, index=True)
+    lipid_class = Column(String(200), nullable=True, index=True)
+    smiles = Column(Text, nullable=True)
+    inchi_key = Column(String(50), nullable=True, index=True)
+
+    precursor_mz = Column(Float, nullable=False, index=True)
+    precursor_type = Column(String(50), nullable=True)
+    collision_energy = Column(Float, nullable=True)
+
+    spectrum = Column(JSON, nullable=False)  # {"mz": [...], "intensity": [...]}
+
+    library: Mapped["SpectralLibrary"] = relationship("SpectralLibrary", back_populates="references")
+
+    __table_args__ = (
+        Index("ix_spectral_ref_library_precursor", "library_id", "precursor_mz"),
+    )
+
+
+class LipidAnnotation(Base):
+    """Match between an internal Feature and a SpectralReference."""
+
+    __tablename__ = "lipid_annotations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=False, index=True)
+    spectral_reference_id = Column(UUID(as_uuid=True), ForeignKey("spectral_references.id"), nullable=False, index=True)
+
+    spectral_score = Column(Float, nullable=False)
+    mz_error_ppm = Column(Float, nullable=True)
+    matched_peaks = Column(Integer, nullable=True)
+    total_peaks = Column(Integer, nullable=True)
+
+    is_confident = Column(Boolean, nullable=False, default=False)
+    is_ambiguous = Column(Boolean, nullable=False, default=False)
+    rank = Column(Integer, nullable=True)
+
+    manually_reviewed = Column(Boolean, nullable=False, default=False)
+    review_status = Column(String(50), nullable=True)  # confirmed|rejected
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+
+    feature: Mapped["Feature"] = relationship("Feature", foreign_keys=[feature_id])
+    spectral_reference: Mapped["SpectralReference"] = relationship("SpectralReference", foreign_keys=[spectral_reference_id])
+
+    __table_args__ = (
+        Index("ix_lipid_annotations_feature_rank", "feature_id", "rank"),
+    )
+
+
 class SignatureComponent(Base):
     """A single component of a multi-omics signature."""
 

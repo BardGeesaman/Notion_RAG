@@ -41,6 +41,7 @@ from amprenta_rag.api.routers import (
     poses,
     connectivity,
     single_cell,
+    spectral,
 )
 from amprenta_rag.config import get_config
 
@@ -99,6 +100,7 @@ app.include_router(docking.router, prefix="/api")
 app.include_router(poses.router, prefix="/api")
 app.include_router(connectivity.router, prefix="/api")
 app.include_router(single_cell.router, prefix="/api")
+app.include_router(spectral.router, prefix="/api")
 
 
 @app.get("/")
