@@ -461,7 +461,12 @@ Implementation:
   - API: 5 endpoints (create run, list, poses, download)
   - Dashboard: Runs page + Triage page (hit filtering)
   - Tests: 9 passed (ligand prep, vina, API, E2E)
-- ❌ B4: Pose QC & Interactions (3-5 days) - PLIP fingerprints, PoseBusters
+- ✅ B4: Pose QC & Interactions (2025-12-23)
+  - Tool: PLIP (Docker-first, 7 interaction types)
+  - QC: Ligand efficiency, clash detection
+  - Storage: PoseQuality + PoseInteraction tables
+  - API: 3 endpoints (analyze, quality, interactions)
+  - Tests: 3 passed (PLIP runner/parser, E2E)
 
 ---
 

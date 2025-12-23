@@ -18,7 +18,7 @@ def render_docking_triage_page() -> None:
     require_auth()
 
     st.header("🎯 Docking Triage")
-    st.caption("Filter docking hits by affinity and batch-download top poses.")
+    st.caption("Filter docking hits by affinity, run pose QC (PLIP), and batch-download poses.")
 
     try:
         with httpx.Client(timeout=30) as client:
@@ -67,8 +67,82 @@ def render_docking_triage_page() -> None:
             for p in hits
         ]
     )
+
+    # Fetch QC summaries (best-effort) to enrich the table
+    if "pose_qc_cache" not in st.session_state:
+        st.session_state["pose_qc_cache"] = {}
+    qc_cache = st.session_state["pose_qc_cache"]
+
+    with httpx.Client(timeout=30) as client:
+        for p in hits:
+            pid = p.get("id")
+            if not pid or pid in qc_cache:
+                continue
+            resp = client.get(f"{API_BASE}/api/poses/{pid}/quality")
+            if resp.status_code == 200:
+                qc_cache[pid] = resp.json()
+            else:
+                qc_cache[pid] = None
+
+    df["LE"] = [((qc_cache.get(p.get("id")) or {}).get("ligand_efficiency")) for p in hits]
+    df["Interactions"] = [((qc_cache.get(p.get("id")) or {}).get("total_interactions")) for p in hits]
+    df["QC Status"] = ["analyzed" if qc_cache.get(p.get("id")) else "not analyzed" for p in hits]
+
     st.dataframe(df, use_container_width=True, hide_index=True)
 
+    st.subheader("Pose QC")
+    st.caption("Analyze uses PLIP on the backend; results are cached per pose.")
+
+    if "pose_interactions_cache" not in st.session_state:
+        st.session_state["pose_interactions_cache"] = {}
+    ix_cache = st.session_state["pose_interactions_cache"]
+
+    for p in hits:
+        pid = p.get("id")
+        if not pid:
+            continue
+        aff = p.get("binding_affinity")
+        with st.expander(f"Pose {pid[:8]}  affinity={aff}"):
+            cols = st.columns([1, 1, 2])
+            with cols[0]:
+                do_analyze = st.button("Analyze", key=f"analyze_{pid}")
+            with cols[1]:
+                st.caption(f"QC: {('analyzed' if qc_cache.get(pid) else 'not analyzed')}")
+            with cols[2]:
+                st.caption("Runs PLIP + clash check + ligand efficiency.")
+
+            if do_analyze:
+                try:
+                    with httpx.Client(timeout=300) as client:
+                        rr = client.post(f"{API_BASE}/api/poses/{pid}/analyze")
+                    if rr.status_code >= 400:
+                        st.error(f"Analyze failed ({rr.status_code}): {rr.text}")
+                    else:
+                        qc_cache[pid] = rr.json()
+                        ix_cache.pop(pid, None)
+                        st.success("Analyzed.")
+                except Exception as e:  # noqa: BLE001
+                    st.error(f"Analyze request failed: {e}")
+
+            qc = qc_cache.get(pid)
+            if qc:
+                st.json(qc)
+                if st.button("Load interactions", key=f"load_ix_{pid}"):
+                    with httpx.Client(timeout=60) as client:
+                        ir = client.get(f"{API_BASE}/api/poses/{pid}/interactions")
+                    if ir.status_code == 200:
+                        ix_cache[pid] = list(ir.json() or [])
+                    else:
+                        st.error(f"Failed to load interactions ({ir.status_code}): {ir.text}")
+
+                ix = ix_cache.get(pid)
+                if ix:
+                    st.caption("Interactions")
+                    st.dataframe(pd.DataFrame(ix), use_container_width=True, hide_index=True)
+            else:
+                st.info("No QC data yet. Click Analyze to run Pose QC.")
+
+    st.divider()
     st.caption("Batch download")
     for p in hits:
         pid = p.get("id")

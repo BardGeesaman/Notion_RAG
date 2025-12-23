@@ -809,10 +809,60 @@ class DockingPose(Base):
 
     docking_run: Mapped["DockingRun"] = relationship("DockingRun", back_populates="poses", foreign_keys=[docking_run_id])
     compound: Mapped["Compound"] = relationship("Compound", foreign_keys=[compound_id])
+    quality: Mapped[Optional["PoseQuality"]] = relationship(
+        "PoseQuality", back_populates="pose", cascade="all, delete-orphan", uselist=False
+    )
+    interactions: Mapped[List["PoseInteraction"]] = relationship(
+        "PoseInteraction", back_populates="pose", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         Index("ix_docking_poses_run_rank", "docking_run_id", "pose_rank"),
     )
+
+
+class PoseQuality(Base):
+    """Per-pose quality/control metrics and interaction summary (e.g., PLIP)."""
+
+    __tablename__ = "pose_qualities"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    pose_id = Column(UUID(as_uuid=True), ForeignKey("docking_poses.id"), nullable=False, index=True, unique=True)
+
+    num_hbonds = Column(Integer, nullable=False, default=0)
+    num_hydrophobic = Column(Integer, nullable=False, default=0)
+    num_salt_bridges = Column(Integer, nullable=False, default=0)
+    num_pi_stacking = Column(Integer, nullable=False, default=0)
+    num_pi_cation = Column(Integer, nullable=False, default=0)
+    num_halogen = Column(Integer, nullable=False, default=0)
+    num_metal = Column(Integer, nullable=False, default=0)
+    total_interactions = Column(Integer, nullable=False, default=0)
+
+    has_clashes = Column(Boolean, nullable=False, default=False)
+    ligand_efficiency = Column(Float, nullable=True)
+
+    analyzed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    pose: Mapped["DockingPose"] = relationship("DockingPose", foreign_keys=[pose_id], back_populates="quality")
+
+
+class PoseInteraction(Base):
+    """Detailed interactions for a pose (e.g., PLIP-derived)."""
+
+    __tablename__ = "pose_interactions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    pose_id = Column(UUID(as_uuid=True), ForeignKey("docking_poses.id"), nullable=False, index=True)
+
+    interaction_type = Column(String(50), nullable=False)  # hbond|hydrophobic|saltbridge|pistacking|pication|halogen|metal
+    ligand_atom = Column(String(200), nullable=True)
+    protein_residue = Column(String(200), nullable=True)
+    distance = Column(Float, nullable=True)
+    angle = Column(Float, nullable=True)
+
+    pose: Mapped["DockingPose"] = relationship("DockingPose", foreign_keys=[pose_id], back_populates="interactions")
+
+    __table_args__ = (Index("ix_pose_interactions_pose_type", "pose_id", "interaction_type"),)
 
 
 gene_protein_map = Table(
