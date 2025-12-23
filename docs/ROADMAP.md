@@ -69,8 +69,14 @@ Simple status legend:
 - ✅ Playwright E2E Separation (2025-12-19): chromium installed, server-dependent tests marked and deselected from default runs
 - ✅ Mypy Type Checking Setup (2025-12-19): gradual typing with strict API layer, 54% error reduction (597→273), type stubs installed
 - ✅ Code Quality Optimization (2025-12-21): 70% coverage achieved, type ignores reduced 69%, pre-commit hooks, Bandit security scanning, E2E tests in CI
-- ❌ Dependency Audit: Detect outdated/vulnerable dependencies (future)
-- ❌ Dead Code Detection: Identify and remove unused code (future)
+- ✅ Dependency Audit (2025-12-24)
+  - Security scan: 4 CVEs identified (no patches available yet)
+  - 33 outdated packages documented
+  - 115 unused imports removed
+- ✅ Dead Code Detection (2025-12-24)
+  - Vulture analysis: 99 high-confidence candidates triaged
+  - 23 true dead code items removed
+  - Maintenance scripts + reports created
 
 ---
 
