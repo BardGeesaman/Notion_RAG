@@ -32,6 +32,7 @@ from amprenta_rag.api.routers import (
     notebook,
     ml,
     chemistry,
+    sphingolipid,
 )
 from amprenta_rag.config import get_config
 
@@ -68,6 +69,7 @@ app.include_router(
 )
 app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
 app.include_router(batch.router, prefix="/api", tags=["Analysis"])
+app.include_router(sphingolipid.router, prefix="/api", tags=["Analysis"])
 app.include_router(reports.router, prefix="/api/v1", tags=["Reports"])
 app.include_router(quality.router, prefix="/api/v1", tags=["Quality"])
 app.include_router(protocols.router, prefix="/api/v1", tags=["Protocols"])

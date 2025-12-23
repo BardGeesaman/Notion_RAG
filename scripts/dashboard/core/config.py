@@ -21,6 +21,7 @@ ANALYSIS_PAGES = [
     "Experiment Optimizer",
     "Model Registry",
     "Batch Correction",
+    "Sphingolipid Imbalance",
     "Notebook Co-Pilot",
     "Notebook Generator",
 ]
@@ -111,6 +112,7 @@ ALL_PAGES = [
     "Experiment Optimizer",
     "Model Registry",
     "Batch Correction",
+    "Sphingolipid Imbalance",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -183,5 +185,6 @@ PAGE_REGISTRY = {
     "Experiment Optimizer": ("scripts.dashboard.pages.experiment_optimizer", "render_experiment_optimizer_page"),
     "Model Registry": ("scripts.dashboard.pages.model_registry", "render_model_registry_page"),
     "Batch Correction": ("scripts.dashboard.pages.batch_correction", "render_batch_correction_page"),
+    "Sphingolipid Imbalance": ("scripts.dashboard.pages.sphingolipid_imbalance", "render_sphingolipid_imbalance_page"),
 }
 

@@ -407,7 +407,7 @@ Implementation:
 - ❌ Connectivity Mapping (LINCS/CMap) (7-10 days) - Signature reversal for drug repurposing
 - ❌ Single-Cell Omics Integration (10-15 days) - scRNA-seq/scATAC-seq with Scanpy
 - ✅ Batch Effect Correction (2025-12-23) - ComBat harmonization pipeline
-- ❌ Sphingolipid Pathway Flux Scoring (6-9 days) - Pathway-level flux/imbalance metrics
+- ✅ Sphingolipid Pathway Imbalance Scoring (2025-12-23) - Enzyme coverage + metabolite ratio scoring
 
 #### Medium Priority
 - ❌ Variant Interpretation (8-12 days) - VEP/ClinVar/dbNSFP annotation pipeline
