@@ -440,7 +440,13 @@ Implementation:
 - ❌ Lipidomics Spectral Matching (6-9 days) - MS/MS library matching
 
 #### Structural Biology & Virtual Screening (Track B, 2 weeks)
-- ❌ B1: Protein Structure Store (6-9 days) - PDB/AlphaFold fetch, pdbfixer prep
+- ✅ B1: Protein Structure Store (2025-12-23)
+  - Fetch: RCSB PDB + AlphaFold DB (v4 models)
+  - Preparation: pdbfixer (add H, missing residues, chain selection)
+  - Metadata: sequence (SEQRES), resolution, method extraction
+  - API: 6 endpoints (list, get, fetch, upload, prepare, download)
+  - Dashboard: Fetch UI, prep button, download links
+  - Tests: 7 passed (fetchers, storage, prep, parser, E2E)
 - ❌ B2: Binding Site Detection (4-6 days) - fpocket/P2Rank pockets
 - ❌ B3: Structure-Based Virtual Screening (8-12 days) - Vina/GNINA docking
 - ❌ B4: Pose QC & Interactions (3-5 days) - PLIP fingerprints, PoseBusters

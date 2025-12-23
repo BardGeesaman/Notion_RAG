@@ -241,6 +241,9 @@ class Feature(Base):
     signatures: Mapped[List["Signature"]] = relationship(
         secondary=signature_feature_assoc, back_populates="features"
     )
+    structures: Mapped[List["ProteinStructure"]] = relationship(
+        "ProteinStructure", back_populates="feature"
+    )
 
 
 class Dataset(Base):
@@ -659,6 +662,63 @@ class GraphEdge(Base):
             "relationship_type",
         ),
     )
+
+
+class ProteinStructure(Base):
+    """Protein structure record linked to a biological Feature (typically a gene/protein).
+
+    Stores upstream identifiers (PDB, AlphaFold) and prep metadata; actual files are
+    stored in `StructureFile`.
+    """
+
+    __tablename__ = "protein_structures"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=True, index=True)
+    feature: Mapped[Optional["Feature"]] = relationship(
+        "Feature", foreign_keys=[feature_id], back_populates="structures"
+    )
+
+    pdb_id = Column(String(10), nullable=True, index=True)
+    alphafold_uniprot_id = Column(String(20), nullable=True, index=True)
+    source = Column(String(50), nullable=False, default="unknown")  # pdb | alphafold | uploaded
+
+    resolution = Column(Float, nullable=True)
+    method = Column(String(100), nullable=True)
+    chain_ids = Column(ARRAY(String), nullable=True)
+
+    prep_status = Column(String(50), nullable=True, default="raw")
+    prep_log = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    files: Mapped[List["StructureFile"]] = relationship(
+        "StructureFile", back_populates="structure", cascade="all, delete-orphan"
+    )
+
+
+class StructureFile(Base):
+    """File artifact associated with a ProteinStructure (PDB/mmCIF/etc.)."""
+
+    __tablename__ = "structure_files"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    structure_id = Column(UUID(as_uuid=True), ForeignKey("protein_structures.id"), nullable=False, index=True)
+    structure: Mapped["ProteinStructure"] = relationship("ProteinStructure", back_populates="files")
+
+    file_type = Column(String(50), nullable=False)  # pdb, cif, fasta, etc.
+    file_path = Column(String(500), nullable=False)
+    file_size_bytes = Column(BigInteger, nullable=True)
+    md5_hash = Column(String(32), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
 gene_protein_map = Table(
