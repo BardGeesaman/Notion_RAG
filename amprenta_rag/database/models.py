@@ -500,6 +500,30 @@ class PipelineJob(Base):
     index = relationship("GenomicsIndex")
 
 
+class NextflowJob(Base):
+    """Track Nextflow pipeline executions."""
+
+    __tablename__ = "nextflow_jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    pipeline_name = Column(String(100), nullable=False)  # "nf-core/rnaseq"
+    pipeline_version = Column(String(20))  # "3.12.0"
+    status = Column(String(20), default="pending")  # pending|running|complete|failed
+    sample_sheet_path = Column(String(500))
+    genome = Column(String(50))  # "GRCh38"
+    output_dir = Column(String(500))
+    work_dir = Column(String(500))  # Nextflow work directory
+    nextflow_log = Column(String(500))  # Path to .nextflow.log
+    multiqc_report = Column(String(500))  # Path to multiqc_report.html
+    progress_percent = Column(Integer, default=0)
+    error_message = Column(Text)
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    params = Column(JSON)  # Additional Nextflow params
+
+
 gene_protein_map = Table(
     "gene_protein_map",
     Base.metadata,

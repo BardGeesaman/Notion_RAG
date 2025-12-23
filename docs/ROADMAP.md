@@ -363,7 +363,7 @@ Implementation:
 ## ❌ FUTURE (Backlog)
 
 - ✅ Bioinformatics Pipeline Runner Dashboard (2025-12-22) - Salmon/Kallisto quantification UI with job tracking
-- ❌ Bioinformatics pipeline orchestrator (Nextflow/Snakemake)
+- ✅ Bioinformatics pipeline orchestrator (Nextflow/Snakemake) (2025-12-22)
 - ❌ Data Version Control (DVC)
 - ✅ **Pinecone → pgvector migration** (2025-12-22) - Self-host vector search in Postgres for reduced costs and latency
 - ❌ Bayesian inference & optimization workflows
