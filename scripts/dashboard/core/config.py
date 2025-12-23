@@ -30,6 +30,7 @@ ANALYSIS_PAGES = [
     "Docking Runs",
     "Docking Triage",
     "Connectivity Map",
+    "Single-Cell Viewer",
 ]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
@@ -125,6 +126,7 @@ ALL_PAGES = [
     "Docking Runs",
     "Docking Triage",
     "Connectivity Map",
+    "Single-Cell Viewer",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -204,5 +206,6 @@ PAGE_REGISTRY = {
     "Docking Runs": ("scripts.dashboard.pages.docking_runs", "render_docking_runs_page"),
     "Docking Triage": ("scripts.dashboard.pages.docking_triage", "render_docking_triage_page"),
     "Connectivity Map": ("scripts.dashboard.pages.connectivity_map", "render_connectivity_map_page"),
+    "Single-Cell Viewer": ("scripts.dashboard.pages.single_cell_viewer", "render_single_cell_viewer_page"),
 }
 

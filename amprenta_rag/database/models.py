@@ -331,6 +331,130 @@ class Dataset(Base):
     )
 
 
+class SingleCellDataset(Base):
+    """Single-cell dataset metadata linked to a Dataset (AnnData / .h5ad)."""
+
+    __tablename__ = "single_cell_datasets"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=False, index=True)
+
+    h5ad_path = Column(String(500), nullable=False)
+    file_size_bytes = Column(BigInteger, nullable=True)
+    n_cells = Column(Integer, nullable=True)
+    n_genes = Column(Integer, nullable=True)
+
+    normalization_method = Column(String(100), nullable=True)
+    hvg_count = Column(Integer, nullable=True)
+    clustering_method = Column(String(100), nullable=True)
+    clustering_resolution = Column(Float, nullable=True)
+
+    has_pca = Column(Boolean, nullable=False, default=False)
+    has_umap = Column(Boolean, nullable=False, default=False)
+    processing_status = Column(String(50), nullable=False, default="pending")
+    processing_log = Column(Text, nullable=True)
+
+    ingested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+
+    dataset: Mapped["Dataset"] = relationship("Dataset", foreign_keys=[dataset_id])
+    annotations: Mapped[List["CellAnnotation"]] = relationship(
+        "CellAnnotation", back_populates="single_cell_dataset", cascade="all, delete-orphan"
+    )
+    clusters: Mapped[List["CellCluster"]] = relationship(
+        "CellCluster", back_populates="single_cell_dataset", cascade="all, delete-orphan"
+    )
+    markers: Mapped[List["CellTypeMarker"]] = relationship(
+        "CellTypeMarker", back_populates="single_cell_dataset", cascade="all, delete-orphan"
+    )
+
+
+class CellAnnotation(Base):
+    """Per-cell annotations and embeddings for a SingleCellDataset."""
+
+    __tablename__ = "cell_annotations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    single_cell_dataset_id = Column(
+        UUID(as_uuid=True), ForeignKey("single_cell_datasets.id"), nullable=False, index=True
+    )
+
+    barcode = Column(String(200), nullable=False)
+    cluster_id = Column(Integer, nullable=True)
+    cell_type = Column(String(200), nullable=True)
+
+    umap_1 = Column(Float, nullable=True)
+    umap_2 = Column(Float, nullable=True)
+
+    n_genes_detected = Column(Integer, nullable=True)
+    total_counts = Column(Float, nullable=True)
+    pct_mitochondrial = Column(Float, nullable=True)
+
+    single_cell_dataset: Mapped["SingleCellDataset"] = relationship(
+        "SingleCellDataset", foreign_keys=[single_cell_dataset_id], back_populates="annotations"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("single_cell_dataset_id", "barcode", name="uq_cell_annotation_barcode"),
+        Index("ix_cell_annotations_dataset_cluster", "single_cell_dataset_id", "cluster_id"),
+    )
+
+
+class CellCluster(Base):
+    """Cluster-level annotation for a SingleCellDataset."""
+
+    __tablename__ = "cell_clusters"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    single_cell_dataset_id = Column(
+        UUID(as_uuid=True), ForeignKey("single_cell_datasets.id"), nullable=False, index=True
+    )
+    cluster_id = Column(Integer, nullable=False)
+
+    cell_type = Column(String(200), nullable=True)
+    n_cells = Column(Integer, nullable=True)
+    marker_feature_ids = Column(JSON, nullable=True)  # list[UUID] or list[str] depending on pipeline
+    description = Column(Text, nullable=True)
+
+    single_cell_dataset: Mapped["SingleCellDataset"] = relationship(
+        "SingleCellDataset", foreign_keys=[single_cell_dataset_id], back_populates="clusters"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("single_cell_dataset_id", "cluster_id", name="uq_cell_cluster"),
+    )
+
+
+class CellTypeMarker(Base):
+    """Differential expression marker for a cluster/cell type."""
+
+    __tablename__ = "cell_type_markers"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    single_cell_dataset_id = Column(
+        UUID(as_uuid=True), ForeignKey("single_cell_datasets.id"), nullable=False, index=True
+    )
+    cluster_id = Column(Integer, nullable=False)
+
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=True, index=True)
+    gene_symbol = Column(String(50), nullable=True, index=True)
+
+    log2_fold_change = Column(Float, nullable=True)
+    pval = Column(Float, nullable=True)
+    pval_adj = Column(Float, nullable=True)
+    pct_in_cluster = Column(Float, nullable=True)
+    pct_out_cluster = Column(Float, nullable=True)
+
+    single_cell_dataset: Mapped["SingleCellDataset"] = relationship(
+        "SingleCellDataset", foreign_keys=[single_cell_dataset_id], back_populates="markers"
+    )
+    feature: Mapped[Optional["Feature"]] = relationship("Feature", foreign_keys=[feature_id])
+
+    __table_args__ = (
+        Index("ix_cell_type_markers_dataset_cluster", "single_cell_dataset_id", "cluster_id"),
+    )
+
+
 class SignatureComponent(Base):
     """A single component of a multi-omics signature."""
 

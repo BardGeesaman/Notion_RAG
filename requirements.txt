@@ -130,6 +130,8 @@ scikit-learn>=1.3.0
 streamlit>=1.35.0
 watchdog
 plotly
+scanpy
+leidenalg
 streamlit-aggrid
 streamlit-agraph>=0.0.45
 markdown>=3.5

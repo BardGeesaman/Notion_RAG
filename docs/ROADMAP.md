@@ -434,7 +434,11 @@ Implementation:
   - API: 6 endpoints (ingest, list, compute, reversals, mimics, mechanisms)
   - Dashboard: Connectivity Map (3 tabs)
   - Tests: 4 passed (scorer, parser, E2E)
-- ❌ Single-Cell Omics Integration (10-15 days) - scRNA-seq/scATAC-seq with Scanpy
+- ✅ Single-Cell Omics Integration (2025-12-23)
+  - Scanpy pipeline: QC, normalize, HVG, PCA, UMAP, Leiden clustering
+  - 8 API endpoints: ingest, list, clusters, recluster, markers, umap, expression
+  - Dashboard: 4-tab viewer (Dataset, UMAP overlay, Clusters, Markers)
+  - Gene-to-Feature mapping for marker discovery
 - ✅ Batch Effect Correction (2025-12-23) - ComBat harmonization pipeline
 - ✅ Sphingolipid Pathway Imbalance Scoring (2025-12-23) - Enzyme coverage + metabolite ratio scoring
 
