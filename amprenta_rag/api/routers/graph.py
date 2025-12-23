@@ -1,4 +1,4 @@
-"""Evidence graph API (edge queries)."""
+"""Evidence graph API (edge queries + traversal)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,9 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
+from amprenta_rag.graph.cytoscape import to_cytoscape_json
 from amprenta_rag.graph.edge_builder import EdgeBuilder, Direction
+from amprenta_rag.graph.traversal import k_hop_subgraph, shortest_path
 
 
 router = APIRouter(prefix="/graph", tags=["Graph"])
@@ -23,6 +25,35 @@ class NeighborResponse(BaseModel):
     confidence: Optional[float] = None
     evidence_source: Optional[str] = None
     provenance: Optional[Dict[str, Any]] = None
+
+
+class TraverseRequest(BaseModel):
+    entity_type: str
+    entity_id: UUID
+    depth: int = 2
+    relationships: Optional[List[str]] = None
+
+
+class GraphSubgraphResponse(BaseModel):
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+    cytoscape: Dict[str, Any]
+    truncated: bool = False
+
+
+class PathRequest(BaseModel):
+    source_type: str
+    source_id: UUID
+    target_type: str
+    target_id: UUID
+    relationships: Optional[List[str]] = None
+
+
+class GraphPathResponse(BaseModel):
+    found: bool
+    nodes: List[Dict[str, Any]] = []
+    edges: List[Dict[str, Any]] = []
+    cytoscape: Optional[Dict[str, Any]] = None
 
 
 @router.get("/neighbors", response_model=List[NeighborResponse])
@@ -59,6 +90,46 @@ def get_neighbors(
         ]
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Graph neighbor query failed: {e}")
+
+
+@router.post("/traverse", response_model=GraphSubgraphResponse)
+def traverse(payload: TraverseRequest) -> GraphSubgraphResponse:
+    try:
+        out = k_hop_subgraph(
+            payload.entity_type,
+            payload.entity_id,
+            depth=payload.depth,
+            relationships=payload.relationships,
+            max_nodes=500,
+        )
+        nodes = [{"entity_type": t, "entity_id": str(i)} for (t, i) in out["nodes"]]
+        edges = out["edges"]
+        cy = to_cytoscape_json(out["nodes"], edges)
+        return GraphSubgraphResponse(nodes=nodes, edges=edges, cytoscape=cy, truncated=bool(out.get("truncated")))
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Graph traversal failed: {e}")
+
+
+@router.post("/path", response_model=GraphPathResponse)
+def path(payload: PathRequest) -> GraphPathResponse:
+    try:
+        out = shortest_path(
+            payload.source_type,
+            payload.source_id,
+            payload.target_type,
+            payload.target_id,
+            relationships=payload.relationships,
+            timeout_s=5.0,
+            max_nodes=500,
+        )
+        if out is None:
+            return GraphPathResponse(found=False)
+        nodes = [{"entity_type": t, "entity_id": str(i)} for (t, i) in out["nodes"]]
+        edges = out["edges"]
+        cy = to_cytoscape_json(out["nodes"], edges)
+        return GraphPathResponse(found=True, nodes=nodes, edges=edges, cytoscape=cy)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Graph path failed: {e}")
 
 
 __all__ = ["router"]

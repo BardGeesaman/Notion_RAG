@@ -123,6 +123,10 @@ def _render_compounds(tab, db_session, compound_model, export_compounds):
                                 st.write(f"**HBD Count:** {compound.hbd_count}")
                             if compound.hba_count is not None:
                                 st.write(f"**HBA Count:** {compound.hba_count}")
+
+                        st.markdown(
+                            f"[View in Graph Explorer](/?page=Graph%20Explorer&entity_type=compound&entity_id={compound.id})"
+                        )
             else:
                 st.info("No compounds found.")
 

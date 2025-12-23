@@ -127,6 +127,7 @@ streamlit>=1.35.0
 watchdog
 plotly
 streamlit-aggrid
+streamlit-agraph>=0.0.45
 markdown>=3.5
 weasyprint>=60.0
 bcrypt>=4.0.0

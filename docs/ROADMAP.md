@@ -410,7 +410,12 @@ Implementation:
   - 4 edge types: Compound↔Target, Target↔Pathway, Signature↔Pathway, Compound↔Signature
   - EdgeBuilder service with upsert + neighbor queries
   - API: GET /api/graph/neighbors
-- ❌ A2: Graph Service + Features (2-3 days) - k-hop, paths, typed-degree, Cytoscape viz
+- ✅ A2: Graph API + Visualization (2025-12-23)
+  - k-hop traversal (BFS, max 500 nodes)
+  - Shortest path (bidirectional BFS, 5s timeout)
+  - Cytoscape.js JSON with entity-type colors
+  - Graph Explorer page (streamlit-agraph)
+  - Deep-link support + "View in Graph" integration
 - ❌ A3: GraphRAG Reranker (2-3 days) - Path-aware boosting for RAG queries
 - ❌ A4: Graph Analytics (optional 2-4 days) - Centrality, community detection
 
