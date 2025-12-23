@@ -449,7 +449,10 @@ Implementation:
   - MAGeCK test (RRA) with Docker-first runner
   - Gene-level results with FDR-based hit calling
   - 6 API endpoints + 3-tab dashboard (screens, results, volcano)
-- ❌ Multi-Omics Latent Factors (7-10 days) - MOFA2/PLS integration
+- ✅ Multi-Omics Latent Factors (MOFA2) (2025-12-23)
+  - MOFA2 Bayesian factor analysis with sample alignment
+  - Variance explained per omics type
+  - 7 API endpoints + 4-tab dashboard (setup, variance, scatter, loadings)
 - ✅ Lipidomics Spectral Matching (2025-12-23)
   - MGF parser for LipidBlast/GNPS spectral libraries
   - Greedy cosine similarity with precursor filtering (10 ppm)

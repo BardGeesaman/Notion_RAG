@@ -33,6 +33,7 @@ ANALYSIS_PAGES = [
     "Single-Cell Viewer",
     "Spectral Matching",
     "CRISPR Analysis",
+    "Multi-Omics Integration",
 ]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
@@ -131,6 +132,7 @@ ALL_PAGES = [
     "Single-Cell Viewer",
     "Spectral Matching",
     "CRISPR Analysis",
+    "Multi-Omics Integration",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -213,5 +215,6 @@ PAGE_REGISTRY = {
     "Single-Cell Viewer": ("scripts.dashboard.pages.single_cell_viewer", "render_single_cell_viewer_page"),
     "Spectral Matching": ("scripts.dashboard.pages.spectral_matching", "render_spectral_matching_page"),
     "CRISPR Analysis": ("scripts.dashboard.pages.crispr_analysis", "render_crispr_analysis_page"),
+    "Multi-Omics Integration": ("scripts.dashboard.pages.multi_omics_integration", "render_multi_omics_integration_page"),
 }
 

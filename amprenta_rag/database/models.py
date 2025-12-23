@@ -743,6 +743,101 @@ class CRISPRResult(Base):
     )
 
 
+class MultiOmicsExperiment(Base):
+    """Multi-omics experiment for latent factor analysis (e.g., MOFA-style)."""
+
+    __tablename__ = "multi_omics_experiments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(500), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+
+    dataset_ids = Column(JSON, nullable=True)  # [dataset_id, ...]
+    sample_mapping = Column(JSON, nullable=True)  # mapping across datasets -> unified sample ids
+
+    n_factors = Column(Integer, nullable=True)
+    convergence_mode = Column(String(100), nullable=True)
+
+    status = Column(String(50), nullable=True, index=True)  # pending|running|completed|failed
+    processing_log = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at = Column(DateTime, nullable=True)
+
+    factors: Mapped[List["LatentFactor"]] = relationship(
+        "LatentFactor", back_populates="experiment", cascade="all, delete-orphan"
+    )
+
+
+class LatentFactor(Base):
+    """A single latent factor within a MultiOmicsExperiment."""
+
+    __tablename__ = "latent_factors"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    experiment_id = Column(
+        UUID(as_uuid=True), ForeignKey("multi_omics_experiments.id"), nullable=False, index=True
+    )
+    factor_index = Column(Integer, nullable=False, index=True)
+
+    variance_explained = Column(JSON, nullable=True)  # {"omics_type": float, ...}
+    description = Column(Text, nullable=True)
+
+    experiment: Mapped["MultiOmicsExperiment"] = relationship(
+        "MultiOmicsExperiment", back_populates="factors", foreign_keys=[experiment_id]
+    )
+    loadings: Mapped[List["FactorLoading"]] = relationship(
+        "FactorLoading", back_populates="factor", cascade="all, delete-orphan"
+    )
+    scores: Mapped[List["FactorScore"]] = relationship(
+        "FactorScore", back_populates="factor", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("experiment_id", "factor_index", name="uq_latent_factor_experiment_index"),
+    )
+
+
+class FactorLoading(Base):
+    """Feature loading for a specific latent factor."""
+
+    __tablename__ = "factor_loadings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    factor_id = Column(UUID(as_uuid=True), ForeignKey("latent_factors.id"), nullable=False, index=True)
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=False, index=True)
+
+    loading = Column(Float, nullable=False)
+    abs_loading = Column(Float, nullable=False, index=True)
+    omics_type = Column(String(50), nullable=True, index=True)
+
+    factor: Mapped["LatentFactor"] = relationship("LatentFactor", back_populates="loadings", foreign_keys=[factor_id])
+    feature: Mapped["Feature"] = relationship("Feature", foreign_keys=[feature_id])
+
+    __table_args__ = (
+        UniqueConstraint("factor_id", "feature_id", name="uq_factor_loading_factor_feature"),
+        Index("ix_factor_loadings_factor_abs", "factor_id", "abs_loading"),
+    )
+
+
+class FactorScore(Base):
+    """Per-sample score for a specific latent factor."""
+
+    __tablename__ = "factor_scores"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    factor_id = Column(UUID(as_uuid=True), ForeignKey("latent_factors.id"), nullable=False, index=True)
+    sample_id = Column(String(200), nullable=False, index=True)
+    score = Column(Float, nullable=False)
+
+    factor: Mapped["LatentFactor"] = relationship("LatentFactor", back_populates="scores", foreign_keys=[factor_id])
+
+    __table_args__ = (
+        UniqueConstraint("factor_id", "sample_id", name="uq_factor_score_factor_sample"),
+        Index("ix_factor_scores_factor_sample", "factor_id", "sample_id"),
+    )
+
+
 class ReportArtifact(Base):
     """Generated report artifact metadata."""
 
