@@ -838,6 +838,128 @@ class FactorScore(Base):
     )
 
 
+class VariantSet(Base):
+    """A set of genetic variants imported from a source file (VCF/TSV/etc.)."""
+
+    __tablename__ = "variant_sets"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(500), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+
+    source_file = Column(String(500), nullable=True)
+    source_type = Column(String(100), nullable=True, index=True)  # vcf/tsv/clinvar/etc.
+
+    n_variants = Column(Integer, nullable=True)
+    n_genes = Column(Integer, nullable=True)
+
+    status = Column(String(50), nullable=True, index=True)  # pending|processing|completed|failed
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    variants: Mapped[List["Variant"]] = relationship(
+        "Variant", back_populates="variant_set", cascade="all, delete-orphan"
+    )
+    burdens: Mapped[List["GeneBurden"]] = relationship(
+        "GeneBurden", back_populates="variant_set", cascade="all, delete-orphan"
+    )
+
+
+class Variant(Base):
+    """A single variant record in a VariantSet."""
+
+    __tablename__ = "variants"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    variant_set_id = Column(UUID(as_uuid=True), ForeignKey("variant_sets.id"), nullable=False, index=True)
+
+    chromosome = Column(String(20), nullable=False, index=True)
+    position = Column(Integer, nullable=False, index=True)
+    ref_allele = Column(String(500), nullable=False)
+    alt_allele = Column(String(500), nullable=False)
+
+    rs_id = Column(String(50), nullable=True, index=True)
+    hgvs_genomic = Column(String(500), nullable=True, index=True)
+    hgvs_coding = Column(String(500), nullable=True, index=True)
+    hgvs_protein = Column(String(500), nullable=True, index=True)
+
+    gene_symbol = Column(String(100), nullable=True, index=True)
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=True, index=True)
+
+    consequence = Column(String(200), nullable=True, index=True)
+    impact = Column(String(50), nullable=True, index=True)
+    gnomad_af = Column(Float, nullable=True)
+
+    variant_set: Mapped["VariantSet"] = relationship("VariantSet", back_populates="variants", foreign_keys=[variant_set_id])
+    feature: Mapped[Optional["Feature"]] = relationship("Feature", foreign_keys=[feature_id])
+    annotations: Mapped[List["VariantAnnotation"]] = relationship(
+        "VariantAnnotation", back_populates="variant", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "variant_set_id",
+            "chromosome",
+            "position",
+            "ref_allele",
+            "alt_allele",
+            name="uq_variant_set_locus",
+        ),
+        Index("ix_variants_set_gene", "variant_set_id", "gene_symbol"),
+    )
+
+
+class VariantAnnotation(Base):
+    """Annotation for a variant from an external source (ClinVar/VEP/CADD/etc.)."""
+
+    __tablename__ = "variant_annotations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    variant_id = Column(UUID(as_uuid=True), ForeignKey("variants.id"), nullable=False, index=True)
+
+    annotation_source = Column(String(100), nullable=False, index=True)
+    clinvar_id = Column(String(100), nullable=True, index=True)
+    clinical_significance = Column(String(200), nullable=True, index=True)
+    review_status = Column(String(200), nullable=True)
+    condition = Column(String(500), nullable=True)
+
+    cadd_phred = Column(Float, nullable=True)
+    revel_score = Column(Float, nullable=True)
+    sift_prediction = Column(String(50), nullable=True)
+    polyphen_prediction = Column(String(50), nullable=True)
+
+    variant: Mapped["Variant"] = relationship("Variant", back_populates="annotations", foreign_keys=[variant_id])
+
+    __table_args__ = (
+        Index("ix_variant_annotations_variant_source", "variant_id", "annotation_source"),
+    )
+
+
+class GeneBurden(Base):
+    """Aggregated per-gene burden metrics for a VariantSet."""
+
+    __tablename__ = "gene_burdens"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    variant_set_id = Column(UUID(as_uuid=True), ForeignKey("variant_sets.id"), nullable=False, index=True)
+
+    gene_symbol = Column(String(100), nullable=True, index=True)
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=True, index=True)
+
+    n_variants = Column(Integer, nullable=True)
+    n_pathogenic = Column(Integer, nullable=True)
+    n_vus = Column(Integer, nullable=True)
+    n_benign = Column(Integer, nullable=True)
+    burden_score = Column(Float, nullable=True)
+
+    variant_set: Mapped["VariantSet"] = relationship("VariantSet", back_populates="burdens", foreign_keys=[variant_set_id])
+    feature: Mapped[Optional["Feature"]] = relationship("Feature", foreign_keys=[feature_id])
+
+    __table_args__ = (
+        UniqueConstraint("variant_set_id", "gene_symbol", name="uq_gene_burden_set_gene"),
+        Index("ix_gene_burdens_set_gene", "variant_set_id", "gene_symbol"),
+    )
+
+
 class ReportArtifact(Base):
     """Generated report artifact metadata."""
 

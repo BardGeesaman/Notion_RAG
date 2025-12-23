@@ -44,6 +44,7 @@ from amprenta_rag.api.routers import (
     spectral,
     crispr,
     multi_omics,
+    variants,
 )
 from amprenta_rag.config import get_config
 
@@ -105,6 +106,7 @@ app.include_router(single_cell.router, prefix="/api")
 app.include_router(spectral.router, prefix="/api")
 app.include_router(crispr.router, prefix="/api")
 app.include_router(multi_omics.router, prefix="/api")
+app.include_router(variants.router, prefix="/api")
 
 
 @app.get("/")

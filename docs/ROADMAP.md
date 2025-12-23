@@ -443,7 +443,11 @@ Implementation:
 - ✅ Sphingolipid Pathway Imbalance Scoring (2025-12-23) - Enzyme coverage + metabolite ratio scoring
 
 #### Medium Priority
-- ❌ Variant Interpretation (8-12 days) - VEP/ClinVar/dbNSFP annotation pipeline
+- ✅ Variant Interpretation (VEP/ClinVar) (2025-12-23)
+  - VEP TSV parser with SIFT/PolyPhen extraction
+  - ClinVar integration (download + match)
+  - Gene burden scoring (pathogenic×10 + VUS)
+  - 6 API endpoints + 4-tab dashboard with pathway enrichment
 - ✅ Phenotype→Gene Mapping (2025-12-23) - HPO gene associations, query expansion API
 - ✅ CRISPR Screen Analysis (MAGeCK) (2025-12-23)
   - MAGeCK test (RRA) with Docker-first runner

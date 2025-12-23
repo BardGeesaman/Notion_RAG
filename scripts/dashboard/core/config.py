@@ -34,6 +34,7 @@ ANALYSIS_PAGES = [
     "Spectral Matching",
     "CRISPR Analysis",
     "Multi-Omics Integration",
+    "Variant Analysis",
 ]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
@@ -133,6 +134,7 @@ ALL_PAGES = [
     "Spectral Matching",
     "CRISPR Analysis",
     "Multi-Omics Integration",
+    "Variant Analysis",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -216,5 +218,6 @@ PAGE_REGISTRY = {
     "Spectral Matching": ("scripts.dashboard.pages.spectral_matching", "render_spectral_matching_page"),
     "CRISPR Analysis": ("scripts.dashboard.pages.crispr_analysis", "render_crispr_analysis_page"),
     "Multi-Omics Integration": ("scripts.dashboard.pages.multi_omics_integration", "render_multi_omics_integration_page"),
+    "Variant Analysis": ("scripts.dashboard.pages.variant_analysis", "render_variant_analysis_page"),
 }
 
