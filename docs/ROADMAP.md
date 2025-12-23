@@ -406,7 +406,7 @@ Implementation:
 - ❌ Evidence Graph + GraphRAG Retrieval (8-12 days) - Knowledge graph retrieval for mechanistic queries
 - ❌ Connectivity Mapping (LINCS/CMap) (7-10 days) - Signature reversal for drug repurposing
 - ❌ Single-Cell Omics Integration (10-15 days) - scRNA-seq/scATAC-seq with Scanpy
-- ❌ Batch Effect Correction (5-8 days) - ComBat/Harmony/SVA harmonization
+- ✅ Batch Effect Correction (2025-12-23) - ComBat harmonization pipeline
 - ❌ Sphingolipid Pathway Flux Scoring (6-9 days) - Pathway-level flux/imbalance metrics
 
 #### Medium Priority
@@ -415,6 +415,12 @@ Implementation:
 - ❌ CRISPR Screen Analysis (6-9 days) - MAGeCK pipeline for functional genomics
 - ❌ Multi-Omics Latent Factors (7-10 days) - MOFA2/PLS integration
 - ❌ Lipidomics Spectral Matching (6-9 days) - MS/MS library matching
+
+#### Structural Biology & Virtual Screening (2 weeks total)
+- ❌ Protein Structure Store + AlphaFold/ColabFold (6-9 days) - Fetch, prep, provenance
+- ❌ Binding Site Detection (4-6 days) - fpocket/P2Rank pocket identification
+- ❌ Structure-Based Virtual Screening (8-12 days) - Vina/GNINA docking pipeline
+- ❌ Pose QC & Interaction Analysis (3-5 days) - PLIP fingerprints, PoseBusters
 
 ---
 

@@ -563,6 +563,18 @@ class MLModel(Base):
     __table_args__ = (UniqueConstraint("name", "version", name="uq_ml_model_name_version"),)
 
 
+class BatchCorrection(Base):
+    """Batch effect correction record (e.g., ComBat)."""
+
+    __tablename__ = "batch_corrections"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    method = Column(String(50), nullable=False)
+    batch_map = Column(JSON, nullable=True)
+    corrected_dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
 gene_protein_map = Table(
     "gene_protein_map",
     Base.metadata,

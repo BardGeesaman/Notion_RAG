@@ -20,6 +20,7 @@ from amprenta_rag.api.routers import (
     reports,
     explainability,
     analysis,
+    batch,
     quality,
     protocols,
     hts,
@@ -66,6 +67,7 @@ app.include_router(
     explainability.router, prefix="/api/v1", tags=["explainability"]
 )
 app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
+app.include_router(batch.router, prefix="/api", tags=["Analysis"])
 app.include_router(reports.router, prefix="/api/v1", tags=["Reports"])
 app.include_router(quality.router, prefix="/api/v1", tags=["Quality"])
 app.include_router(protocols.router, prefix="/api/v1", tags=["Protocols"])

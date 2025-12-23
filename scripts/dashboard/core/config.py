@@ -20,6 +20,7 @@ ANALYSIS_PAGES = [
     "Nextflow Orchestrator",
     "Experiment Optimizer",
     "Model Registry",
+    "Batch Correction",
     "Notebook Co-Pilot",
     "Notebook Generator",
 ]
@@ -109,7 +110,7 @@ ALL_PAGES = [
     "Nextflow Orchestrator",
     "Experiment Optimizer",
     "Model Registry",
-    "Model Registry",
+    "Batch Correction",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -181,5 +182,6 @@ PAGE_REGISTRY = {
     "Nextflow Orchestrator": ("scripts.dashboard.pages.nextflow_orchestrator", "render_nextflow_orchestrator_page"),
     "Experiment Optimizer": ("scripts.dashboard.pages.experiment_optimizer", "render_experiment_optimizer_page"),
     "Model Registry": ("scripts.dashboard.pages.model_registry", "render_model_registry_page"),
+    "Batch Correction": ("scripts.dashboard.pages.batch_correction", "render_batch_correction_page"),
 }
 
