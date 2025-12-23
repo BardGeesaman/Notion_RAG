@@ -51,6 +51,7 @@ ADMIN_PAGES = [
     "Entity Explorer",
     "Data Grid",
     "Genome Browser",
+    "Company Settings",
 ]
 
 ALL_PAGES = [
@@ -135,6 +136,7 @@ ALL_PAGES = [
     "CRISPR Analysis",
     "Multi-Omics Integration",
     "Variant Analysis",
+    "Company Settings",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -219,5 +221,6 @@ PAGE_REGISTRY = {
     "CRISPR Analysis": ("scripts.dashboard.pages.crispr_analysis", "render_crispr_analysis_page"),
     "Multi-Omics Integration": ("scripts.dashboard.pages.multi_omics_integration", "render_multi_omics_integration_page"),
     "Variant Analysis": ("scripts.dashboard.pages.variant_analysis", "render_variant_analysis_page"),
+    "Company Settings": ("scripts.dashboard.pages.company_settings", "render_company_settings_page"),
 }
 

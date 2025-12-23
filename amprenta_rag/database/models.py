@@ -1459,6 +1459,7 @@ from amprenta_rag.models.chemistry import (  # noqa: F401
     ToxicologyResult,  # noqa: F401
 )
 from amprenta_rag.models.auth import (  # noqa: F401
+    Company,
     User,
     Team,
     TeamMember,

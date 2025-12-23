@@ -355,9 +355,12 @@ Implementation:
 - ✅ Playwright E2E: **Concurrent Editing / optimistic locking** flow (2025-12-22)
 
 ### 5) Multi-Company Support (Multi-Tenancy)
-- ❌ Company model + admin roles
-- ❌ Data segregation (RLS vs schema separation)
-- ❌ Company-scoped settings/branding
+- ✅ Multi-Company Support (Multi-Tenancy) (2025-12-23)
+  - Company model with subdomain routing, branding, limits
+  - Row-Level Security (RLS) policies on 14 tenant tables
+  - Company context dependency for transparent data isolation
+  - 7 API endpoints for company + user management
+  - Company Settings dashboard (2 tabs)
 
 ---
 

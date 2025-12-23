@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import List, Optional, TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, JSON, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, JSON, func, Integer, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, relationship
 
@@ -29,9 +29,37 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), default="researcher")  # admin, researcher, viewer
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=True, index=True)
+    company_role = Column(String(20), nullable=True, default="member")  # member|admin|owner (tenant role)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=func.now())
     last_login = Column(DateTime, nullable=True)
+
+    company: Mapped[Optional["Company"]] = relationship("Company", back_populates="users", foreign_keys=[company_id])
+
+
+class Company(Base):
+    """Tenant organization for multi-tenancy."""
+
+    __tablename__ = "companies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False, index=True)
+    subdomain = Column(String(100), nullable=False, unique=True, index=True)
+    logo_url = Column(String(500), nullable=True)
+    primary_color = Column(String(50), nullable=True)
+
+    max_users = Column(Integer, nullable=True)
+    max_datasets = Column(Integer, nullable=True)
+    storage_quota_gb = Column(Float, nullable=True)
+
+    status = Column(String(50), nullable=True, default="active", index=True)
+    trial_ends_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    users: Mapped[List["User"]] = relationship("User", back_populates="company")
 
 
 class Team(Base):
@@ -118,6 +146,7 @@ class AuditLog(Base):
 
 
 __all__ = [
+    "Company",
     "User",
     "Team",
     "TeamMember",
