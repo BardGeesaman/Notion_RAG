@@ -1,7 +1,7 @@
 """Automated study quality critique service."""
 from __future__ import annotations
 
-from typing import List, Dict, Any, Protocol
+from typing import List, Dict, Any
 from uuid import UUID
 
 from amprenta_rag.database.models import Experiment

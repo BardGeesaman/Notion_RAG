@@ -10,9 +10,8 @@ import json
 import os
 import re
 import uuid
-from dataclasses import dataclass
 from textwrap import dedent
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.llm.model_registry import call_model

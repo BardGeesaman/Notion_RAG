@@ -577,7 +577,6 @@ def extract_metabolights_metabolites_from_isa_tab(
     import re
     import zlib
 
-    import pandas as pd
 
     if download_dir is None:
         download_dir = Path("/tmp")

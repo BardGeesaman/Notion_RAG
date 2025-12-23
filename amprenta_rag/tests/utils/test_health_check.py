@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import time
 
-import pytest
 
 from amprenta_rag.utils import health_check
 

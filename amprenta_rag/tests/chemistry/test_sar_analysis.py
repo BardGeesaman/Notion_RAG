@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import sys
-from types import SimpleNamespace, ModuleType
+from types import ModuleType
 from uuid import UUID, uuid4
 
-import pandas as pd
 
 from amprenta_rag.chemistry import sar_analysis as sa
 

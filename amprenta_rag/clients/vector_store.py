@@ -5,9 +5,7 @@ Supports both Pinecone and Postgres/pgvector backends via a shared interface.
 
 from __future__ import annotations
 
-from contextlib import contextmanager
-from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Protocol, Sequence, TypedDict, Union, cast
+from typing import Any, Dict, List, Optional, Protocol, Sequence, TypedDict, cast
 
 import sqlalchemy as sa
 

@@ -1,5 +1,4 @@
 from __future__ import annotations
-import pytest
 from types import SimpleNamespace
 from amprenta_rag.maintenance import verify
 

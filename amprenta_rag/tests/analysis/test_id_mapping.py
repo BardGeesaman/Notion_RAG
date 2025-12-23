@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import pytest
 
 from amprenta_rag.analysis import id_mapping as idm
 

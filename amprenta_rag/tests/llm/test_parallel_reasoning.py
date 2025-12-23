@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import sys
-from types import ModuleType
-import pytest
 
 from amprenta_rag.llm import parallel_reasoning as pr
 

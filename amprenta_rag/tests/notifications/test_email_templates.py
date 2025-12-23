@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from amprenta_rag.notifications import email_templates as et
 
 class FakeExperiment:

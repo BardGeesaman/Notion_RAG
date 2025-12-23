@@ -6,7 +6,7 @@ import json
 import logging
 import hashlib
 from datetime import datetime
-from typing import Optional, cast
+from typing import Optional
 from uuid import UUID
 
 from apscheduler.triggers.cron import CronTrigger

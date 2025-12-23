@@ -41,7 +41,7 @@ from amprenta_rag.ingestion.signature_matching import (
 )
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.models.domain import FeatureType, OmicsType
+from amprenta_rag.models.domain import OmicsType
 
 logger = get_logger(__name__)
 

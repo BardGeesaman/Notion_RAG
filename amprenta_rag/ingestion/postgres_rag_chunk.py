@@ -7,7 +7,7 @@ replacing Notion-based chunk page creation.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Generator, cast
+from typing import Any, Dict, Optional, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session

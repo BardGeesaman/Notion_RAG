@@ -18,7 +18,7 @@ supports the common "key: value" format used in this project.
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from amprenta_rag.notebook.context import AnalysisContext
 from amprenta_rag.notebook.copilot import synthesize_cell

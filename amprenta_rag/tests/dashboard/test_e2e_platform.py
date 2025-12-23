@@ -3,7 +3,7 @@ Comprehensive E2E Platform Test Suite
 Tests all major dashboard functionality
 """
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 import time
 
 pytestmark = pytest.mark.requires_server

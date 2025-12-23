@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
-import pytest
 
 from amprenta_rag.reports import scheduler as rs
 

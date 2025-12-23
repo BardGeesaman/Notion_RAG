@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 from types import ModuleType
-import pytest
 
 # Mock scripts.run_dashboard to provide ALL_PAGES/ADMIN_PAGES constants
 fake_dash = ModuleType("scripts.run_dashboard")
@@ -11,7 +10,6 @@ fake_dash.ADMIN_PAGES = ["Admin"]
 sys.modules["scripts.run_dashboard"] = fake_dash
 
 from amprenta_rag.auth import feature_permissions as fp
-from amprenta_rag.database.models import FeaturePermission
 
 
 class FakePermission:

@@ -9,7 +9,7 @@ Maintains backward compatibility by re-exporting all public functions.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, cast
+from typing import Any
 
 from amprenta_rag.ingestion.features.constants import AMINO_ACIDS, METABOLITE_SYNONYMS, NUCLEOTIDES
 from amprenta_rag.ingestion.features.extraction import extract_features_from_mwtab, extract_features_from_text

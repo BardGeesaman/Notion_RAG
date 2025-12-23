@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from typing import List, cast, Any
-from uuid import UUID
 
 from amprenta_rag.utils.uuid_utils import ensure_uuid
 

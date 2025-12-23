@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import sys
 from types import ModuleType
-import pytest
-from pathlib import Path
 
 # Mock weasyprint BEFORE importing the module under test
 fake_weasyprint = ModuleType("weasyprint")

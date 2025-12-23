@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-import pytest
 
 from amprenta_rag.analysis import moa_inference as mi
 

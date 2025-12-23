@@ -18,12 +18,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import random
 import statistics
 import time
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 import sqlalchemy as sa
 

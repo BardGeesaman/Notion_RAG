@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from uuid import uuid4
-import importlib
 import sys
 from types import ModuleType
 

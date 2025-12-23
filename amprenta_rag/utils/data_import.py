@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 from typing import List, Optional, Any, cast
-from uuid import UUID
 
 import pandas as pd
 

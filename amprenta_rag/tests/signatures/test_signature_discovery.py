@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from uuid import uuid4
 from amprenta_rag.domain.signatures_discovery import DiscoveryDatasetSummary
 from amprenta_rag.signatures import signature_discovery as sd

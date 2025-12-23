@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from amprenta_rag.ingestion import omics_type_detection as otd
 
 def test_detect_omics_type_from_filename():

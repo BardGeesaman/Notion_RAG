@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 import time
 from amprenta_rag.auth import session
 

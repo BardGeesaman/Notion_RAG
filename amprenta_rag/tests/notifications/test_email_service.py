@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from uuid import uuid4
-import pytest
 from amprenta_rag.notifications import email_service as es
 
 # Define FakeDB at module level so it's available to test_send_share_notification_unknown

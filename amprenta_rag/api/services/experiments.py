@@ -2,7 +2,7 @@
 CRUD services for Experiments.
 """
 
-from typing import List, Optional, Any, Sequence, cast
+from typing import List, Optional, Any, cast
 from uuid import UUID
 
 from sqlalchemy.orm import Session

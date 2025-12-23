@@ -82,7 +82,7 @@ pyxlsb==1.0.10
 pyzmq
 regex==2025.11.3
 requests==2.32.5
-biopython==1.83
+biopython==1.86
 scipy==1.15.3
 segtok==1.5.11
 six==1.17.0
@@ -117,6 +117,9 @@ pytest-playwright>=0.4.0
 pytest-cov>=4.1.0
 pre-commit>=3.6.0
 interrogate>=1.7.0
+# NOTE: 'py' is deprecated but still pulled in by interrogate in this environment.
+# No patched version is currently available on PyPI (latest is 1.11.0; PYSEC-2022-42969).
+py==1.11.0
 fastapi>=0.124.0
 uvicorn[standard]>=0.38.0
 
@@ -145,7 +148,7 @@ PyJWT>=2.8.0
 
 # Report generation (Phase 8A)
 papermill>=2.4.0
-nbconvert>=7.0.0
+nbconvert==7.16.6
 nbformat>=5.7.0
 
 # Chemistry / SAR

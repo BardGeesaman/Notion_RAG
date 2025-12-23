@@ -15,11 +15,9 @@ Key Principles:
 
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any, Sequence, cast
+from typing import List, Dict
 from uuid import UUID
-import uuid
 
-from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from amprenta_rag.database.models import (
@@ -36,38 +34,14 @@ logger = get_logger(__name__)
 
 # Domain splits (facade re-exports keep backwards compatibility)
 from .crud_programs import (  # noqa: E402
-    create_program,
     get_program_by_id,
-    get_program_by_name,
-    get_program_by_notion_id,
-    get_or_create_program,
-    list_programs,
 )
 from .crud_experiments import (  # noqa: E402
-    create_experiment,
     get_experiment_by_id,
-    get_experiment_by_name,
-    get_or_create_experiment,
 )
 from .crud_datasets import (  # noqa: E402
-    create_dataset,
     get_dataset_by_id,
-    get_dataset_by_name,
-    get_or_create_dataset,
-    list_datasets,
-    create_feature,
     get_feature_by_id,
-    get_feature_by_name_and_type,
-    get_or_create_feature,
-    bulk_get_or_create_features,
-)
-from .crud_signatures import (  # noqa: E402
-    create_signature,
-    create_signature_component,
-    get_signature_by_id,
-    get_signature_by_name,
-    get_or_create_signature,
-    link_dataset_to_signature,
 )
 
 # ==============================================================================

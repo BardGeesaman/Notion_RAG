@@ -13,7 +13,6 @@ from amprenta_rag.database.models import (
     Feature as FeatureModel,
 )
 from amprenta_rag.api.schemas import SignatureCreate, SignatureUpdate
-import uuid
 
 
 def create_signature(db: Session, signature: SignatureCreate) -> SignatureModel:

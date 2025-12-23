@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import streamlit as st
-from typing import Iterable, Any, Dict, List, Optional, cast
+from typing import Iterable, Any, Dict, List, Optional
 
 from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.audit import log_logout

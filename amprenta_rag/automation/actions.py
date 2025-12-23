@@ -1,8 +1,7 @@
 """Workflow action handlers."""
 from __future__ import annotations
 
-from typing import Dict, Any, cast
-from uuid import UUID
+from typing import Dict, Any
 
 from amprenta_rag.utils.uuid_utils import ensure_uuid
 

@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-import gzip
-from io import BytesIO
 from pathlib import Path
-from types import SimpleNamespace
 
-import pytest
 
 import sys
 from types import ModuleType

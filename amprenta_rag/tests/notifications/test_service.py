@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
-import pytest
 
 from amprenta_rag.notifications import service as ns
 

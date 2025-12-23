@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from typing import Any, Dict, List, Optional, Sequence
+from typing import List, Optional
 
 import nbformat
 
