@@ -400,6 +400,22 @@ Implementation:
   - Document RDKit installation via conda-forge (not pip)
   - Standardize Python version across environments
 
+### Bioinformatics & Integration (Backlog)
+
+#### High Priority
+- ❌ Evidence Graph + GraphRAG Retrieval (8-12 days) - Knowledge graph retrieval for mechanistic queries
+- ❌ Connectivity Mapping (LINCS/CMap) (7-10 days) - Signature reversal for drug repurposing
+- ❌ Single-Cell Omics Integration (10-15 days) - scRNA-seq/scATAC-seq with Scanpy
+- ❌ Batch Effect Correction (5-8 days) - ComBat/Harmony/SVA harmonization
+- ❌ Sphingolipid Pathway Flux Scoring (6-9 days) - Pathway-level flux/imbalance metrics
+
+#### Medium Priority
+- ❌ Variant Interpretation (8-12 days) - VEP/ClinVar/dbNSFP annotation pipeline
+- ❌ Phenotype→Gene Mapping (4-6 days) - HPO/MONDO integration
+- ❌ CRISPR Screen Analysis (6-9 days) - MAGeCK pipeline for functional genomics
+- ❌ Multi-Omics Latent Factors (7-10 days) - MOFA2/PLS integration
+- ❌ Lipidomics Spectral Matching (6-9 days) - MS/MS library matching
+
 ---
 
 ## Notes
