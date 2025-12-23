@@ -416,7 +416,11 @@ Implementation:
   - Cytoscape.js JSON with entity-type colors
   - Graph Explorer page (streamlit-agraph)
   - Deep-link support + "View in Graph" integration
-- ❌ A3: GraphRAG Reranker (2-3 days) - Path-aware boosting for RAG queries
+- ✅ A3: GraphRAG Reranker (2025-12-23)
+  - Path-aware boosting for RAG queries
+  - Hybrid entity extraction (LLM + regex fallback)
+  - Alpha blending: score * (1 + 0.3 * graph_boost)
+  - LRU cache (20k entries) for performance
 - ❌ A4: Graph Analytics (optional 2-4 days) - Centrality, community detection
 
 - ❌ Connectivity Mapping (LINCS/CMap) (7-10 days) - Signature reversal for drug repurposing

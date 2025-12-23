@@ -53,6 +53,7 @@ def query_rag(
     user_id: Optional[str] = None,
     model: str = "gpt-4o",
     use_trust_scoring: bool = False,
+    use_graph_boost: bool = False,
 ) -> RAGQueryResult:
     """
     High-level API: run a complete RAG query and get structured results.
@@ -317,6 +318,15 @@ def query_rag(
                     break
 
     matches = [summarize_match(m) for m in raw_matches]
+
+    if use_graph_boost and matches:
+        try:
+            from amprenta_rag.query.graph_reranker import boost_by_graph
+
+            matches = boost_by_graph(user_query, matches, alpha=0.3, max_hops=2)
+        except Exception as e:
+            logger.warning("[RAG][GRAPH] Graph boost failed; continuing without boost: %r", e)
+
     filtered_matches = cast(List[Any], filter_matches(matches, tag=tag))
 
     if not filtered_matches:

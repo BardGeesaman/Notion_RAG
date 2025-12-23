@@ -74,6 +74,12 @@ def render_rag_query_page() -> None:
         help="Weight results by source reliability (internal > external > general)"
     )
 
+    use_graph_boost = st.checkbox(
+        "Use Graph Boost",
+        value=False,
+        help="Boost RAG matches that are connected to query entities in the Evidence Graph",
+    )
+
     # Query button
     if st.button("🔍 Search", type="primary"):
         if not query_text.strip():
@@ -95,6 +101,7 @@ def render_rag_query_page() -> None:
                                 source_types=[source_type_filter] if source_type_filter != "All" else None,
                                 model=default_model,
                                 use_trust_scoring=use_trust,
+                                use_graph_boost=use_graph_boost,
                             )
 
                             # Then run parallel reasoning on the question
@@ -226,6 +233,7 @@ def render_rag_query_page() -> None:
                             source_types=[source_type_filter] if source_type_filter != "All" else None,
                             model=selected_model_name,
                             use_trust_scoring=use_trust,
+                            use_graph_boost=use_graph_boost,
                         )
 
                         if result and result.matches:
