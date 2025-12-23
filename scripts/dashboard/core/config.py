@@ -29,6 +29,7 @@ ANALYSIS_PAGES = [
     "Binding Sites",
     "Docking Runs",
     "Docking Triage",
+    "Connectivity Map",
 ]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
@@ -123,6 +124,7 @@ ALL_PAGES = [
     "Binding Sites",
     "Docking Runs",
     "Docking Triage",
+    "Connectivity Map",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -201,5 +203,6 @@ PAGE_REGISTRY = {
     "Binding Sites": ("scripts.dashboard.pages.binding_sites", "render_binding_sites_page"),
     "Docking Runs": ("scripts.dashboard.pages.docking_runs", "render_docking_runs_page"),
     "Docking Triage": ("scripts.dashboard.pages.docking_triage", "render_docking_triage_page"),
+    "Connectivity Map": ("scripts.dashboard.pages.connectivity_map", "render_connectivity_map_page"),
 }
 

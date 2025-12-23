@@ -397,6 +397,72 @@ class Signature(Base):
     )
 
 
+class LINCSGene(Base):
+    """LINCS L1000 gene metadata."""
+
+    __tablename__ = "lincs_genes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    entrez_id = Column(Integer, nullable=False, unique=True, index=True)
+    gene_symbol = Column(String(50), nullable=True, index=True)
+    gene_title = Column(String(500), nullable=True)
+    is_landmark = Column(Boolean, nullable=False, default=False)
+
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=True, index=True)
+    feature: Mapped[Optional["Feature"]] = relationship("Feature", foreign_keys=[feature_id])
+
+
+class LINCSSignature(Base):
+    """LINCS gene expression signature (typically z-scores for many genes)."""
+
+    __tablename__ = "lincs_signatures"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    sig_id = Column(String(100), nullable=False, unique=True, index=True)
+
+    pert_iname = Column(String(200), nullable=True, index=True)
+    pert_id = Column(String(100), nullable=True, index=True)
+    pert_type = Column(String(100), nullable=True)
+
+    cell_id = Column(String(100), nullable=True, index=True)
+    pert_time = Column(Float, nullable=True)
+    pert_dose = Column(Float, nullable=True)
+
+    gene_expression = Column(JSON, nullable=True)  # {entrez_id: z-score}
+
+    tas = Column(Float, nullable=True)
+    distil_id = Column(String(500), nullable=True)
+    ingested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class ConnectivityScore(Base):
+    """Connectivity score between a query Signature and a LINCS signature."""
+
+    __tablename__ = "connectivity_scores"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    query_signature_id = Column(UUID(as_uuid=True), ForeignKey("signatures.id"), nullable=False, index=True)
+    lincs_signature_id = Column(UUID(as_uuid=True), ForeignKey("lincs_signatures.id"), nullable=False, index=True)
+
+    score = Column(Float, nullable=False)
+    score_type = Column(String(50), nullable=False, default="connectivity")
+    p_value = Column(Float, nullable=True)
+    computed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    query_signature: Mapped["Signature"] = relationship("Signature", foreign_keys=[query_signature_id])
+    lincs_signature: Mapped["LINCSSignature"] = relationship("LINCSSignature", foreign_keys=[lincs_signature_id])
+
+    __table_args__ = (
+        UniqueConstraint(
+            "query_signature_id",
+            "lincs_signature_id",
+            "score_type",
+            name="uq_connectivity_score",
+        ),
+        Index("ix_connectivity_scores_query_score_type", "query_signature_id", "score_type"),
+    )
+
+
 class ReportArtifact(Base):
     """Generated report artifact metadata."""
 

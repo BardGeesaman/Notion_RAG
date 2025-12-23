@@ -427,7 +427,13 @@ Implementation:
   - Graph Explorer: "Size by Degree" + "Color by Community" toggles
   - Modularity legend display
 
-- ❌ Connectivity Mapping (LINCS/CMap) (7-10 days) - Signature reversal for drug repurposing
+- ✅ Connectivity Mapping (LINCS/CMap) (2025-12-23)
+  - Data: LINCS L1000 Level 5 (978 landmark genes)
+  - Schema: LINCSGene, LINCSSignature, ConnectivityScore tables
+  - Algorithm: Weighted cosine similarity (CMap standard)
+  - API: 6 endpoints (ingest, list, compute, reversals, mimics, mechanisms)
+  - Dashboard: Connectivity Map (3 tabs)
+  - Tests: 4 passed (scorer, parser, E2E)
 - ❌ Single-Cell Omics Integration (10-15 days) - scRNA-seq/scATAC-seq with Scanpy
 - ✅ Batch Effect Correction (2025-12-23) - ComBat harmonization pipeline
 - ✅ Sphingolipid Pathway Imbalance Scoring (2025-12-23) - Enzyme coverage + metabolite ratio scoring
