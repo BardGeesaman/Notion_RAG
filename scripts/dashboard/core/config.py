@@ -24,6 +24,7 @@ ANALYSIS_PAGES = [
     "Sphingolipid Imbalance",
     "Notebook Co-Pilot",
     "Notebook Generator",
+    "Graph Explorer",
 ]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
@@ -113,6 +114,7 @@ ALL_PAGES = [
     "Model Registry",
     "Batch Correction",
     "Sphingolipid Imbalance",
+    "Graph Explorer",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -186,5 +188,6 @@ PAGE_REGISTRY = {
     "Model Registry": ("scripts.dashboard.pages.model_registry", "render_model_registry_page"),
     "Batch Correction": ("scripts.dashboard.pages.batch_correction", "render_batch_correction_page"),
     "Sphingolipid Imbalance": ("scripts.dashboard.pages.sphingolipid_imbalance", "render_sphingolipid_imbalance_page"),
+    "Graph Explorer": ("scripts.dashboard.pages.graph_explorer", "render_graph_explorer_page"),
 }
 
