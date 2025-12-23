@@ -151,3 +151,12 @@ ipycytoscape>=1.3.0
 
 # Vector search (pgvector)
 pgvector>=0.2.0
+
+# Bayesian inference (PyMC)
+pymc>=5.0
+arviz>=0.16
+pytensor>=2.14
+
+# Bayesian optimization (BoTorch / Ax)
+botorch>=0.9
+ax-platform>=0.3

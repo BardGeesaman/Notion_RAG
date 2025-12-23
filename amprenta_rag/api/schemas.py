@@ -8,7 +8,7 @@ mapping between domain models and API representations.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, List, Optional, Literal, Any
+from typing import Any, Dict, List, Literal, Optional, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -638,6 +638,7 @@ class MOACandidate(BaseModel):
     candidate_id: str
     type: str
     probability: float
+    probability_ci: Optional[Tuple[float, float]] = None
     rank: int
     contributions: List[EvidenceContribution]
 
@@ -645,8 +646,29 @@ class MOACandidate(BaseModel):
 class MOAInferenceRequest(BaseModel):
     compound_id: UUID
     dataset_ids: List[UUID] = Field(default_factory=list)
+    method: Literal["fusion", "bayesian"] = "fusion"
 
 
 class MOAInferenceResult(BaseModel):
     compound_id: UUID
     candidates: List[MOACandidate]
+
+
+# ============================================================================
+# Analysis / Bayesian inference schemas
+# ============================================================================
+
+
+class BayesianDoseResponseRequest(BaseModel):
+    concentrations: List[float]
+    responses: List[float]
+    prior_ec50: Optional[float] = None
+    likelihood: str = "normal"
+    include_diagnostics: bool = False
+
+
+class BayesianDoseResponseResponse(BaseModel):
+    ec50_mean: float
+    ec50_ci: Tuple[float, float]
+    hill_slope: float
+    diagnostics: Optional[Dict[str, Any]] = None

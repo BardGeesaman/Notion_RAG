@@ -228,23 +228,24 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - AutoML Notebook Templates
 - Drift & Calibration Monitoring
 
-## Bayesian Framework (Future)
+## Bayesian Framework
 
-### Tier 1 - High Impact
-- Batch Bayesian Optimization for Screening (BoTorch/Ax)
-- Hierarchical Bayesian Dose-Response (PyMC, credible intervals)
-- Bayesian ADMET with Uncertainty Quantification
-- Signature→MOA Bayesian Evidence Fusion
+### Tier 1 - High Impact (Completed 2025-12-22)
+- ✅ Batch Bayesian Optimization for Screening (BoTorch qEI, single-objective)
+- ✅ Hierarchical Bayesian Dose-Response (PyMC, credible intervals, ArviZ diagnostics)
+- ❌ Bayesian ADMET with Uncertainty Quantification (future)
+- ✅ Signature→MOA Bayesian Evidence Fusion (Beta regression)
 
-### Tier 2 - Strategic
-- Prior Builder (expert/literature priors)
-- Posterior Inclusion Probabilities for Biomarkers
-- Multi-Objective BO (Pareto front visualization)
+### Tier 2 - Strategic (Deferred)
+- ❌ Prior Builder (expert/literature priors)
+- ❌ Posterior Inclusion Probabilities for Biomarkers
+- ❌ Multi-Objective BO (qNEHVI, Pareto front visualization)
+- ❌ Dashboard toggle for Bayesian dose-response in HTS QC page
+- ❌ E2E tests for Bayesian endpoints
 
 ### Libraries
-- BoTorch + Ax + GPyTorch (optimization)
-- PyMC or NumPyro (probabilistic modeling)
-- ArviZ (analysis/plots)
+- BoTorch + Ax + GPyTorch (optimization) ✅ Installed
+- PyMC + ArviZ (probabilistic modeling) ✅ Installed
 
 ## Advanced Visualization (Future)
 
@@ -366,7 +367,11 @@ Implementation:
 - ✅ Bioinformatics pipeline orchestrator (Nextflow/Snakemake) (2025-12-22)
 - ✅ Data Version Control (DVC) (2025-12-22) - (MVP - local versioning; S3 remote Phase 2)
 - ✅ **Pinecone → pgvector migration** (2025-12-22) - Self-host vector search in Postgres for reduced costs and latency
-- ❌ Bayesian inference & optimization workflows
+- ✅ Bayesian inference & optimization workflows (2025-12-22)
+  - Phase 1: Hierarchical Bayesian Dose-Response (PyMC, credible intervals, ArviZ diagnostics)
+  - Phase 2: Bayesian Optimization for Screening (BoTorch qEI, single-objective)
+  - Phase 3: MOA Bayesian Evidence Fusion (PyMC Beta regression)
+  - Tier 2 deferred: Prior Builder, Multi-Objective BO, Posterior Inclusion Probabilities
 - ❌ ML/AI model registry + predictive ADMET
 - ❌ OOP Refactoring Review
 

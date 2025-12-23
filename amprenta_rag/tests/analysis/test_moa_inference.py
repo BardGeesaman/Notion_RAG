@@ -146,6 +146,30 @@ def test_infer_moa_returns_ranked_candidates(monkeypatch):
     assert len(out[0].contributions) == 3
 
 
+@pytest.mark.unit
+def test_infer_moa_bayesian_returns_candidates_with_ci(monkeypatch):
+    pytest.importorskip("pymc")
+
+    from amprenta_rag.analysis import moa_inference as moa
+
+    compound_id = uuid4()
+    ds_ids = [uuid4()]
+
+    monkeypatch.setattr(moa, "_collect_features", Mock(return_value={"CDK2"}))
+    monkeypatch.setattr(moa, "generate_moa_candidates", Mock(return_value=["CDK2", "EGFR", "MAPK1"]))
+    # Deterministic evidence to keep model stable
+    monkeypatch.setattr(moa, "score_bioactivity_evidence", Mock(side_effect=[0.9, 0.2, 0.1]))
+    monkeypatch.setattr(moa, "score_omics_concordance", Mock(side_effect=[0.6, 0.1, 0.0]))
+    monkeypatch.setattr(moa, "score_pathway_enrichment", Mock(side_effect=[0.7, 0.2, 0.0]))
+
+    out = moa.infer_moa_bayesian(compound_id, ds_ids)
+    assert len(out) == 3
+    assert out[0].rank == 1
+    assert hasattr(out[0], "probability_ci")
+    lo, hi = out[0].probability_ci
+    assert 0.0 <= lo <= hi <= 1.0
+
+
 @pytest.fixture()
 def api_client():
     from amprenta_rag.api.main import app
@@ -187,6 +211,42 @@ def test_post_moa_infer_returns_schema(api_client, monkeypatch):
     assert body["compound_id"] == str(compound_id)
     assert body["candidates"][0]["candidate_id"] == "CDK2"
     assert body["candidates"][0]["contributions"][0]["feature_name"] == "bioactivity"
+
+
+@pytest.mark.api
+def test_post_moa_infer_bayesian_routes_to_bayesian(api_client, monkeypatch):
+    from amprenta_rag.api.routers import moa as moa_router
+    from amprenta_rag.analysis.moa_inference import BayesianMOACandidate, EvidenceContribution
+
+    compound_id = uuid4()
+    ds_id = uuid4()
+
+    monkeypatch.setattr(moa_router, "_validate_compound", lambda _id: None)
+    monkeypatch.setattr(
+        moa_router,
+        "infer_moa_bayesian",
+        Mock(
+            return_value=[
+                BayesianMOACandidate(
+                    candidate_id="CDK2",
+                    type="target",
+                    probability=0.8,
+                    probability_ci=(0.6, 0.9),
+                    rank=1,
+                    contributions=[EvidenceContribution("bioactivity", 0.9, 0.4)],
+                )
+            ]
+        ),
+    )
+
+    resp = api_client.post(
+        "/api/v1/moa/infer",
+        json={"compound_id": str(compound_id), "dataset_ids": [str(ds_id)], "method": "bayesian"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["candidates"][0]["candidate_id"] == "CDK2"
+    assert body["candidates"][0]["probability_ci"] == [0.6, 0.9]
 
 
 @pytest.mark.api

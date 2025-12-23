@@ -18,6 +18,7 @@ ANALYSIS_PAGES = [
     "Cross-Omics Pathways",
     "Pipeline Runner",
     "Nextflow Orchestrator",
+    "Experiment Optimizer",
     "Notebook Co-Pilot",
     "Notebook Generator",
 ]
@@ -105,6 +106,7 @@ ALL_PAGES = [
     "Notebook Generator",
     "Pipeline Runner",
     "Nextflow Orchestrator",
+    "Experiment Optimizer",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -174,5 +176,6 @@ PAGE_REGISTRY = {
     "Notebook Generator": ("scripts.dashboard.pages.notebook_generator", "render_notebook_generator_page"),
     "Pipeline Runner": ("scripts.dashboard.pages.pipeline_runner", "render_pipeline_runner_page"),
     "Nextflow Orchestrator": ("scripts.dashboard.pages.nextflow_orchestrator", "render_nextflow_orchestrator_page"),
+    "Experiment Optimizer": ("scripts.dashboard.pages.experiment_optimizer", "render_experiment_optimizer_page"),
 }
 
