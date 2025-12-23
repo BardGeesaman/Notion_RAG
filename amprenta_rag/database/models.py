@@ -257,6 +257,11 @@ class Dataset(Base):
     sample_type = Column(ARRAY(String), nullable=True)
     disease = Column(ARRAY(String), nullable=True)
 
+    # DVC versioning (optional)
+    dvc_version = Column(String(32), nullable=True)
+    dvc_metadata = Column(JSON, nullable=True)
+    dvc_pushed = Column(Boolean, default=False, nullable=False)
+
     # Scientific metadata from mwTab
     methods = Column(Text, nullable=True)  # Extracted methods from mwTab
     summary = Column(Text, nullable=True)  # Study summary

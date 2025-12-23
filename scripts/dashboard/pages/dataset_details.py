@@ -123,68 +123,120 @@ def render_dataset_details(dataset: dict):
         render_feature_summary(dataset)
 
     st.markdown("---")
-    st.subheader("Edit Dataset")
+    tab_edit, tab_versions = st.tabs(["Edit Dataset", "Version History"])
 
-    with st.form("dataset_update_form"):
-        name = st.text_input("Name", value=dataset.get("name") or "")
-        description = st.text_area("Description", value=dataset.get("description") or "")
-        organism_csv = st.text_input(
-            "Organism (comma-separated)",
-            value=", ".join(dataset.get("organism") or []),
+    with tab_edit:
+        st.subheader("Edit Dataset")
+
+        with st.form("dataset_update_form"):
+            name = st.text_input("Name", value=dataset.get("name") or "")
+            description = st.text_area("Description", value=dataset.get("description") or "")
+            organism_csv = st.text_input(
+                "Organism (comma-separated)",
+                value=", ".join(dataset.get("organism") or []),
+            )
+            sample_type_csv = st.text_input(
+                "Sample type (comma-separated)",
+                value=", ".join(dataset.get("sample_type") or []),
+            )
+            disease_csv = st.text_input(
+                "Disease (comma-separated)",
+                value=", ".join(dataset.get("disease") or []),
+            )
+            submitted = st.form_submit_button("Save", type="primary")
+
+        if submitted:
+            payload: dict[str, Any] = {
+                "version": int(st.session_state.get("dataset_version", version)),
+                "name": name.strip() or None,
+                "description": description.strip() or None,
+                "organism": _parse_csv_list(organism_csv) if organism_csv.strip() else [],
+                "sample_type": _parse_csv_list(sample_type_csv) if sample_type_csv.strip() else [],
+                "disease": _parse_csv_list(disease_csv) if disease_csv.strip() else [],
+            }
+            payload = {k: v for k, v in payload.items() if v is not None}
+
+            try:
+                resp = patch_dataset(str(dataset.get("id") or ""), payload)
+            except httpx.HTTPError as e:  # noqa: BLE001
+                st.error(f"Failed to update dataset: {e}")
+                return
+
+            if resp.status_code == 409:
+                st.error("This dataset was modified. Please reload.")
+                if st.button("🔄 Reload", type="secondary"):
+                    fetch_dataset.clear()
+                    st.rerun()
+                return
+
+            if resp.status_code == 404:
+                st.error("Dataset not found.")
+                return
+
+            if resp.status_code >= 500:
+                st.error("Server error - please try again.")
+                return
+
+            try:
+                resp.raise_for_status()
+            except httpx.HTTPError as e:  # noqa: BLE001
+                st.error(f"Update failed: {e}")
+                return
+
+            updated = resp.json()
+            st.session_state["dataset_version"] = int(updated.get("version") or (version + 1))
+            st.success("Saved.")
+            fetch_dataset.clear()
+            st.rerun()
+
+    with tab_versions:
+        st.subheader("Version History")
+        dvc_version = dataset.get("dvc_version")
+        dvc_pushed = dataset.get("dvc_pushed")
+        dvc_meta = dataset.get("dvc_metadata") or {}
+
+        st.write(
+            {
+                "dvc_version": dvc_version,
+                "dvc_pushed": bool(dvc_pushed),
+                "dvc_file": dvc_meta.get("dvc_file") if isinstance(dvc_meta, dict) else None,
+            }
         )
-        sample_type_csv = st.text_input(
-            "Sample type (comma-separated)",
-            value=", ".join(dataset.get("sample_type") or []),
-        )
-        disease_csv = st.text_input(
-            "Disease (comma-separated)",
-            value=", ".join(dataset.get("disease") or []),
-        )
-        submitted = st.form_submit_button("Save", type="primary")
 
-    if submitted:
-        payload: dict[str, Any] = {
-            "version": int(st.session_state.get("dataset_version", version)),
-            "name": name.strip() or None,
-            "description": description.strip() or None,
-            "organism": _parse_csv_list(organism_csv) if organism_csv.strip() else [],
-            "sample_type": _parse_csv_list(sample_type_csv) if sample_type_csv.strip() else [],
-            "disease": _parse_csv_list(disease_csv) if disease_csv.strip() else [],
-        }
-        payload = {k: v for k, v in payload.items() if v is not None}
+        versions = []
+        if isinstance(dvc_meta, dict) and isinstance(dvc_meta.get("versions"), list):
+            versions = dvc_meta.get("versions") or []
+        elif dvc_version:
+            versions = [{"hash": dvc_version, "timestamp": dataset.get("updated_at")}]
 
-        try:
-            resp = patch_dataset(str(dataset.get("id") or ""), payload)
-        except httpx.HTTPError as e:  # noqa: BLE001
-            st.error(f"Failed to update dataset: {e}")
+        if not versions:
+            st.info("No DVC versions recorded for this dataset yet.")
             return
 
-        if resp.status_code == 409:
-            st.error("This dataset was modified. Please reload.")
-            if st.button("🔄 Reload", type="secondary"):
-                fetch_dataset.clear()
-                st.rerun()
-            return
+        for i, v in enumerate(reversed(versions), start=1):
+            h = v.get("hash") if isinstance(v, dict) else None
+            ts = v.get("timestamp") if isinstance(v, dict) else None
+            st.markdown(f"**v{i}**  hash=`{h}`  time={ts}")
+            raw_yaml = v.get("raw_yaml") if isinstance(v, dict) else None
+            dvc_file = v.get("dvc_file") if isinstance(v, dict) else (dvc_meta.get("dvc_file") if isinstance(dvc_meta, dict) else None)
 
-        if resp.status_code == 404:
-            st.error("Dataset not found.")
-            return
+            cols = st.columns([1, 3])
+            with cols[0]:
+                if st.button("Restore", key=f"restore_{i}", disabled=not (raw_yaml and dvc_file)):
+                    try:
+                        from amprenta_rag.ingestion.dvc_manager import restore_from_metadata
 
-        if resp.status_code >= 500:
-            st.error("Server error - please try again.")
-            return
-
-        try:
-            resp.raise_for_status()
-        except httpx.HTTPError as e:  # noqa: BLE001
-            st.error(f"Update failed: {e}")
-            return
-
-        updated = resp.json()
-        st.session_state["dataset_version"] = int(updated.get("version") or (version + 1))
-        st.success("Saved.")
-        fetch_dataset.clear()
-        st.rerun()
+                        ok = restore_from_metadata(dvc_file, raw_yaml)
+                        if ok:
+                            st.success("Restored dataset file(s) from DVC cache.")
+                        else:
+                            st.error("Restore failed (DVC not installed or checkout failed).")
+                    except Exception as e:  # noqa: BLE001
+                        st.error(f"Restore failed: {e}")
+            with cols[1]:
+                if raw_yaml:
+                    with st.expander("Show .dvc snapshot", expanded=False):
+                        st.code(raw_yaml, language="yaml")
 
 
 def render_selection():

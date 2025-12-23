@@ -117,6 +117,51 @@ def ingest_dataset_from_file(req: OmicsDatasetIngestRequest) -> UUID:
 
             dataset_uuid = ingest_dataset_from_postgres(parsed)  # type: ignore[func-returns-value]
 
+            # DVC auto-versioning (best effort)
+            try:
+                from datetime import datetime
+                from pathlib import Path
+
+                from amprenta_rag.ingestion.dvc_manager import get_version_info, version_file
+
+                fp = getattr(req, "dataset_path", None) or getattr(req, "file_path", None)
+                if fp:
+                    md5 = version_file(fp)
+                    if md5:
+                        dataset_obj = db.query(DatasetModel).get(dataset_uuid)
+                        if dataset_obj is not None:
+                            dvc_file = Path(str(fp) + ".dvc")
+                            info = {}
+                            raw_yaml = None
+                            if dvc_file.exists():
+                                info = get_version_info(dvc_file)
+                                raw_yaml = info.get("_raw_yaml") if isinstance(info, dict) else None
+
+                            meta = getattr(dataset_obj, "dvc_metadata", None) or {}
+                            versions = meta.get("versions") if isinstance(meta, dict) else None
+                            if not isinstance(versions, list):
+                                versions = []
+                            versions.append(
+                                {
+                                    "hash": md5,
+                                    "timestamp": datetime.utcnow().isoformat(),
+                                    "dvc_file": str(dvc_file),
+                                    "raw_yaml": raw_yaml,
+                                }
+                            )
+                            meta = dict(meta) if isinstance(meta, dict) else {}
+                            meta["dvc_file"] = str(dvc_file)
+                            meta["versions"] = versions
+                            meta["last_versioned_at"] = datetime.utcnow().isoformat()
+
+                            dataset_obj.dvc_version = md5
+                            dataset_obj.dvc_metadata = meta
+                            dataset_obj.dvc_pushed = False
+                            db.commit()
+            except Exception:
+                # Never fail ingestion if DVC tooling isn't available.
+                pass
+
             if AUTO_LINK_ENABLED:
                 dataset_obj = db.query(DatasetModel).get(dataset_uuid)
                 if dataset_obj:

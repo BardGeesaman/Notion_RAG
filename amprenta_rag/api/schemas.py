@@ -178,6 +178,9 @@ class Dataset(DatasetBase):
     file_urls: List[str] = Field(default_factory=list)
     organism: List[str] = Field(default_factory=list)
     version: int = 1
+    dvc_version: Optional[str] = None
+    dvc_metadata: Optional[dict] = None
+    dvc_pushed: bool = False
 
     @field_validator("file_paths", "file_urls", "organism", mode="before")
     @classmethod
