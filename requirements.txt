@@ -149,6 +149,7 @@ nbformat>=5.7.0
 # Chemistry / SAR
 rdkit-pypi
 numpy<2.0  # rdkit compatibility
+meeko>=0.5.0
 
 # Notebooks / Voila (local dev)
 ipywidgets>=8.0.0

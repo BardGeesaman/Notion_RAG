@@ -37,6 +37,7 @@ from amprenta_rag.api.routers import (
     graph,
     structures,
     pockets,
+    docking,
 )
 from amprenta_rag.config import get_config
 
@@ -91,6 +92,7 @@ app.include_router(phenotypes.router, prefix="/api")
 app.include_router(graph.router, prefix="/api")
 app.include_router(structures.router, prefix="/api")
 app.include_router(pockets.router, prefix="/api")
+app.include_router(docking.router, prefix="/api")
 
 
 @app.get("/")

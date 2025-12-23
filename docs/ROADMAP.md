@@ -454,7 +454,13 @@ Implementation:
   - API: detect-pockets, list, download endpoints
   - Dashboard: Structure selector, detect button, table view
   - Tests: 5 passed (unit + E2E)
-- ❌ B3: Structure-Based Virtual Screening (8-12 days) - Vina/GNINA docking
+- ✅ B3: Structure-Based Virtual Screening (2025-12-23)
+  - Tool: AutoDock Vina (Docker-first, CPU-based)
+  - Ligand prep: RDKit ETKDG + Meeko/OpenBabel PDBQT
+  - Batch: ThreadPoolExecutor (4 workers), atomic progress
+  - API: 5 endpoints (create run, list, poses, download)
+  - Dashboard: Runs page + Triage page (hit filtering)
+  - Tests: 9 passed (ligand prep, vina, API, E2E)
 - ❌ B4: Pose QC & Interactions (3-5 days) - PLIP fingerprints, PoseBusters
 
 ---

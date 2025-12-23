@@ -27,6 +27,8 @@ ANALYSIS_PAGES = [
     "Graph Explorer",
     "Protein Structures",
     "Binding Sites",
+    "Docking Runs",
+    "Docking Triage",
 ]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
@@ -119,6 +121,8 @@ ALL_PAGES = [
     "Graph Explorer",
     "Protein Structures",
     "Binding Sites",
+    "Docking Runs",
+    "Docking Triage",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -195,5 +199,7 @@ PAGE_REGISTRY = {
     "Graph Explorer": ("scripts.dashboard.pages.graph_explorer", "render_graph_explorer_page"),
     "Protein Structures": ("scripts.dashboard.pages.protein_structures", "render_protein_structures_page"),
     "Binding Sites": ("scripts.dashboard.pages.binding_sites", "render_binding_sites_page"),
+    "Docking Runs": ("scripts.dashboard.pages.docking_runs", "render_docking_runs_page"),
+    "Docking Triage": ("scripts.dashboard.pages.docking_triage", "render_docking_triage_page"),
 }
 

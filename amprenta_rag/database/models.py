@@ -756,6 +756,65 @@ class BindingSite(Base):
     )
 
 
+class DockingRun(Base):
+    """A docking job run against a protein structure and optional binding site."""
+
+    __tablename__ = "docking_runs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    structure_id = Column(UUID(as_uuid=True), ForeignKey("protein_structures.id"), nullable=False, index=True)
+    binding_site_id = Column(UUID(as_uuid=True), ForeignKey("binding_sites.id"), nullable=True, index=True)
+
+    center_x = Column(Float, nullable=True)
+    center_y = Column(Float, nullable=True)
+    center_z = Column(Float, nullable=True)
+
+    size_x = Column(Float, nullable=True)
+    size_y = Column(Float, nullable=True)
+    size_z = Column(Float, nullable=True)
+
+    status = Column(String(50), nullable=False, default="pending")  # pending|running|completed|failed
+    compound_ids = Column(JSON, nullable=True)  # list of Compound.id UUID strings
+    exhaustiveness = Column(Integer, nullable=False, default=8)
+    total_compounds = Column(Integer, nullable=True)
+    completed_compounds = Column(Integer, nullable=False, default=0)
+
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    error_log = Column(Text, nullable=True)
+
+    structure: Mapped["ProteinStructure"] = relationship("ProteinStructure", foreign_keys=[structure_id])
+    binding_site: Mapped[Optional["BindingSite"]] = relationship("BindingSite", foreign_keys=[binding_site_id])
+    poses: Mapped[List["DockingPose"]] = relationship(
+        "DockingPose", back_populates="docking_run", cascade="all, delete-orphan"
+    )
+
+
+class DockingPose(Base):
+    """Docked pose for a compound in a DockingRun."""
+
+    __tablename__ = "docking_poses"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    docking_run_id = Column(UUID(as_uuid=True), ForeignKey("docking_runs.id"), nullable=False, index=True)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=False, index=True)
+
+    binding_affinity = Column(Float, nullable=True)  # kcal/mol
+    pose_rank = Column(Integer, nullable=True)
+    rmsd_lb = Column(Float, nullable=True)
+    rmsd_ub = Column(Float, nullable=True)
+
+    pose_pdbqt_path = Column(String(500), nullable=True)
+    docked_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    docking_run: Mapped["DockingRun"] = relationship("DockingRun", back_populates="poses", foreign_keys=[docking_run_id])
+    compound: Mapped["Compound"] = relationship("Compound", foreign_keys=[compound_id])
+
+    __table_args__ = (
+        Index("ix_docking_poses_run_rank", "docking_run_id", "pose_rank"),
+    )
+
+
 gene_protein_map = Table(
     "gene_protein_map",
     Base.metadata,
