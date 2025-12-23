@@ -575,6 +575,33 @@ class BatchCorrection(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
+class PhenotypeGeneAssociation(Base):
+    """Association between an HPO phenotype term and a gene symbol (HPOA genes_to_phenotype)."""
+
+    __tablename__ = "phenotype_gene_associations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+
+    # HPO term
+    hpo_id = Column(String(20), nullable=False, index=True)  # e.g. "HP:0001250"
+    hpo_name = Column(String(500), nullable=True)
+
+    # Gene
+    gene_symbol = Column(String(50), nullable=False, index=True)
+    ncbi_gene_id = Column(String(30), nullable=True)
+
+    # Optional context from HPOA
+    disease_id = Column(String(50), nullable=True)
+    frequency = Column(String(50), nullable=True)
+    source = Column(String(100), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("hpo_id", "gene_symbol", "disease_id", name="uq_hpo_gene_disease"),
+    )
+
+
 gene_protein_map = Table(
     "gene_protein_map",
     Base.metadata,

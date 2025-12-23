@@ -403,7 +403,13 @@ Implementation:
 ### Bioinformatics & Integration (Backlog)
 
 #### High Priority
-- ❌ Evidence Graph + GraphRAG Retrieval (8-12 days) - Knowledge graph retrieval for mechanistic queries
+
+#### Evidence Graph + GraphRAG (Track A, 2-3 weeks)
+- ❌ A1: Graph Schema + ETL (3-4 days) - graph_node/graph_edge tables, entity linking
+- ❌ A2: Graph Service + Features (2-3 days) - k-hop, paths, typed-degree, Cytoscape viz
+- ❌ A3: GraphRAG Reranker (2-3 days) - Path-aware boosting for RAG queries
+- ❌ A4: Graph Analytics (optional 2-4 days) - Centrality, community detection
+
 - ❌ Connectivity Mapping (LINCS/CMap) (7-10 days) - Signature reversal for drug repurposing
 - ❌ Single-Cell Omics Integration (10-15 days) - scRNA-seq/scATAC-seq with Scanpy
 - ✅ Batch Effect Correction (2025-12-23) - ComBat harmonization pipeline
@@ -411,16 +417,16 @@ Implementation:
 
 #### Medium Priority
 - ❌ Variant Interpretation (8-12 days) - VEP/ClinVar/dbNSFP annotation pipeline
-- ❌ Phenotype→Gene Mapping (4-6 days) - HPO/MONDO integration
+- ✅ Phenotype→Gene Mapping (2025-12-23) - HPO gene associations, query expansion API
 - ❌ CRISPR Screen Analysis (6-9 days) - MAGeCK pipeline for functional genomics
 - ❌ Multi-Omics Latent Factors (7-10 days) - MOFA2/PLS integration
 - ❌ Lipidomics Spectral Matching (6-9 days) - MS/MS library matching
 
-#### Structural Biology & Virtual Screening (2 weeks total)
-- ❌ Protein Structure Store + AlphaFold/ColabFold (6-9 days) - Fetch, prep, provenance
-- ❌ Binding Site Detection (4-6 days) - fpocket/P2Rank pocket identification
-- ❌ Structure-Based Virtual Screening (8-12 days) - Vina/GNINA docking pipeline
-- ❌ Pose QC & Interaction Analysis (3-5 days) - PLIP fingerprints, PoseBusters
+#### Structural Biology & Virtual Screening (Track B, 2 weeks)
+- ❌ B1: Protein Structure Store (6-9 days) - PDB/AlphaFold fetch, pdbfixer prep
+- ❌ B2: Binding Site Detection (4-6 days) - fpocket/P2Rank pockets
+- ❌ B3: Structure-Based Virtual Screening (8-12 days) - Vina/GNINA docking
+- ❌ B4: Pose QC & Interactions (3-5 days) - PLIP fingerprints, PoseBusters
 
 ---
 
