@@ -30,6 +30,7 @@ from amprenta_rag.api.routers import (
     subscriptions,
     alerts,
     notebook,
+    notebooks,
     ml,
     chemistry,
     sphingolipid,
@@ -94,6 +95,7 @@ app.include_router(catalog.router, prefix="/api/v1", tags=["Catalog"])
 app.include_router(subscriptions.router, prefix="/api/v1", tags=["Subscriptions"])
 app.include_router(alerts.router, prefix="/api/v1", tags=["Alerts"])
 app.include_router(notebook.router, prefix="/api/notebook", tags=["Notebook"])
+app.include_router(notebooks.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
 
 app.include_router(phenotypes.router, prefix="/api")

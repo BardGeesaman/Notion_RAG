@@ -149,6 +149,11 @@ Drug Discovery-Specific (Completed):
 - Notebook Co-Pilot MVP (cell synthesizer)
 
 ### Advanced
+- ✅ Jupyter Advanced Features (2025-12-24)
+  - Dashboard Discovery: Notebook Gallery with 13 templates, search/filter, JupyterHub deep links
+  - SAR What-If Designer: SMILES input, real-time ADMET prediction, 2D structure rendering
+  - Scaffold Hopping: benzene→pyridine, cyclohexane→piperidine transformations
+  - Risk assessment with color-coded GREEN/YELLOW/RED heuristics
 - "Pin to Program" - dashboard instance locked to Program
 - Weekly Executive Digests (scheduled Papermill → Voila)
 - Approval gates with signed review cards
