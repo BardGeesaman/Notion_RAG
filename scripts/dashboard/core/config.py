@@ -26,6 +26,7 @@ ANALYSIS_PAGES = [
     "Notebook Generator",
     "Graph Explorer",
     "Protein Structures",
+    "Binding Sites",
 ]
 ELN_PAGES = ["Protocols", "Sample Inventory", "Q&A Tracker"]
 ADMIN_PAGES = [
@@ -117,6 +118,7 @@ ALL_PAGES = [
     "Sphingolipid Imbalance",
     "Graph Explorer",
     "Protein Structures",
+    "Binding Sites",
 ]
 
 # Mapping page name -> (module_path, function_name)
@@ -192,5 +194,6 @@ PAGE_REGISTRY = {
     "Sphingolipid Imbalance": ("scripts.dashboard.pages.sphingolipid_imbalance", "render_sphingolipid_imbalance_page"),
     "Graph Explorer": ("scripts.dashboard.pages.graph_explorer", "render_graph_explorer_page"),
     "Protein Structures": ("scripts.dashboard.pages.protein_structures", "render_protein_structures_page"),
+    "Binding Sites": ("scripts.dashboard.pages.binding_sites", "render_binding_sites_page"),
 }
 

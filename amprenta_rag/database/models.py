@@ -703,6 +703,10 @@ class ProteinStructure(Base):
         "StructureFile", back_populates="structure", cascade="all, delete-orphan"
     )
 
+    binding_sites: Mapped[List["BindingSite"]] = relationship(
+        "BindingSite", back_populates="structure", cascade="all, delete-orphan"
+    )
+
 
 class StructureFile(Base):
     """File artifact associated with a ProteinStructure (PDB/mmCIF/etc.)."""
@@ -719,6 +723,37 @@ class StructureFile(Base):
     md5_hash = Column(String(32), nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class BindingSite(Base):
+    """Binding site / pocket detected on a ProteinStructure."""
+
+    __tablename__ = "binding_sites"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    structure_id = Column(UUID(as_uuid=True), ForeignKey("protein_structures.id"), nullable=False, index=True)
+
+    pocket_rank = Column(Integer, nullable=False)
+    score = Column(Float, nullable=True)
+    volume = Column(Float, nullable=True)
+
+    center_x = Column(Float, nullable=True)
+    center_y = Column(Float, nullable=True)
+    center_z = Column(Float, nullable=True)
+
+    residues = Column(JSON, nullable=True)  # list of "chain:res:num"
+    pocket_pdb_path = Column(String(500), nullable=True)
+
+    detection_method = Column(String(50), nullable=False, default="fpocket")
+    detected_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    structure: Mapped["ProteinStructure"] = relationship(
+        "ProteinStructure", foreign_keys=[structure_id], back_populates="binding_sites"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("structure_id", "detection_method", "pocket_rank", name="uq_binding_site_rank"),
+    )
 
 
 gene_protein_map = Table(

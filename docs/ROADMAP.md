@@ -447,7 +447,13 @@ Implementation:
   - API: 6 endpoints (list, get, fetch, upload, prepare, download)
   - Dashboard: Fetch UI, prep button, download links
   - Tests: 7 passed (fetchers, storage, prep, parser, E2E)
-- ❌ B2: Binding Site Detection (4-6 days) - fpocket/P2Rank pockets
+- ✅ B2: Binding Site Detection (2025-12-23)
+  - Tool: fpocket (geometry-based, Docker-first with local fallback)
+  - Output: Top 5 pockets sorted by druggability score
+  - Storage: BindingSite table with centroid coords + pocket PDB
+  - API: detect-pockets, list, download endpoints
+  - Dashboard: Structure selector, detect button, table view
+  - Tests: 5 passed (unit + E2E)
 - ❌ B3: Structure-Based Virtual Screening (8-12 days) - Vina/GNINA docking
 - ❌ B4: Pose QC & Interactions (3-5 days) - PLIP fingerprints, PoseBusters
 
