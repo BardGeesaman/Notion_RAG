@@ -405,7 +405,11 @@ Implementation:
 #### High Priority
 
 #### Evidence Graph + GraphRAG (Track A, 2-3 weeks)
-- ❌ A1: Graph Schema + ETL (3-4 days) - graph_node/graph_edge tables, entity linking
+- ✅ A1: Graph Schema + ETL (2025-12-23)
+  - GraphEdge table with composite indexes
+  - 4 edge types: Compound↔Target, Target↔Pathway, Signature↔Pathway, Compound↔Signature
+  - EdgeBuilder service with upsert + neighbor queries
+  - API: GET /api/graph/neighbors
 - ❌ A2: Graph Service + Features (2-3 days) - k-hop, paths, typed-degree, Cytoscape viz
 - ❌ A3: GraphRAG Reranker (2-3 days) - Path-aware boosting for RAG queries
 - ❌ A4: Graph Analytics (optional 2-4 days) - Centrality, community detection

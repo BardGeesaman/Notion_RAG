@@ -19,6 +19,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Table,
@@ -599,6 +600,64 @@ class PhenotypeGeneAssociation(Base):
 
     __table_args__ = (
         UniqueConstraint("hpo_id", "gene_symbol", "disease_id", name="uq_hpo_gene_disease"),
+    )
+
+
+class GraphEdge(Base):
+    """Generic evidence graph edge between two entities.
+
+    This is a flexible table intended to represent relationships across the system
+    (compound→target, target→pathway, dataset→signature, etc.).
+
+    TODO: Consider adding a first-class `GraphNode` table once we need node-level
+    metadata, canonicalization, and typed constraints beyond `provenance`.
+    """
+
+    __tablename__ = "graph_edges"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+
+    source_entity_type = Column(String(50), nullable=False, index=True)
+    source_entity_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+
+    target_entity_type = Column(String(50), nullable=False, index=True)
+    target_entity_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+
+    relationship_type = Column(String(100), nullable=False, index=True)
+    confidence = Column(Float, nullable=True)
+    evidence_source = Column(String(100), nullable=True, index=True)
+    provenance = Column(JSON, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_entity_type",
+            "source_entity_id",
+            "target_entity_type",
+            "target_entity_id",
+            "relationship_type",
+            "evidence_source",
+            name="uq_graph_edge",
+        ),
+        Index(
+            "ix_graph_edges_src_rel",
+            "source_entity_type",
+            "source_entity_id",
+            "relationship_type",
+        ),
+        Index(
+            "ix_graph_edges_tgt_rel",
+            "target_entity_type",
+            "target_entity_id",
+            "relationship_type",
+        ),
     )
 
 

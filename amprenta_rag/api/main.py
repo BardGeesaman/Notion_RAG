@@ -34,6 +34,7 @@ from amprenta_rag.api.routers import (
     chemistry,
     sphingolipid,
     phenotypes,
+    graph,
 )
 from amprenta_rag.config import get_config
 
@@ -85,6 +86,7 @@ app.include_router(notebook.router, prefix="/api/notebook", tags=["Notebook"])
 app.include_router(ml.router, prefix="/api")
 
 app.include_router(phenotypes.router, prefix="/api")
+app.include_router(graph.router, prefix="/api")
 
 
 @app.get("/")
