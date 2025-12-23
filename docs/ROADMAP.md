@@ -445,7 +445,10 @@ Implementation:
 #### Medium Priority
 - ❌ Variant Interpretation (8-12 days) - VEP/ClinVar/dbNSFP annotation pipeline
 - ✅ Phenotype→Gene Mapping (2025-12-23) - HPO gene associations, query expansion API
-- ❌ CRISPR Screen Analysis (6-9 days) - MAGeCK pipeline for functional genomics
+- ✅ CRISPR Screen Analysis (MAGeCK) (2025-12-23)
+  - MAGeCK test (RRA) with Docker-first runner
+  - Gene-level results with FDR-based hit calling
+  - 6 API endpoints + 3-tab dashboard (screens, results, volcano)
 - ❌ Multi-Omics Latent Factors (7-10 days) - MOFA2/PLS integration
 - ✅ Lipidomics Spectral Matching (2025-12-23)
   - MGF parser for LipidBlast/GNPS spectral libraries

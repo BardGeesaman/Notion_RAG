@@ -665,6 +665,84 @@ class ConnectivityScore(Base):
     )
 
 
+class CRISPRScreen(Base):
+    """CRISPR screen run metadata."""
+
+    __tablename__ = "crispr_screens"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=False, index=True)
+
+    name = Column(String(500), nullable=False, index=True)
+    library_type = Column(String(100), nullable=True, index=True)
+    cell_line = Column(String(200), nullable=True, index=True)
+    treatment = Column(String(200), nullable=True, index=True)
+    control_label = Column(String(200), nullable=True)
+    treatment_label = Column(String(200), nullable=True)
+    status = Column(String(50), nullable=True, index=True)  # pending|running|completed|failed
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    dataset: Mapped["Dataset"] = relationship("Dataset", foreign_keys=[dataset_id])
+    guides: Mapped[List["CRISPRGuide"]] = relationship(
+        "CRISPRGuide", back_populates="screen", cascade="all, delete-orphan"
+    )
+    results: Mapped[List["CRISPRResult"]] = relationship(
+        "CRISPRResult", back_populates="screen", cascade="all, delete-orphan"
+    )
+
+
+class CRISPRGuide(Base):
+    """CRISPR guide information for a screen."""
+
+    __tablename__ = "crispr_guides"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    screen_id = Column(UUID(as_uuid=True), ForeignKey("crispr_screens.id"), nullable=False, index=True)
+
+    guide_seq = Column(String(200), nullable=False, index=True)
+    gene_symbol = Column(String(100), nullable=True, index=True)
+    gene_id = Column(String(100), nullable=True, index=True)
+
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=True, index=True)
+    feature: Mapped[Optional["Feature"]] = relationship("Feature", foreign_keys=[feature_id])
+
+    screen: Mapped["CRISPRScreen"] = relationship("CRISPRScreen", back_populates="guides", foreign_keys=[screen_id])
+
+    __table_args__ = (
+        UniqueConstraint("screen_id", "guide_seq", name="uq_crispr_guide_screen_seq"),
+        Index("ix_crispr_guides_screen_gene", "screen_id", "gene_symbol"),
+    )
+
+
+class CRISPRResult(Base):
+    """Per-gene result for a CRISPR screen."""
+
+    __tablename__ = "crispr_results"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    screen_id = Column(UUID(as_uuid=True), ForeignKey("crispr_screens.id"), nullable=False, index=True)
+
+    gene_symbol = Column(String(100), nullable=True, index=True)
+    feature_id = Column(UUID(as_uuid=True), ForeignKey("features.id"), nullable=True, index=True)
+
+    beta_score = Column(Float, nullable=True)
+    p_value = Column(Float, nullable=True)
+    fdr = Column(Float, nullable=True)
+    neg_lfc = Column(Float, nullable=True)
+    pos_lfc = Column(Float, nullable=True)
+
+    rank = Column(Integer, nullable=True, index=True)
+    is_hit = Column(Boolean, nullable=False, default=False, index=True)
+
+    screen: Mapped["CRISPRScreen"] = relationship("CRISPRScreen", back_populates="results", foreign_keys=[screen_id])
+    feature: Mapped[Optional["Feature"]] = relationship("Feature", foreign_keys=[feature_id])
+
+    __table_args__ = (
+        Index("ix_crispr_results_screen_gene", "screen_id", "gene_symbol"),
+    )
+
+
 class ReportArtifact(Base):
     """Generated report artifact metadata."""
 

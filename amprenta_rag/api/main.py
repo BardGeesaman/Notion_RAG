@@ -42,6 +42,7 @@ from amprenta_rag.api.routers import (
     connectivity,
     single_cell,
     spectral,
+    crispr,
 )
 from amprenta_rag.config import get_config
 
@@ -101,6 +102,7 @@ app.include_router(poses.router, prefix="/api")
 app.include_router(connectivity.router, prefix="/api")
 app.include_router(single_cell.router, prefix="/api")
 app.include_router(spectral.router, prefix="/api")
+app.include_router(crispr.router, prefix="/api")
 
 
 @app.get("/")
