@@ -35,6 +35,7 @@ def create_omics_dataset_page(
     Previously created a new Experimental Data Asset page in Notion.
     Datasets are now created directly in Postgres.
     """
+    del entity_count
     logger.debug(
         "[OMICS-INGESTION-UTILS] create_omics_dataset_page() is a no-op (Notion removed)"
     )

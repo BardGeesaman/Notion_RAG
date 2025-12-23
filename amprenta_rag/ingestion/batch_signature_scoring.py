@@ -47,6 +47,8 @@ def score_datasets_against_signatures_batch(
     Returns:
         Dictionary mapping dataset_page_id → list of SignatureMatchResult objects
     """
+    # Parameter retained for backward compatibility; filtering is not implemented in this module.
+    del signature_page_ids
     results: Dict[str, List[SignatureMatchResult]] = {}
 
     logger.info(

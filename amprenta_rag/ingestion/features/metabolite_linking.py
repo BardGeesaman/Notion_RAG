@@ -36,6 +36,7 @@ def link_metabolites_to_item(
 
     Previously linked metabolites to a Notion item.
     """
+    del item_page_id
     logger.debug(
         "[FEATURES][METABOLITE-LINKING] link_metabolites_to_item() is a no-op (Notion removed)"
     )

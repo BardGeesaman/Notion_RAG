@@ -52,6 +52,7 @@ def update_lipid_species_synonyms(
     synonyms: List[str],
 ) -> bool:
     """DEPRECATED: Notion support removed. Returns False."""
+    del species_page_id, synonyms
     logger.debug("[SIGNATURE-CRUD] update_lipid_species_synonyms() is a no-op (Notion removed)")
     return False
 

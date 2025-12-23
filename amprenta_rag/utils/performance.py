@@ -31,6 +31,8 @@ class PerformanceTimer:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # Context-manager protocol args are unused; keep signature for compatibility.
+        del exc_type, exc_val, exc_tb
         self.end_time = time.time()
         elapsed = self.elapsed_time()
 

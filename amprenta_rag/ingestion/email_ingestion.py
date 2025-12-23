@@ -47,6 +47,7 @@ def extract_page_content(page_id: str) -> str:
 
 def create_rag_chunk_page(chunk_id: str, chunk_text: str, parent_type: str, parent_id: str, order: int, when_iso: str) -> Optional[str]:
     """DEPRECATED: Notion support removed. Returns None."""
+    del when_iso
     logger.debug("[INGEST][EMAIL] create_rag_chunk_page() deprecated - Notion support removed")
     return None
 
@@ -57,6 +58,7 @@ def fetch_not_embedded_emails() -> List[Dict[str, Any]]:
 
 def update_email_page(page_id: str, when_iso: str) -> None:
     """DEPRECATED: Notion support removed. Does nothing."""
+    del when_iso
     logger.debug("[INGEST][EMAIL] update_email_page() deprecated - Notion support removed")
     return
 

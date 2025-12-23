@@ -58,6 +58,8 @@ def register_compound(
     registered_by: Optional[str] = None,
 ) -> Optional[str]:
     """Register a compound. Returns corporate_id or existing duplicate id."""
+    # Parameters retained for API/backward compatibility (not used by current implementation).
+    del batch_number, registered_by
     if not smiles or not smiles.strip():
         return None
 

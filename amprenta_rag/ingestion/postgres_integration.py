@@ -169,6 +169,7 @@ def embed_dataset_with_postgres_metadata(
         signature_matches: Optional list of signature match results.
         notion_page_id: Optional Notion page ID linked to this dataset.
     """
+    del species_or_features
     logger.info(
         "[POSTGRES][EMBED] embed_dataset_with_postgres_metadata() called for dataset %s (ID=%s, omics_type=%s); "
         "Postgres-aware embedding is not yet implemented, callers should fall back to Notion-based embedding.",

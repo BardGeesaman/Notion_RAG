@@ -58,6 +58,8 @@ class BaseHTTPClient:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
+        # Signature follows context-manager protocol; exception args are unused.
+        del exc_type, exc, tb
         self.close()
 
     def _request(

@@ -138,6 +138,7 @@ def _update_experiment_embedding_metadata(
 
     Previously updated the Experiment page with embedding metadata in Notion.
     """
+    del embedding_count
     logger.debug(
         "[INGEST][EXPERIMENT] _update_experiment_embedding_metadata() is a no-op (Notion removed)"
     )

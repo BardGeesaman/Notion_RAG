@@ -17,21 +17,6 @@ from amprenta_rag.ingestion.feature_extraction import (
     link_features_to_notion_items,
 )
 from amprenta_rag.ingestion.metadata_semantic import get_literature_semantic_metadata
-# DEPRECATED: Notion imports removed - Postgres is now source of truth
-# from amprenta_rag.ingestion.notion_pages import (
-#     ensure_literature_page,
-#     update_literature_page,
-# )
-
-def ensure_literature_page(item, parent_type: str) -> str:
-    """DEPRECATED: Notion support removed. Returns placeholder page ID."""
-    logger.debug("[ZOTERO][INGESTION] ensure_literature_page() deprecated - Notion support removed")
-    return "placeholder-page-id"
-
-def update_literature_page(page_id: str, when_iso: str) -> None:
-    """DEPRECATED: Notion support removed. Does nothing."""
-    logger.debug("[ZOTERO][INGESTION] update_literature_page() deprecated - Notion support removed")
-    return
 from amprenta_rag.ingestion.signature_integration import (
     detect_and_ingest_signatures_from_content,
 )
@@ -46,6 +31,20 @@ from amprenta_rag.ingestion.zotero_api import (
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
+
+
+# DEPRECATED: Notion imports removed - Postgres is now source of truth
+def ensure_literature_page(item, parent_type: str) -> str:
+    """DEPRECATED: Notion support removed. Returns placeholder page ID."""
+    logger.debug("[ZOTERO][INGESTION] ensure_literature_page() deprecated - Notion support removed")
+    return "placeholder-page-id"
+
+
+def update_literature_page(page_id: str, when_iso: str) -> None:
+    """DEPRECATED: Notion support removed. Does nothing."""
+    del when_iso
+    logger.debug("[ZOTERO][INGESTION] update_literature_page() deprecated - Notion support removed")
+    return
 
 
 def ingest_zotero_item(

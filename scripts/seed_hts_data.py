@@ -60,6 +60,7 @@ def _ensure_compounds(db, count: int, rng: random.Random) -> List[Compound]:
 
 
 def _simulate_plate(compounds: List[Compound], plate_idx: int, rng: random.Random) -> List[Dict]:
+    del plate_idx
     # Controls
     pos_wells = set(WELLS_96[:8])   # first 8 wells as positive
     neg_wells = set(WELLS_96[8:16]) # next 8 as negative

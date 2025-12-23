@@ -36,6 +36,7 @@ def link_feature_to_dataset(
 
     Previously linked a feature page to a dataset page in Notion.
     """
+    del feature_page_id
     logger.debug(
         "[FEATURES][GENERAL-LINKING] link_feature_to_dataset() is a no-op (Notion removed)"
     )

@@ -89,3 +89,11 @@ From `reports/dead_code_summary.md`:
 - Status: No patches available yet (monitoring)
 - Packages pinned to latest versions in requirements.txt
 
+### Dead Code Removal
+- Triaged 99 high-confidence vulture candidates
+- Removed 23 true dead code items (unused args, locals, stubs)
+- Skipped 69 false positives (FastAPI routes, Pydantic, fixtures)
+- 7 uncertain candidates deferred for manual review
+- Files modified: 17
+- Tests: PASS
+

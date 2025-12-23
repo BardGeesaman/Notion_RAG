@@ -74,6 +74,7 @@ def extract_aggregated_context(
     Returns:
         Empty context dictionary
     """
+    del page_type
     logger.debug(
         "[RAG][CROSS-OMICS] extract_aggregated_context() is deprecated - Notion removed"
     )

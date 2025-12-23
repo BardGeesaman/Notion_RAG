@@ -381,6 +381,7 @@ def write_evidence_report_to_notion(
 
     Previously wrote an evidence report to a Notion page.
     """
+    del target_page_id
     logger.debug(
         "[REPORTING][EVIDENCE] write_evidence_report_to_notion() is a no-op (Notion removed)"
     )
