@@ -421,7 +421,11 @@ Implementation:
   - Hybrid entity extraction (LLM + regex fallback)
   - Alpha blending: score * (1 + 0.3 * graph_boost)
   - LRU cache (20k entries) for performance
-- ❌ A4: Graph Analytics (optional 2-4 days) - Centrality, community detection
+- ✅ A4: Graph Analytics (2025-12-23)
+  - Degree centrality + Louvain community detection
+  - POST /api/graph/analytics endpoint
+  - Graph Explorer: "Size by Degree" + "Color by Community" toggles
+  - Modularity legend display
 
 - ❌ Connectivity Mapping (LINCS/CMap) (7-10 days) - Signature reversal for drug repurposing
 - ❌ Single-Cell Omics Integration (10-15 days) - scRNA-seq/scATAC-seq with Scanpy

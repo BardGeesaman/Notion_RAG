@@ -47,3 +47,10 @@ def test_path_form_elements_exist(page: Page, streamlit_server: str) -> None:
     expect(page.get_by_role("button", name=re.compile(r"Find path")).first).to_be_visible(timeout=10000)
 
 
+def test_analytics_checkboxes_exist(page: Page, streamlit_server: str) -> None:
+    """Verify analytics toggles exist on Graph Explorer page."""
+    _goto(page, streamlit_server)
+    expect(page.get_by_text("Size by Degree").first).to_be_visible(timeout=10000)
+    expect(page.get_by_text("Color by Community").first).to_be_visible(timeout=10000)
+
+

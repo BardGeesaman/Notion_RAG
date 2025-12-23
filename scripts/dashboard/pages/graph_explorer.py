@@ -13,9 +13,17 @@ import streamlit as st
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 TRAVERSE_ENDPOINT = f"{API_BASE}/api/graph/traverse"
 PATH_ENDPOINT = f"{API_BASE}/api/graph/path"
+ANALYTICS_ENDPOINT = f"{API_BASE}/api/graph/analytics"
 
 
-def _to_agraph(cytoscape: Dict[str, Any]):
+def _to_agraph(
+    cytoscape: Dict[str, Any],
+    *,
+    degree_centrality: Dict[str, float] | None = None,
+    communities: Dict[str, int] | None = None,
+    size_by_degree: bool = False,
+    color_by_community: bool = False,
+):
     from streamlit_agraph import Node, Edge  # type: ignore[import-not-found]
 
     COLORS = {
@@ -26,15 +34,42 @@ def _to_agraph(cytoscape: Dict[str, Any]):
         "dataset": "#3B1F2B",
     }
 
+    # Simple palette for community recoloring (fallback if > len palette)
+    COMM_COLORS = [
+        "#2E86AB",
+        "#A23B72",
+        "#F18F01",
+        "#C73E1D",
+        "#3B1F2B",
+        "#4ECDC4",
+        "#C7F9CC",
+        "#9B5DE5",
+        "#F15BB5",
+        "#00BBF9",
+    ]
+
     nodes = []
+    deg = degree_centrality or {}
+    comms = communities or {}
+    max_deg = max(deg.values()) if deg else 0.0
     for n in cytoscape.get("nodes", []):
         d = (n or {}).get("data") or {}
-        color = COLORS.get(d.get("entity_type"), "#888888")
+        base_color = COLORS.get(d.get("entity_type"), "#888888")
+        node_id = d.get("id")
+        color = base_color
+        if color_by_community and node_id and node_id in comms:
+            cid = int(comms.get(node_id, 0))
+            color = COMM_COLORS[cid % len(COMM_COLORS)]
+        size = 20
+        if size_by_degree and node_id and max_deg > 0:
+            val = float(deg.get(node_id, 0.0))
+            # Map [0, max] -> [10, 50]
+            size = int(10 + (40 * (val / max_deg)))
         nodes.append(
             Node(
                 id=d.get("id"),
                 label=d.get("label"),
-                size=20,
+                size=size,
                 color=color,
                 title=f"{d.get('entity_type')} {d.get('entity_id')}",
             )
@@ -99,6 +134,12 @@ def render_graph_explorer_page() -> None:
         help="Optional: filter which edge types are traversed.",
     )
 
+    col_opt1, col_opt2 = st.columns(2)
+    with col_opt1:
+        size_by_degree = st.checkbox("Size by Degree", value=False)
+    with col_opt2:
+        color_by_community = st.checkbox("Color by Community", value=False)
+
     if st.button("Traverse", type="primary"):
         try:
             entity_id = UUID(entity_id_str.strip())
@@ -130,10 +171,40 @@ def render_graph_explorer_page() -> None:
             st.warning("Result truncated to max nodes.")
         st.caption(f"Nodes: {len(data.get('nodes') or [])} | Edges: {len(data.get('edges') or [])}")
 
+        degree = None
+        comms = None
+        if size_by_degree or color_by_community:
+            metrics = []
+            if size_by_degree:
+                metrics.append("degree_centrality")
+            if color_by_community:
+                metrics.append("communities")
+            try:
+                with httpx.Client(timeout=15) as client:
+                    resp = client.post(
+                        ANALYTICS_ENDPOINT,
+                        json={"nodes": data.get("nodes") or [], "edges": data.get("edges") or [], "metrics": metrics},
+                    )
+                if resp.status_code < 400:
+                    a = resp.json() or {}
+                    degree = a.get("degree_centrality")
+                    comms = a.get("communities")
+                    st.session_state["graph_explorer_analytics"] = a
+                else:
+                    st.warning("Analytics API returned error; using default styling.")
+            except Exception:
+                st.warning("Analytics unavailable; using default styling.")
+
         try:
             from streamlit_agraph import agraph, Config  # type: ignore[import-not-found]
 
-            nodes, edges = _to_agraph(data["cytoscape"])
+            nodes, edges = _to_agraph(
+                data["cytoscape"],
+                degree_centrality=degree,
+                communities=comms,
+                size_by_degree=size_by_degree,
+                color_by_community=color_by_community,
+            )
             config = Config(
                 width=900,
                 height=600,
@@ -142,6 +213,16 @@ def render_graph_explorer_page() -> None:
                 hierarchical=False,
             )
             agraph(nodes=nodes, edges=edges, config=config)
+
+            if color_by_community:
+                analytics_data = st.session_state.get("graph_explorer_analytics", {})
+                if analytics_data:
+                    st.caption("**Community Detection:**")
+                    for comm_id, size in (analytics_data.get("community_sizes") or {}).items():
+                        st.caption(f"  - Community {comm_id}: {size} nodes")
+                    mod = analytics_data.get("modularity")
+                    if mod is not None:
+                        st.metric("Modularity", f"{mod:.3f}", help="Higher = better community structure")
         except Exception as e:  # noqa: BLE001
             st.error(f"Visualization failed (is streamlit-agraph installed?): {e}")
             st.json(data["cytoscape"])

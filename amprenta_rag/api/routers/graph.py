@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from amprenta_rag.graph.cytoscape import to_cytoscape_json
 from amprenta_rag.graph.edge_builder import EdgeBuilder, Direction
+from amprenta_rag.graph.analytics import compute_graph_analytics
 from amprenta_rag.graph.traversal import k_hop_subgraph, shortest_path
 
 
@@ -54,6 +55,19 @@ class GraphPathResponse(BaseModel):
     nodes: List[Dict[str, Any]] = []
     edges: List[Dict[str, Any]] = []
     cytoscape: Optional[Dict[str, Any]] = None
+
+
+class GraphAnalyticsRequest(BaseModel):
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+    metrics: List[str]
+
+
+class GraphAnalyticsResponse(BaseModel):
+    degree_centrality: Optional[Dict[str, float]] = None
+    communities: Optional[Dict[str, int]] = None
+    community_sizes: Optional[Dict[str, int]] = None
+    modularity: Optional[float] = None
 
 
 @router.get("/neighbors", response_model=List[NeighborResponse])
@@ -130,6 +144,30 @@ def path(payload: PathRequest) -> GraphPathResponse:
         return GraphPathResponse(found=True, nodes=nodes, edges=edges, cytoscape=cy)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Graph path failed: {e}")
+
+
+@router.post("/analytics", response_model=GraphAnalyticsResponse)
+def analytics(payload: GraphAnalyticsRequest) -> GraphAnalyticsResponse:
+    try:
+        out = compute_graph_analytics(payload.nodes or [], payload.edges or [], payload.metrics or [])
+        comms = out.get("communities") if isinstance(out, dict) else None
+        sizes: Optional[Dict[str, int]] = None
+        if isinstance(comms, dict) and comms:
+            tmp: Dict[int, int] = {}
+            for _, cid in comms.items():
+                try:
+                    tmp[int(cid)] = tmp.get(int(cid), 0) + 1
+                except Exception:
+                    continue
+            sizes = {str(k): v for k, v in tmp.items()}
+        return GraphAnalyticsResponse(
+            degree_centrality=out.get("degree_centrality"),
+            communities=out.get("communities"),
+            modularity=out.get("modularity"),
+            community_sizes=sizes,
+        )
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Graph analytics failed: {e}")
 
 
 __all__ = ["router"]
