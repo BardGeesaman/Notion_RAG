@@ -160,3 +160,9 @@ pytensor>=2.14
 # Bayesian optimization (BoTorch / Ax)
 botorch>=0.9
 ax-platform>=0.3
+
+# ML Model Registry + ADMET
+xgboost>=2.0
+mordred>=1.2
+tdc>=0.4
+joblib>=1.3

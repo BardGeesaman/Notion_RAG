@@ -529,6 +529,40 @@ class NextflowJob(Base):
     params = Column(JSON)  # Additional Nextflow params
 
 
+class MLModel(Base):
+    """Machine learning model registry entry."""
+
+    __tablename__ = "ml_models"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    version = Column(String(50), nullable=False)
+    model_type = Column(String(100), nullable=False)  # "admet_classification", "admet_regression"
+    framework = Column(String(50), nullable=False)  # "xgboost", "sklearn"
+    artifact_path = Column(String(500), nullable=False)
+
+    # Training metadata
+    training_dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=True)
+    features = Column(JSON, nullable=True)  # List of feature names
+    hyperparameters = Column(JSON, nullable=True)
+
+    # Performance
+    metrics = Column(JSON, nullable=True)  # {"auc": 0.92, "rmse": 0.45}
+
+    # Lifecycle
+    status = Column(String(50), default="active")  # "active", "archived", "training"
+    description = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (UniqueConstraint("name", "version", name="uq_ml_model_name_version"),)
+
+
 gene_protein_map = Table(
     "gene_protein_map",
     Base.metadata,

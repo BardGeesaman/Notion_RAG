@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 
-from amprenta_rag.analysis.moa_inference import infer_moa
+from amprenta_rag.analysis.moa_inference import infer_moa, infer_moa_bayesian
 from amprenta_rag.api import schemas
 from amprenta_rag.database.models import Compound
 from amprenta_rag.database.session import db_session
@@ -27,7 +27,10 @@ def _validate_compound(compound_id: UUID) -> None:
 )
 def infer_moa_endpoint(request: schemas.MOAInferenceRequest) -> schemas.MOAInferenceResult:
     _validate_compound(request.compound_id)
-    candidates = infer_moa(request.compound_id, request.dataset_ids)
+    if request.method == "bayesian":
+        candidates = infer_moa_bayesian(request.compound_id, request.dataset_ids)
+    else:
+        candidates = infer_moa(request.compound_id, request.dataset_ids)
     return schemas.MOAInferenceResult(
         compound_id=request.compound_id,
         candidates=[schemas.MOACandidate(**cast(Dict[str, Any], c.asdict())) for c in candidates],

@@ -372,7 +372,10 @@ Implementation:
   - Phase 2: Bayesian Optimization for Screening (BoTorch qEI, single-objective)
   - Phase 3: MOA Bayesian Evidence Fusion (PyMC Beta regression)
   - Tier 2 deferred: Prior Builder, Multi-Objective BO, Posterior Inclusion Probabilities
-- ❌ ML/AI model registry + predictive ADMET
+- ✅ ML/AI model registry + predictive ADMET (2025-12-23)
+  - Model Registry: Postgres metadata + joblib artifacts, versioning, caching
+  - ADMET Predictor: Morgan FP + RDKit descriptors, API endpoints
+  - Phase 2: Train models with TDC datasets (deferred - env issues)
 - ❌ OOP Refactoring Review
 
 ### Universal Unstructured AI Extraction (AI ETL)

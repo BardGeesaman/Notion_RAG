@@ -19,6 +19,7 @@ from amprenta_rag.api.routers import (
     sar,
     reports,
     explainability,
+    analysis,
     quality,
     protocols,
     hts,
@@ -28,6 +29,8 @@ from amprenta_rag.api.routers import (
     subscriptions,
     alerts,
     notebook,
+    ml,
+    chemistry,
 )
 from amprenta_rag.config import get_config
 
@@ -62,16 +65,19 @@ app.include_router(sar.router, prefix="/api/v1/sar", tags=["SAR"])
 app.include_router(
     explainability.router, prefix="/api/v1", tags=["explainability"]
 )
+app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
 app.include_router(reports.router, prefix="/api/v1", tags=["Reports"])
 app.include_router(quality.router, prefix="/api/v1", tags=["Quality"])
 app.include_router(protocols.router, prefix="/api/v1", tags=["Protocols"])
 app.include_router(hts.router, prefix="/api/v1", tags=["HTS"])
 app.include_router(pathways.router, prefix="/api/v1", tags=["Pathways"])
 app.include_router(moa.router, prefix="/api/v1", tags=["MOA"])
+app.include_router(chemistry.router, prefix="/api/v1", tags=["Chemistry"])
 app.include_router(catalog.router, prefix="/api/v1", tags=["Catalog"])
 app.include_router(subscriptions.router, prefix="/api/v1", tags=["Subscriptions"])
 app.include_router(alerts.router, prefix="/api/v1", tags=["Alerts"])
 app.include_router(notebook.router, prefix="/api/notebook", tags=["Notebook"])
+app.include_router(ml.router, prefix="/api")
 
 
 @app.get("/")
