@@ -1,9 +1,17 @@
-"""Harvest scheduler service for automated repository scanning."""
+"""Harvest scheduler service for automated repository scanning.
+
+Extended to support periodic external source synchronization (ChEMBL/PubChem).
+"""
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
+
+from amprenta_rag.database.session import db_session
+from amprenta_rag.sync.adapters.chembl import ChEMBLAdapter
+from amprenta_rag.sync.adapters.pubchem import PubChemAdapter
+from amprenta_rag.sync.manager import SyncManager
 
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import HarvestSchedule
@@ -23,6 +31,8 @@ except ImportError:
 
 _scheduler_instance: Optional[BackgroundScheduler] = None
 
+_sync_manager: Optional[SyncManager] = None
+
 
 def get_scheduler() -> BackgroundScheduler:
     """Get or create the scheduler singleton."""
@@ -35,6 +45,18 @@ def get_scheduler() -> BackgroundScheduler:
         logger.info("[HARVEST] Created scheduler instance")
 
     return _scheduler_instance
+
+
+def get_sync_manager() -> SyncManager:
+    """Get or create a SyncManager singleton with core adapters registered."""
+    global _sync_manager
+    if _sync_manager is None:
+        mgr = SyncManager(db_session)
+        mgr.register_adapter(ChEMBLAdapter())
+        mgr.register_adapter(PubChemAdapter(db_session))
+        _sync_manager = mgr
+        logger.info("[SYNC] Created SyncManager singleton")
+    return _sync_manager
 
 
 def start_scheduler() -> None:
@@ -54,6 +76,8 @@ def stop_scheduler() -> None:
         _scheduler_instance.shutdown()
         logger.info("[HARVEST] Scheduler stopped")
     _scheduler_instance = None
+    global _sync_manager
+    _sync_manager = None
 
 
 def run_harvest(schedule_id: str) -> None:
@@ -161,3 +185,33 @@ def load_active_schedules() -> None:
                 logger.error("[HARVEST] Failed to schedule %s: %r", schedule.name, e)
     finally:
         db_gen.close()
+
+
+def run_external_sync(source: str, sync_type: str = "incremental") -> None:
+    """Run an external sync job immediately (scheduler entrypoint)."""
+    mgr = get_sync_manager()
+    job = mgr.create_sync_job(source=source, sync_type=sync_type)
+    mgr.run_sync(job.id)
+
+
+def schedule_external_sync(source: str, interval_hours: int = 24) -> None:
+    """Schedule periodic external sync for a given source."""
+    scheduler = get_scheduler()
+    src = (source or "").strip().lower()
+    if not src:
+        raise ValueError("source is required")
+
+    job_id = f"sync_{src}"
+    if scheduler.get_job(job_id):
+        scheduler.remove_job(job_id)
+
+    scheduler.add_job(
+        run_external_sync,
+        trigger=IntervalTrigger(hours=float(interval_hours)),
+        args=[src, "incremental"],
+        id=job_id,
+        name=f"External Sync: {src}",
+        start_date=datetime.utcnow(),
+        replace_existing=True,
+    )
+    logger.info("[SYNC] Scheduled external sync for %s (every %d hours)", src, interval_hours)

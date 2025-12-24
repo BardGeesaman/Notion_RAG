@@ -216,7 +216,14 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 ## External Repository Integration (Future)
 
 ### Tier 1 - High Impact
-- ❌ External Sync Orchestrator (GEO, ChEMBL, PubChem, UniProt, KEGG adapters)
+- ✅ External Sync Orchestrator MVP (2025-12-24)
+  - Schema: SyncJob, SyncRecord, SyncConflict, ChEMBLActivity, PubChemBioassay
+  - Adapters: ChEMBL (bioactivity), PubChem (bioassay)
+  - Incremental sync with checksum-based change detection
+  - API: 5 endpoints (run, status, list, conflicts, resolve)
+  - Dashboard: Sync Monitor (jobs, conflicts, stats)
+  - APScheduler integration for scheduled syncs
+  - Phase 2: UniProt, KEGG, GEO incremental, auto-conflict resolution
 - ❌ Provenance Ledger + Checksums (audit trail, diffs)
 - ❌ GEO Incremental Harvester + Metadata Normalization
 - ❌ ChEMBL/PubChem Bioactivity Sync (compound-centric)

@@ -64,6 +64,11 @@ class Compound(Base):
     rotatable_bonds = Column(Integer, nullable=True)
     aromatic_rings = Column(Integer, nullable=True)
 
+    # External sync identifiers (ChEMBL/PubChem)
+    chembl_id = Column(String(50), nullable=True, index=True)
+    pubchem_cid = Column(Integer, nullable=True, index=True)
+    last_synced_at = Column(DateTime(timezone=True), nullable=True)
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

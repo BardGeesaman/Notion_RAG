@@ -1163,6 +1163,153 @@ class ExtractedDocument(Base):
     )
 
 
+class SyncJob(Base):
+    """A synchronization job against an external source (ChEMBL/PubChem/UniProt/KEGG)."""
+
+    __tablename__ = "sync_jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+
+    source = Column(String(50), nullable=False, index=True)  # chembl/pubchem/uniprot/kegg
+    sync_type = Column(String(50), nullable=False)  # full/incremental
+    status = Column(String(50), nullable=False, default="pending", index=True)  # pending/running/completed/failed
+
+    records_synced = Column(Integer, nullable=False, default=0)
+    records_updated = Column(Integer, nullable=False, default=0)
+    records_new = Column(Integer, nullable=False, default=0)
+    conflicts_detected = Column(Integer, nullable=False, default=0)
+
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    error_log = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    records: Mapped[List["SyncRecord"]] = relationship(
+        "SyncRecord", back_populates="job", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_sync_jobs_source_status", "source", "status"),
+    )
+
+
+class SyncRecord(Base):
+    """A unique mapping of a source external_id to an internal entity (best-effort)."""
+
+    __tablename__ = "sync_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+
+    job_id = Column(UUID(as_uuid=True), ForeignKey("sync_jobs.id"), nullable=True, index=True)
+    source = Column(String(50), nullable=False, index=True)
+    external_id = Column(String(200), nullable=False, index=True)  # e.g. CHEMBL123456
+
+    entity_type = Column(String(50), nullable=False)  # compound/activity/assay/target
+    entity_id = Column(UUID(as_uuid=True), nullable=True)
+
+    checksum = Column(String(32), nullable=False)  # MD5 hash
+    synced_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    # NOTE: `metadata` is reserved on SQLAlchemy declarative models; use `metadata_` attribute name.
+    metadata_ = Column("metadata", JSONB, nullable=False)
+
+    job: Mapped[Optional["SyncJob"]] = relationship("SyncJob", back_populates="records", foreign_keys=[job_id])
+    conflicts: Mapped[List["SyncConflict"]] = relationship(
+        "SyncConflict", back_populates="record", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("source", "external_id", name="uq_sync_record_source_external_id"),
+        Index("ix_sync_records_source_external_id", "source", "external_id"),
+    )
+
+
+class SyncConflict(Base):
+    """A conflict detected during sync (e.g., local edits or schema mismatch)."""
+
+    __tablename__ = "sync_conflicts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    record_id = Column(UUID(as_uuid=True), ForeignKey("sync_records.id"), nullable=False, index=True)
+
+    conflict_type = Column(String(50), nullable=False)  # local_edit/schema_mismatch/duplicate
+    local_value = Column(JSONB, nullable=False)
+    external_value = Column(JSONB, nullable=False)
+
+    resolution_status = Column(
+        String(50),
+        nullable=False,
+        default="pending",  # pending/auto_merged/manual_override/ignored
+        index=True,
+    )
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+
+    record: Mapped["SyncRecord"] = relationship("SyncRecord", back_populates="conflicts", foreign_keys=[record_id])
+
+    __table_args__ = (
+        Index("ix_sync_conflicts_record_status", "record_id", "resolution_status"),
+    )
+
+
+class ChEMBLActivity(Base):
+    """ChEMBL activity measurement linked to an optional internal Compound."""
+
+    __tablename__ = "chembl_activities"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=True, index=True)
+
+    chembl_molecule_id = Column(String(50), nullable=False, index=True)
+    chembl_assay_id = Column(String(50), nullable=False, index=True)
+
+    activity_type = Column(String(50), nullable=True)  # IC50/Ki/Kd/EC50
+    value = Column(Float, nullable=True)
+    units = Column(String(50), nullable=True)
+    relation = Column(String(10), nullable=True)
+
+    target_chembl_id = Column(String(50), nullable=True, index=True)
+    target_name = Column(String(500), nullable=True)
+    assay_type = Column(String(50), nullable=True)  # binding/functional
+
+    synced_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    compound: Mapped[Optional["Compound"]] = relationship("Compound", foreign_keys=[compound_id])
+
+    __table_args__ = (
+        Index("ix_chembl_activities_molecule_assay", "chembl_molecule_id", "chembl_assay_id"),
+    )
+
+
+class PubChemBioassay(Base):
+    """PubChem bioassay record linked to an optional internal Compound."""
+
+    __tablename__ = "pubchem_bioassays"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=True, index=True)
+
+    pubchem_cid = Column(Integer, nullable=False, index=True)
+    aid = Column(Integer, nullable=False, index=True)
+
+    activity_outcome = Column(String(50), nullable=True)  # active/inactive/inconclusive
+    activity_score = Column(Float, nullable=True)
+    assay_name = Column(String(500), nullable=True)
+
+    synced_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    compound: Mapped[Optional["Compound"]] = relationship("Compound", foreign_keys=[compound_id])
+
+    __table_args__ = (
+        Index("ix_pubchem_bioassays_cid_aid", "pubchem_cid", "aid"),
+    )
+
+
 class MLModel(Base):
     """Machine learning model registry entry."""
 
