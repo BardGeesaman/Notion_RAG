@@ -249,9 +249,12 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - ❌ Lightweight Model Registry + Reproducibility
 - ❌ AutoML Notebook Templates
 - ❌ Drift & Calibration Monitoring
-- ❌ Universal Unstructured AI Extraction (AI ETL) (2-3 weeks)
-  - Ingest PDFs, DOCX, web pages, images (OCR)
-  - LLM entity extraction + normalization
+- ✅ Universal Unstructured AI Extraction (AI ETL) MVP (2025-12-24)
+  - Parsers: DOCX, PPTX, Excel, CSV (PDF existing)
+  - Structured LLM extraction with Pydantic schemas
+  - Batch upload API + background processing
+  - Dashboard: AI Extraction page (3 tabs)
+  - Phase 2: OCR, web scraping, entity normalization APIs
 
 ## Bayesian Framework
 

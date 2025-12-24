@@ -112,6 +112,10 @@ class RAGChunk(Base):
     email_id = Column(UUID(as_uuid=True), ForeignKey("emails.id"), nullable=True, index=True)
     email: Mapped[Optional["Email"]] = relationship(back_populates="chunks")
 
+    extraction_job_id = Column(
+        UUID(as_uuid=True), ForeignKey("extraction_jobs.id"), nullable=True, index=True
+    )
+
 
 class LiteratureCritique(Base):
     """Critical analysis of scientific literature."""

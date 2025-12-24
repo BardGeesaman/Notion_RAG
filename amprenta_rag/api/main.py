@@ -47,6 +47,7 @@ from amprenta_rag.api.routers import (
     multi_omics,
     variants,
     companies,
+    extraction,
 )
 from amprenta_rag.config import get_config
 
@@ -111,6 +112,7 @@ app.include_router(crispr.router, prefix="/api")
 app.include_router(multi_omics.router, prefix="/api")
 app.include_router(variants.router, prefix="/api")
 app.include_router(companies.router, prefix="/api")
+app.include_router(extraction.router, prefix="/api")
 
 
 @app.get("/")

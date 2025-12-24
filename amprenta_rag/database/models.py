@@ -26,7 +26,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, relationship
 
 from amprenta_rag.database.base import Base
@@ -1094,6 +1094,73 @@ class NextflowJob(Base):
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     params = Column(JSON)  # Additional Nextflow params
+
+
+class ExtractionJob(Base):
+    """Batch document extraction job for file-based ingestion."""
+
+    __tablename__ = "extraction_jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    batch_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+    file_count = Column(Integer, nullable=False)
+    completed_count = Column(Integer, nullable=False, default=0)
+    status = Column(String(50), nullable=False, default="pending")  # pending|running|completed|failed
+
+    started_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    documents: Mapped[List["ExtractedDocument"]] = relationship(
+        "ExtractedDocument", back_populates="job", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_extraction_jobs_status", "status"),
+        Index("ix_extraction_jobs_batch_status", "batch_id", "status"),
+    )
+
+
+class ExtractedDocument(Base):
+    """Extracted document metadata for a given ExtractionJob."""
+
+    __tablename__ = "extracted_documents"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("extraction_jobs.id"), nullable=False, index=True)
+
+    file_path = Column(String(500), nullable=False)
+    original_filename = Column(String(500), nullable=False)
+    doc_type = Column(String(50), nullable=False, index=True)  # pdf|docx|pptx|csv|xlsx
+
+    extracted_entities = Column(JSONB, nullable=False)
+    extraction_config = Column(JSONB, nullable=True)
+
+    status = Column(String(50), nullable=False, default="pending", index=True)  # pending|completed|failed
+    error_log = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    job: Mapped["ExtractionJob"] = relationship("ExtractionJob", back_populates="documents", foreign_keys=[job_id])
+
+    __table_args__ = (
+        Index("ix_extracted_documents_job_status", "job_id", "status"),
+        Index("ix_extracted_documents_job_doc_type", "job_id", "doc_type"),
+    )
 
 
 class MLModel(Base):
