@@ -82,9 +82,12 @@ Simple status legend:
   - 23 true dead code items removed
   - Maintenance scripts + reports created
 - ❌ OOP Refactoring Review
-- ❌ Comprehensive Test Data Seeding Suite (1-2 weeks)
-  - Idempotent seed scripts for all domains
-  - Standard CLI: --size {small,medium,large} --reset --seed
+- ✅ Comprehensive Test Data Seeding Suite (2025-12-24)
+  - 13 domain seeders (added: genomics, single-cell, structures)
+  - seed_utils.py: shared CLI parser, progress bars, schema detection
+  - Enhanced seed_all.py: validation, summary, graceful skip
+  - Idempotent design: safe to re-run without --reset
+  - CI workflow: .github/workflows/seed_test_data.yml
 
 ---
 
