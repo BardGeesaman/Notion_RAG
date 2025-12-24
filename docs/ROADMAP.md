@@ -216,39 +216,39 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 ## External Repository Integration (Future)
 
 ### Tier 1 - High Impact
-- External Sync Orchestrator (GEO, ChEMBL, PubChem, UniProt, KEGG adapters)
-- Provenance Ledger + Checksums (audit trail, diffs)
-- GEO Incremental Harvester + Metadata Normalization
-- ChEMBL/PubChem Bioactivity Sync (compound-centric)
+- ❌ External Sync Orchestrator (GEO, ChEMBL, PubChem, UniProt, KEGG adapters)
+- ❌ Provenance Ledger + Checksums (audit trail, diffs)
+- ❌ GEO Incremental Harvester + Metadata Normalization
+- ❌ ChEMBL/PubChem Bioactivity Sync (compound-centric)
 
 ### Tier 2 - Strategic
-- UniProt/KEGG Mapping Refresh
+- ❌ UniProt/KEGG Mapping Refresh
 - ✅ Repository Subscriptions & Alerts (saved queries) - 2024-12-18
 - ✅ External Data Catalog Page (health, freshness dashboard) - 2024-12-18
 
 ### Tier 3 - AI-Assisted
-- AI Dataset Finder (NL → cross-repo query)
-- Metadata Enrichment from Abstracts (LLM extraction)
-- AI Relevance & Novelty Scoring
+- ❌ AI Dataset Finder (NL → cross-repo query)
+- ❌ Metadata Enrichment from Abstracts (LLM extraction)
+- ❌ AI Relevance & Novelty Scoring
 
 ## Machine Learning (Future)
 
 ### Tier 1 - High Impact
-- ADMET Baselines (QSAR with SHAP explainability)
-- Structural/Toxicity Alerts (PAINS/Lilly + ML)
-- Target-Activity QSAR (per-target classifiers)
-- Signature→MOA Inference (mechanism of action)
-- Biomarker Discovery (stable feature selection)
+- ❌ ADMET Baselines (QSAR with SHAP explainability)
+- ❌ Structural/Toxicity Alerts (PAINS/Lilly + ML)
+- ❌ Target-Activity QSAR (per-target classifiers)
+- ❌ Signature→MOA Inference (mechanism of action)
+- ❌ Biomarker Discovery (stable feature selection)
 
 ### Tier 2 - Strategic
-- Potency & Liability Multi-objective Ranking
-- Assay Outcome Predictors (program-specific)
-- Active Learning for Screening
+- ❌ Potency & Liability Multi-objective Ranking
+- ❌ Assay Outcome Predictors (program-specific)
+- ❌ Active Learning for Screening
 
 ### Tier 3 - Platform
-- Lightweight Model Registry + Reproducibility
-- AutoML Notebook Templates
-- Drift & Calibration Monitoring
+- ❌ Lightweight Model Registry + Reproducibility
+- ❌ AutoML Notebook Templates
+- ❌ Drift & Calibration Monitoring
 - ❌ Universal Unstructured AI Extraction (AI ETL) (2-3 weeks)
   - Ingest PDFs, DOCX, web pages, images (OCR)
   - LLM entity extraction + normalization
@@ -275,16 +275,16 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 ## Advanced Visualization (Future)
 
 ### Tier 1 - High Impact
-- 3D Molecule Viewer + Conformer Overlay (py3Dmol)
-- Compound-Target Network (Cytoscape.js)
-- Pathway Maps with Data Overlays
-- Dose-Response & Time-Series Explorer (Plotly)
-- Multi-Omics Integration View (Alluvial/UpSet)
+- ❌ 3D Molecule Viewer + Conformer Overlay (py3Dmol)
+- ❌ Compound-Target Network (Cytoscape.js)
+- ❌ Pathway Maps with Data Overlays
+- ❌ Dose-Response & Time-Series Explorer (Plotly)
+- ❌ Multi-Omics Integration View (Alluvial/UpSet)
 
 ### Tier 2 - Strategic
-- SAR Grid & R-Group Explorer
-- Interactive Plate Maps (HTS QC)
-- Program/Experiment Voila Dashboards
+- ❌ SAR Grid & R-Group Explorer
+- ❌ Interactive Plate Maps (HTS QC)
+- ❌ Program/Experiment Voila Dashboards
 
 ### Libraries
 - Networks: Cytoscape.js
@@ -294,18 +294,18 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 ## Collaboration (Future)
 
 ### Tier 1 - High Impact
-- Entity-Scoped Sharing & Roles (per-entity ACLs)
-- Comments, Mentions, Inline Annotations
-- Review & Approval Workflows (datasets, signatures, protocols)
-- Activity Feed + Notifications
-- Shared Notebooks & Project Library
-- Project/Team Workspaces Hub
+- ❌ Entity-Scoped Sharing & Roles (per-entity ACLs)
+- ❌ Comments, Mentions, Inline Annotations
+- ❌ Review & Approval Workflows (datasets, signatures, protocols)
+- ❌ Activity Feed + Notifications
+- ❌ Shared Notebooks & Project Library
+- ❌ Project/Team Workspaces Hub
 
 ### Tier 2 - Strategic
-- Collaborative Notebook Editing (RTC)
-- Notebook Review Threads + Diffs
-- Voila Share Links with Expiring Tokens
-- Scheduled Review Cycles & SLAs
+- ❌ Collaborative Notebook Editing (RTC)
+- ❌ Notebook Review Threads + Diffs
+- ❌ Voila Share Links with Expiring Tokens
+- ❌ Scheduled Review Cycles & SLAs
 
 ### Approved Features (2025-12-13) - ✅ Completed
 - ✅ HTS QC & Triage Assistant (3-5 days)
