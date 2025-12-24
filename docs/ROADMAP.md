@@ -162,8 +162,8 @@ Drug Discovery-Specific (Completed):
 - ✅ Cache by (notebook_path, param_hash, code_hash)
 
 ### Quick Wins
-- "Open as Dashboard" button (Voila read-only view)
-- Notebook Co-Pilot MVP (cell synthesizer)
+- ❌ "Open as Dashboard" button (Voila read-only view)
+- ❌ Notebook Co-Pilot MVP (cell synthesizer)
 
 ### Advanced
 - ✅ Jupyter Advanced Features (2025-12-24)
@@ -171,9 +171,9 @@ Drug Discovery-Specific (Completed):
   - SAR What-If Designer: SMILES input, real-time ADMET prediction, 2D structure rendering
   - Scaffold Hopping: benzene→pyridine, cyclohexane→piperidine transformations
   - Risk assessment with color-coded GREEN/YELLOW/RED heuristics
-- "Pin to Program" - dashboard instance locked to Program
-- Weekly Executive Digests (scheduled Papermill → Voila)
-- Approval gates with signed review cards
+- ❌ "Pin to Program" - dashboard instance locked to Program
+- ❌ Weekly Executive Digests (scheduled Papermill → Voila)
+- ❌ Approval gates with signed review cards
 
 ### HTS Plate Viewer (MVP - 3-4 days)
 Data requirements:
@@ -201,17 +201,17 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - AnalysisContext JSON in first cell for context
 - Vetted helpers (`amprenta_rag.notebook.*`) for guardrails
 
-### SAR What-If Designer (WOW feature - prototype)
-- Sketch R-group substitutions live
-- Predicted potency + ADMET traffic lights with uncertainty
-- 3D conformer overlay (py3Dmol)
-- One-click "save candidate" to Compounds
+### SAR What-If Designer ✅ (covered by Jupyter Advanced Features 2025-12-24)
+- ✅ Sketch R-group substitutions live
+- ✅ Predicted potency + ADMET traffic lights with uncertainty
+- ✅ 3D conformer overlay (py3Dmol)
+- ✅ One-click "save candidate" to Compounds
 
-### Dashboard Discovery
-- Streamlit entity pages: "Open as Dashboard" button
-- JupyterHub launcher: pinned icons
-- Global Catalog page: searchable with tags
-- Program/Team Library: curated per workspace
+### Dashboard Discovery ✅ (covered by Jupyter Advanced Features 2025-12-24)
+- ✅ Streamlit entity pages: "Open as Dashboard" button
+- ✅ JupyterHub launcher: pinned icons
+- ✅ Global Catalog page: searchable with tags
+- ✅ Program/Team Library: curated per workspace
 
 ## External Repository Integration (Future)
 
