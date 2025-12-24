@@ -18,11 +18,34 @@ The Amprenta RAG System is a production-ready platform that:
 ## Quick Start
 
 ```bash
-# Clone and setup
+# Clone
 git clone https://github.com/BardGeesaman/Notion_RAG.git
 cd Notion_RAG
+```
+
+## Setup
+
+### Option A: Conda (recommended for ARM/M1)
+
+RDKit/OpenMM/pdbfixer are most reliable via `conda-forge` on Apple Silicon.
+
+```bash
+conda env create -f environment.yml
+conda activate amprenta
+```
+
+Verify RDKit:
+
+```bash
+python -c "from rdkit import Chem; print('rdkit OK', Chem.MolFromSmiles('c1ccccc1') is not None)"
+```
+
+### Option B: Pip (x86 only)
+
+```bash
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
+```
 
 # Configure (see docs/CONFIGURATION.md)
 cp .env.example .env
@@ -321,7 +344,7 @@ scripts/                  # Command-line scripts
 
 ### Prerequisites
 
-- Python 3.10 or higher
+- Python 3.10
 - API keys for:
   - OpenAI (embeddings and LLM)
   - Pinecone (vector database)
@@ -329,6 +352,25 @@ scripts/                  # Command-line scripts
 - Postgres database (local or remote)
 
 ### Installation
+
+#### Option A: Conda (Recommended for ARM/M1 Macs)
+
+RDKit and some scientific packages require conda-forge on ARM architecture:
+
+```bash
+# Clone repository
+git clone https://github.com/BardGeesaman/Notion_RAG.git
+cd Notion_RAG
+
+# Create conda environment (includes RDKit, OpenMM, scientific stack)
+conda env create -f environment.yml
+conda activate amprenta
+
+# Verify RDKit
+python -c "from rdkit import Chem; print('RDKit OK')"
+```
+
+#### Option B: Pip (x86/Intel only)
 
 ```bash
 # Clone repository
@@ -342,6 +384,8 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 ```
+
+> **Note**: On ARM/M1 Macs, `rdkit-pypi` may fail. Use conda instead.
 
 ### Configuration
 

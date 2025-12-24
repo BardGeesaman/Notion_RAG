@@ -28,6 +28,10 @@ Simple status legend:
 - ✅ Notion removed (no runtime dependencies)
 - ✅ Streamlit dashboard: modular page architecture + sessions/auth
 - ✅ FastAPI service layer operational
+- ✅ Environment Management (2025-12-24)
+  - environment.yml with conda-forge for RDKit/OpenMM
+  - requirements-pip.txt for pip-only packages
+  - README updated with conda setup instructions
 
 ### RAG Maturity
 - ✅ Hybrid retrieval (dense + structured search patterns)
@@ -77,6 +81,10 @@ Simple status legend:
   - Vulture analysis: 99 high-confidence candidates triaged
   - 23 true dead code items removed
   - Maintenance scripts + reports created
+- ❌ OOP Refactoring Review
+- ❌ Comprehensive Test Data Seeding Suite (1-2 weeks)
+  - Idempotent seed scripts for all domains
+  - Standard CLI: --size {small,medium,large} --reset --seed
 
 ---
 
@@ -238,6 +246,9 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - Lightweight Model Registry + Reproducibility
 - AutoML Notebook Templates
 - Drift & Calibration Monitoring
+- ❌ Universal Unstructured AI Extraction (AI ETL) (2-3 weeks)
+  - Ingest PDFs, DOCX, web pages, images (OCR)
+  - LLM entity extraction + normalization
 
 ## Bayesian Framework
 
@@ -375,46 +386,22 @@ Implementation:
 
 ---
 
-## ❌ FUTURE (Backlog)
+## ✅ DONE (Completed from Backlog)
 
-- ✅ Bioinformatics Pipeline Runner Dashboard (2025-12-22) - Salmon/Kallisto quantification UI with job tracking
-- ✅ Bioinformatics pipeline orchestrator (Nextflow/Snakemake) (2025-12-22)
-- ✅ Data Version Control (DVC) (2025-12-22) - (MVP - local versioning; S3 remote Phase 2)
-- ✅ **Pinecone → pgvector migration** (2025-12-22) - Self-host vector search in Postgres for reduced costs and latency
-- ✅ Bayesian inference & optimization workflows (2025-12-22)
-  - Phase 1: Hierarchical Bayesian Dose-Response (PyMC, credible intervals, ArviZ diagnostics)
-  - Phase 2: Bayesian Optimization for Screening (BoTorch qEI, single-objective)
-  - Phase 3: MOA Bayesian Evidence Fusion (PyMC Beta regression)
-  - Tier 2 deferred: Prior Builder, Multi-Objective BO, Posterior Inclusion Probabilities
+### Infrastructure (Completed 2025-12-22)
+- ✅ Bioinformatics Pipeline Runner Dashboard - Salmon/Kallisto quantification UI with job tracking
+- ✅ Bioinformatics pipeline orchestrator (Nextflow/Snakemake)
+- ✅ Data Version Control (DVC) - MVP local versioning; S3 remote Phase 2
+- ✅ Pinecone → pgvector migration - Self-host vector search in Postgres
+- ✅ Bayesian inference & optimization workflows
+  - Hierarchical Bayesian Dose-Response (PyMC, ArviZ)
+  - Bayesian Optimization for Screening (BoTorch qEI)
+  - MOA Bayesian Evidence Fusion (PyMC Beta regression)
 - ✅ ML/AI model registry + predictive ADMET (2025-12-23)
-  - Model Registry: Postgres metadata + joblib artifacts, versioning, caching
-  - ADMET Predictor: Morgan FP + RDKit descriptors, API endpoints
-  - Phase 2: Train models with TDC datasets (deferred - env issues)
-- ❌ OOP Refactoring Review
+  - Model Registry: Postgres metadata + joblib artifacts
+  - ADMET Predictor: Morgan FP + RDKit descriptors
 
-### Universal Unstructured AI Extraction (AI ETL)
-- Ingest web pages, PDFs, DOCX, PPTX, CSV, images (OCR)
-- Parse, chunk, extract entities via LLM (JSON schema)
-- Normalize to PubChem/HGNC/UniProt/MeSH
-- Index to Postgres + Pinecone for RAG
-- Estimated effort: 2-3 weeks
-- Reference: .cursor/plans/universal_unstructured_ai_extraction_for_rag_172e0713.plan.md
-
-### Comprehensive Test Data Seeding Suite
-- Idempotent seed scripts for all domains: transcriptomics, proteomics, metabolomics, lipidomics, HTS/SAR, signatures
-- Standard CLI: --size {small,medium,large} --reset --seed <int> --dry-run
-- Orchestrator (seed_all.py) for full environment setup
-- Deterministic, realistic distributions per domain
-- Estimated effort: 1-2 weeks
-- Reference: .cursor/plans/comprehensive_test_data_seeding_suite_87ab8efa.plan.md
-
-### Environment Management
-- ❌ Reconcile conda environments across workstations (myenv)
-  - Create `environment.yml` for reproducible conda setup
-  - Document RDKit installation via conda-forge (not pip)
-  - Standardize Python version across environments
-
-### Bioinformatics & Integration (Backlog)
+### Bioinformatics & Integration (Completed 2025-12-23)
 
 #### High Priority
 
