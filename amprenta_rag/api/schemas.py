@@ -325,6 +325,26 @@ class OverlayResponse(BaseSchema):
     aligned_pdb_strings: List[str]
 
 
+class NetworkNode(BaseSchema):
+    data: Dict[str, Any]
+
+
+class NetworkEdge(BaseSchema):
+    data: Dict[str, Any]
+
+
+class CompoundTargetNetworkRequest(BaseSchema):
+    compound_ids: List[UUID] = Field(default_factory=list, description="Compound UUIDs (GraphEdge source_entity_id)")
+    target_ids: List[UUID] = Field(default_factory=list, description="Target Feature UUIDs (GraphEdge target_entity_id)")
+    filters: Dict[str, Any] = Field(default_factory=dict, description="Filters: ic50_range{min_nm,max_nm}, activity_type")
+
+
+class CompoundTargetNetworkResponse(BaseSchema):
+    nodes: List[NetworkNode] = Field(default_factory=list)
+    edges: List[NetworkEdge] = Field(default_factory=list)
+    meta: Dict[str, Any] = Field(default_factory=dict)
+
+
 class BiomarkerFeature(BaseSchema):
     feature: str
     avg_rank: float

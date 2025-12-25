@@ -231,6 +231,11 @@ def _render_compounds(tab, db_session, compound_model, export_compounds):
                             if compound.hba_count is not None:
                                 st.write(f"**HBA Count:** {compound.hba_count}")
 
+                            if st.button("View in Network", key=f"view_net_{compound.id}", type="secondary"):
+                                st.session_state["ctn_prefill_compound_ids"] = [str(compound.id)]
+                                st.session_state["selected_page"] = "Compound-Target Network"
+                                st.rerun()
+
                         if st.button("Predict ADMET", key=f"admet_{compound.id}", type="secondary"):
                             try:
                                 resp = _api_post(

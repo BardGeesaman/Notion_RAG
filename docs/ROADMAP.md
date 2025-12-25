@@ -307,7 +307,14 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - API: POST /api/viz3d/conformers, POST /api/viz3d/overlay, GET /api/viz3d/protein/{id}
   - Dashboard: Molecule Viewer page + Compound/Protein 3D View expanders
   - Fallback to 2D image when py3Dmol unavailable
-- ❌ Compound-Target Network (Cytoscape.js)
+- ✅ Compound-Target Network (2025-12-25)
+  - Cytoscape.js visualization with drug discovery styling
+  - Node shapes by entity type (ellipse=compound, diamond=target)
+  - Edge width by pIC50, color by activity type
+  - IC50 range filtering and activity type filters
+  - API: POST /api/network/compound-target, expand endpoints
+  - Dashboard: Compound-Target Network page (3 tabs)
+  - Integration: "View in Network" from compound detail
 - ❌ Pathway Maps with Data Overlays
 - ❌ Dose-Response & Time-Series Explorer (Plotly)
 - ❌ Multi-Omics Integration View (Alluvial/UpSet)
