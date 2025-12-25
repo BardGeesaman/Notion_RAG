@@ -345,6 +345,63 @@ class CompoundTargetNetworkResponse(BaseSchema):
     meta: Dict[str, Any] = Field(default_factory=dict)
 
 
+class DoseResponseFitRequest(BaseSchema):
+    concentrations: List[float]
+    responses: List[float]
+    model: str = Field("4PL", description="3PL, 4PL, bayesian_4pl")
+    concentration_unit: str = Field("nM", description="Unit label for concentrations (metadata)")
+    response_unit: str = Field("percent_inhibition", description="Unit label for responses (metadata)")
+
+
+class DoseResponseFitResponse(BaseSchema):
+    ec50: float
+    ec50_ci: Optional[Tuple[float, float]] = None
+    hill_slope: float
+    top: float
+    bottom: Optional[float] = None
+    r_squared: Optional[float] = None
+    curve_x: List[float]
+    curve_y: List[float]
+    ci_lower: Optional[List[float]] = None
+    ci_upper: Optional[List[float]] = None
+    warnings: List[str] = Field(default_factory=list)
+
+
+class DoseResponseCompareRequest(BaseSchema):
+    fits: List[DoseResponseFitRequest]
+
+
+class DoseResponseCompareResponse(BaseSchema):
+    results: List[DoseResponseFitResponse]
+    comparison_table: Dict[str, Any]
+
+
+class TimeseriesAnalyzeRequest(BaseSchema):
+    values: List[float]
+    timepoints: List[float]
+    smooth_method: Optional[str] = Field(None, description="savgol or lowess")
+    detect_changepoints: bool = False
+    changepoint_threshold: float = 2.0
+
+
+class TimeseriesAnalyzeResponse(BaseSchema):
+    slope: float
+    pvalue: float
+    direction: str
+    smoothed_values: Optional[List[float]] = None
+    changepoint_indices: Optional[List[int]] = None
+
+
+class TrajectoryCompareRequest(BaseSchema):
+    series: List[TimeseriesAnalyzeRequest]
+
+
+class TrajectoryCompareResponse(BaseSchema):
+    results: List[TimeseriesAnalyzeResponse]
+    comparison_table: Dict[str, Any]
+    cluster_labels: Optional[List[int]] = None
+
+
 class BiomarkerFeature(BaseSchema):
     feature: str
     avg_rank: float

@@ -58,6 +58,7 @@ from amprenta_rag.api.routers import (
     biomarker,
     viz3d,
     compound_target,
+    explorer,
 )
 from amprenta_rag.config import get_config
 
@@ -137,6 +138,7 @@ app.include_router(qsar.router, prefix="/api")
 app.include_router(biomarker.router, prefix="/api")
 app.include_router(viz3d.router, prefix="/api")
 app.include_router(compound_target.router, prefix="/api/network")
+app.include_router(explorer.router, prefix="/api")
 
 
 @app.get("/")

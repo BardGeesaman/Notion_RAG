@@ -316,7 +316,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Dashboard: Compound-Target Network page (3 tabs)
   - Integration: "View in Network" from compound detail
 - ❌ Pathway Maps with Data Overlays
-- ❌ Dose-Response & Time-Series Explorer (Plotly)
+- ✅ Dose-Response Explorer (2025-12-25)
+  - 3PL/4PL/Bayesian curve fitting with scipy and PyMC
+  - Bootstrap confidence intervals for parameter estimation
+  - Time series trend analysis, smoothing, changepoint detection
+  - Plotly visualizations with log-scale and CI bands
+  - API: 4 endpoints for fitting, comparison, analysis
+  - Dashboard: Dose-Response Explorer page with 4 tabs
 - ❌ Multi-Omics Integration View (Alluvial/UpSet)
 
 ### Tier 2 - Strategic
