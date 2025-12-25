@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-19
+**Last Updated**: 2025-12-25
 
 Simple status legend:
 - ✅ DONE
@@ -81,13 +81,15 @@ Simple status legend:
   - Vulture analysis: 99 high-confidence candidates triaged
   - 23 true dead code items removed
   - Maintenance scripts + reports created
-- ❌ OOP Refactoring Review
 - ✅ Comprehensive Test Data Seeding Suite (2025-12-24)
   - 13 domain seeders (added: genomics, single-cell, structures)
   - seed_utils.py: shared CLI parser, progress bars, schema detection
   - Enhanced seed_all.py: validation, summary, graceful skip
   - Idempotent design: safe to re-run without --reset
   - CI workflow: .github/workflows/seed_test_data.yml
+
+### Testing & Development (Future)
+- ❌ OOP Refactoring Review (code structure improvements)
 
 ---
 
@@ -179,31 +181,12 @@ Drug Discovery-Specific (Completed):
   - K-means clustering with elbow plot
   - Papermill parameters + MLModelRegistry integration
 
-### HTS Plate Viewer (MVP - 3-4 days)
-Data requirements:
-- Required: campaign_id, well_position, normalized_value|raw_value, hit_flag
-- Optional: plate_id, control_type, replicate_group
-
-MVP features:
-- Single plate heatmap (color scale with clipping)
-- Z' factor badge (\(Z' = 1 - 3(\sigma_{pos} + \sigma_{neg})/|\mu_{pos} - \mu_{neg}|\))
-- Control tagging fallback (toggle mode when controls undefined)
-- Tooltips (well, value, hit), Export PNG/CSV
-
-v0.2: Multi-plate grid, replicate correlation, edge-effects map
-
 ### Cross-Platform Context Pattern
 URL: `?ctx=<base64url(JSON)>&sig=<HMAC>`
 
 JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - DashboardRun provenance table (params_hash, code_hash, artifacts)
 - Round-trip: publish writes run_id + artifacts back to source entity
-
-### Notebook Co-Pilot (MVP - 4-5 days)
-- Sidebar actions: buttons that insert cells (Load dataset, HTS QC, Dose-response, Publish)
-- Magic commands: `%%copilot` with YAML block
-- AnalysisContext JSON in first cell for context
-- Vetted helpers (`amprenta_rag.notebook.*`) for guardrails
 
 ### SAR What-If Designer ✅ (covered by Jupyter Advanced Features 2025-12-24)
 - ✅ Sketch R-group substitutions live
@@ -230,7 +213,7 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Phase 2: UniProt, KEGG, GEO incremental, auto-conflict resolution
 - ❌ Provenance Ledger + Checksums (audit trail, diffs)
 - ❌ GEO Incremental Harvester + Metadata Normalization
-- ❌ ChEMBL/PubChem Bioactivity Sync (compound-centric)
+- ✅ ChEMBL/PubChem Bioactivity Sync (2025-12-24) - covered by External Sync Orchestrator MVP
 
 ### Tier 2 - Strategic
 - ❌ UniProt/KEGG Mapping Refresh
@@ -248,7 +231,7 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - ❌ ADMET Baselines (QSAR with SHAP explainability)
 - ❌ Structural/Toxicity Alerts (PAINS/Lilly + ML)
 - ❌ Target-Activity QSAR (per-target classifiers)
-- ❌ Signature→MOA Inference (mechanism of action)
+- ✅ Signature→MOA Inference (2025-12-17) - see MOA Inference from HTS + Multi-Omics (Advanced Analytics Features)
 - ❌ Biomarker Discovery (stable feature selection)
 
 ### Tier 2 - Strategic
@@ -257,8 +240,10 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - ❌ Active Learning for Screening
 
 ### Tier 3 - Platform
-- ❌ Lightweight Model Registry + Reproducibility
-- ❌ AutoML Notebook Templates
+- ✅ Lightweight Model Registry + Reproducibility (2025-12-23)
+  - MLModelRegistry in amprenta_rag/ml/registry.py
+  - Postgres metadata + joblib artifacts
+- ✅ AutoML Notebook Templates (2025-12-25) - see Quick Wins section
 - ❌ Drift & Calibration Monitoring
 - ✅ Universal Unstructured AI Extraction (AI ETL) MVP (2025-12-24)
   - Parsers: DOCX, PPTX, Excel, CSV (PDF existing)
