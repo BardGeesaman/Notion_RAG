@@ -10,6 +10,8 @@ import httpx
 import pandas as pd
 import streamlit as st
 
+from scripts.dashboard.components.mol3d_viewer import render_protein_3d
+
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 LIST_ENDPOINT = f"{API_BASE}/api/structures"
@@ -110,6 +112,38 @@ def render_protein_structures_page() -> None:
         sid = r.get("id")
         with st.expander(f"{sid} ({r.get('source')}, {r.get('prep_status')})"):
             st.json(r)
+
+            # 3D viewer (lazy)
+            with st.expander("3D View", expanded=False):
+                style = st.selectbox(
+                    "Style",
+                    options=["cartoon", "stick", "line", "sphere"],
+                    index=0,
+                    key=f"prot3d_style_{sid}",
+                )
+                file_type = st.selectbox(
+                    "File type",
+                    options=["pdb", "prepared"],
+                    index=0 if (r.get("prep_status") != "prepared") else 1,
+                    key=f"prot3d_ft_{sid}",
+                    help="Choose a prepared file if available; fallback to pdb/raw.",
+                )
+                if st.button("Load 3D View", key=f"prot3d_load_{sid}", type="secondary"):
+                    try:
+                        with httpx.Client(timeout=60) as client:
+                            resp = client.get(f"{API_BASE}/api/viz3d/protein/{sid}", params={"file_type": file_type})
+                        if resp.status_code >= 400:
+                            st.error(f"3D fetch failed ({resp.status_code}): {resp.text}")
+                        else:
+                            out = resp.json()
+                            pdb_str = out.get("pdb_string") if isinstance(out, dict) else None
+                            st.session_state[f"prot3d_pdb_{sid}"] = pdb_str
+                    except Exception as e:  # noqa: BLE001
+                        st.error(f"3D fetch failed: {e}")
+
+                cached = st.session_state.get(f"prot3d_pdb_{sid}")
+                if isinstance(cached, str) and cached.strip():
+                    render_protein_3d(cached, style=style, model_format="pdb")
 
             col_p1, col_p2, col_p3 = st.columns([1, 1, 2])
             with col_p1:

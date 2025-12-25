@@ -8,6 +8,8 @@ import pandas as pd
 import httpx
 import streamlit as st
 
+from scripts.dashboard.components.mol3d_viewer import render_conformers_3d, render_molecule_3d
+
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 
 
@@ -166,6 +168,54 @@ def _render_compounds(tab, db_session, compound_model, export_compounds):
                             st.write(f"**SMILES:** `{compound.smiles}`")
                             if compound.inchi_key:
                                 st.write(f"**InChI Key:** `{compound.inchi_key}`")
+
+                            # 3D viewer (lazy, inside its own expander)
+                            with st.expander("3D View", expanded=False):
+                                style = st.selectbox(
+                                    "Style",
+                                    options=["stick", "sphere", "line", "cartoon"],
+                                    index=0,
+                                    key=f"cmpd3d_style_{compound.id}",
+                                )
+                                show_confs = st.checkbox(
+                                    "Show Conformers",
+                                    value=False,
+                                    key=f"cmpd3d_showconfs_{compound.id}",
+                                )
+                                if show_confs:
+                                    render_conformers_3d(compound.smiles, n_conformers=5, style=style)
+                                else:
+                                    render_molecule_3d(compound.smiles, style=style)
+
+                                pdb_cache_key = f"cmpd3d_pdb_{compound.id}"
+                                if st.button("Generate PDB", key=f"cmpd3d_genpdb_{compound.id}"):
+                                    try:
+                                        out = _api_post(
+                                            "/api/viz3d/conformers",
+                                            {"smiles": compound.smiles, "n_conformers": 1, "optimize": True},
+                                            timeout=120,
+                                        )
+                                        pdb = None
+                                        if isinstance(out, dict):
+                                            pdbs = out.get("pdb_strings") or []
+                                            if isinstance(pdbs, list) and pdbs:
+                                                pdb = str(pdbs[0])
+                                        if not pdb:
+                                            raise ValueError("No PDB returned")
+                                        st.session_state[pdb_cache_key] = pdb
+                                    except Exception as e:  # noqa: BLE001
+                                        st.session_state.pop(pdb_cache_key, None)
+                                        st.error(f"Failed to generate PDB: {e}")
+
+                                pdb_str = st.session_state.get(pdb_cache_key)
+                                if isinstance(pdb_str, str) and pdb_str.strip():
+                                    st.download_button(
+                                        "Download PDB",
+                                        data=pdb_str.encode("utf-8"),
+                                        file_name=f"{compound.compound_id}.pdb",
+                                        mime="chemical/x-pdb",
+                                        key=f"cmpd3d_dlpdb_{compound.id}",
+                                    )
                             if compound.canonical_smiles:
                                 st.write(f"**Canonical SMILES:** `{compound.canonical_smiles}`")
                         with col2:

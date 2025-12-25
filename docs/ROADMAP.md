@@ -300,7 +300,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 ## Advanced Visualization (Future)
 
 ### Tier 1 - High Impact
-- ❌ 3D Molecule Viewer + Conformer Overlay (py3Dmol)
+- ✅ 3D Molecule Viewer + Conformer Overlay (2025-12-25)
+  - Conformer generation with RDKit ETKDG + MMFF optimization
+  - py3Dmol 3D visualization with style options (stick, sphere, cartoon)
+  - Multi-conformer overlay and molecule comparison
+  - API: POST /api/viz3d/conformers, POST /api/viz3d/overlay, GET /api/viz3d/protein/{id}
+  - Dashboard: Molecule Viewer page + Compound/Protein 3D View expanders
+  - Fallback to 2D image when py3Dmol unavailable
 - ❌ Compound-Target Network (Cytoscape.js)
 - ❌ Pathway Maps with Data Overlays
 - ❌ Dose-Response & Time-Series Explorer (Plotly)

@@ -305,6 +305,26 @@ class QSARTargetInfo(BaseSchema):
     metrics: Optional[Dict[str, Any]] = None
 
 
+class ConformerRequest(BaseSchema):
+    smiles: str
+    n_conformers: int = Field(5, ge=1, le=50)
+    optimize: bool = True
+
+
+class ConformerResponse(BaseSchema):
+    pdb_strings: List[str]
+    energies: List[float]
+
+
+class OverlayRequest(BaseSchema):
+    smiles_list: List[str]
+    reference_idx: int = Field(0, ge=0)
+
+
+class OverlayResponse(BaseSchema):
+    aligned_pdb_strings: List[str]
+
+
 class BiomarkerFeature(BaseSchema):
     feature: str
     avg_rank: float
