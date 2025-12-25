@@ -268,7 +268,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 ### Tier 1 - High Impact (Completed 2025-12-22)
 - ✅ Batch Bayesian Optimization for Screening (BoTorch qEI, single-objective)
 - ✅ Hierarchical Bayesian Dose-Response (PyMC, credible intervals, ArviZ diagnostics)
-- ❌ Bayesian ADMET with Uncertainty Quantification (future)
+- ✅ Bayesian ADMET with Uncertainty Quantification (2025-12-24)
+  - Bootstrap ensemble (5 XGBoost models)
+  - Isotonic/Platt calibration
+  - Applicability domain checker (Tanimoto)
+  - API endpoint POST /api/admet/predict
+  - ADMET Predictor dashboard (3 tabs)
+  - Phase 2: Train models with ChEMBL data (deferred)
 - ✅ Signature→MOA Bayesian Evidence Fusion (Beta regression)
 
 ### Tier 2 - Strategic (Deferred)

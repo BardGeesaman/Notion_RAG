@@ -1,0 +1,7 @@
+{
+  "generated_at": "2025-12-24T00:00:00Z",
+  "dry_run": true,
+  "note": "Mock ADMET dataset scaffold for tests/dry-run. Parquet contents are not included in repo; tests monkeypatch read_parquet."
+}
+
+

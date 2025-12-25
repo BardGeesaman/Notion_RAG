@@ -1,4 +1,8 @@
-"""Batch extraction API endpoints."""
+"""Batch extraction API endpoints.
+
+Note: multipart uploads require `python-multipart`. In minimal environments (e.g. some CI/E2E runs),
+we degrade gracefully by exposing a stub upload endpoint that returns 501, so the API can still boot.
+"""
 
 from __future__ import annotations
 
@@ -17,40 +21,58 @@ from amprenta_rag.extraction.batch_service import ExtractionBatchService
 
 router = APIRouter(prefix="/extraction", tags=["Extraction"])
 
+try:
+    import multipart  # type: ignore  # noqa: F401
+
+    _MULTIPART_AVAILABLE = True
+except Exception:  # noqa: BLE001
+    _MULTIPART_AVAILABLE = False
+
 
 async def _run_job_in_background(job_id: UUID) -> None:
     svc = ExtractionBatchService(db_session)
     await asyncio.to_thread(svc.process_job, job_id)
 
 
-@router.post("/upload-batch")
-async def upload_batch(files: List[UploadFile] = File(...)) -> Dict[str, Any]:
-    if not files:
-        raise HTTPException(status_code=400, detail="files[] is required")
+if _MULTIPART_AVAILABLE:
 
-    tmpdir = Path(tempfile.mkdtemp(prefix="amprenta_extract_"))
-    saved: List[str] = []
-    for f in files:
-        try:
-            content = await f.read()
-        except Exception as e:  # noqa: BLE001
-            raise HTTPException(status_code=400, detail=f"Failed to read upload: {e}")
+    @router.post("/upload-batch")
+    async def upload_batch(files: List[UploadFile] = File(...)) -> Dict[str, Any]:
+        if not files:
+            raise HTTPException(status_code=400, detail="files[] is required")
 
-        name = (f.filename or "upload").replace("/", "_")
-        path = tmpdir / name
-        try:
-            path.write_bytes(content)
-        except Exception as e:  # noqa: BLE001
-            raise HTTPException(status_code=500, detail=f"Failed to save upload: {e}")
-        saved.append(str(path))
+        tmpdir = Path(tempfile.mkdtemp(prefix="amprenta_extract_"))
+        saved: List[str] = []
+        for f in files:
+            try:
+                content = await f.read()
+            except Exception as e:  # noqa: BLE001
+                raise HTTPException(status_code=400, detail=f"Failed to read upload: {e}")
 
-    svc = ExtractionBatchService(db_session)
-    job = svc.create_job(saved)
+            name = (f.filename or "upload").replace("/", "_")
+            path = tmpdir / name
+            try:
+                path.write_bytes(content)
+            except Exception as e:  # noqa: BLE001
+                raise HTTPException(status_code=500, detail=f"Failed to save upload: {e}")
+            saved.append(str(path))
 
-    # Kick off background job processing
-    asyncio.create_task(_run_job_in_background(job.id))
+        svc = ExtractionBatchService(db_session)
+        job = svc.create_job(saved)
 
-    return {"job_id": str(job.id), "status": job.status, "file_count": job.file_count}
+        # Kick off background job processing
+        asyncio.create_task(_run_job_in_background(job.id))
+
+        return {"job_id": str(job.id), "status": job.status, "file_count": job.file_count}
+
+else:
+
+    @router.post("/upload-batch")
+    async def upload_batch() -> Dict[str, Any]:  # type: ignore[no-redef]
+        raise HTTPException(
+            status_code=501,
+            detail='Form upload requires "python-multipart" (pip install python-multipart)',
+        )
 
 
 @router.get("/jobs/{job_id}")

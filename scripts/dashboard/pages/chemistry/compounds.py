@@ -2,8 +2,51 @@
 
 from __future__ import annotations
 
+import os
+
 import pandas as pd
+import httpx
 import streamlit as st
+
+API_BASE = os.environ.get("API_URL", "http://localhost:8000")
+
+
+def _api_post(path: str, json_body: dict, *, timeout: int = 120) -> dict:
+    with httpx.Client(timeout=timeout) as client:
+        r = client.post(f"{API_BASE}{path}", json=json_body)
+    r.raise_for_status()
+    out = r.json()
+    return out if isinstance(out, dict) else {"raw": out}
+
+
+def _traffic_light(endpoint: str, mean: float, std: float | None) -> str:
+    endpoint = (endpoint or "").lower()
+    std_v = float(std) if std is not None else 0.0
+
+    def downgrade(level: str) -> str:
+        if std_v > 0.3:
+            return {"green": "yellow", "yellow": "red", "red": "red"}.get(level, level)
+        return level
+
+    level = "yellow"
+    if endpoint == "herg":
+        if mean < 0.3:
+            level = "green"
+        elif mean > 0.7:
+            level = "red"
+    elif endpoint == "logs":
+        if mean > -4:
+            level = "green"
+        elif mean < -6:
+            level = "red"
+    elif endpoint == "logp":
+        if 1 <= mean <= 3:
+            level = "green"
+        elif mean < 0 or mean > 5:
+            level = "red"
+        else:
+            level = "yellow"
+    return downgrade(level)
 
 
 def render_compounds_tab(
@@ -123,6 +166,48 @@ def _render_compounds(tab, db_session, compound_model, export_compounds):
                                 st.write(f"**HBD Count:** {compound.hbd_count}")
                             if compound.hba_count is not None:
                                 st.write(f"**HBA Count:** {compound.hba_count}")
+
+                        if st.button("Predict ADMET", key=f"admet_{compound.id}", type="secondary"):
+                            try:
+                                resp = _api_post(
+                                    "/api/admet/predict",
+                                    {"smiles": [compound.smiles], "endpoints": ["herg", "logs", "logp"], "include_uncertainty": True},
+                                    timeout=120,
+                                )
+                                res0 = (resp.get("results") or [{}])[0]
+                                preds = res0.get("predictions") or {}
+                                rows = []
+                                for ep, p in preds.items():
+                                    if not isinstance(p, dict) or "mean" not in p:
+                                        continue
+                                    mean = float(p.get("mean"))
+                                    std = p.get("std")
+                                    light = _traffic_light(ep, mean, float(std) if std is not None else None)
+                                    ci_low = p.get("ci_low")
+                                    ci_high = p.get("ci_high")
+                                    ci_str = "-"
+                                    try:
+                                        if ci_low is not None and ci_high is not None:
+                                            ci_str = f"[{float(ci_low):.3f}, {float(ci_high):.3f}]"
+                                    except Exception:  # noqa: BLE001
+                                        ci_str = "-"
+                                    rows.append(
+                                        {
+                                            "Endpoint": ep,
+                                            "Mean": mean,
+                                            "Std": std,
+                                            "95% CI": ci_str,
+                                            "In Domain": p.get("in_domain"),
+                                            "Light": light,
+                                        }
+                                    )
+                                if rows:
+                                    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+                                else:
+                                    st.info("No ADMET predictions returned (models may not be registered).")
+                                st.markdown("[Open full ADMET Predictor](/?page=ADMET%20Predictor)")
+                            except Exception as e:  # noqa: BLE001
+                                st.error(f"ADMET prediction failed: {e}")
 
                         st.markdown(
                             f"[View in Graph Explorer](/?page=Graph%20Explorer&entity_type=compound&entity_id={compound.id})"

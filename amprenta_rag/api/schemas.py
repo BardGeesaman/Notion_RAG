@@ -220,6 +220,38 @@ class CatalogSummaryResponse(BaseSchema):
     repositories: List[RepositorySummary]
 
 
+# ============================================================================
+# ADMET prediction schemas
+# ============================================================================
+
+
+class ADMETPredictRequest(BaseSchema):
+    smiles: List[str] = Field(..., max_length=100, description="SMILES list (max 100)")
+    endpoints: Optional[List[str]] = None
+    include_uncertainty: bool = True
+
+
+class ADMETEndpointPrediction(BaseSchema):
+    mean: float
+    std: Optional[float] = None
+    ci_low: Optional[float] = None
+    ci_high: Optional[float] = None
+    in_domain: Optional[bool] = None
+    similarity: Optional[float] = None
+    calibrated: bool = False
+
+
+class ADMETCompoundPrediction(BaseSchema):
+    smiles: str
+    predictions: Dict[str, ADMETEndpointPrediction]
+    error: Optional[str] = None
+
+
+class ADMETPredictResponse(BaseSchema):
+    results: List[ADMETCompoundPrediction]
+    model_info: Dict[str, Any]
+
+
 class CatalogDatasetsResponse(BaseSchema):
     """Response wrapper for catalog dataset listings."""
 
