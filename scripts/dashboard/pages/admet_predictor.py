@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from typing import Any, Dict, List
 
@@ -75,6 +76,47 @@ def _ci_str(ci_low: Any, ci_high: Any) -> str:
         return "-"
 
 
+def render_shap_waterfall(shap_data: Dict[str, Any], title: str) -> None:
+    """Render a SHAP waterfall chart from the Explain API payload."""
+    try:
+        import plotly.graph_objects as go  # type: ignore
+    except Exception:
+        st.info("Plotly not available; cannot render SHAP waterfall.")
+        return
+
+    top = shap_data.get("top_features") or []
+    other_sum = float(shap_data.get("other_sum", 0.0))
+    base_value = float(shap_data.get("base_value", 0.0))
+
+    names = [str(f.get("name")) for f in top if isinstance(f, dict)]
+    vals = [float(f.get("value", 0.0)) for f in top if isinstance(f, dict)]
+
+    n_other = max(0, 2054 - len(names))
+    names = names + [f"Other ({n_other} features)"]
+    vals = vals + [other_sum]
+
+    final_val = base_value + float(sum(vals))
+
+    fig = go.Figure(
+        go.Waterfall(
+            x=["Base"] + names + ["Output"],
+            measure=["absolute"] + ["relative"] * len(vals) + ["total"],
+            y=[base_value] + vals + [final_val],
+            connector={"line": {"color": "rgba(120,120,120,0.5)"}},
+            increasing={"marker": {"color": "#2E8B57"}},  # green
+            decreasing={"marker": {"color": "#C73E1D"}},  # red
+            totals={"marker": {"color": "#444444"}},
+        )
+    )
+    fig.update_layout(
+        title=title,
+        height=420,
+        margin=dict(l=40, r=20, t=60, b=40),
+        showlegend=False,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
 def render_admet_predictor_page() -> None:
     from scripts.dashboard.auth import require_auth
 
@@ -83,7 +125,7 @@ def render_admet_predictor_page() -> None:
     st.header("ADMET Predictor")
     st.caption("Uncertainty-aware ADMET predictions (ensemble + calibration + applicability domain).")
 
-    tab1, tab2, tab3 = st.tabs(["Predict", "Calibration", "Model Info"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Predict", "Calibration", "Model Info", "Explain", "Global Importance"])
 
     with tab1:
         st.subheader("Predict")
@@ -255,6 +297,130 @@ def render_admet_predictor_page() -> None:
             st.json(last.get("model_info"))
 
         st.caption("Training script: scripts/train_admet_ensemble.py")
+
+    with tab4:
+        st.subheader("Explain")
+        st.caption("Explain a single prediction using SHAP (top-K features + other).")
+
+        smi = st.text_input("SMILES (single compound)", value="", max_chars=500)
+        endpoint = st.selectbox("Endpoint", options=["herg", "logs", "logp"], index=0)
+        top_k = st.slider("Top K features", min_value=5, max_value=20, value=10, step=1)
+
+        if st.button("Explain", type="primary"):
+            if not smi.strip():
+                st.error("Please enter a SMILES string.")
+            else:
+                try:
+                    out = _api_post(
+                        "/api/admet/explain",
+                        {"smiles": smi.strip(), "endpoint": endpoint, "top_k": int(top_k)},
+                        timeout=120,
+                    )
+                    st.session_state["admet_explain_last"] = out
+                except Exception as e:  # noqa: BLE001
+                    # Keep UI usable even if API is unavailable.
+                    st.session_state["admet_explain_last"] = {
+                        "smiles": smi.strip(),
+                        "endpoint": endpoint,
+                        "prediction": {},
+                        "shap": {"error": str(e), "top_features": [], "other_sum": 0.0, "base_value": 0.0},
+                        "error": str(e),
+                    }
+
+        last = st.session_state.get("admet_explain_last") or {}
+        if isinstance(last, dict) and last.get("smiles"):
+            err = last.get("error")
+            pred = last.get("prediction") if isinstance(last.get("prediction"), dict) else {}
+            shap_payload = last.get("shap") if isinstance(last.get("shap"), dict) else None
+
+            if err:
+                st.error(str(err))
+
+            if pred:
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    try:
+                        st.metric("Mean", f"{float(pred.get('mean')):.4f}")
+                    except Exception:  # noqa: BLE001
+                        st.metric("Mean", "-")
+                with c2:
+                    st.metric("95% CI", _ci_str(pred.get("ci_low"), pred.get("ci_high")))
+                with c3:
+                    st.metric("In Domain", str(pred.get("in_domain")))
+
+            # Always render a stable SHAP section after an explain attempt, even if the API couldn't compute SHAP.
+            if shap_payload is None:
+                shap_payload = {"error": "No SHAP data available", "top_features": [], "other_sum": 0.0, "base_value": 0.0}
+
+            if shap_payload.get("error"):
+                st.warning(str(shap_payload.get("error")))
+
+            render_shap_waterfall(shap_payload, title=f"SHAP Waterfall ({last.get('endpoint')})")
+
+            st.download_button(
+                "Download SHAP JSON",
+                data=json.dumps(shap_payload, indent=2).encode("utf-8"),
+                file_name="admet_shap.json",
+                mime="application/json",
+            )
+
+            hist = st.session_state.setdefault("admet_shap_history", [])
+            if isinstance(hist, list):
+                hist.append({"endpoint": last.get("endpoint"), "top_features": shap_payload.get("top_features") or []})
+
+    with tab5:
+        st.subheader("Global Importance")
+        st.caption("Requires multiple explanations to compute (MVP: accumulates top-K SHAP from Explain tab).")
+
+        hist = st.session_state.get("admet_shap_history") or []
+        if not isinstance(hist, list) or not hist:
+            st.info("No SHAP data accumulated yet. Run a few explains first.")
+        else:
+            show_morgan = st.checkbox("Show Morgan bits", value=True)
+            descriptors_only = st.checkbox("Show descriptors only", value=False)
+
+            acc: Dict[str, float] = {}
+            n = 0
+            for item in hist:
+                top = item.get("top_features") if isinstance(item, dict) else None
+                if not isinstance(top, list):
+                    continue
+                n += 1
+                for f in top:
+                    if not isinstance(f, dict):
+                        continue
+                    name = str(f.get("name") or "")
+                    val = float(f.get("value", 0.0))
+                    acc[name] = acc.get(name, 0.0) + abs(val)
+
+            if n == 0 or not acc:
+                st.info("No usable SHAP top_features found yet.")
+            else:
+                imp = [{"name": k, "importance": v / float(n)} for k, v in acc.items()]
+
+                if descriptors_only or not show_morgan:
+                    imp = [x for x in imp if not str(x["name"]).startswith("MorganBit_")]
+
+                imp.sort(key=lambda x: float(x["importance"]), reverse=True)
+                top20 = imp[:20]
+
+                if not top20:
+                    st.info("No features to display under current filter.")
+                else:
+                    try:
+                        import plotly.graph_objects as go  # type: ignore
+                    except Exception:
+                        st.info("Plotly not available; cannot render importance chart.")
+                    else:
+                        names = [x["name"] for x in top20][::-1]
+                        vals = [float(x["importance"]) for x in top20][::-1]
+                        fig = go.Figure(go.Bar(x=vals, y=names, orientation="h"))
+                        fig.update_layout(
+                            title="Top 20 features by mean |SHAP| (accumulated)",
+                            height=520,
+                            margin=dict(l=200, r=20, t=60, b=40),
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
 
 
 __all__ = ["render_admet_predictor_page"]

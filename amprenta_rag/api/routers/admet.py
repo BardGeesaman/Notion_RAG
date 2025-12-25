@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.schemas import (
     ADMETCompoundPrediction,
+    ADMETExplainRequest,
+    ADMETExplainResponse,
     ADMETEndpointPrediction,
     ADMETPredictRequest,
     ADMETPredictResponse,
@@ -106,6 +108,48 @@ def predict_admet(
         results2.append(ADMETCompoundPrediction(smiles=smi, predictions=preds, error=err))
 
     return ADMETPredictResponse(results=results2, model_info=_model_info(endpoints))
+
+
+@router.post("/explain", response_model=ADMETExplainResponse)
+def explain_admet_prediction(
+    request: ADMETExplainRequest,
+    db: Session = Depends(get_db),  # noqa: ARG001
+) -> ADMETExplainResponse:
+    predictor = get_admet_predictor()
+    endpoint = str(request.endpoint or "herg")
+
+    raw = predictor.predict_with_uncertainty(
+        [request.smiles],
+        endpoints=[endpoint],
+        include_shap=True,
+        shap_top_k=int(request.top_k),
+    )
+    item = (raw or [{}])[0] if isinstance(raw, list) else {}
+    err: Optional[str] = item.get("error") if isinstance(item, dict) else "prediction_failed"
+
+    preds = item.get("predictions") if isinstance(item, dict) else None
+    pred_ep = preds.get(endpoint) if isinstance(preds, dict) else None
+
+    shap: Optional[Dict[str, Any]] = None
+    prediction: Dict[str, Any] = {}
+
+    if isinstance(pred_ep, dict):
+        shap = pred_ep.get("shap")
+        prediction = dict(pred_ep)
+        prediction.pop("shap", None)
+        if "error" in prediction and not err:
+            err = str(prediction.get("error"))
+    else:
+        if err is None:
+            err = "prediction_unavailable"
+
+    return ADMETExplainResponse(
+        smiles=str(request.smiles or ""),
+        endpoint=endpoint,
+        prediction=prediction,
+        shap=shap,
+        error=err,
+    )
 
 
 __all__ = ["router"]

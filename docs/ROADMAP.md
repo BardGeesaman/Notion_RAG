@@ -228,7 +228,12 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 ## Machine Learning (Future)
 
 ### Tier 1 - High Impact
-- ❌ ADMET Baselines (QSAR with SHAP explainability)
+- ✅ ADMET SHAP Explainability (2025-12-25)
+  - Feature name mapping: amprenta_rag/ml/admet/features.py (2054 names)
+  - Ensemble SHAP explainer: amprenta_rag/ml/admet/explainer.py
+  - API: POST /api/admet/explain
+  - Dashboard: ADMET Predictor tabs (Explain + Global Importance)
+  - Docs: docs/ADMET_SHAP_GUIDE.md
 - ❌ Structural/Toxicity Alerts (PAINS/Lilly + ML)
 - ❌ Target-Activity QSAR (per-target classifiers)
 - ✅ Signature→MOA Inference (2025-12-17) - see MOA Inference from HTS + Multi-Omics (Advanced Analytics Features)

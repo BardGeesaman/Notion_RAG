@@ -252,6 +252,26 @@ class ADMETPredictResponse(BaseSchema):
     model_info: Dict[str, Any]
 
 
+class ADMETExplainRequest(BaseSchema):
+    smiles: str
+    endpoint: str = Field("herg", description="ADMET endpoint (herg|logs|logp)")
+    top_k: int = Field(10, ge=1, le=100, description="Number of top SHAP features")
+
+
+class SHAPFeature(BaseSchema):
+    name: str
+    value: float
+    rank: int
+
+
+class ADMETExplainResponse(BaseSchema):
+    smiles: str
+    endpoint: str
+    prediction: Dict[str, Any]
+    shap: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+
 class CatalogDatasetsResponse(BaseSchema):
     """Response wrapper for catalog dataset listings."""
 

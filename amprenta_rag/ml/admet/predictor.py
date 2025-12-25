@@ -162,6 +162,8 @@ class ADMETPredictor:
         self,
         smiles_list: List[str],
         endpoints: Optional[List[str]] = None,
+        include_shap: bool = False,
+        shap_top_k: int = 10,
     ) -> List[Dict[str, Any]]:
         """Predict ADMET with uncertainty quantification (ensemble + calibration + applicability)."""
 
@@ -302,6 +304,22 @@ class ADMETPredictor:
                     "similarity": sim,
                     "calibrated": bool(calibrated),
                 }
+
+                if include_shap:
+                    try:
+                        from amprenta_rag.ml.admet.explainer import EnsembleSHAPExplainer
+
+                        expl = EnsembleSHAPExplainer(artifact)
+                        shap_out = expl.explain_prediction(X, top_k=int(shap_top_k))
+                        out["predictions"][endpoint]["shap"] = {
+                            "top_features": shap_out.get("top_features") or [],
+                            "other_sum": float(shap_out.get("other_sum", 0.0)),
+                            "base_value": float(shap_out.get("base_value", 0.0)),
+                        }
+                    except ImportError:
+                        out["predictions"][endpoint]["shap"] = {"error": "shap not installed"}
+                    except Exception as e:  # noqa: BLE001
+                        out["predictions"][endpoint]["shap"] = {"error": str(e)}
 
             results.append(out)
 
