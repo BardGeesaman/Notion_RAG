@@ -42,3 +42,4 @@ def downgrade() -> None:
     op.drop_table("digest_schedules")
 
 
+

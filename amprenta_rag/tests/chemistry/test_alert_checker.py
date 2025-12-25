@@ -46,3 +46,4 @@ def test_invalid_smiles_handled() -> None:
     assert out["traffic_light"] == "RED"
 
 
+

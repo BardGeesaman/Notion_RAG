@@ -61,3 +61,4 @@ Use the **Target QSAR** page:
 - **Features**: Morgan fingerprint (2048 bits) + 6 RDKit descriptors (2054 dims).
 
 
+

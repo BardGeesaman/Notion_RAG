@@ -39,3 +39,4 @@ def downgrade() -> None:
     op.drop_table("notebook_reviews")
 
 
+

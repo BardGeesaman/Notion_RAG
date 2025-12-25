@@ -139,3 +139,4 @@ class StructuralAlertChecker:
 __all__ = ["StructuralAlertChecker", "get_traffic_light", "list_available_filters"]
 
 
+

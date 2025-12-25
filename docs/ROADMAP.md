@@ -246,7 +246,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Dashboard: Target QSAR page
   - Training CLI: scripts/train_qsar_models.py
 - ✅ Signature→MOA Inference (2025-12-17) - see MOA Inference from HTS + Multi-Omics (Advanced Analytics Features)
-- ❌ Biomarker Discovery (stable feature selection)
+- ✅ Biomarker Discovery (2025-12-25)
+  - Statistical tests (t-test, Mann-Whitney, ANOVA) with FDR correction
+  - Stability selection (bootstrap + LassoCV)
+  - Cross-validated importance (RandomForest)
+  - Consensus ranking across methods
+  - API: POST /api/biomarker/discover, GET /api/biomarker/methods
+  - Dashboard: Biomarker Discovery page (setup, methods, results tabs)
 
 ### Tier 2 - Strategic
 - ❌ Potency & Liability Multi-objective Ranking

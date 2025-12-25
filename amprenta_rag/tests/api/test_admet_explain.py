@@ -102,3 +102,4 @@ def test_explain_endpoint_shap_not_installed(monkeypatch):
     assert data["shap"]["error"] == "shap not installed"
 
 
+

@@ -15,3 +15,4 @@ In JupyterHub deployments, Voila is commonly proxied behind JupyterHub or a reve
 # - allowed notebook paths (templates directory only)
 
 
+

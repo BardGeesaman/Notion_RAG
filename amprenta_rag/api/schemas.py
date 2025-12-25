@@ -305,6 +305,28 @@ class QSARTargetInfo(BaseSchema):
     metrics: Optional[Dict[str, Any]] = None
 
 
+class BiomarkerFeature(BaseSchema):
+    feature: str
+    avg_rank: float
+    methods: int
+
+
+class BiomarkerDiscoverRequest(BaseSchema):
+    experiment_id: UUID
+    group1_samples: List[str] = Field(..., description="Sample IDs for group 1")
+    group2_samples: List[str] = Field(..., description="Sample IDs for group 2")
+    methods: List[str] = Field(
+        default_factory=lambda: ["statistical", "stability", "importance"],
+        description="Discovery methods to run",
+    )
+    fdr_threshold: float = Field(0.05, ge=0.0, le=1.0, description="FDR threshold for statistical filtering")
+
+
+class BiomarkerDiscoverResponse(BaseSchema):
+    consensus_ranking: List[BiomarkerFeature]
+    method_results: Dict[str, Any]
+
+
 class AlertCheckRequest(BaseSchema):
     smiles: str
     filters: Optional[List[str]] = None

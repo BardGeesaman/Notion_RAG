@@ -30,3 +30,4 @@ def test_target_qsar_page_loads(page: Page, streamlit_server: str) -> None:
     expect(main.locator('button[data-baseweb="tab"]', has_text="Model Info").first).to_be_visible(timeout=10000)
 
 
+

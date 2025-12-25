@@ -39,3 +39,4 @@ def test_single_compound_check(page: Page, streamlit_server: str) -> None:
     expect(main.get_by_text("GREEN").first).to_be_visible(timeout=20000)
 
 
+

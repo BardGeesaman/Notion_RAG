@@ -26,6 +26,8 @@ def test_admet_predictor_page_loads(page: Page, streamlit_server: str) -> None:
     expect(main.locator('button[data-baseweb="tab"]', has_text="Predict").first).to_be_visible(timeout=10000)
     expect(main.locator('button[data-baseweb="tab"]', has_text="Calibration").first).to_be_visible(timeout=10000)
     expect(main.locator('button[data-baseweb="tab"]', has_text="Model Info").first).to_be_visible(timeout=10000)
+    expect(main.locator('button[data-baseweb="tab"]', has_text="Explain").first).to_be_visible(timeout=10000)
+    expect(main.locator('button[data-baseweb="tab"]', has_text="Global Importance").first).to_be_visible(timeout=10000)
 
 
 def test_predict_tab_elements_exist(page: Page, streamlit_server: str) -> None:

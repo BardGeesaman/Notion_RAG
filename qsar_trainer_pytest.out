@@ -1,0 +1,8 @@
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.10.19, pytest-9.0.2, pluggy-1.6.0 -- /Users/bard/miniconda3/envs/myenv/bin/python3.10
+cachedir: .pytest_cache
+rootdir: /Users/bard/Documents/RAG
+configfile: pytest.ini
+[1mcollecting ... [0mcollected 0 items / 1 skipped
+
+[33m============================== [33m[1m1 skipped[0m[33m in 0.08s[0m[33m ==============================[0m

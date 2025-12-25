@@ -1,0 +1,13 @@
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.10.19, pytest-9.0.2, pluggy-1.6.0 -- /Users/bard/miniconda3/envs/myenv/bin/python3.10
+cachedir: .pytest_cache
+rootdir: /Users/bard/Documents/RAG
+configfile: pytest.ini
+[1mcollecting ... [0mcollected 4 items
+
+amprenta_rag/tests/ml/test_qsar_datasets.py::test_normalize_to_nm_various_units [32mPASSED[0m[32m [ 25%][0m
+amprenta_rag/tests/ml/test_qsar_datasets.py::test_aggregate_ic50_median [32mPASSED[0m[32m [ 50%][0m
+amprenta_rag/tests/ml/test_qsar_datasets.py::test_load_target_chembl [32mPASSED[0m[32m [ 75%][0m
+amprenta_rag/tests/ml/test_qsar_datasets.py::test_load_target_validates_criteria [32mPASSED[0m[32m [100%][0m
+
+[32m============================== [32m[1m4 passed[0m[32m in 0.36s[0m[32m ===============================[0m

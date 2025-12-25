@@ -41,3 +41,4 @@ def downgrade() -> None:
     op.drop_table("pinned_dashboards")
 
 
+

@@ -1,0 +1,23 @@
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.10.19, pytest-9.0.2, pluggy-1.6.0 -- /Users/bard/miniconda3/envs/myenv/bin/python3.10
+cachedir: .pytest_cache
+rootdir: /Users/bard/Documents/RAG
+configfile: pytest.ini
+[1mcollecting ... [0mcollected 14 items
+
+amprenta_rag/tests/ml/test_qsar_datasets.py::test_normalize_to_nm_various_units [32mPASSED[0m[33m [  7%][0m
+amprenta_rag/tests/ml/test_qsar_datasets.py::test_aggregate_ic50_median [32mPASSED[0m[33m [ 14%][0m
+amprenta_rag/tests/ml/test_qsar_datasets.py::test_load_target_chembl [32mPASSED[0m[33m [ 21%][0m
+amprenta_rag/tests/ml/test_qsar_datasets.py::test_load_target_validates_criteria [32mPASSED[0m[33m [ 28%][0m
+amprenta_rag/tests/ml/test_qsar_trainer.py::test_train_target_model_returns_metrics [33mSKIPPED[0m[33m [ 35%][0m
+amprenta_rag/tests/ml/test_qsar_trainer.py::test_train_target_model_registers_model [33mSKIPPED[0m[33m [ 42%][0m
+amprenta_rag/tests/ml/test_qsar_trainer.py::test_class_imbalance_handled [33mSKIPPED[0m[33m [ 50%][0m
+amprenta_rag/tests/ml/test_qsar_predictor.py::test_list_available_targets [32mPASSED[0m[33m [ 57%][0m
+amprenta_rag/tests/ml/test_qsar_predictor.py::test_predict_returns_probabilities [32mPASSED[0m[33m [ 64%][0m
+amprenta_rag/tests/ml/test_qsar_predictor.py::test_predict_invalid_smiles [32mPASSED[0m[33m [ 71%][0m
+amprenta_rag/tests/ml/test_qsar_predictor.py::test_predict_missing_model_handled [32mPASSED[0m[33m [ 78%][0m
+amprenta_rag/tests/api/test_qsar_api.py::test_list_targets_endpoint [32mPASSED[0m[33m [ 85%][0m
+amprenta_rag/tests/api/test_qsar_api.py::test_predict_endpoint_returns_results [32mPASSED[0m[33m [ 92%][0m
+amprenta_rag/tests/api/test_qsar_api.py::test_predict_endpoint_limit_enforced [32mPASSED[0m[33m [100%][0m
+
+[33m================== [32m11 passed[0m, [33m[1m3 skipped[0m, [33m[1m68 warnings[0m[33m in 4.34s[0m[33m ==================[0m

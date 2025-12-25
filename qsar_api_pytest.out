@@ -1,0 +1,12 @@
+[1m============================= test session starts ==============================[0m
+platform darwin -- Python 3.10.19, pytest-9.0.2, pluggy-1.6.0 -- /Users/bard/miniconda3/envs/myenv/bin/python3.10
+cachedir: .pytest_cache
+rootdir: /Users/bard/Documents/RAG
+configfile: pytest.ini
+[1mcollecting ... [0mcollected 3 items
+
+amprenta_rag/tests/api/test_qsar_api.py::test_list_targets_endpoint [32mPASSED[0m[33m [ 33%][0m
+amprenta_rag/tests/api/test_qsar_api.py::test_predict_endpoint_returns_results [32mPASSED[0m[33m [ 66%][0m
+amprenta_rag/tests/api/test_qsar_api.py::test_predict_endpoint_limit_enforced [32mPASSED[0m[33m [100%][0m
+
+[33m======================== [32m3 passed[0m, [33m[1m68 warnings[0m[33m in 4.24s[0m[33m ========================[0m
