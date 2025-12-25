@@ -161,9 +161,12 @@ Drug Discovery-Specific (Completed):
 - ✅ Artifact registry (HTML/JSON/PNGs) with provenance
 - ✅ Cache by (notebook_path, param_hash, code_hash)
 
-### Quick Wins
-- ❌ "Open as Dashboard" button (Voila read-only view)
-- ❌ Notebook Co-Pilot MVP (cell synthesizer)
+### Quick Wins (Completed 2025-12-25)
+- ✅ "Open as Dashboard" button (Voila /voila/render endpoint)
+- ✅ "Pin to Program" - lock dashboard to Program with config
+- ✅ Weekly Executive Digests (Papermill + email/Slack notifications)
+- ✅ Approval gates with signed review cards (HMAC-SHA256 signatures)
+- ✅ AutoML Notebook Templates (classification, regression, clustering)
 
 ### Advanced
 - ✅ Jupyter Advanced Features (2025-12-24)
@@ -171,9 +174,10 @@ Drug Discovery-Specific (Completed):
   - SAR What-If Designer: SMILES input, real-time ADMET prediction, 2D structure rendering
   - Scaffold Hopping: benzene→pyridine, cyclohexane→piperidine transformations
   - Risk assessment with color-coded GREEN/YELLOW/RED heuristics
-- ❌ "Pin to Program" - dashboard instance locked to Program
-- ❌ Weekly Executive Digests (scheduled Papermill → Voila)
-- ❌ Approval gates with signed review cards
+- ✅ AutoML Notebook Templates (2025-12-25)
+  - XGBoost classification/regression
+  - K-means clustering with elbow plot
+  - Papermill parameters + MLModelRegistry integration
 
 ### HTS Plate Viewer (MVP - 3-4 days)
 Data requirements:

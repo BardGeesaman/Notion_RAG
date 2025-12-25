@@ -7,6 +7,7 @@ import streamlit as st
 
 from amprenta_rag.database.models import Program
 from scripts.dashboard.db_session import db_session
+from scripts.dashboard.pages.program_detail import render_pinned_dashboards_section
 
 
 def render_programs_page() -> None:
@@ -48,6 +49,9 @@ def render_programs_page() -> None:
                     dataset_count = len(program.datasets)
                     if dataset_count > 0:
                         st.write(f"**Related Datasets:** {dataset_count}")
+
+                    st.divider()
+                    render_pinned_dashboards_section(program_id=program.id, key_prefix=f"prog_{program.id}_")
 
                     api_base = st.secrets.get("api_base_url", "http://localhost:8000")
                     if st.button("📄 Generate Report", key=f"report_{program.id}"):

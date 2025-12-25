@@ -152,6 +152,26 @@ class Program(Base):
         back_populates="programs",
         viewonly=False,
     )
+    pinned_dashboards: Mapped[List["PinnedDashboard"]] = relationship(
+        "PinnedDashboard", back_populates="program", cascade="all, delete-orphan"
+    )
+
+
+class PinnedDashboard(Base):
+    """Notebook dashboards pinned/locked to a Program."""
+
+    __tablename__ = "pinned_dashboards"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    notebook_path = Column(String(500), nullable=False, index=True)
+    program_id = Column(UUID(as_uuid=True), ForeignKey("programs.id", ondelete="CASCADE"), nullable=False, index=True)
+    pinned_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    pinned_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    display_name = Column(String(500), nullable=True)
+    config = Column(JSONB, nullable=True)
+
+    program: Mapped["Program"] = relationship("Program", back_populates="pinned_dashboards")
+    pinned_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[pinned_by_id])
 
 
 class Experiment(Base):
@@ -995,6 +1015,43 @@ class ReportSchedule(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
+
+
+class DigestSchedule(Base):
+    """Scheduled execution of notebook digests (Papermill -> HTML render)."""
+
+    __tablename__ = "digest_schedules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    program_id = Column(UUID(as_uuid=True), ForeignKey("programs.id", ondelete="CASCADE"), nullable=False, index=True)
+    notebook_path = Column(String(500), nullable=False)
+    schedule_cron = Column(String(100), nullable=False)
+    recipients = Column(JSONB, nullable=False)  # list of emails or user ids
+    last_run_at = Column(DateTime(timezone=True), nullable=True)
+    last_status = Column(String(20), nullable=True)  # success|failed
+    enabled = Column(Boolean, default=True, nullable=False)
+
+    program: Mapped["Program"] = relationship("Program")
+
+
+class NotebookReview(Base):
+    """Notebook review record with signed decision and audit trail."""
+
+    __tablename__ = "notebook_reviews"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    notebook_path = Column(String(500), nullable=False, index=True)
+    version_hash = Column(String(64), nullable=False, index=True)
+    reviewer_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    status = Column(String(32), nullable=False, default="pending", index=True)
+    comments = Column(Text, nullable=True)
+    signature = Column(String(128), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    reviewer: Mapped[Optional["User"]] = relationship("User", foreign_keys=[reviewer_id])
+
+    __table_args__ = (Index("ix_notebook_reviews_notebook_status", "notebook_path", "status"),)
 
 
 class RepositorySubscription(Base):

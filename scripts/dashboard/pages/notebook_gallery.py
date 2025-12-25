@@ -8,6 +8,9 @@ from typing import Any, Dict, List
 import httpx
 import streamlit as st
 
+from scripts.dashboard.components.notebook_card import render_notebook_card
+from scripts.dashboard.components.review_card import render_review_badge
+
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 JUPYTERHUB_URL = os.environ.get("JUPYTERHUB_URL", "http://localhost:8000")
@@ -40,6 +43,14 @@ def _truncate(s: str, n: int = 160) -> str:
     if len(t) <= n:
         return t
     return t[: n - 1].rstrip() + "…"
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _review_status(nb_path: str) -> dict:
+    try:
+        return dict(_api_get(f"/api/reviews/notebook/{nb_path}", timeout=10) or {})
+    except Exception:
+        return {}
 
 
 def render_notebook_gallery_page() -> None:
@@ -105,23 +116,26 @@ def render_notebook_gallery_page() -> None:
     for i, tpl in enumerate(filtered):
         col = cols[i % 3]
         with col:
-            st.subheader(str(tpl.get("title") or tpl.get("id") or "Untitled"))
-            st.caption(_truncate(str(tpl.get("description") or "")))
-            if tpl.get("tags"):
-                st.caption("Tags: " + ", ".join([str(t) for t in tpl.get("tags") or []]))
-
-            # Preview placeholder
-            st.caption("Preview: (placeholder)")
-
             tpl_id = str(tpl.get("id"))
             nb_path = str(tpl.get("notebook_path") or "")
 
-            # Deep link into JupyterHub
+            source_url = f"{API_BASE}/api/notebooks/templates/{tpl_id}/download" if tpl_id else None
             if nb_path:
-                jhub_link = f"{JUPYTERHUB_URL.rstrip('/')}/notebooks/{nb_path}"
-                st.link_button("Open in JupyterHub", jhub_link)
+                render_review_badge(_review_status(nb_path))
+            render_notebook_card(
+                notebook_path=nb_path,
+                title=str(tpl.get("title") or tpl.get("id") or "Untitled"),
+                description=_truncate(str(tpl.get("description") or "")),
+                tags=list(tpl.get("tags") or []),
+                # JupyterHub link preserved (Open in Jupyter)
+                jupyter_url=f"{JUPYTERHUB_URL.rstrip('/')}/notebooks/{nb_path}" if nb_path else None,
+                # Voila: /voila/render/{notebook_path}
+                voila_url=f"{JUPYTERHUB_URL.rstrip('/')}/voila/render/{nb_path}" if nb_path else None,
+                source_url=source_url,
+                preview_image=str(tpl.get("preview_image") or "") if tpl.get("preview_image") else None,
+            )
 
-            # Download button (fetch from API)
+            # Download button (fetch from API; keep existing behavior)
             try:
                 with httpx.Client(timeout=30) as client:
                     r = client.get(f"{API_BASE}/api/notebooks/templates/{tpl_id}/download")
