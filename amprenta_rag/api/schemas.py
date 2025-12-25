@@ -272,6 +272,39 @@ class ADMETExplainResponse(BaseSchema):
     error: Optional[str] = None
 
 
+class QSARPredictRequest(BaseSchema):
+    smiles_list: List[str] = Field(..., description="SMILES list (max 100)")
+    targets: List[str] = Field(..., description="Target names (e.g., EGFR, BRAF)")
+
+
+class QSARTargetPrediction(BaseSchema):
+    probability: float
+    std: Optional[float] = None
+    ci_low: Optional[float] = None
+    ci_high: Optional[float] = None
+    in_domain: Optional[bool] = None
+    similarity: Optional[float] = None
+    calibrated: bool
+    active: bool
+
+
+class QSARCompoundResult(BaseSchema):
+    smiles: str
+    predictions: Dict[str, QSARTargetPrediction]
+    error: Optional[str] = None
+
+
+class QSARPredictResponse(BaseSchema):
+    results: List[QSARCompoundResult]
+
+
+class QSARTargetInfo(BaseSchema):
+    target: str
+    model_name: str
+    version: str
+    metrics: Optional[Dict[str, Any]] = None
+
+
 class AlertCheckRequest(BaseSchema):
     smiles: str
     filters: Optional[List[str]] = None

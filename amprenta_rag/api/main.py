@@ -54,6 +54,7 @@ from amprenta_rag.api.routers import (
     extraction,
     sync,
     admet,
+    qsar,
 )
 from amprenta_rag.config import get_config
 
@@ -129,6 +130,7 @@ app.include_router(companies.router, prefix="/api")
 app.include_router(extraction.router, prefix="/api")
 app.include_router(sync.router, prefix="/api")
 app.include_router(admet.router, prefix="/api")
+app.include_router(qsar.router, prefix="/api")
 
 
 @app.get("/")

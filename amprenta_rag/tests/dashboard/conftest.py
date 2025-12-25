@@ -5,6 +5,7 @@ from typing import Dict, Any
 
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -86,7 +87,7 @@ def fastapi_server():
 
     _kill_port(port)
     proc = subprocess.Popen(
-        ["uvicorn", "amprenta_rag.api.main:app", f"--port={port}", "--host=0.0.0.0"],
+        [sys.executable, "-m", "uvicorn", "amprenta_rag.api.main:app", f"--port={port}", "--host=0.0.0.0"],
         cwd=project_root,
         env=env,
         stdout=log_f,
@@ -154,7 +155,7 @@ def streamlit_server(fastapi_server):
 
     _kill_port(port)
     proc = subprocess.Popen(
-        ["streamlit", "run", "scripts/dashboard/app.py", f"--server.port={port}", "--server.headless=true"],
+        [sys.executable, "-m", "streamlit", "run", "scripts/dashboard/app.py", f"--server.port={port}", "--server.headless=true"],
         cwd=project_root,
         env=env,
         stdout=log_f,

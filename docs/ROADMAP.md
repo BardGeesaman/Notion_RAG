@@ -238,7 +238,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Filters: PAINS (RDKit FilterCatalog), Brenk (RDKit FilterCatalog), Lilly (SMARTS subset)
   - API: POST /api/alerts/check, POST /api/alerts/batch, GET /api/alerts/filters
   - Dashboard: Structural Alerts page + compound detail integration
-- ❌ Target-Activity QSAR (per-target classifiers)
+- ✅ Target-Activity QSAR (2025-12-25)
+  - ChEMBL integration for training data
+  - TargetDatasetLoader with unit normalization + median IC50 aggregation
+  - BootstrapEnsemble per target + isotonic calibration + applicability checks
+  - API: /api/qsar/targets, /api/qsar/predict
+  - Dashboard: Target QSAR page
+  - Training CLI: scripts/train_qsar_models.py
 - ✅ Signature→MOA Inference (2025-12-17) - see MOA Inference from HTS + Multi-Omics (Advanced Analytics Features)
 - ❌ Biomarker Discovery (stable feature selection)
 
