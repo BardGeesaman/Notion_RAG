@@ -100,7 +100,11 @@ app.include_router(moa.router, prefix="/api/v1", tags=["MOA"])
 app.include_router(chemistry.router, prefix="/api/v1", tags=["Chemistry"])
 app.include_router(catalog.router, prefix="/api/v1", tags=["Catalog"])
 app.include_router(subscriptions.router, prefix="/api/v1", tags=["Subscriptions"])
+# Note: `amprenta_rag.api.routers.alerts` contains TWO routers:
+# - `alerts.router` (legacy notification alerts) served at `/api/v1/alerts/*`
+# - `alerts.structural_router` (structural alert checking: PAINS/Brenk/Lilly) served at `/api/alerts/*`
 app.include_router(alerts.router, prefix="/api/v1", tags=["Alerts"])
+app.include_router(alerts.structural_router, prefix="/api")
 app.include_router(notebook.router, prefix="/api/notebook", tags=["Notebook"])
 app.include_router(notebooks.router, prefix="/api")
 app.include_router(dashboards.router, prefix="/api")

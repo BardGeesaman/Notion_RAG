@@ -272,6 +272,47 @@ class ADMETExplainResponse(BaseSchema):
     error: Optional[str] = None
 
 
+class AlertCheckRequest(BaseSchema):
+    smiles: str
+    filters: Optional[List[str]] = None
+
+
+class AlertBatchRequest(BaseSchema):
+    smiles_list: List[str] = Field(..., description="SMILES list (max 100)")
+    filters: Optional[List[str]] = None
+
+
+class AlertResultSchema(BaseSchema):
+    alert_type: str
+    pattern_name: str
+    description: str
+    severity: str
+    matched_smarts: str
+
+
+class AlertCheckResponse(BaseSchema):
+    smiles: str
+    is_clean: bool
+    traffic_light: str
+    alert_count: int
+    alerts: List[AlertResultSchema]
+    summary: Dict[str, int]
+    error: Optional[str] = None
+
+
+class AlertBatchResponse(BaseSchema):
+    results: List[AlertCheckResponse]
+    total_checked: int
+    clean_count: int
+    flagged_count: int
+
+
+class FilterInfo(BaseSchema):
+    name: str
+    pattern_count: int
+    description: str
+
+
 class CatalogDatasetsResponse(BaseSchema):
     """Response wrapper for catalog dataset listings."""
 

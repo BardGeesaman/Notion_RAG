@@ -234,7 +234,10 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - API: POST /api/admet/explain
   - Dashboard: ADMET Predictor tabs (Explain + Global Importance)
   - Docs: docs/ADMET_SHAP_GUIDE.md
-- ❌ Structural/Toxicity Alerts (PAINS/Lilly + ML)
+- ✅ Structural Alerts MVP (2025-12-25)
+  - Filters: PAINS (RDKit FilterCatalog), Brenk (RDKit FilterCatalog), Lilly (SMARTS subset)
+  - API: POST /api/alerts/check, POST /api/alerts/batch, GET /api/alerts/filters
+  - Dashboard: Structural Alerts page + compound detail integration
 - ❌ Target-Activity QSAR (per-target classifiers)
 - ✅ Signature→MOA Inference (2025-12-17) - see MOA Inference from HTS + Multi-Omics (Advanced Analytics Features)
 - ❌ Biomarker Discovery (stable feature selection)

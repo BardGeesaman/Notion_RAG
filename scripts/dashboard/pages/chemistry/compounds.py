@@ -49,6 +49,20 @@ def _traffic_light(endpoint: str, mean: float, std: float | None) -> str:
     return downgrade(level)
 
 
+def _render_structural_alert_badge(light: str) -> None:
+    tl = (light or "").upper()
+    bg = {"GREEN": "#2E8B57", "YELLOW": "#F0AD4E", "RED": "#C73E1D"}.get(tl, "#888888")
+    st.markdown(
+        f"""
+<div style="display:inline-block;padding:6px 12px;border-radius:999px;background:{bg};color:white;
+font-weight:700;letter-spacing:0.5px;font-size:12px;">
+{tl or "UNKNOWN"}
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
 def render_compounds_tab(
     tab_compounds,
     tab_register,
@@ -208,6 +222,55 @@ def _render_compounds(tab, db_session, compound_model, export_compounds):
                                 st.markdown("[Open full ADMET Predictor](/?page=ADMET%20Predictor)")
                             except Exception as e:  # noqa: BLE001
                                 st.error(f"ADMET prediction failed: {e}")
+
+                        # Structural alerts (PAINS/Brenk/Lilly)
+                        alert_cache_key = f"structural_alerts_check_{compound.id}"
+                        c_btn, c_out = st.columns([1, 3])
+                        with c_btn:
+                            if st.button("Check Alerts", key=f"alerts_{compound.id}", type="secondary"):
+                                with st.spinner("Checking structural alerts..."):
+                                    try:
+                                        out = _api_post("/api/alerts/check", {"smiles": compound.smiles, "filters": None}, timeout=60)
+                                        st.session_state[alert_cache_key] = out
+                                    except Exception as e:  # noqa: BLE001
+                                        st.session_state[alert_cache_key] = {"smiles": compound.smiles, "error": str(e), "alerts": []}
+
+                        with c_out:
+                            cached = st.session_state.get(alert_cache_key)
+                            if isinstance(cached, dict) and (cached.get("smiles") == compound.smiles):
+                                if cached.get("error"):
+                                    st.error(f"Alert check failed: {cached['error']}")
+                                else:
+                                    _render_structural_alert_badge(str(cached.get("traffic_light") or ""))
+                                    summary = cached.get("summary") or {}
+                                    if isinstance(summary, dict):
+                                        st.caption(
+                                            f"PAINS: {int(summary.get('pains_count', 0) or 0)} · "
+                                            f"Brenk: {int(summary.get('brenk_count', 0) or 0)} · "
+                                            f"Lilly: {int(summary.get('lilly_count', 0) or 0)}"
+                                        )
+
+                                    alerts = cached.get("alerts") or []
+                                    if isinstance(alerts, list) and alerts:
+                                        with st.expander(f"Alert details ({len(alerts)})", expanded=False):
+                                            df_alerts = pd.DataFrame(alerts)
+                                            if not df_alerts.empty:
+                                                df_alerts = df_alerts.rename(
+                                                    columns={
+                                                        "alert_type": "Type",
+                                                        "pattern_name": "Pattern Name",
+                                                        "description": "Description",
+                                                        "severity": "Severity",
+                                                        "matched_smarts": "SMARTS",
+                                                    }
+                                                )
+                                                cols = ["Type", "Pattern Name", "Description", "Severity", "SMARTS"]
+                                                st.dataframe(
+                                                    df_alerts[[c for c in cols if c in df_alerts.columns]],
+                                                    hide_index=True,
+                                                    use_container_width=True,
+                                                )
+                                    st.markdown("[Open full Structural Alerts](/?page=Structural%20Alerts)")
 
                         st.markdown(
                             f"[View in Graph Explorer](/?page=Graph%20Explorer&entity_type=compound&entity_id={compound.id})"

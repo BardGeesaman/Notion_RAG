@@ -12,9 +12,16 @@ from amprenta_rag.chemistry.normalization import (
     generate_compound_id,
     normalize_smiles,
 )
+from amprenta_rag.chemistry.alerts import AlertResult, PAINSFilter, BRENKFilter, LillyFilter
+from amprenta_rag.chemistry.alert_checker import StructuralAlertChecker
 
 __all__ = [
     "normalize_smiles",
     "compute_molecular_descriptors",
     "generate_compound_id",
+    "AlertResult",
+    "PAINSFilter",
+    "BRENKFilter",
+    "LillyFilter",
+    "StructuralAlertChecker",
 ]
