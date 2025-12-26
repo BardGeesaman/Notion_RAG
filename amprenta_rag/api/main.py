@@ -59,6 +59,7 @@ from amprenta_rag.api.routers import (
     viz3d,
     compound_target,
     explorer,
+    pathway_maps,
 )
 from amprenta_rag.config import get_config
 
@@ -139,6 +140,7 @@ app.include_router(biomarker.router, prefix="/api")
 app.include_router(viz3d.router, prefix="/api")
 app.include_router(compound_target.router, prefix="/api/network")
 app.include_router(explorer.router, prefix="/api")
+app.include_router(pathway_maps.router, prefix="/api")
 
 
 @app.get("/")

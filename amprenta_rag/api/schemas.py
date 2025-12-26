@@ -869,6 +869,70 @@ class PathwayFeatures(BaseModel):
 
 
 # ============================================================================
+# Pathway maps (KEGG-only MVP) schemas
+# ============================================================================
+
+
+class PathwayNodeSchema(BaseModel):
+    id: str
+    name: str
+    type: str
+    x: float
+    y: float
+    kegg_ids: List[str] = Field(default_factory=list)
+
+
+class PathwayEdgeSchema(BaseModel):
+    source: str
+    target: str
+    type: str
+    subtype: Optional[str] = None
+    style: str = "solid"
+    color: str = "#9E9E9E"
+
+
+class PathwayStructureResponse(BaseModel):
+    pathway_id: str
+    name: str
+    nodes: List[PathwayNodeSchema] = Field(default_factory=list)
+    edges: List[PathwayEdgeSchema] = Field(default_factory=list)
+    organism: str = ""
+
+
+class PathwayOverlayRequest(BaseModel):
+    pathway_id: str
+    expression_data: Dict[str, float] = Field(default_factory=dict)
+    colormap: str = "RdBu_r"
+    vmin: float = -2.0
+    vmax: float = 2.0
+
+
+class PathwayOverlayNodeSchema(BaseModel):
+    node_id: str
+    gene_symbol: str
+    value: float
+    color: str
+    label: str
+
+
+class PathwayOverlayResponse(BaseModel):
+    pathway_id: str
+    overlays: List[PathwayOverlayNodeSchema] = Field(default_factory=list)
+
+
+class PathwaySearchResult(BaseModel):
+    pathway_id: str
+    name: str
+    organism: str
+    gene_count: int = 0
+
+
+class PathwayExpressionResponse(BaseModel):
+    dataset_id: UUID
+    gene_expression: Dict[str, float] = Field(default_factory=dict)
+
+
+# ============================================================================
 # MOA inference schemas
 # ============================================================================
 

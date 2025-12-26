@@ -315,7 +315,14 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - API: POST /api/network/compound-target, expand endpoints
   - Dashboard: Compound-Target Network page (3 tabs)
   - Integration: "View in Network" from compound detail
-- ❌ Pathway Maps with Data Overlays
+- ✅ Pathway Maps with Data Overlays (2025-12-25)
+  - KEGG KGML pathway structure parsing with coordinate normalization
+  - Expression data overlay with diverging colormaps
+  - File-based caching with 7-day TTL
+  - Node shapes: gene (rectangle), compound (ellipse), sub-pathway (hexagon)
+  - Edge styles: activation (green), inhibition (red dashed)
+  - API: 5 endpoints (structure, overlay, search, enriched, expression)
+  - Dashboard: Pathway Map Viewer page with 4 tabs
 - ✅ Dose-Response Explorer (2025-12-25)
   - 3PL/4PL/Bayesian curve fitting with scipy and PyMC
   - Bootstrap confidence intervals for parameter estimation
