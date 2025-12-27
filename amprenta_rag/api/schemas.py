@@ -1058,3 +1058,83 @@ class UpSetResponse(BaseModel):
     sets: List[UpSetSet]
     intersections: List[UpSetIntersection]
     matrix: List[UpSetMatrixItem]  # List of matrix items with presence vectors
+
+
+# ============================================================================
+# Compound Ranking schemas
+# ============================================================================
+
+
+class RankingRequest(BaseModel):
+    """Request for compound ranking."""
+    
+    compound_ids: List[str]  # UUIDs as strings
+    weights: Optional[Dict[str, float]] = None  # Override preset
+    preset: Optional[str] = None  # "balanced", "potency_first", etc.
+    include_pareto: bool = True
+
+
+class ObjectiveScoreSchema(BaseModel):
+    """Individual objective score."""
+    
+    name: str
+    raw_value: Optional[float]
+    normalized: float
+    weight: float
+    confidence: Optional[float] = None
+
+
+class CompoundRankingSchema(BaseModel):
+    """Compound ranking result."""
+    
+    compound_id: str
+    smiles: str
+    objectives: List[ObjectiveScoreSchema]
+    weighted_score: float
+    pareto_rank: Optional[int]
+    rank: int
+
+
+class RankingResponse(BaseModel):
+    """Response for compound ranking."""
+    
+    rankings: List[CompoundRankingSchema]
+    pareto_front: List[CompoundRankingSchema]
+    total_compounds: int
+    skipped_compounds: int  # Missing potency or invalid SMILES
+
+
+class ParetoRequest(BaseModel):
+    """Request for Pareto plot data."""
+    
+    compound_ids: List[str]
+    x_objective: str = "potency"
+    y_objective: str = "liability_aggregate"  # or specific: "herg", "alerts"
+
+
+class ParetoPoint(BaseModel):
+    """Point in Pareto plot."""
+    
+    compound_id: str
+    smiles: str
+    x_value: float
+    y_value: float
+    pareto_rank: int
+    is_frontier: bool
+
+
+class ParetoResponse(BaseModel):
+    """Response for Pareto plot data."""
+    
+    points: List[ParetoPoint]
+    x_label: str
+    y_label: str
+    frontier_ids: List[str]
+
+
+class RankingPreset(BaseModel):
+    """Ranking weight preset."""
+    
+    name: str
+    weights: Dict[str, float]
+    description: str

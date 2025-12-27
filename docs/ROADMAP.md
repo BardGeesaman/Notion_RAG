@@ -255,7 +255,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Dashboard: Biomarker Discovery page (setup, methods, results tabs)
 
 ### Tier 2 - Strategic
-- ❌ Potency & Liability Multi-objective Ranking
+- ✅ Potency & Liability Multi-objective Ranking (2025-12-27)
+  - 5 objectives: potency, hERG, alerts, logS, logP
+  - Multi-type potency normalization (IC50/EC50/Ki/Kd)
+  - Weighted alert scoring (PAINS > Brenk/Lilly)
+  - 4 presets: balanced, potency-first, safety-first, CNS-optimized
+  - 2D Pareto visualization (liability vs potency)
+  - API: 3 endpoints (score, pareto, presets)
 - ❌ Assay Outcome Predictors (program-specific)
 - ❌ Active Learning for Screening
 
