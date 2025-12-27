@@ -629,6 +629,26 @@ class ActivityCliffResponse(BaseSchema):
     assay_id: Optional[str] = None
 
 
+class ScaffoldSummary(BaseSchema):
+    scaffold_smiles: str
+    compound_count: int
+
+
+class SARGridRequest(BaseSchema):
+    compound_ids: List[str]
+    core_smarts: Optional[str] = None  # Auto-detect if None
+    x_axis: str = "R1"
+    y_axis: str = "R2"
+
+
+class SARGridResponse(BaseSchema):
+    matrix: List[List[Optional[float]]]  # 2D array of activity values
+    row_labels: List[str]  # R-group strings for rows
+    col_labels: List[str]  # R-group strings for columns
+    core_smiles: str
+    total_compounds: int
+
+
 # ============================================================================
 # Signature schemas
 # ============================================================================

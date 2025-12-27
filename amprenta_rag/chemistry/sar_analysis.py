@@ -188,3 +188,53 @@ def detect_activity_cliffs(
         return cliffs
     finally:
         db_gen.close()
+
+
+def build_sar_matrix(
+    compounds: List[Dict[str, Any]],
+    x_axis: str = "R1",
+    y_axis: str = "R2", 
+    activity_col: str = "ic50",
+) -> pd.DataFrame:
+    """
+    Build pivot table for SAR grid.
+    
+    Args:
+        compounds: Output from decompose_rgroups (has R1, R2, etc. keys)
+        x_axis: R-group position for columns
+        y_axis: R-group position for rows
+        activity_col: Activity column name (ic50, pic50)
+        
+    Returns:
+        DataFrame with R-groups as row/col labels, activity as values.
+        Multiple compounds with same R1/R2: take mean.
+    """
+    if not compounds:
+        return pd.DataFrame()
+    
+    # Convert to DataFrame for easier manipulation
+    df = pd.DataFrame(compounds)
+    
+    # Check if required columns exist
+    required_cols = [x_axis, y_axis, activity_col]
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Missing required columns: {missing_cols}")
+    
+    # Filter out rows with null values in key columns
+    df_clean = df.dropna(subset=[x_axis, y_axis, activity_col])
+    
+    if df_clean.empty:
+        return pd.DataFrame()
+    
+    # Create pivot table with mean aggregation for duplicates
+    pivot_table = pd.pivot_table(
+        df_clean,
+        values=activity_col,
+        index=y_axis,  # Rows
+        columns=x_axis,  # Columns
+        aggfunc='mean',
+        fill_value=None
+    )
+    
+    return pivot_table

@@ -343,7 +343,12 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - API: 3 endpoints (datasets, alluvial, upset)
 
 ### Tier 2 - Strategic
-- ❌ SAR Grid & R-Group Explorer
+- ✅ SAR Grid & R-Group Explorer (2025-12-27)
+  - SAR matrix builder with pivot table
+  - Plotly heatmap with pIC50 coloring
+  - Murcko scaffold extraction
+  - Integrated into existing SAR Analysis tab
+  - API: 2 endpoints (scaffolds, grid)
 - ❌ Interactive Plate Maps (HTS QC)
 - ❌ Program/Experiment Voila Dashboards
 
