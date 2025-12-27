@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
+from enum import Enum
 from typing import List, Optional
 
 from sqlalchemy import (
@@ -17,6 +18,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Enum,
     Float,
     ForeignKey,
     Index,
@@ -46,6 +48,17 @@ def generate_uuid() -> uuid.UUID:
         A new UUID4 instance
     """
     return uuid.uuid4()
+
+
+class ActivityEventType(str, Enum):
+    """Types of activity events that can be tracked."""
+    
+    COMPOUND_ADDED = "compound_added"
+    EXPERIMENT_CREATED = "experiment_created"
+    MODEL_TRAINED = "model_trained"
+    HIT_CONFIRMED = "hit_confirmed"
+    STATUS_CHANGED = "status_changed"
+    NOTEBOOK_REVIEWED = "notebook_reviewed"
 
 
 # Association tables for many-to-many relationships
@@ -1074,19 +1087,43 @@ class RepositorySubscription(Base):
     user: Mapped[Optional["User"]] = relationship(foreign_keys=[user_id])
 
 
-class Alert(Base):
-    """Alert generated from repository subscription matches."""
+class RepositoryNotification(Base):
+    """Notification generated from activity events or repository subscription matches."""
 
-    __tablename__ = "alerts"
+    __tablename__ = "repository_notifications"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
-    subscription_id = Column(UUID(as_uuid=True), ForeignKey("repository_subscriptions.id"), nullable=False)
-    dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=False)
+    subscription_id = Column(UUID(as_uuid=True), ForeignKey("repository_subscriptions.id"), nullable=True)
+    dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=True)
+    activity_event_id = Column(UUID(as_uuid=True), ForeignKey("activity_events.id"), nullable=True)
+    notification_type = Column(String(50), default="discovery", nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
-    subscription: Mapped["RepositorySubscription"] = relationship("RepositorySubscription")
-    dataset: Mapped["Dataset"] = relationship("Dataset")
+    subscription: Mapped[Optional["RepositorySubscription"]] = relationship("RepositorySubscription")
+    dataset: Mapped[Optional["Dataset"]] = relationship("Dataset")
+    activity_event: Mapped["ActivityEvent"] = relationship("ActivityEvent", back_populates="repository_notifications")
+
+
+class ActivityEvent(Base):
+    """Activity event that tracks user actions and system events."""
+
+    __tablename__ = "activity_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    event_type = Column(String(50), nullable=False, index=True)
+    actor_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    target_type = Column(String(50), nullable=True, index=True)
+    target_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    target_name = Column(String(255), nullable=True)  # snapshot for orphan handling
+    program_id = Column(UUID(as_uuid=True), ForeignKey("programs.id"), nullable=True, index=True)
+    event_metadata = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+
+    # Relationships
+    actor: Mapped["User"] = relationship("User")
+    program: Mapped["Program"] = relationship("Program")
+    repository_notifications: Mapped[List["RepositoryNotification"]] = relationship("RepositoryNotification", back_populates="activity_event")
 
 
 class GenomicsIndex(Base):

@@ -1214,3 +1214,38 @@ class HealthReportSchema(BaseModel):
     psi_max: Optional[float]
     ece: Optional[float]
     last_checked: datetime
+
+
+# Activity & Notifications Schemas
+class ActivityEventSchema(BaseModel):
+    """Activity event schema for API responses."""
+    
+    id: UUID
+    event_type: str
+    actor_id: Optional[UUID] = None
+    target_type: str
+    target_id: UUID
+    target_name: str
+    program_id: Optional[UUID] = None
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime
+
+
+class NotificationSchema(BaseModel):
+    """Notification schema for API responses."""
+    
+    id: UUID
+    user_id: UUID
+    activity_event_id: Optional[UUID] = None
+    notification_type: str
+    title: Optional[str] = None
+    message: Optional[str] = None
+    is_read: bool
+    created_at: datetime
+    activity_event: Optional[ActivityEventSchema] = None
+
+
+class NotificationCountSchema(BaseModel):
+    """Notification count schema."""
+    
+    unread_count: int

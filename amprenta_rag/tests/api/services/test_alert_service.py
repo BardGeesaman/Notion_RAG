@@ -23,7 +23,7 @@ class Field:
         return hash(self.name)
 
 
-class FakeAlert:
+class FakeRepositoryNotification:
     id = Field("id")
     created_at = Field("created_at")
     is_read = Field("is_read")
@@ -104,31 +104,31 @@ class FakeSession:
 
 
 def test_list_alerts_limits_and_sorts(monkeypatch):
-    old = FakeAlert(created_at=datetime.utcnow() - timedelta(days=1))
-    new = FakeAlert(created_at=datetime.utcnow())
+    old = FakeRepositoryNotification(created_at=datetime.utcnow() - timedelta(days=1))
+    new = FakeRepositoryNotification(created_at=datetime.utcnow())
     db = FakeSession([new, old])
     monkeypatch.setattr(alert_service, "db_session", lambda: db)
-    monkeypatch.setattr(alert_service, "Alert", FakeAlert)
+    monkeypatch.setattr(alert_service, "RepositoryNotification", FakeRepositoryNotification)
 
     rows = alert_service.list_alerts(user_id=None, unread_only=False)
     assert rows[0]["id"] == new.id
 
 
 def test_mark_read(monkeypatch):
-    alert = FakeAlert(is_read=False)
+    alert = FakeRepositoryNotification(is_read=False)
     db = FakeSession([alert])
     monkeypatch.setattr(alert_service, "db_session", lambda: db)
-    monkeypatch.setattr(alert_service, "Alert", FakeAlert)
+    monkeypatch.setattr(alert_service, "RepositoryNotification", FakeRepositoryNotification)
     assert alert_service.mark_read(alert.id) is True
     assert alert.is_read is True
     assert alert_service.mark_read(uuid4()) is False
 
 
 def test_delete_alert(monkeypatch):
-    alert = FakeAlert(is_read=False)
+    alert = FakeRepositoryNotification(is_read=False)
     db = FakeSession([alert])
     monkeypatch.setattr(alert_service, "db_session", lambda: db)
-    monkeypatch.setattr(alert_service, "Alert", FakeAlert)
+    monkeypatch.setattr(alert_service, "RepositoryNotification", FakeRepositoryNotification)
     updated = alert_service.mark_all_read(user_id=None)
     assert updated == 1
 

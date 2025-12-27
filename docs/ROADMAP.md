@@ -66,6 +66,16 @@ Simple status legend:
 - ✅ Cross-Omics Pathway Analysis (enrichment, network proximity)
 - ✅ MOA Inference from HTS + Multi-Omics (evidence fusion, probability scores)
 
+### Collaboration & User Experience
+- ✅ Activity Feed + Notifications (2025-12-27)
+  - activity_events table for tracking actions
+  - Unified notification system (merged with alerts)
+  - API: 6 endpoints (feed, events, notifications, read, read-all, count)
+  - Dashboard: Enhanced alerts bell with Activity tab
+  - Activity Feed page with filters and timeline
+  - Integration: model training, experiments, notebook reviews
+  - Phase 2: compound_added, hit_confirmed, status_changed integration
+
 ### Testing & Development
 - ✅ Comprehensive Test Data Seeding Suite (all domains, size presets, deterministic)
 - ✅ Phase 2 Code Quality (2025-12-19): ruff.toml config, 6,252 whitespace fixes, 213 F401 fixes, 22 E712 fixes, model re-exports restored
@@ -373,7 +383,6 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - ❌ Entity-Scoped Sharing & Roles (per-entity ACLs)
 - ❌ Comments, Mentions, Inline Annotations
 - ❌ Review & Approval Workflows (datasets, signatures, protocols)
-- ❌ Activity Feed + Notifications
 - ❌ Shared Notebooks & Project Library
 - ❌ Project/Team Workspaces Hub
 

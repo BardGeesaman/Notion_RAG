@@ -9,9 +9,10 @@ from uuid import UUID
 
 import joblib
 
-from amprenta_rag.database.models import MLModel
+from amprenta_rag.database.models import MLModel, ActivityEventType
 from amprenta_rag.database.session import db_session
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.services.activity import log_activity
 
 logger = get_logger(__name__)
 
@@ -64,6 +65,25 @@ class MLModelRegistry:
             db.commit()
             db.refresh(ml_model)
             logger.info("[ML] Registered model %s:%s (%s)", name, version, ml_model.id)
+            
+            # Log activity
+            try:
+                log_activity(
+                    event_type=ActivityEventType.MODEL_TRAINED,
+                    target_type="model",
+                    target_id=ml_model.id,
+                    target_name=ml_model.name,
+                    actor_id=None,  # System action
+                    program_id=None,  # No program context in registry
+                    metadata={
+                        "model_type": ml_model.model_type,
+                        "version": ml_model.version,
+                        "framework": ml_model.framework,
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to log model registration activity: {e}")
+            
             return ml_model
 
     def load_model(self, model_id: UUID) -> Any:

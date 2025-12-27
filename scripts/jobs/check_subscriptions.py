@@ -22,7 +22,7 @@ from uuid import UUID
 from sqlalchemy import or_
 
 from amprenta_rag.database.session import db_session
-from amprenta_rag.database.models import RepositorySubscription, Dataset, Alert
+from amprenta_rag.database.models import RepositorySubscription, Dataset, RepositoryNotification
 
 logger = logging.getLogger(__name__)
 

@@ -15,8 +15,12 @@ from datetime import datetime, timezone
 from typing import Any, Dict
 from uuid import UUID
 
-from amprenta_rag.database.models import NotebookReview
+from amprenta_rag.database.models import NotebookReview, ActivityEventType
 from amprenta_rag.notebooks.registry import load_registry, resolve_notebook_path
+from amprenta_rag.services.activity import log_activity
+from amprenta_rag.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 VALID_STATUSES = {"pending", "approved", "rejected", "changes_requested"}
@@ -99,6 +103,25 @@ class NotebookReviewService:
         self.db.add(r)
         self.db.commit()
         self.db.refresh(r)
+        
+        # Log activity
+        try:
+            log_activity(
+                event_type=ActivityEventType.NOTEBOOK_REVIEWED,
+                target_type="notebook",
+                target_id=r.id,
+                target_name=r.notebook_path.split('/')[-1] if r.notebook_path else str(r.id),
+                actor_id=reviewer_id,
+                program_id=None,  # No program context in notebook reviews
+                metadata={
+                    "verdict": r.status,
+                    "notebook_path": r.notebook_path,
+                    "version_hash": r.version_hash,
+                }
+            )
+        except Exception as e:
+            logger.error(f"Failed to log notebook review activity: {e}")
+        
         return sig
 
     def get_review_status(self, notebook_path: str) -> Dict[str, Any]:

@@ -6,7 +6,7 @@ import os
 
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
-DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow", "Variant Tracking"]
+DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow", "Variant Tracking", "Activity Feed"]
 ANALYSIS_PAGES = [
     "Analysis Tools",
     "Chemistry",
@@ -84,6 +84,7 @@ ALL_PAGES = [
     "Repositories",
     "Discovery Workflow",
     "Variant Tracking",
+    "Activity Feed",
     "Analysis Tools",
     "Visualizations",
     "Quality Checks",
@@ -187,6 +188,7 @@ PAGE_REGISTRY = {
     "Repositories": ("scripts.dashboard.pages.repositories", "render_repositories_page"),
     "Discovery Workflow": ("scripts.dashboard.pages.discovery_workflow", "render_discovery_workflow_page"),
     "Variant Tracking": ("scripts.dashboard.pages.variants", "render_variants_page"),
+    "Activity Feed": ("scripts.dashboard.pages.activity_feed", "render_activity_feed_page"),
     "Analysis Tools": ("scripts.dashboard.pages.analysis", "render_analysis_page"),
     "Visualizations": ("scripts.dashboard.pages.visualizations", "render_visualizations_page"),
     "Cytoscape Demo": ("scripts.dashboard.pages.visualizations.cytoscape_network", "render"),

@@ -7,9 +7,13 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from amprenta_rag.database.models import Experiment as ExperimentModel
+from amprenta_rag.database.models import Experiment as ExperimentModel, ActivityEventType
 from amprenta_rag.api.schemas import ExperimentCreate, ExperimentUpdate
+from amprenta_rag.services.activity import log_activity
+from amprenta_rag.logging_utils import get_logger
 import uuid
+
+logger = get_logger(__name__)
 
 
 def create_experiment(db: Session, experiment: ExperimentCreate) -> ExperimentModel:
@@ -35,6 +39,27 @@ def create_experiment(db: Session, experiment: ExperimentCreate) -> ExperimentMo
     db.add(db_experiment)
     db.commit()
     db.refresh(db_experiment)
+    
+    # Log activity
+    try:
+        # Get program_id from first associated program if available
+        program_id = db_experiment.programs[0].id if db_experiment.programs else None
+        
+        log_activity(
+            event_type=ActivityEventType.EXPERIMENT_CREATED,
+            target_type="experiment",
+            target_id=db_experiment.id,
+            target_name=db_experiment.name,
+            actor_id=None,  # TODO: Get from request context
+            program_id=program_id,
+            metadata={
+                "experiment_type": db_experiment.type,
+                "description": db_experiment.description,
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to log experiment creation activity: {e}")
+    
     return db_experiment
 
 
