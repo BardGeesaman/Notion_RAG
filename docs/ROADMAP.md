@@ -349,7 +349,12 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Murcko scaffold extraction
   - Integrated into existing SAR Analysis tab
   - API: 2 endpoints (scaffolds, grid)
-- ❌ Interactive Plate Maps (HTS QC)
+- ✅ Interactive Plate Maps (HTS QC) (2025-12-27)
+  - Plotly heatmap with click/box selection
+  - Color modes: Normalized, Z-Score, Hit Status, Raw
+  - Well detail panel with compound info
+  - CSV export for selected wells
+  - Auto-detect 96/384/1536-well formats
 - ❌ Program/Experiment Voila Dashboards
 
 ### Libraries

@@ -106,11 +106,23 @@ def get_plate_qc_summary(campaign_id: UUID) -> PlateQCSummary:
     )
 
 
-def get_plate_heatmap_data(campaign_id: UUID) -> List[WellData]:
+def get_plate_heatmap_data(
+    campaign_id: UUID, 
+    include_all: bool = False,
+) -> List[WellData]:
+    """
+    Get plate data for heatmap visualization.
+    
+    Args:
+        campaign_id: HTS campaign UUID
+        include_all: If False (default), return hits only. If True, return all wells.
+    """
     with db_session() as db:
-        results: List[HTSResult] = (
-            db.query(HTSResult).filter(HTSResult.campaign_id == campaign_id).all()
-        )
+        query = db.query(HTSResult).filter(HTSResult.campaign_id == campaign_id)
+        if not include_all:
+            query = query.filter(HTSResult.hit_flag.is_(True))
+        results: List[HTSResult] = query.all()
+    
     return [
         WellData(
             well_position=r.well_position,
@@ -122,6 +134,17 @@ def get_plate_heatmap_data(campaign_id: UUID) -> List[WellData]:
         )
         for r in results
     ]
+
+
+def detect_plate_format(max_row: int, max_col: int) -> str:
+    """Return plate format name for UI display."""
+    if max_row == 7 and max_col == 11:
+        return "96-well"
+    elif max_row == 15 and max_col == 23:
+        return "384-well"
+    elif max_row == 31 and max_col == 47:
+        return "1536-well"
+    return f"Custom ({max_row+1}×{max_col+1})"
 
 
 def get_hit_compounds(campaign_id: UUID) -> List[HitCompound]:

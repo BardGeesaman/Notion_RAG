@@ -59,6 +59,18 @@ def hts_plate_data(campaign_id: UUID) -> List[schemas.WellData]:
 
 
 @router.get(
+    "/hts/campaigns/{campaign_id}/plate/full",
+    summary="Full plate data for interactive visualization",
+    response_model=List[schemas.WellData],
+)
+def hts_plate_full(campaign_id: UUID) -> List[schemas.WellData]:
+    """Return ALL wells (not just hits) for full plate visualization."""
+    _campaign_exists(campaign_id)
+    wells = get_plate_heatmap_data(campaign_id, include_all=True)
+    return [schemas.WellData(**w.asdict()) for w in wells]
+
+
+@router.get(
     "/hts/campaigns/{campaign_id}/hits",
     summary="Hit compounds for HTS campaign",
     response_model=List[schemas.HitCompound],
