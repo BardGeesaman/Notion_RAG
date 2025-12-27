@@ -65,6 +65,14 @@ Simple status legend:
 - ✅ Protocol Version Diff & Deviations Audit
 - ✅ Cross-Omics Pathway Analysis (enrichment, network proximity)
 - ✅ MOA Inference from HTS + Multi-Omics (evidence fusion, probability scores)
+- ✅ Multi-Objective Bayesian Optimization (2025-12-27)
+  - qNoisyExpectedHypervolumeImprovement acquisition function
+  - ModelListGP for multiple objectives (potency, hERG, logS, etc.)
+  - Pareto front computation with is_non_dominated
+  - 2D/3D Pareto visualizations in Experiment Optimizer dashboard
+  - Direction controls (maximize/minimize per objective)
+  - API endpoint: /api/v1/bayesian-optimization/recommend-multi-objective
+  - 7 unit tests covering validation and multi-objective scenarios
 
 ### Collaboration & User Experience
 - ✅ Activity Feed + Notifications (2025-12-27)
@@ -310,7 +318,12 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 ### Tier 2 - Strategic (Deferred)
 - ❌ Prior Builder (expert/literature priors)
 - ❌ Posterior Inclusion Probabilities for Biomarkers
-- ❌ Multi-Objective BO (qNEHVI, Pareto front visualization)
+- ✅ Multi-Objective BO (qNEHVI, Pareto front visualization) (2025-12-27)
+  - ModelListGP with qNoisyExpectedHypervolumeImprovement
+  - Objective direction handling (maximize/minimize)
+  - Auto reference point computation
+  - 2D/3D Pareto visualization in dashboard
+  - API endpoint: POST /api/v1/bayesian-optimization/recommend-multi-objective
 - ❌ Dashboard toggle for Bayesian dose-response in HTS QC page
 - ❌ E2E tests for Bayesian endpoints
 

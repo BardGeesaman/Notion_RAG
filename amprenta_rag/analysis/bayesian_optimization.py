@@ -6,7 +6,7 @@ uses a GP surrogate + qExpectedImprovement to rank candidate compounds.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 
 def _require_botorch():
@@ -23,6 +23,22 @@ def _require_botorch():
             "Install with: botorch>=0.9 ax-platform>=0.3 (and torch)."
         ) from e
     return torch, qExpectedImprovement, fit_gpytorch_mll, SingleTaskGP, SobolQMCNormalSampler, ExactMarginalLogLikelihood
+
+
+def _require_botorch_multi():
+    """Import multi-objective BoTorch components."""
+    try:
+        import torch  # type: ignore
+        from botorch.models import SingleTaskGP  # type: ignore
+        from botorch.models.model_list_gp_regression import ModelListGP  # type: ignore
+        from botorch.acquisition.multi_objective import qNoisyExpectedHypervolumeImprovement  # type: ignore
+        from botorch.utils.multi_objective import is_non_dominated  # type: ignore
+        from botorch.fit import fit_gpytorch_mll  # type: ignore
+        from gpytorch.mlls import ExactMarginalLogLikelihood  # type: ignore
+    except Exception as e:  # noqa: BLE001
+        raise ImportError("BoTorch multi-objective requires: botorch>=0.9") from e
+    return (torch, SingleTaskGP, ModelListGP, qNoisyExpectedHypervolumeImprovement, 
+            is_non_dominated, fit_gpytorch_mll, ExactMarginalLogLikelihood)
 
 
 def _as_float_matrix(rows: Sequence[Dict[str, Any]], key: str = "features") -> List[List[float]]:
@@ -128,6 +144,198 @@ def recommend_next_compounds(
     return ranked[:batch_size]
 
 
-__all__ = ["recommend_next_compounds"]
+def compute_pareto_front(objectives_matrix):
+    """Compute Pareto front using BoTorch is_non_dominated.
+    
+    Args:
+        objectives_matrix: List of lists or 2D array, shape (n_compounds, n_objectives)
+        
+    Returns:
+        Dict with "indices" (list of int) and "values" (list of lists)
+    """
+    torch, _, _, _, is_non_dominated, _, _ = _require_botorch_multi()
+    obj_tensor = torch.tensor(objectives_matrix, dtype=torch.double)
+    mask = is_non_dominated(obj_tensor)
+    indices = mask.nonzero(as_tuple=True)[0].tolist()
+    values = obj_tensor[mask].tolist()
+    return {"indices": indices, "values": values}
+
+
+def recommend_multi_objective(
+    tested_compounds: List[Dict],
+    candidate_pool: List[Dict],
+    objectives: List[str],
+    objective_directions: List[str],
+    batch_size: int = 10,
+    ref_point: Optional[List[float]] = None,
+) -> Dict:
+    """Multi-objective Bayesian optimization using qNEHVI.
+    
+    Args:
+        tested_compounds: List of dicts with "features" (list) and objective values
+        candidate_pool: List of dicts with "id" and "features"
+        objectives: List of objective names (e.g., ["potency", "herg"])
+        objective_directions: List of "maximize" or "minimize" for each objective
+        batch_size: Number of recommendations to return
+        ref_point: Optional reference point for hypervolume (auto-computed if None)
+        
+    Returns:
+        Dict with:
+            "recommendations": List of dicts with id, acquisition, pred_means, pred_stds
+            "pareto_front": Dict with indices and values
+    """
+    # Validation
+    if len(tested_compounds) < 5:
+        raise ValueError("Need at least 5 tested_compounds to fit GPs")
+    if len(objectives) != len(objective_directions):
+        raise ValueError("objectives and objective_directions must have same length")
+    if len(objectives) < 2:
+        raise ValueError("Multi-objective requires at least 2 objectives")
+    for direction in objective_directions:
+        if direction not in ["maximize", "minimize"]:
+            raise ValueError(f"Invalid direction: {direction}. Must be 'maximize' or 'minimize'")
+    
+    # Check all objectives present
+    for compound in tested_compounds:
+        for obj in objectives:
+            if obj not in compound:
+                raise ValueError(f"Objective '{obj}' missing from tested compound")
+    
+    if not candidate_pool:
+        return {"recommendations": [], "pareto_front": {"indices": [], "values": []}}
+    
+    torch, SingleTaskGP, ModelListGP, qNEHVI, is_non_dominated, fit_gpytorch_mll, MLL = _require_botorch_multi()
+    
+    # Extract features and objectives
+    X_train = _as_float_matrix(tested_compounds, key="features")
+    Y_train = []
+    for compound in tested_compounds:
+        y_vals = []
+        for obj, direction in zip(objectives, objective_directions):
+            val = float(compound[obj])
+            # Flip sign for minimize objectives (turn into maximization)
+            if direction == "minimize":
+                val = -val
+            y_vals.append(val)
+        Y_train.append(y_vals)
+    
+    X_cand = _as_float_matrix(candidate_pool, key="features")
+    ids = [str(r.get("id", "")) for r in candidate_pool]
+    
+    d = len(X_train[0])
+    n_obj = len(objectives)
+    
+    if any(len(x) != d for x in X_train) or any(len(x) != d for x in X_cand):
+        raise ValueError("All feature vectors must have the same dimensionality")
+    
+    device = torch.device("cpu")
+    dtype = torch.double
+    X = torch.tensor(X_train, device=device, dtype=dtype)
+    Y = torch.tensor(Y_train, device=device, dtype=dtype)  # (n, n_obj)
+    
+    # Standardize features
+    X_mean = X.mean(dim=0, keepdim=True)
+    X_std = X.std(dim=0, keepdim=True).clamp_min(1e-12)
+    Xs = (X - X_mean) / X_std
+    
+    # Build one GP per objective
+    y_means_list = []
+    y_stds_list = []
+    models = []
+    for i in range(n_obj):
+        y_i = Y[:, i].unsqueeze(-1)
+        y_mean = y_i.mean()
+        y_std = y_i.std().clamp_min(1e-12)
+        y_means_list.append(y_mean)
+        y_stds_list.append(y_std)
+        ys_i = (y_i - y_mean) / y_std
+        
+        gp = SingleTaskGP(Xs, ys_i)
+        mll = MLL(gp.likelihood, gp)
+        fit_gpytorch_mll(mll)
+        models.append(gp)
+    
+    model = ModelListGP(*models)
+    
+    # Auto-compute reference point if not provided
+    if ref_point is None:
+        ref_point = []
+        for i in range(n_obj):
+            y_vals = Y[:, i].cpu().numpy()
+            ref_val = float(y_vals.min() - 0.1 * y_vals.std())
+            ref_point.append(ref_val)
+    
+    ref_point_tensor = torch.tensor(ref_point, device=device, dtype=dtype)
+    
+    # Prepare candidates
+    Xc = torch.tensor(X_cand, device=device, dtype=dtype)
+    Xcs = (Xc - X_mean) / X_std
+    
+    # qNEHVI acquisition
+    acq = qNEHVI(
+        model=model,
+        ref_point=ref_point_tensor,
+        X_baseline=Xs,
+        prune_baseline=True,
+    )
+    
+    # Evaluate acquisition for each candidate
+    with torch.no_grad():
+        acq_vals = []
+        pred_means = []
+        pred_stds = []
+        
+        for i in range(len(Xcs)):
+            x_i = Xcs[i:i+1].unsqueeze(1)  # (1, 1, d)
+            acq_val = acq(x_i).item()
+            acq_vals.append(acq_val)
+            
+            # Get predictions for each objective
+            means = []
+            stds = []
+            for j, gp in enumerate(models):
+                post = gp.posterior(Xcs[i:i+1])
+                mean_std = post.mean.item()  # standardized
+                std_std = torch.sqrt(post.variance.clamp_min(0.0)).item()
+                # Unstandardize to original scale
+                mean = mean_std * y_stds_list[j].item() + y_means_list[j].item()
+                std = std_std * y_stds_list[j].item()
+                means.append(mean)
+                stds.append(std)
+            pred_means.append(means)
+            pred_stds.append(stds)
+    
+    # Build recommendations
+    ranked = []
+    for cid, acq_val, means, stds in zip(ids, acq_vals, pred_means, pred_stds):
+        if not cid:
+            continue
+        
+        pred_means_dict = {}
+        pred_stds_dict = {}
+        for j, obj in enumerate(objectives):
+            pred_means_dict[obj] = float(means[j])
+            pred_stds_dict[obj] = float(stds[j])
+        
+        ranked.append({
+            "id": cid,
+            "acquisition": float(acq_val),
+            "pred_means": pred_means_dict,
+            "pred_stds": pred_stds_dict,
+        })
+    
+    ranked.sort(key=lambda r: r["acquisition"], reverse=True)
+    recommendations = ranked[:batch_size]
+    
+    # Compute Pareto front from tested compounds
+    pareto_front = compute_pareto_front(Y_train)
+    
+    return {
+        "recommendations": recommendations,
+        "pareto_front": pareto_front,
+    }
+
+
+__all__ = ["recommend_next_compounds", "compute_pareto_front", "recommend_multi_objective"]
 
 

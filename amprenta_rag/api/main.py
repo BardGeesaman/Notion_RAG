@@ -48,6 +48,7 @@ from amprenta_rag.api.routers import (
     single_cell,
     spectral,
     crispr,
+    bayesian,
     multi_omics,
     variants,
     companies,
@@ -146,6 +147,7 @@ app.include_router(viz3d.router, prefix="/api")
 app.include_router(compound_target.router, prefix="/api/network")
 app.include_router(explorer.router, prefix="/api")
 app.include_router(pathway_maps.router, prefix="/api")
+app.include_router(bayesian.router, prefix="/api/v1")
 app.include_router(ranking.router, prefix="/api")
 app.include_router(monitoring.router, prefix="/api/v1")
 app.include_router(multi_omics_viz.router, prefix="/api")
