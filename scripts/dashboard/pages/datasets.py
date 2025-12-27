@@ -10,6 +10,7 @@ from amprenta_rag.database.models import Dataset
 from amprenta_rag.export.slide_generator import generate_dataset_slides
 from amprenta_rag.notebooks import generate_dataset_notebook
 from scripts.dashboard.db_session import db_session
+from scripts.dashboard.components.comment_widget import render_comments_widget
 
 
 def get_qc_dict(ds):
@@ -258,5 +259,9 @@ def render_datasets_page() -> None:
                     if dataset.experiments:
                         exp_names = ", ".join([e.name for e in dataset.experiments])
                         st.write(f"**Part of experiment(s):** {exp_names}")
+                    
+                    # Comments section
+                    st.markdown("---")
+                    render_comments_widget("dataset", dataset.id)
         else:
             st.info("No datasets found matching your filters.")

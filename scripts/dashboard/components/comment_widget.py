@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import re
 from uuid import UUID
 import streamlit as st
-from amprenta_rag.utils.comments import add_comment, get_comments, delete_comment
+from amprenta_rag.utils.comments import add_comment, get_comments, delete_comment, update_comment
 from amprenta_rag.auth.session import get_current_user
 from scripts.dashboard.db_session import db_session
 
@@ -65,30 +66,95 @@ def render_comments_widget(entity_type: str, entity_id: str | UUID) -> None:
             st.info("Please log in to add comments.")
 
 
+def _highlight_mentions(content: str) -> str:
+    """Highlight @mentions in comment content with styled HTML.
+    
+    Args:
+        content: Comment text
+        
+    Returns:
+        HTML string with highlighted mentions
+    """
+    pattern = r'@([a-zA-Z0-9_-]+)'
+    highlighted = re.sub(
+        pattern,
+        r'<span style="color: #1f77b4; font-weight: bold; background-color: #e3f2fd; padding: 2px 4px; border-radius: 3px;">@\1</span>',
+        content
+    )
+    return highlighted
+
+
 def _render_comment(comment: dict, user_id: UUID | None, db, entity_type: str, entity_id: UUID) -> None:
     """Render a single comment with its replies."""
     comment_id = UUID(comment["id"])
+    is_owner = user_id and comment.get("author_id") == str(user_id)
+    is_editing = st.session_state.get(f"edit_{comment_id}", False)
 
     # Comment container
     with st.container():
-        col1, col2 = st.columns([5, 1])
-
-        with col1:
-            st.markdown(f"**{comment['author']}** - {comment['created_at'].strftime('%Y-%m-%d %H:%M')}")
-            st.markdown(comment["content"])
-
-        with col2:
-            # Delete button (only for own comments)
-            if user_id and comment.get("author_id") == str(user_id):
-                if st.button("🗑️", key=f"delete_{comment_id}", help="Delete comment"):
-                    try:
-                        if delete_comment(comment_id, user_id, db):
-                            st.success("Comment deleted!")
-                            st.rerun()
+        # Show edit form if editing
+        if is_editing:
+            with st.form(f"edit_form_{comment_id}"):
+                edited_text = st.text_area(
+                    "Edit comment",
+                    value=comment["content"],
+                    key=f"edit_text_{comment_id}"
+                )
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    if st.form_submit_button("💾 Save", type="primary"):
+                        if edited_text.strip():
+                            try:
+                                updated = update_comment(comment_id, edited_text.strip(), user_id, db)
+                                if updated:
+                                    st.session_state[f"edit_{comment_id}"] = False
+                                    st.success("Comment updated!")
+                                    st.rerun()
+                                else:
+                                    st.error("Failed to update comment.")
+                            except Exception as e:
+                                st.error(f"Error: {e}")
                         else:
-                            st.error("Failed to delete comment.")
-                    except Exception as e:
-                        st.error(f"Error: {e}")
+                            st.warning("Comment cannot be empty.")
+                with col2:
+                    if st.form_submit_button("Cancel"):
+                        st.session_state[f"edit_{comment_id}"] = False
+                        st.rerun()
+        else:
+            col1, col2 = st.columns([5, 1])
+
+            with col1:
+                # Show edited badge if comment was updated
+                edited_badge = ""
+                if comment.get("updated_at") and comment.get("created_at"):
+                    if comment["updated_at"] != comment["created_at"]:
+                        edited_badge = " <span style='color: gray; font-size: 0.9em;'>(edited)</span>"
+                
+                st.markdown(
+                    f"**{comment['author']}** - {comment['created_at'].strftime('%Y-%m-%d %H:%M')}{edited_badge}",
+                    unsafe_allow_html=True
+                )
+                
+                # Highlight @mentions in content
+                highlighted_content = _highlight_mentions(comment["content"])
+                st.markdown(highlighted_content, unsafe_allow_html=True)
+
+            with col2:
+                # Edit and delete buttons (only for own comments)
+                if is_owner:
+                    if st.button("✏️", key=f"edit_{comment_id}_btn", help="Edit comment"):
+                        st.session_state[f"edit_{comment_id}"] = True
+                        st.rerun()
+                    
+                    if st.button("🗑️", key=f"delete_{comment_id}", help="Delete comment"):
+                        try:
+                            if delete_comment(comment_id, user_id, db):
+                                st.success("Comment deleted!")
+                                st.rerun()
+                            else:
+                                st.error("Failed to delete comment.")
+                        except Exception as e:
+                            st.error(f"Error: {e}")
 
         # Replies section
         if comment.get("replies"):

@@ -23,6 +23,7 @@ from amprenta_rag.notifications.email_service import send_share_notification, is
 from amprenta_rag.export.slide_generator import generate_experiment_slides
 from amprenta_rag.utils.optimistic_lock import update_with_lock, ConflictError
 from scripts.dashboard.db_session import db_session
+from scripts.dashboard.components.comment_widget import render_comments_widget
 
 
 def _handle_reload(exp_id: int, actual_version: int) -> None:
@@ -197,6 +198,10 @@ def _render_browse_tab() -> None:
                                         st.error(f"Error sending email: {e}")
                                 else:
                                     st.error("Please enter a recipient email address")
+
+                    # Comments section
+                    st.markdown("---")
+                    render_comments_widget("experiment", experiment.id)
 
                     # Save as Template button
                     user = get_current_user()

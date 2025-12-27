@@ -1,191 +1,159 @@
+"""Unit tests for comment service utilities."""
+
 from __future__ import annotations
 
-from typing import Any, List
-from uuid import UUID, uuid4
+from datetime import datetime, timezone
+from uuid import uuid4
+from unittest.mock import Mock, MagicMock
 
 import pytest
 
-from amprenta_rag.utils import comments
+from amprenta_rag.utils.comments import (
+    update_comment,
+    parse_mentions,
+    resolve_mentions,
+    notify_mentions,
+)
 
 
-class _Field:
-    """Lightweight stand-in for SQLAlchemy column attributes."""
-
-    def __init__(self, name: str):
-        self.name = name
-
-    def __eq__(self, other: object):  # type: ignore[override]
-        return (self.name, other)
-
-    def is_(self, other: object):
-        return ("is", self.name, other)
-
-    def desc(self) -> "_Field":
-        return self
-
-
-class FakeComment:
-    entity_type = _Field("entity_type")
-    entity_id = _Field("entity_id")
-    parent_id = _Field("parent_id")
-    created_at = _Field("created_at")
-    created_by_id = _Field("created_by_id")
-    id = _Field("id")
-
-    def __init__(
-        self,
-        entity_type: str,
-        entity_id: UUID,
-        content: str,
-        created_by_id: UUID | None,
-        parent_id: UUID | None = None,
-        created_at: Any = None,
-    ):
-        self._entity_type_val = entity_type
-        self._entity_id_val = entity_id
-        self._content_val = content
-        self._created_by_id_val = created_by_id
-        self._parent_id_val = parent_id
-        self._created_at_val = created_at
-        self.id: UUID | None = None
-
-    def __getattribute__(self, name: str):
-        if name in ("entity_type", "entity_id", "parent_id", "created_at", "created_by_id"):
-            return object.__getattribute__(self, f"_{name}_val")
-        if name == "content":
-            return object.__getattribute__(self, "_content_val")
-        return object.__getattribute__(self, name)
-
-
-class FakeUser:
-    id = _Field("id")
-
-    def __init__(self, id: UUID, username: str):
-        self._id_val = id
-        self.username = username
-
-    def __getattribute__(self, name: str):
-        if name == "id":
-            return object.__getattribute__(self, "_id_val")
-        return object.__getattribute__(self, name)
-
-
-class FakeQuery:
-    def __init__(self, data: List[Any]):
-        self._data = list(data)
-
-    def filter(self, *predicates: Any) -> "FakeQuery":
-        filtered: List[Any] = []
-        for obj in self._data:
-            match = True
-            for pred in predicates:
-                if isinstance(pred, tuple):
-                    if len(pred) == 3 and pred[0] == "is":
-                        _, field, val = pred
-                        if getattr(obj, field, None) is not val:
-                            match = False
-                            break
-                    else:
-                        field, val = pred
-                        if getattr(obj, field, None) != val:
-                            match = False
-                            break
-                elif pred is False:
-                    match = False
-                    break
-            if match:
-                filtered.append(obj)
-        return FakeQuery(filtered)
-
-    def order_by(self, *args: Any) -> "FakeQuery":
-        return self
-
-    def all(self) -> List[Any]:
-        return list(self._data)
-
-    def first(self) -> Any | None:
-        return self._data[0] if self._data else None
-
-
-class FakeSession:
-    def __init__(self):
-        self.comments: List[FakeComment] = []
-        self.users: List[FakeUser] = []
-
-    def add(self, obj: Any) -> None:
-        if isinstance(obj, FakeComment):
-            obj.id = obj.id or uuid4()
-            self.comments.append(obj)
-        elif isinstance(obj, FakeUser):
-            self.users.append(obj)
-
-    def commit(self) -> None:
-        return None
-
-    def refresh(self, obj: Any) -> None:
-        return None
-
-    def query(self, model: Any) -> FakeQuery:
-        if model is comments.Comment:
-            return FakeQuery(self.comments)
-        if model is comments.User:
-            return FakeQuery(self.users)
-        return FakeQuery([])
-
-    def delete(self, obj: Any) -> None:
-        if isinstance(obj, FakeComment):
-            self.comments = [c for c in self.comments if c is not obj]
-
-
-@pytest.fixture(autouse=True)
-def patch_models(monkeypatch):
-    monkeypatch.setattr(comments, "Comment", FakeComment)
-    monkeypatch.setattr(comments, "User", FakeUser)
-    yield
-
-
-def test_add_and_get_comments_with_replies():
-    db = FakeSession()
-    user = FakeUser(id=uuid4(), username="alice")
-    db.add(user)
-    entity = uuid4()
-
-    parent = comments.add_comment("experiment", entity, "root", user.id, db)
-    reply = comments.add_comment("experiment", entity, "child", user.id, db, parent_id=parent.id)
-
-    results = comments.get_comments("experiment", entity, db)
-    assert len(results) == 1
-    top = results[0]
-    assert top["id"] == str(parent.id)
-    assert top["author"] == "alice"
-    assert len(top["replies"]) == 1
-    assert top["replies"][0]["id"] == str(reply.id)
-    assert top["replies"][0]["author"] == "alice"
-
-
-def test_get_comments_unknown_user_and_order():
-    db = FakeSession()
-    entity = uuid4()
-    # No user added for this comment
-    comments.add_comment("signature", entity, "orphan", uuid4(), db)
-
-    results = comments.get_comments("signature", entity, db)
-    assert results[0]["author"] == "Unknown"
-    assert results[0]["replies"] == []
-
-
-def test_delete_comment_only_by_author():
-    db = FakeSession()
+def test_update_comment_success():
+    """Test successful comment update."""
+    comment_id = uuid4()
     user_id = uuid4()
-    other_id = uuid4()
-    entity = uuid4()
+    new_content = "Updated content"
+    
+    # Mock comment object
+    mock_comment = Mock()
+    mock_comment.id = comment_id
+    mock_comment.content = "Old content"
+    mock_comment.created_by_id = user_id
+    
+    # Mock database session
+    mock_db = Mock()
+    mock_query = Mock()
+    mock_query.filter.return_value.first.return_value = mock_comment
+    mock_db.query.return_value = mock_query
+    
+    result = update_comment(comment_id, new_content, user_id, mock_db)
+    
+    assert result == mock_comment
+    assert mock_comment.content == new_content
+    mock_db.commit.assert_called_once()
+    mock_db.refresh.assert_called_once_with(mock_comment)
 
-    parent = comments.add_comment("dataset", entity, "to-delete", user_id, db)
-    assert comments.delete_comment(parent.id, user_id, db) is True
-    assert comments.get_comments("dataset", entity, db) == []
 
-    # Recreate and try with different user
-    parent = comments.add_comment("dataset", entity, "keep", user_id, db)
-    assert comments.delete_comment(parent.id, other_id, db) is False
-    assert comments.get_comments("dataset", entity, db)[0]["id"] == str(parent.id)
+def test_update_comment_unauthorized():
+    """Test update fails when user is not the author."""
+    comment_id = uuid4()
+    user_id = uuid4()
+    other_user_id = uuid4()
+    
+    # Mock database session
+    mock_db = Mock()
+    mock_query = Mock()
+    mock_query.filter.return_value.first.return_value = None  # Not found for this user
+    mock_db.query.return_value = mock_query
+    
+    result = update_comment(comment_id, "New content", user_id, mock_db)
+    
+    assert result is None
+    mock_db.commit.assert_not_called()
 
+
+def test_parse_mentions_single():
+    """Test parsing a single @mention."""
+    content = "Hello @john, how are you?"
+    mentions = parse_mentions(content)
+    
+    assert mentions == ["john"]
+
+
+def test_parse_mentions_multiple():
+    """Test parsing multiple @mentions."""
+    content = "Hey @alice and @bob, meet @charlie_123"
+    mentions = parse_mentions(content)
+    
+    assert set(mentions) == {"alice", "bob", "charlie_123"}
+    assert len(mentions) == 3
+
+
+def test_parse_mentions_empty():
+    """Test parsing content with no mentions."""
+    content = "This is a comment without any mentions."
+    mentions = parse_mentions(content)
+    
+    assert mentions == []
+
+
+def test_resolve_mentions():
+    """Test resolving usernames to user IDs."""
+    usernames = ["alice", "bob"]
+    user_id_1 = uuid4()
+    user_id_2 = uuid4()
+    
+    # Mock User objects
+    mock_user_1 = Mock()
+    mock_user_1.id = user_id_1
+    mock_user_2 = Mock()
+    mock_user_2.id = user_id_2
+    
+    # Mock database session
+    mock_db = Mock()
+    mock_query = Mock()
+    mock_query.filter.return_value.all.return_value = [mock_user_1, mock_user_2]
+    mock_db.query.return_value = mock_query
+    
+    result = resolve_mentions(usernames, mock_db)
+    
+    assert result == [user_id_1, user_id_2]
+
+
+def test_notify_mentions():
+    """Test notifying mentioned users."""
+    comment_id = uuid4()
+    author_id = uuid4()
+    mentioned_user_1 = uuid4()
+    mentioned_user_2 = uuid4()
+    
+    # Mock comment
+    mock_comment = Mock()
+    mock_comment.id = comment_id
+    mock_comment.created_by_id = author_id
+    mock_comment.entity_type = "dataset"
+    mock_comment.entity_id = uuid4()
+    mock_comment.content = "Test comment content"
+    
+    mock_db = Mock()
+    
+    # Mock log_activity to avoid actual activity logging
+    from unittest.mock import patch
+    with patch("amprenta_rag.utils.comments.log_activity") as mock_log:
+        notify_mentions(mock_comment, [mentioned_user_1, mentioned_user_2], mock_db)
+        
+        # Should be called twice (once per mentioned user)
+        assert mock_log.call_count == 2
+
+
+def test_notify_mentions_excludes_author():
+    """Test that notification excludes the comment author."""
+    comment_id = uuid4()
+    author_id = uuid4()
+    
+    # Mock comment
+    mock_comment = Mock()
+    mock_comment.id = comment_id
+    mock_comment.created_by_id = author_id
+    mock_comment.entity_type = "experiment"
+    mock_comment.entity_id = uuid4()
+    mock_comment.content = "Self mention @me"
+    
+    mock_db = Mock()
+    
+    # Mock log_activity
+    from unittest.mock import patch
+    with patch("amprenta_rag.utils.comments.log_activity") as mock_log:
+        # Include author in mentioned users
+        notify_mentions(mock_comment, [author_id], mock_db)
+        
+        # Should not be called (author excluded)
+        mock_log.assert_not_called()

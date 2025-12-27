@@ -9,6 +9,7 @@ import httpx
 import streamlit as st
 
 from scripts.dashboard.components.mol3d_viewer import render_conformers_3d, render_molecule_3d
+from scripts.dashboard.components.comment_widget import render_comments_widget
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 
@@ -330,6 +331,10 @@ def _render_compounds(tab, db_session, compound_model, export_compounds):
                         st.markdown(
                             f"[View in Graph Explorer](/?page=Graph%20Explorer&entity_type=compound&entity_id={compound.id})"
                         )
+
+                        # Comments section
+                        st.markdown("---")
+                        render_comments_widget("compound", compound.id)
             else:
                 st.info("No compounds found.")
 

@@ -83,6 +83,15 @@ Simple status legend:
   - Activity Feed page with filters and timeline
   - Integration: model training, experiments, notebook reviews
   - Phase 2: compound_added, hit_confirmed, status_changed integration
+- ✅ Comments + @Mentions (2025-12-27) - Inline Annotations deferred to Phase 2
+  - Contextual commenting on entities (datasets, experiments, compounds, signatures)
+  - @mention parsing and notification system
+  - Edit and delete functionality (author-only)
+  - Threaded replies with parent-child relationships
+  - @mention highlighting in dashboard with styled HTML
+  - Page integration (experiments, datasets, compounds)
+  - API: 4 endpoints (create, list, update, delete)
+  - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
 ### Testing & Development
 - ✅ Comprehensive Test Data Seeding Suite (all domains, size presets, deterministic)
@@ -394,7 +403,6 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 
 ### Tier 1 - High Impact
 - ❌ Entity-Scoped Sharing & Roles (per-entity ACLs)
-- ❌ Comments, Mentions, Inline Annotations
 - ❌ Review & Approval Workflows (datasets, signatures, protocols)
 - ❌ Shared Notebooks & Project Library
 - ❌ Project/Team Workspaces Hub

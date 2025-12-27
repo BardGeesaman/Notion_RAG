@@ -1249,3 +1249,32 @@ class NotificationCountSchema(BaseModel):
     """Notification count schema."""
     
     unread_count: int
+
+
+# Comment schemas
+class CommentCreate(BaseModel):
+    """Schema for creating a comment."""
+    
+    entity_type: str
+    entity_id: UUID
+    content: str
+    parent_id: Optional[UUID] = None
+
+
+class CommentUpdate(BaseModel):
+    """Schema for updating a comment."""
+    
+    content: str
+
+
+class CommentResponse(BaseModel):
+    """Schema for comment response."""
+    
+    id: UUID
+    entity_type: str
+    entity_id: UUID
+    content: str
+    author: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    replies: List[dict] = []

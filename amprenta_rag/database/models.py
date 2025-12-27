@@ -59,6 +59,8 @@ class ActivityEventType(str, Enum):
     HIT_CONFIRMED = "hit_confirmed"
     STATUS_CHANGED = "status_changed"
     NOTEBOOK_REVIEWED = "notebook_reviewed"
+    COMMENT_ADDED = "comment_added"
+    MENTION_RECEIVED = "mention_received"
 
 
 # Association tables for many-to-many relationships
