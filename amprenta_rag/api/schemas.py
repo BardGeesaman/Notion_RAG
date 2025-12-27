@@ -932,6 +932,8 @@ class PathwayExpressionResponse(BaseModel):
     gene_expression: Dict[str, float] = Field(default_factory=dict)
 
 
+
+
 # ============================================================================
 # MOA inference schemas
 # ============================================================================
@@ -981,3 +983,78 @@ class BayesianDoseResponseResponse(BaseModel):
     ec50_ci: Tuple[float, float]
     hill_slope: float
     diagnostics: Optional[Dict[str, Any]] = None
+
+
+# ============================================================================
+# Multi-Omics Visualization schemas
+# ============================================================================
+
+
+class AlluvialRequest(BaseModel):
+    """Request for alluvial diagram data."""
+    
+    dataset_ids: List[str]  # UUIDs as strings
+
+
+class AlluvialNode(BaseModel):
+    """Node in alluvial diagram."""
+    
+    id: str
+    label: str
+    color: str
+
+
+class AlluvialLink(BaseModel):
+    """Link in alluvial diagram."""
+    
+    source: int
+    target: int
+    value: int
+
+
+class AlluvialResponse(BaseModel):
+    """Response for alluvial diagram data."""
+    
+    nodes: List[AlluvialNode]
+    links: List[AlluvialLink]
+
+
+class UpSetRequest(BaseModel):
+    """Request for UpSet plot data."""
+    
+    dataset_ids: List[str]
+
+
+class UpSetSet(BaseModel):
+    """Set definition for UpSet plot."""
+    
+    id: str
+    name: str
+    omics_type: str
+    color: str
+    size: int
+
+
+class UpSetIntersection(BaseModel):
+    """Intersection data for UpSet plot."""
+    
+    sets: List[str]  # dataset IDs in intersection
+    count: int
+    bitmask: int
+
+
+class UpSetMatrixItem(BaseModel):
+    """Matrix item for UpSet plot."""
+    
+    key: str
+    label: str
+    presence: List[int]
+    dataset_count: int
+
+
+class UpSetResponse(BaseModel):
+    """Response for UpSet plot data."""
+    
+    sets: List[UpSetSet]
+    intersections: List[UpSetIntersection]
+    matrix: List[UpSetMatrixItem]  # List of matrix items with presence vectors

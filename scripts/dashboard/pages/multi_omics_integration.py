@@ -9,7 +9,13 @@ from typing import Any, Dict, List
 import httpx
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
+
+try:
+    from upsetplot import plot as upset_plot
+except ImportError:
+    upset_plot = None
 
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
@@ -43,7 +49,7 @@ def render_multi_omics_integration_page() -> None:
     st.header("Multi-Omics Integration")
     st.caption("Create and run multi-omics latent factor experiments (MOFA-style).")
 
-    tab1, tab2, tab3, tab4 = st.tabs(["Setup + Run", "Variance", "Factor Scatter", "Loadings"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Setup + Run", "Variance", "Factor Scatter", "Loadings", "Alluvial", "UpSet"])
 
     experiments: List[Dict[str, Any]] = []
     try:
@@ -204,6 +210,220 @@ def render_multi_omics_integration_page() -> None:
                 st.error(f"Failed to load loadings: {e}")
         else:
             st.info("No experiments available.")
+
+    with tab5:
+        st.subheader("Alluvial (Dataset Flow)")
+        
+        # Get available datasets
+        datasets: List[Dict[str, Any]] = []
+        try:
+            datasets = list(_api_get("/api/multi-omics-viz/datasets") or [])
+        except Exception as e:  # noqa: BLE001
+            st.error(f"Failed to load datasets: {e}")
+            datasets = []
+        
+        if not datasets:
+            st.info("No datasets available.")
+        else:
+            # Dataset selection
+            dataset_options = [{"id": d["id"], "label": f"{d['name']} ({d['omics_type']})"} for d in datasets]
+            selected_indices = st.multiselect(
+                "Select datasets",
+                options=range(len(dataset_options)),
+                format_func=lambda i: dataset_options[i]["label"],
+                default=list(range(min(3, len(dataset_options)))),  # Select first 3 by default
+                key="alluvial_datasets"
+            )
+            
+            # Top N features slider
+            top_n = st.slider("Top N features", min_value=10, max_value=100, value=50, step=10, key="alluvial_top_n")
+            
+            if selected_indices:
+                selected_dataset_ids = [dataset_options[i]["id"] for i in selected_indices]
+                
+                if st.button("Generate Alluvial", type="primary", key="alluvial_generate"):
+                    try:
+                        payload = {"dataset_ids": selected_dataset_ids}
+                        result = _api_post("/api/multi-omics-viz/alluvial", payload, timeout=120)
+                        
+                        # Build Plotly Sankey
+                        nodes = result.get("nodes", [])
+                        links = result.get("links", [])
+                        
+                        if not nodes or not links:
+                            st.info("No data to visualize.")
+                        else:
+                            # Limit to top N features for better visualization
+                            feature_nodes = [n for n in nodes if not any(d["id"] in n["id"] for d in datasets)]
+                            if len(feature_nodes) > top_n:
+                                # Keep top N features by total link value
+                                feature_values = {}
+                                for link in links:
+                                    target_id = nodes[link["target"]]["id"]
+                                    if target_id not in [d["id"] for d in datasets]:  # Is a feature
+                                        feature_values[target_id] = feature_values.get(target_id, 0) + link["value"]
+                                
+                                top_features = sorted(feature_values.items(), key=lambda x: x[1], reverse=True)[:top_n]
+                                top_feature_ids = {f[0] for f in top_features}
+                                
+                                # Filter nodes and links
+                                filtered_nodes = [n for n in nodes if n["id"] in top_feature_ids or any(d["id"] in n["id"] for d in datasets)]
+                                node_id_map = {old_id: new_id for new_id, old_id in enumerate([n["id"] for n in filtered_nodes])}
+                                
+                                filtered_links = []
+                                for link in links:
+                                    source_id = nodes[link["source"]]["id"]
+                                    target_id = nodes[link["target"]]["id"]
+                                    if source_id in node_id_map and target_id in node_id_map:
+                                        filtered_links.append({
+                                            "source": node_id_map[source_id],
+                                            "target": node_id_map[target_id],
+                                            "value": link["value"]
+                                        })
+                                
+                                nodes = filtered_nodes
+                                links = filtered_links
+                                
+                                # Update link indices
+                                for i, link in enumerate(links):
+                                    links[i] = {
+                                        "source": link["source"],
+                                        "target": link["target"], 
+                                        "value": link["value"]
+                                    }
+                            
+                            fig = go.Figure(data=[go.Sankey(
+                                node=dict(
+                                    pad=15,
+                                    thickness=20,
+                                    line=dict(color="black", width=0.5),
+                                    label=[n["label"] for n in nodes],
+                                    color=[n["color"] for n in nodes]
+                                ),
+                                link=dict(
+                                    source=[link["source"] for link in links],
+                                    target=[link["target"] for link in links],
+                                    value=[link["value"] for link in links]
+                                )
+                            )])
+                            
+                            fig.update_layout(
+                                title_text=f"Multi-Omics Data Flow (Top {len([n for n in nodes if not any(d['id'] in n['id'] for d in datasets)])} Features)",
+                                font_size=10,
+                                height=600
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Show summary stats
+                            st.write(f"**Nodes:** {len(nodes)} | **Links:** {len(links)}")
+                            
+                    except Exception as e:  # noqa: BLE001
+                        st.error(f"Failed to generate alluvial: {e}")
+
+    with tab6:
+        st.subheader("UpSet Plot (Feature Overlaps)")
+        
+        # Reuse dataset selection
+        if not datasets:
+            st.info("No datasets available.")
+        else:
+            selected_indices = st.multiselect(
+                "Select datasets",
+                options=range(len(dataset_options)),
+                format_func=lambda i: dataset_options[i]["label"],
+                default=list(range(min(4, len(dataset_options)))),  # Select first 4 by default
+                key="upset_datasets"
+            )
+            
+            if selected_indices:
+                selected_dataset_ids = [dataset_options[i]["id"] for i in selected_indices]
+                
+                if st.button("Generate UpSet Plot", type="primary", key="upset_generate"):
+                    try:
+                        payload = {"dataset_ids": selected_dataset_ids}
+                        result = _api_post("/api/multi-omics-viz/upset", payload, timeout=120)
+                        
+                        sets_data = result.get("sets", [])
+                        intersections = result.get("intersections", [])
+                        matrix_items = result.get("matrix", [])
+                        
+                        if not sets_data or not intersections:
+                            st.info("No overlap data to visualize.")
+                        else:
+                            if upset_plot is None:
+                                st.warning("UpSet plotting requires: `pip install upsetplot`")
+                                
+                                # Fallback table view
+                                st.subheader("Dataset Sizes")
+                                sets_df = pd.DataFrame(sets_data)
+                                st.dataframe(sets_df, use_container_width=True, hide_index=True)
+                                
+                                st.subheader("Top Intersections")
+                                # Sort intersections by count
+                                sorted_intersections = sorted(intersections, key=lambda x: x["count"], reverse=True)
+                                intersect_df = pd.DataFrame(sorted_intersections[:20])  # Top 20
+                                if not intersect_df.empty:
+                                    intersect_df["dataset_names"] = intersect_df["sets"].apply(
+                                        lambda set_ids: ", ".join([
+                                            next((s["name"] for s in sets_data if s["id"] == sid), sid)
+                                            for sid in set_ids
+                                        ])
+                                    )
+                                st.dataframe(intersect_df, use_container_width=True, hide_index=True)
+                                
+                            else:
+                                # Generate UpSet plot using upsetplot
+                                import matplotlib.pyplot as plt
+                                
+                                # Convert to upsetplot format
+                                set_names = [s["name"] for s in sets_data]
+                                
+                                # Build membership matrix
+                                feature_memberships = {}
+                                for item in matrix_items:
+                                    feature = item["label"]
+                                    presence = item["presence"]
+                                    feature_memberships[feature] = {
+                                        set_names[i]: bool(presence[i]) for i in range(len(set_names))
+                                    }
+                                
+                                if feature_memberships:
+                                    # Create DataFrame for upsetplot
+                                    membership_df = pd.DataFrame.from_dict(feature_memberships, orient='index')
+                                    
+                                    # Generate plot
+                                    fig = plt.figure(figsize=(12, 8))
+                                    # Pass boolean DataFrame directly to upset_plot
+                                    upset_plot(membership_df, 
+                                              subset_size='count',
+                                              show_counts=True,
+                                              sort_by='cardinality',
+                                              sort_categories_by='cardinality')
+                                    plt.suptitle("Feature Overlaps Across Datasets", y=0.98)
+                                    
+                                    st.pyplot(fig, use_container_width=True)
+                                    plt.close()
+                                    
+                                    # Show summary stats
+                                    total_features = len(feature_memberships)
+                                    total_intersections = len(intersections)
+                                    st.write(f"**Total Features:** {total_features} | **Intersections:** {total_intersections}")
+                                    
+                                    # Show top intersections table
+                                    st.subheader("Top Intersections")
+                                    sorted_intersections = sorted(intersections, key=lambda x: x["count"], reverse=True)
+                                    top_intersections = pd.DataFrame(sorted_intersections[:10])
+                                    if not top_intersections.empty:
+                                        top_intersections["dataset_names"] = top_intersections["sets"].apply(
+                                            lambda set_ids: ", ".join([
+                                                next((s["name"] for s in sets_data if s["id"] == sid), sid)
+                                                for sid in set_ids
+                                            ])
+                                        )
+                                    st.dataframe(top_intersections, use_container_width=True, hide_index=True)
+                                
+                    except Exception as e:  # noqa: BLE001
+                        st.error(f"Failed to generate UpSet plot: {e}")
 
 
 __all__ = ["render_multi_omics_integration_page"]

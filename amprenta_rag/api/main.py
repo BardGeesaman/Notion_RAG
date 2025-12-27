@@ -49,6 +49,7 @@ from amprenta_rag.api.routers import (
     spectral,
     crispr,
     multi_omics,
+    multi_omics_viz,
     variants,
     companies,
     extraction,
@@ -60,6 +61,7 @@ from amprenta_rag.api.routers import (
     compound_target,
     explorer,
     pathway_maps,
+    multi_omics_viz,
 )
 from amprenta_rag.config import get_config
 
@@ -130,6 +132,7 @@ app.include_router(single_cell.router, prefix="/api")
 app.include_router(spectral.router, prefix="/api")
 app.include_router(crispr.router, prefix="/api")
 app.include_router(multi_omics.router, prefix="/api")
+app.include_router(multi_omics_viz.router, prefix="/api")
 app.include_router(variants.router, prefix="/api")
 app.include_router(companies.router, prefix="/api")
 app.include_router(extraction.router, prefix="/api")
@@ -141,6 +144,7 @@ app.include_router(viz3d.router, prefix="/api")
 app.include_router(compound_target.router, prefix="/api/network")
 app.include_router(explorer.router, prefix="/api")
 app.include_router(pathway_maps.router, prefix="/api")
+app.include_router(multi_omics_viz.router, prefix="/api")
 
 
 @app.get("/")

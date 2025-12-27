@@ -330,7 +330,11 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Plotly visualizations with log-scale and CI bands
   - API: 4 endpoints for fitting, comparison, analysis
   - Dashboard: Dose-Response Explorer page with 4 tabs
-- ❌ Multi-Omics Integration View (Alluvial/UpSet)
+- ✅ Multi-Omics Integration View (2025-12-27)
+  - Alluvial (Sankey) diagram for feature flow visualization
+  - UpSet plot for set intersections across datasets
+  - Integrated into existing MOFA page as Tabs 5-6
+  - API: 3 endpoints (datasets, alluvial, upset)
 
 ### Tier 2 - Strategic
 - ❌ SAR Grid & R-Group Explorer
