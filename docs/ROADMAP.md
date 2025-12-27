@@ -270,7 +270,12 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - MLModelRegistry in amprenta_rag/ml/registry.py
   - Postgres metadata + joblib artifacts
 - ✅ AutoML Notebook Templates (2025-12-25) - see Quick Wins section
-- ❌ Drift & Calibration Monitoring
+- ✅ Drift & Calibration Monitoring (2025-12-27)
+  - PSI drift detection for molecular descriptors
+  - FP aggregate drift (tanimoto, hamming)
+  - ECE calibration for classification models
+  - API: 5 endpoints (drift, calibration, log, feedback, health)
+  - Dashboard: Model Health Overview, Drift Analysis, Calibration tabs
 - ✅ Universal Unstructured AI Extraction (AI ETL) MVP (2025-12-24)
   - Parsers: DOCX, PPTX, Excel, CSV (PDF existing)
   - Structured LLM extraction with Pydantic schemas

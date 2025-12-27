@@ -1785,3 +1785,19 @@ from amprenta_rag.models.eln import (  # noqa: F401
     LabNotebookEntry,
     LabNotebookEntryAssociation,
 )
+
+
+class ModelMonitoringLog(Base):
+    """Model monitoring log for tracking predictions and performance."""
+
+    __tablename__ = "model_monitoring_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    model_id = Column(UUID(as_uuid=True), ForeignKey("ml_models.id"), index=True, nullable=False)
+    model_version = Column(String(50), index=True, nullable=False)
+    prediction_id = Column(UUID(as_uuid=True), unique=True, index=True, nullable=False)
+    prediction = Column(Float, nullable=False)
+    ground_truth = Column(Float, nullable=True)
+    input_hash = Column(String(64), index=True)
+    feature_summary = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, index=True)

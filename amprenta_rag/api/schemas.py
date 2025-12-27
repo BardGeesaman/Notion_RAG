@@ -1158,3 +1158,59 @@ class RankingPreset(BaseModel):
     name: str
     weights: Dict[str, float]
     description: str
+
+
+# Model Monitoring Schemas
+class MonitoringLogRequest(BaseModel):
+    """Request to log a model prediction for monitoring."""
+    
+    model_id: UUID
+    model_version: str
+    prediction_id: UUID
+    prediction: float
+    input_hash: Optional[str] = None
+    feature_summary: Dict[str, Any]
+
+
+class MonitoringFeedbackRequest(BaseModel):
+    """Request to provide ground truth feedback for a prediction."""
+    
+    prediction_id: UUID
+    ground_truth: float
+
+
+class DriftReportSchema(BaseModel):
+    """Drift analysis report for a model."""
+    
+    model_id: UUID
+    model_name: str
+    status: str
+    psi_scores: Dict[str, float]
+    fp_aggregate_drift: Dict[str, float]
+    window_hours: int
+    n_predictions: int
+    computed_at: datetime
+
+
+class CalibrationReportSchema(BaseModel):
+    """Calibration analysis report for a classification model."""
+    
+    model_id: UUID
+    model_name: str
+    status: str
+    ece: Optional[float]
+    n_predictions_with_truth: int
+    computed_at: datetime
+
+
+class HealthReportSchema(BaseModel):
+    """Overall health report combining drift and calibration analysis."""
+    
+    model_id: UUID
+    model_name: str
+    overall_status: str
+    drift_status: str
+    calibration_status: str
+    psi_max: Optional[float]
+    ece: Optional[float]
+    last_checked: datetime

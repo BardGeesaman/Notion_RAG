@@ -48,10 +48,19 @@ def render_model_registry_page() -> None:
     if status_filter != "All":
         df = df[df["status"] == status_filter]
 
+    # Add monitoring links
+    df_display = df.copy()
+    df_display["monitoring"] = df_display["id"].apply(
+        lambda model_id: f"[View Monitoring](?page=Model%20Monitoring&model_id={model_id})"
+    )
+    
     st.dataframe(
-        df[["name", "version", "model_type", "framework", "status", "metrics"]],
+        df_display[["name", "version", "model_type", "framework", "status", "metrics", "monitoring"]],
         use_container_width=True,
         hide_index=True,
+        column_config={
+            "monitoring": st.column_config.LinkColumn("Monitoring", help="View model monitoring dashboard")
+        }
     )
 
     if st.checkbox("Show model details"):
