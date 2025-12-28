@@ -93,6 +93,14 @@ Simple status legend:
   - API: 4 endpoints (create, list, update, delete)
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
+### Collaboration & User Experience
+- ✅ Collaboration Features MVP (2025-12-28)
+  - Entity-scoped sharing (view/edit/admin permissions)
+  - Review workflows (draft→submitted→in_review→approved/rejected state machine)
+  - Workspaces Hub dashboard for teams and projects
+  - API: 11 endpoints (5 sharing + 6 reviews)
+  - 38 tests (6 service sharing + 8 service reviews + 10 API sharing + 14 API reviews)
+
 ### Testing & Development
 - ✅ Comprehensive Test Data Seeding Suite (all domains, size presets, deterministic)
 - ✅ Phase 2 Code Quality (2025-12-19): ruff.toml config, 6,252 whitespace fixes, 213 F401 fixes, 22 E712 fixes, model re-exports restored
@@ -123,6 +131,8 @@ Simple status legend:
   - Auto-migrate test fixture in conftest.py
   - Fixed Activity API session management
   - Fixed Datasets API schema validation
+  - Fixed 4 E2E test selector failures (brittle input[aria-label] → robust get_by_text with .or_() fallbacks)
+  - E2E tests: 66 total, 64 passing, 2 legitimate skips (optional ADMET UI, HPO data)
   - 250+ tests passing (API: 149, Integration: 10, Utils: 91)
 
 ### Testing & Development (Future)
