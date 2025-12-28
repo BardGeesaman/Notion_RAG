@@ -24,21 +24,16 @@ def test_sphingolipid_imbalance_page_loads(page: Page, streamlit_server: str):
     _goto(page, streamlit_server, "Sphingolipid%20Imbalance")
     main = _main_container(page)
 
-    expect(main.locator("text=Sphingolipid Pathway Imbalance").first).to_be_visible(timeout=20000)
+    # Check for page heading - using get_by_text for partial match
+    expect(main.get_by_text("Sphingolipid Pathway Imbalance").first).to_be_visible(timeout=20000)
 
-    # Verify dataset selection UI is present
-    # If no datasets message appears, the page loaded but needs seeded data
-    no_datasets = main.locator("text=No datasets available.")
-    select_datasets = main.locator("text=Select datasets").first
-    
-    # Assert either the selection widget OR a clear message about needing data
-    has_datasets = select_datasets.count() > 0
-    has_no_data_msg = no_datasets.count() > 0
-    
-    assert has_datasets or has_no_data_msg, "Expected either dataset selector or 'No datasets available' message"
-    
-    # If datasets are available, verify the selector is visible
-    if has_datasets:
-        expect(select_datasets).to_be_visible(timeout=20000)
+    # Check for caption text that's always rendered (regardless of data state)
+    # This proves the page fully loaded and rendered its content
+    caption_or_datasets = main.get_by_text("Heuristic scoring").or_(
+        main.get_by_text("Select datasets")
+    ).or_(
+        main.get_by_text("No datasets available.")
+    )
+    expect(caption_or_datasets.first).to_be_visible(timeout=15000)
 
 

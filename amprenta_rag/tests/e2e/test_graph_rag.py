@@ -18,11 +18,13 @@ def _goto(page: Page, base_url: str) -> None:
 
 def test_use_graph_boost_checkbox_exists(page: Page, streamlit_server: str) -> None:
     _goto(page, streamlit_server)
-    # Streamlit checkbox is typically rendered as an input with aria-label equal to the label.
-    cb = page.locator('input[aria-label="Use Graph Boost"]').first
-    if cb.count() == 0:
-        # Fallback: locate label text
-        cb = page.locator("text=Use Graph Boost").first
-    expect(cb).to_be_visible(timeout=20000)
+    
+    # Use label-based approach - check for visible "Use Graph Boost" text
+    # This is more reliable across Streamlit versions than input[aria-label]
+    main = page.locator('[data-testid="stMainBlockContainer"]').first
+    
+    # Look for the checkbox label text (Streamlit renders checkbox with label)
+    graph_boost_label = main.get_by_text("Use Graph Boost")
+    expect(graph_boost_label.first).to_be_visible(timeout=20000)
 
 
