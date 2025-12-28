@@ -1,7 +1,14 @@
 # Next Steps - Implementation Roadmap
 
-**Last Updated**: 2025-12-10  
-**Status**: Pathway analysis complete, Postgres-only architecture
+> **⚠️ DEPRECATED (2025-12-28)**: This file is no longer maintained.
+> 
+> **Single Source of Truth: [ROADMAP.md](ROADMAP.md)**
+> 
+> All planned features have been migrated to ROADMAP.md.
+> This file is retained for historical reference only.
+
+**Last Updated**: 2025-12-10 (STALE - see ROADMAP.md)  
+**Status**: DEPRECATED - See ROADMAP.md for current status
 
 ---
 

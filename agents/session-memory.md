@@ -28,9 +28,9 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 * **Key Constraints:**
   - **Postgres** as primary system of record (Notion 100% REMOVED per Chairman directive)
-  - **Pinecone** for vector storage (semantic index)
+  - **pgvector** for vector storage (Pinecone removed 2025-12-28)
   - **Python 3.10+** codebase
-  - API rate limits (OpenAI, Pinecone, public repositories)
+  - API rate limits (OpenAI, public repositories)
 
 * **Guiding Principles:**
   - **Idempotency**: All operations safe to re-run
@@ -47,19 +47,20 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 * **Main Components:**
   - **Postgres**: Primary system of record for ALL structured data (Programs, Experiments, Datasets, Features, Signatures, Compounds, HTS, and all relationships).
-  - **Pinecone**: Vector index for RAG with OpenAI embeddings.
+  - **pgvector**: Vector index for RAG with OpenAI embeddings (migrated from Pinecone 2025-12-28).
   - **OpenAI**: Embedding generation (text-embedding-ada-002) + LLM reasoning (GPT-4o/Claude 3.5).
   - **FastAPI**: REST API service layer with 15+ CRUD endpoints.
   - **Streamlit**: Web dashboard (40+ pages) for data exploration and analysis.
   - **Python Scripts**: CLI tools for ingestion and analysis.
   - ~~**SQLite**: Removed (Dec 2025) - Chemistry/HTS migrated to Postgres.~~
+  - ~~**Pinecone**: Removed (Dec 2025) - Migrated to pgvector.~~
 
 * **How They Interact:**
   1. Data files → Ingestion pipelines → Parse and normalize features → **Postgres**
   2. Entities (Experiments, Datasets) → **Postgres** → Establish relationships
-  3. Dataset summaries → OpenAI (embeddings) → **Pinecone** (vector storage)
+  3. Dataset summaries → OpenAI (embeddings) → **pgvector** (vector storage in Postgres)
   4. Signatures → Match against dataset features → Score and writeback to **Postgres**
-  5. RAG queries → **Pinecone** (semantic search) + **Postgres** (structured search) → OpenAI (reasoning)
+  5. RAG queries → **pgvector** (semantic search) + **Postgres** (structured search) → OpenAI (reasoning)
   6. **Streamlit Dashboard** provides human-friendly interface and data visualization
 
 * **Known Limitations:**
@@ -74,7 +75,7 @@ It should be updated at natural breakpoints in work sessions to support continui
   - **Bioinformatics Pipeline**: Nextflow/Snakemake integration.
 
 * **Dependencies to Monitor:**
-  - Pinecone index capacity and query performance
+  - pgvector index performance and Postgres resource usage
   - OpenAI API costs and embedding model changes
   - External mapping services (KEGG, Reactome, UniProt APIs)
 
@@ -398,9 +399,9 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *Potential pitfalls or areas lacking clarity.*
 
-### Risk 1: Pinecone Index Capacity
-* **Risk:** Free tier limits vs. growing public dataset collection.
-* **Mitigation:** Monitoring vector counts, potential upgrade to paid tier or self-hosted vector DB (pgvector) in AWS phase.
+### Risk 1: pgvector Performance at Scale
+* **Risk:** Vector search performance as dataset grows.
+* **Mitigation:** Monitoring query latency, index optimization, potential index partitioning for large collections.
 
 ### Risk 2: AWS Deployment Complexity
 * **Risk:** Moving from local/single-server to ECS/RDS adds DevOps overhead.

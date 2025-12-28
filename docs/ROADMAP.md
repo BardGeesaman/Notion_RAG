@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-28
 
 Simple status legend:
 - ✅ DONE
@@ -17,7 +17,7 @@ Simple status legend:
 - ✅ **FastAPI REST API operational**
 - ✅ **Chemistry & HTS integrated with PostgreSQL**
 - ✅ **Public repository ingestion complete** (GEO, PRIDE, MetaboLights, Metabolomics Workbench)
-- ✅ **RAG operational** (Pinecone-backed retrieval + LLM synthesis)
+- ✅ **RAG operational** (pgvector-backed retrieval + LLM synthesis)
 
 ---
 
@@ -153,6 +153,57 @@ Simple status legend:
 ### Testing & Development (Future)
 - ❌ Split requirements.txt - move pdbfixer/openmm to requirements-structural.txt (pdbfixer requires conda-forge, not pip-installable)
 - ❌ OOP Refactoring Review (code structure improvements)
+
+### Future Backlog (Migrated from NEXT_STEPS.md 2025-12-28)
+
+**Integration & Data Sources:**
+- ❌ Semantic Scholar / OpenAlex Integration
+  - Citation graphs & AI relevance scoring
+  - Author/institution metadata enrichment
+  - Automated Literature Analysis
+- ❌ Publication & Supplementary Data Extraction
+  - Extract experiment details from PDF publications
+  - Parse supplementary tables (Excel/CSV)
+  - Link publications to repository datasets
+- ❌ Imaging Data Support (Microscopy/HCS metadata)
+- ❌ Flow Cytometry / FACS Data Ingestion
+- ❌ Biophysical Assay Support (SPR, MST, DSC)
+
+**Visualization & UI/UX:**
+- ❌ High-Dimensional Projector
+  - Interactive 3D scatter plots (UMAP/t-SNE)
+  - TensorBoard-style point cloud visualization
+- ❌ Chemical Sketcher (Ketcher/MarvinJS)
+  - Draw structures to generate SMILES
+  - Visual structure editor for registration
+- ❌ Navigation & UI Organization
+  - Functional grouping (Discovery, ELN, Analysis, Admin)
+  - Collapsible sidebar sections
+- ❌ Scientist's Cockpit Dashboard (widgets for recent data, alerts, tasks)
+
+**Compliance & IP:**
+- ❌ 21 CFR Part 11 Readiness
+  - Electronic signatures
+  - Data immutability logs
+- ❌ IP & Patent Tracking
+  - Invention Disclosure Registry
+  - Patent Portfolio Manager
+  - Experiment-to-IP Linking
+
+**Infrastructure & Operations:**
+- ❌ Job Queue System (Celery/Redis)
+- ❌ Automated Backup & Disaster Recovery
+  - Daily full backups to S3
+  - Point-in-Time Recovery (WAL archiving)
+  - User-initiated data export (project zip)
+- ❌ Enhanced System Administration Tools
+  - Cache Management UI
+  - Extended health monitoring (CPU/Memory/Queue)
+
+**Future ML/AI Innovations:**
+- ❌ Generative Chemistry (De Novo Design / VAEs)
+- ❌ Image Analysis Pipeline (CellPose for HCS)
+- ❌ Power Analysis for Sample Size Estimation
 
 ---
 

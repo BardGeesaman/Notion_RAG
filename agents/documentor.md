@@ -41,6 +41,14 @@ TO: Architect
 * Maintain `docs/ROADMAP.md` as the single source of truth for roadmap status.
 * Update `docs/ROADMAP.md` after each major phase completion (mark ✅ DONE, update NEXT UP priorities).
 
+### ROADMAP Single Source of Truth
+
+**CRITICAL: `docs/ROADMAP.md` is the ONLY planning document.**
+
+- `docs/NEXT_STEPS.md` is DEPRECATED (2025-12-28) - do NOT update it
+- All feature planning, status tracking, and completion records go in ROADMAP.md
+- Never create new planning documents without Architect approval
+
 ### ROADMAP Reconciliation Rules
 
 When updating ROADMAP.md after feature completion:
@@ -48,6 +56,7 @@ When updating ROADMAP.md after feature completion:
 2. **Find and update** any corresponding ❌ entry in Future/Planning sections
 3. **Mark it ✅** or remove it if redundant (avoid duplicate entries)
 4. **Verify counts** match after changes (grep for ✅ and ❌)
+5. **Update "Last Updated" date** at top of file
 
 Single source of truth: Each feature should appear only ONCE in ROADMAP.
 
