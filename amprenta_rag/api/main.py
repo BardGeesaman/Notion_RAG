@@ -71,6 +71,7 @@ from amprenta_rag.api.routers import (
     teams,
     scoring,
     predictors,
+    papers,
 )
 from amprenta_rag.config import get_config
 
@@ -164,6 +165,7 @@ app.include_router(entity_reviews.router, prefix="/api/v1")
 app.include_router(teams.router, prefix="/api/v1")
 app.include_router(scoring.router, prefix="/api/v1/score", tags=["Scoring"])
 app.include_router(predictors.router, prefix="/api/v1/predictors", tags=["Predictors"])
+app.include_router(papers.router, prefix="/api/v1/papers", tags=["Papers"])
 
 
 @app.get("/")
