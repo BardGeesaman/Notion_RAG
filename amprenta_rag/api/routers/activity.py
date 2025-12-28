@@ -11,8 +11,9 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from amprenta_rag.api.dependencies import get_current_user
 from amprenta_rag.api.schemas import (
     ActivityEventSchema,
     NotificationSchema,
@@ -25,7 +26,7 @@ from amprenta_rag.services.activity import (
     mark_all_notifications_read,
     get_unread_count,
 )
-from amprenta_rag.database.models import ActivityEvent, RepositoryNotification
+from amprenta_rag.database.models import ActivityEvent, User
 from amprenta_rag.database.session import db_session
 
 # Create routers
@@ -109,6 +110,7 @@ def get_notifications_endpoint(
     unread_only: bool = Query(False, description="Return only unread notifications"),
     limit: int = Query(20, ge=1, le=100, description="Maximum number of notifications to return"),
     offset: int = Query(0, ge=0, description="Number of notifications to skip"),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get paginated notifications for the current user.
@@ -116,8 +118,7 @@ def get_notifications_endpoint(
     Returns a list of notifications ordered by creation date (newest first).
     Includes related activity event data when available.
     """
-    # TODO: Replace with actual user context from auth
-    user_id = MOCK_USER_ID
+    user_id = current_user.id
     
     notifications = get_user_notifications(
         user_id=user_id,
@@ -161,14 +162,16 @@ def get_notifications_endpoint(
 
 
 @notifications_router.post("/{notification_id}/read")
-def mark_notification_read_endpoint(notification_id: UUID):
+def mark_notification_read_endpoint(
+    notification_id: UUID,
+    current_user: User = Depends(get_current_user),
+):
     """
     Mark a specific notification as read.
     
     Returns 404 if the notification is not found or not owned by the current user.
     """
-    # TODO: Replace with actual user context from auth
-    user_id = MOCK_USER_ID
+    user_id = current_user.id
     
     success = mark_notification_read(notification_id, user_id)
     
@@ -185,14 +188,15 @@ def mark_notification_read_endpoint(notification_id: UUID):
 
 
 @notifications_router.post("/read-all")
-def mark_all_notifications_read_endpoint():
+def mark_all_notifications_read_endpoint(
+    current_user: User = Depends(get_current_user),
+):
     """
     Mark all notifications as read for the current user.
     
     Returns the count of notifications that were marked as read.
     """
-    # TODO: Replace with actual user context from auth
-    user_id = MOCK_USER_ID
+    user_id = current_user.id
     
     count = mark_all_notifications_read(user_id)
     
@@ -203,12 +207,13 @@ def mark_all_notifications_read_endpoint():
 
 
 @notifications_router.get("/count", response_model=NotificationCountSchema)
-def get_notifications_count():
+def get_notifications_count(
+    current_user: User = Depends(get_current_user),
+):
     """
     Get the count of unread notifications for the current user.
     """
-    # TODO: Replace with actual user context from auth
-    user_id = MOCK_USER_ID
+    user_id = current_user.id
     
     unread_count = get_unread_count(user_id)
     

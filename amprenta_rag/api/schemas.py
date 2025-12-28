@@ -182,7 +182,7 @@ class Dataset(DatasetBase):
     dvc_metadata: Optional[dict] = None
     dvc_pushed: bool = False
 
-    @field_validator("file_paths", "file_urls", "organism", mode="before")
+    @field_validator("file_paths", "file_urls", "organism", "sample_type", "disease", mode="before")
     @classmethod
     def none_to_empty_list(cls, v: Optional[List[str]]) -> List[str]:
         return v if v is not None else []

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from amprenta_rag.database.base import get_db
 from amprenta_rag.api import schemas
+from amprenta_rag.api.dependencies import get_current_user
 from amprenta_rag.utils.comments import (
     add_comment,
     get_comments,
@@ -28,22 +29,19 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 def create_comment(
     comment: schemas.CommentCreate,
     db: Session = Depends(get_db),
-    user_id: UUID = None,  # TODO: Get from auth context
+    current_user: User = Depends(get_current_user),
 ) -> schemas.CommentResponse:
     """Create a new comment and notify mentioned users.
     
     Args:
         comment: Comment creation data
         db: Database session
-        user_id: Current user ID (from auth)
+        current_user: Current authenticated user
         
     Returns:
         Created comment with metadata
     """
-    if user_id is None:
-        # MVP: Use mock user ID
-        from uuid import UUID as UUIDType
-        user_id = UUIDType("00000000-0000-0000-0000-000000000001")
+    user_id = current_user.id
     
     try:
         # Create comment
@@ -125,7 +123,7 @@ def edit_comment(
     comment_id: UUID,
     comment_update: schemas.CommentUpdate,
     db: Session = Depends(get_db),
-    user_id: UUID = None,  # TODO: Get from auth context
+    current_user: User = Depends(get_current_user),
 ) -> schemas.CommentResponse:
     """Update a comment (author only).
     
@@ -133,7 +131,7 @@ def edit_comment(
         comment_id: Comment UUID
         comment_update: Updated content
         db: Database session
-        user_id: Current user ID
+        current_user: Current authenticated user
         
     Returns:
         Updated comment
@@ -141,9 +139,7 @@ def edit_comment(
     Raises:
         HTTPException: 403 if unauthorized, 404 if not found
     """
-    if user_id is None:
-        from uuid import UUID as UUIDType
-        user_id = UUIDType("00000000-0000-0000-0000-000000000001")
+    user_id = current_user.id
     
     updated = update_comment(comment_id, comment_update.content, user_id, db)
     
@@ -174,14 +170,14 @@ def edit_comment(
 def remove_comment(
     comment_id: UUID,
     db: Session = Depends(get_db),
-    user_id: UUID = None,  # TODO: Get from auth context
+    current_user: User = Depends(get_current_user),
 ) -> dict:
     """Delete a comment (author only).
     
     Args:
         comment_id: Comment UUID
         db: Database session
-        user_id: Current user ID
+        current_user: Current authenticated user
         
     Returns:
         Success message
@@ -189,9 +185,7 @@ def remove_comment(
     Raises:
         HTTPException: 403 if unauthorized, 404 if not found
     """
-    if user_id is None:
-        from uuid import UUID as UUIDType
-        user_id = UUIDType("00000000-0000-0000-0000-000000000001")
+    user_id = current_user.id
     
     deleted = delete_comment(comment_id, user_id, db)
     

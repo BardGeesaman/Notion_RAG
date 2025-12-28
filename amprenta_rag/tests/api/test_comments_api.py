@@ -2,10 +2,28 @@
 
 from __future__ import annotations
 
-from uuid import uuid4
+from uuid import uuid4, UUID
 from unittest.mock import Mock, patch
 
 import pytest
+
+
+# Test user fixture
+TEST_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
+
+
+def _auth_headers():
+    """Helper to create auth headers for API requests."""
+    return {"X-User-Id": str(TEST_USER_ID)}
+
+
+def mock_current_user():
+    """Mock user for dependency override."""
+    class FakeUser:
+        id = TEST_USER_ID
+        username = "testuser"
+        email = "test@example.com"
+    return FakeUser()
 
 
 def test_create_comment_endpoint():
@@ -15,6 +33,7 @@ def test_create_comment_endpoint():
     from fastapi.testclient import TestClient
     from amprenta_rag.api.main import app
     from amprenta_rag.database.base import get_db
+    from amprenta_rag.api.dependencies import get_current_user
     from unittest.mock import MagicMock
     
     # Mock database session with User query
@@ -23,8 +42,9 @@ def test_create_comment_endpoint():
     mock_user.username = "test_user"
     mock_db.query.return_value.filter.return_value.first.return_value = mock_user
     
-    # Override FastAPI dependency
+    # Override FastAPI dependencies
     app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = mock_current_user
     
     try:
         client = TestClient(app)
@@ -48,7 +68,7 @@ def test_create_comment_endpoint():
             mock_add.return_value = mock_comment
             
             with patch("amprenta_rag.api.routers.comments.parse_mentions", return_value=[]):
-                response = client.post("/api/v1/comments", json=payload)
+                response = client.post("/api/v1/comments", json=payload, headers=_auth_headers())
                 
                 assert response.status_code == 200 or response.status_code == 500  # May fail without full setup
     finally:
@@ -62,6 +82,7 @@ def test_create_comment_with_mentions():
     
     from fastapi.testclient import TestClient
     from amprenta_rag.api.main import app
+    from amprenta_rag.api.dependencies import get_current_user
     from amprenta_rag.database.base import get_db
     from unittest.mock import MagicMock
     
@@ -73,6 +94,7 @@ def test_create_comment_with_mentions():
     
     # Override FastAPI dependency
     app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = mock_current_user
     
     try:
         client = TestClient(app)
@@ -98,7 +120,7 @@ def test_create_comment_with_mentions():
             with patch("amprenta_rag.api.routers.comments.parse_mentions", return_value=["alice"]):
                 with patch("amprenta_rag.api.routers.comments.resolve_mentions", return_value=[uuid4()]):
                     with patch("amprenta_rag.api.routers.comments.notify_mentions"):
-                        response = client.post("/api/v1/comments", json=payload)
+                        response = client.post("/api/v1/comments", json=payload, headers=_auth_headers())
                         
                         # Verify response (may fail without full DB setup)
                         assert response.status_code in [200, 500]
@@ -113,14 +135,20 @@ def test_list_comments_endpoint():
     
     from fastapi.testclient import TestClient
     from amprenta_rag.api.main import app
+    from amprenta_rag.api.dependencies import get_current_user
     
-    client = TestClient(app)
-    entity_id = str(uuid4())
+    app.dependency_overrides[get_current_user] = mock_current_user
     
-    with patch("amprenta_rag.api.routers.comments.get_comments", return_value=[]):
-        response = client.get(f"/api/v1/comments?entity_type=dataset&entity_id={entity_id}")
+    try:
+        client = TestClient(app)
+        entity_id = str(uuid4())
         
-        assert response.status_code in [200, 500]
+        with patch("amprenta_rag.api.routers.comments.get_comments", return_value=[]):
+            response = client.get(f"/api/v1/comments?entity_type=dataset&entity_id={entity_id}", headers=_auth_headers())
+            
+            assert response.status_code in [200, 500]
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_update_comment_endpoint():
@@ -129,6 +157,7 @@ def test_update_comment_endpoint():
     
     from fastapi.testclient import TestClient
     from amprenta_rag.api.main import app
+    from amprenta_rag.api.dependencies import get_current_user
     from amprenta_rag.database.base import get_db
     from unittest.mock import MagicMock
     
@@ -140,6 +169,7 @@ def test_update_comment_endpoint():
     
     # Override FastAPI dependency
     app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = mock_current_user
     
     try:
         client = TestClient(app)
@@ -156,7 +186,7 @@ def test_update_comment_endpoint():
             mock_comment.updated_at = "2025-12-27T13:00:00"
             mock_update.return_value = mock_comment
             
-            response = client.put(f"/api/v1/comments/{comment_id}", json=payload)
+            response = client.put(f"/api/v1/comments/{comment_id}", json=payload, headers=_auth_headers())
             
             assert response.status_code in [200, 403, 500]
     finally:
@@ -170,15 +200,21 @@ def test_update_comment_unauthorized_returns_403():
     
     from fastapi.testclient import TestClient
     from amprenta_rag.api.main import app
+    from amprenta_rag.api.dependencies import get_current_user
     
-    client = TestClient(app)
-    comment_id = str(uuid4())
-    payload = {"content": "Trying to update"}
+    app.dependency_overrides[get_current_user] = mock_current_user
     
-    with patch("amprenta_rag.api.routers.comments.update_comment", return_value=None):
-        response = client.put(f"/api/v1/comments/{comment_id}", json=payload)
+    try:
+        client = TestClient(app)
+        comment_id = str(uuid4())
+        payload = {"content": "Trying to update"}
         
-        assert response.status_code == 403
+        with patch("amprenta_rag.api.routers.comments.update_comment", return_value=None):
+            response = client.put(f"/api/v1/comments/{comment_id}", json=payload, headers=_auth_headers())
+            
+            assert response.status_code == 403
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_delete_comment_endpoint():
@@ -187,14 +223,20 @@ def test_delete_comment_endpoint():
     
     from fastapi.testclient import TestClient
     from amprenta_rag.api.main import app
+    from amprenta_rag.api.dependencies import get_current_user
     
-    client = TestClient(app)
-    comment_id = str(uuid4())
+    app.dependency_overrides[get_current_user] = mock_current_user
     
-    with patch("amprenta_rag.api.routers.comments.delete_comment", return_value=True):
-        response = client.delete(f"/api/v1/comments/{comment_id}")
+    try:
+        client = TestClient(app)
+        comment_id = str(uuid4())
         
-        assert response.status_code in [200, 500]
+        with patch("amprenta_rag.api.routers.comments.delete_comment", return_value=True):
+            response = client.delete(f"/api/v1/comments/{comment_id}", headers=_auth_headers())
+            
+            assert response.status_code in [200, 500]
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_delete_comment_unauthorized_returns_403():
@@ -203,14 +245,20 @@ def test_delete_comment_unauthorized_returns_403():
     
     from fastapi.testclient import TestClient
     from amprenta_rag.api.main import app
+    from amprenta_rag.api.dependencies import get_current_user
     
-    client = TestClient(app)
-    comment_id = str(uuid4())
+    app.dependency_overrides[get_current_user] = mock_current_user
     
-    with patch("amprenta_rag.api.routers.comments.delete_comment", return_value=False):
-        response = client.delete(f"/api/v1/comments/{comment_id}")
+    try:
+        client = TestClient(app)
+        comment_id = str(uuid4())
         
-        assert response.status_code == 403
+        with patch("amprenta_rag.api.routers.comments.delete_comment", return_value=False):
+            response = client.delete(f"/api/v1/comments/{comment_id}", headers=_auth_headers())
+            
+            assert response.status_code == 403
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_missing_required_field_returns_422():
@@ -219,16 +267,22 @@ def test_missing_required_field_returns_422():
     
     from fastapi.testclient import TestClient
     from amprenta_rag.api.main import app
+    from amprenta_rag.api.dependencies import get_current_user
     
-    client = TestClient(app)
+    app.dependency_overrides[get_current_user] = mock_current_user
     
-    # Missing entity_id
-    payload = {
-        "entity_type": "compound",
-        "content": "Test comment",
-    }
-    
-    response = client.post("/api/v1/comments", json=payload)
-    
-    assert response.status_code == 422  # Validation error
+    try:
+        client = TestClient(app)
+        
+        # Missing entity_id
+        payload = {
+            "entity_type": "compound",
+            "content": "Test comment",
+        }
+        
+        response = client.post("/api/v1/comments", json=payload, headers=_auth_headers())
+        
+        assert response.status_code == 422  # Validation error
+    finally:
+        app.dependency_overrides.clear()
 

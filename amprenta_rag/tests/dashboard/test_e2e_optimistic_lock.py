@@ -46,10 +46,21 @@ def _goto_experiment_edit_design(page: Page, base_url: str) -> None:
     else:
         raise Exception("Edit Design tab not found - navigation may have failed")
 
-    if page.locator("text=No experiments available to edit.").count() > 0:
-        pytest.skip("No experiments available to edit in this environment.")
-
-    expect(page.locator("text=Select experiment").first).to_be_visible()
+    # Check if experiments are available
+    no_experiments = page.locator("text=No experiments available to edit.")
+    select_experiment = page.locator("text=Select experiment").first
+    
+    has_experiments = select_experiment.count() > 0
+    has_no_data_msg = no_experiments.count() > 0
+    
+    # Assert that the page loaded properly
+    assert has_experiments or has_no_data_msg, "Expected either experiment selector or 'No experiments available' message"
+    
+    # If no experiments, raise exception so test fails with clear message
+    if has_no_data_msg:
+        raise Exception("No experiments available to edit - test requires seeded data")
+    
+    expect(select_experiment).to_be_visible()
 
 
 def _set_sample_groups_json(page: Page, payload: str) -> None:

@@ -31,8 +31,7 @@ class TestPostgresAPIIntegration:
 
         # Create via API
         response = client.post("/api/v1/programs", json=program_data)
-        if response.status_code not in (200, 201):
-            pytest.skip("API endpoint not fully implemented yet")
+        assert response.status_code in (200, 201), f"Expected 200/201, got {response.status_code}: {response.text}"
 
         program = response.json()
         program_id = uuid.UUID(program["id"])
@@ -69,10 +68,7 @@ class TestPostgresAPIIntegration:
         try:
             # Read via API
             response = client.get(f"/api/v1/programs/{program_id}")
-            if response.status_code == 404:
-                pytest.skip("API endpoint not fully implemented yet")
-
-            assert response.status_code == 200
+            assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
             program = response.json()
             assert program["name"] == db_program.name
 
@@ -101,10 +97,7 @@ class TestPostgresAPIIntegration:
             # Update via API
             update_data = {"description": "Updated via API"}
             response = client.patch(f"/api/v1/programs/{program_id}", json=update_data)
-            if response.status_code == 404:
-                pytest.skip("API endpoint not fully implemented yet")
-
-            assert response.status_code == 200
+            assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
             # Verify in database
             db.refresh(db_program)
@@ -134,10 +127,7 @@ class TestPostgresAPIIntegration:
         try:
             # Delete via API
             response = client.delete(f"/api/v1/programs/{program_id}")
-            if response.status_code == 404:
-                pytest.skip("API endpoint not fully implemented yet")
-
-            assert response.status_code in (200, 204)
+            assert response.status_code in (200, 204), f"Expected 200/204, got {response.status_code}: {response.text}"
 
             # Verify deleted in database
             db_program_check = db.query(Program).filter(Program.id == program_id).first()

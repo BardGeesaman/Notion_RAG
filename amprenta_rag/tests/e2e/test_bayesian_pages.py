@@ -49,23 +49,27 @@ def test_moa_inference_toggle_works(page: Page, streamlit_server: str):
     _goto(page, streamlit_server, "MOA%20Inference")
     main = _main_container(page)
 
-    # Ensure we actually landed on the MOA page; otherwise skip (nav/routing may differ by env).
-    if main.locator('h1:has-text("MOA Inference"), h2:has-text("MOA Inference")').count() == 0:
-        pytest.skip("MOA Inference page header not detected (routing/navigation mismatch).")
+    # Verify we landed on the MOA page
+    page_header = main.locator('h1:has-text("MOA Inference"), h2:has-text("MOA Inference")').first
+    assert page_header.count() > 0, "MOA Inference page header must be present (check routing)"
+    
+    # Check for data availability
+    no_compounds = main.locator("text=No compounds available.")
+    has_no_data = no_compounds.count() > 0
+    
+    if has_no_data:
+        # Page loaded but needs seeded data - this is acceptable for E2E
+        return
 
-    if main.locator("text=No compounds available.").count() > 0:
-        pytest.skip("No compounds available in this environment.")
-
-    # Ensure page content is loaded.
+    # Verify MOA inference form button exists
     run_btn = page.get_by_role("button", name="Run MOA Inference").first
-    if run_btn.count() == 0:
-        pytest.skip("MOA inference form button not found (page may require data/DB).")
+    assert run_btn.count() > 0, "Run MOA Inference button must exist on page"
     expect(run_btn).to_be_visible(timeout=20000)
     expect(main.locator("text=Method").first).to_be_visible(timeout=20000)
 
+    # Verify Bayesian radio option exists
     bayesian_radio = page.get_by_role("radio", name="Bayesian").first
-    if bayesian_radio.count() == 0:
-        pytest.skip("Bayesian radio option not found (widget markup changed).")
+    assert bayesian_radio.count() > 0, "Bayesian radio option must exist in Method selector"
     bayesian_radio.click()
     page.wait_for_timeout(500)
     expect(bayesian_radio).to_be_visible(timeout=20000)

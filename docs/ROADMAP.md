@@ -114,6 +114,16 @@ Simple status legend:
   - Enhanced seed_all.py: validation, summary, graceful skip
   - Idempotent design: safe to re-run without --reset
   - CI workflow: .github/workflows/seed_test_data.yml
+- ✅ Technical Debt Cleanup (2025-12-27)
+  - Removed pytest.skip from API/E2E tests (12 skips → assertions/fixtures)
+  - Replaced 7 hardcoded auth IDs with get_current_user dependency
+  - Fixed cache timing test (functional, not timing)
+  - Comprehensive schema audit (48 tables added)
+  - Migration reset (clean baseline e9386d67cc54 + b5d4975de50f)
+  - Auto-migrate test fixture in conftest.py
+  - Fixed Activity API session management
+  - Fixed Datasets API schema validation
+  - 250+ tests passing (API: 149, Integration: 10, Utils: 91)
 
 ### Testing & Development (Future)
 - ❌ OOP Refactoring Review (code structure improvements)

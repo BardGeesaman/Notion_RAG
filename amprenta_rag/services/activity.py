@@ -73,15 +73,32 @@ def log_activity(
             # Route notifications
             notified_users = route_notifications(event, db)
             logger.info(
-                f"Activity logged: {event_type.value} for {target_type}:{target_id}, "
+                f"Activity logged: {event_type_str} for {target_type}:{target_id}, "
                 f"notified {len(notified_users)} users"
             )
             
             db.commit()
+            
+            # Load all attributes before returning (to avoid DetachedInstanceError)
+            event_id = event.id
+            event_type_val = event.event_type
+            actor_id_val = event.actor_id
+            target_type_val = event.target_type
+            target_id_val = event.target_id
+            target_name_val = event.target_name
+            program_id_val = event.program_id
+            metadata_val = event.event_metadata
+            created_at_val = event.created_at
+            
+            db.expunge(event)  # Detach from session so it can be used after context
             return event
             
     except Exception as e:
-        logger.error(f"Failed to log activity {event_type.value}: {e}")
+        # Use event_type_str if available, otherwise convert event_type
+        event_type_display = event_type_str if 'event_type_str' in locals() else (
+            event_type.value if isinstance(event_type, ActivityEventType) else str(event_type)
+        )
+        logger.error(f"Failed to log activity {event_type_display}: {e}")
         return None
 
 
@@ -177,6 +194,14 @@ def get_activity_feed(
                 .limit(limit)
                 .all()
             )
+            
+            # Load all attributes and expunge to avoid DetachedInstanceError
+            for event in events:
+                # Access all attributes to load them
+                _ = (event.id, event.event_type, event.actor_id, event.target_type,
+                     event.target_id, event.target_name, event.program_id,
+                     event.event_metadata, event.created_at)
+                db.expunge(event)
             
             return events
             
