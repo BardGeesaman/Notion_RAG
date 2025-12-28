@@ -21,7 +21,7 @@ from amprenta_rag.database.models import (
     Signature as SignatureModel,
 )
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 
 logger = get_logger(__name__)
 

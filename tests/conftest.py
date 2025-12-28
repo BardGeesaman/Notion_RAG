@@ -78,13 +78,6 @@ SM(d18:1/16:0),2.5,ng/mL
 
 
 @pytest.fixture
-def mock_pinecone_client():
-    """Mock Pinecone client."""
-    with patch("amprenta_rag.clients.pinecone_client") as mock:
-        yield mock
-
-
-@pytest.fixture
 def mock_postgres_session():
     """Mock Postgres database session."""
     with patch("amprenta_rag.database.base.get_db") as mock_get_db:
@@ -126,8 +119,5 @@ def pytest_configure(config):
     )
     config.addinivalue_line(
         "markers", "requires_postgres: Tests requiring Postgres database"
-    )
-    config.addinivalue_line(
-        "markers", "requires_pinecone: Tests requiring Pinecone API"
     )
 

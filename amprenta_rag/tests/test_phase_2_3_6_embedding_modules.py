@@ -76,42 +76,42 @@ class TestFunctionSignatures:
 class TestCoreFunctionality:
     """Test core embedding functionality is intact."""
 
-    def test_metabolomics_has_pinecone_logic(self):
-        """Test metabolomics embedding has Pinecone upsert logic."""
+    def test_metabolomics_has_embedding_logic(self):
+        """Test metabolomics embedding has core embedding logic."""
         from amprenta_rag.ingestion.metabolomics import embedding
         source = inspect.getsource(embedding)
 
-        assert 'get_pinecone_index' in source
+        # Pinecone removed - check for core embedding functions only
         assert 'upsert' in source
         assert 'chunk_text' in source
         assert 'embed_texts' in source
 
-    def test_proteomics_has_pinecone_logic(self):
-        """Test proteomics embedding has Pinecone upsert logic."""
+    def test_proteomics_has_embedding_logic(self):
+        """Test proteomics embedding has core embedding logic."""
         from amprenta_rag.ingestion.proteomics import embedding
         source = inspect.getsource(embedding)
 
-        assert 'get_pinecone_index' in source
+        # Pinecone removed - check for core embedding functions only
         assert 'upsert' in source
         assert 'chunk_text' in source
         assert 'embed_texts' in source
 
-    def test_lipidomics_has_pinecone_logic(self):
-        """Test lipidomics embedding has Pinecone upsert logic."""
+    def test_lipidomics_has_embedding_logic(self):
+        """Test lipidomics embedding has core embedding logic."""
         from amprenta_rag.ingestion.lipidomics import embedding
         source = inspect.getsource(embedding)
 
-        assert 'get_pinecone_index' in source
+        # Pinecone removed - check for core embedding functions only
         assert 'upsert' in source
         assert 'chunk_text' in source
         assert 'embed_texts' in source
 
-    def test_transcriptomics_has_pinecone_logic(self):
-        """Test transcriptomics embedding has Pinecone upsert logic."""
+    def test_transcriptomics_has_embedding_logic(self):
+        """Test transcriptomics embedding has core embedding logic."""
         from amprenta_rag.ingestion.transcriptomics import embedding
         source = inspect.getsource(embedding)
 
-        assert 'get_pinecone_index' in source
+        # Pinecone removed - check for core embedding functions only
         assert 'upsert' in source
         assert 'chunk_text' in source
         assert 'embed_texts' in source

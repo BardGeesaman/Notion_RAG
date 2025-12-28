@@ -19,7 +19,7 @@ from uuid import uuid4
 from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion.feature_extraction import extract_features_from_text
-from amprenta_rag.ingestion.pinecone_utils import _query_pinecone_by_filter, sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.logging_utils import get_logger
 
@@ -49,36 +49,10 @@ def _content_already_ingested(
     if not content_id:
         return False, None
 
-    # Query Pinecone for existing content
-    matches = _query_pinecone_by_filter(
-        {
-            "content_id": {"$eq": content_id},
-        }
-    )
-
-    if not matches:
-        return False, None
-
-    # Get stored hash from first match
-    m0 = matches[0]
-    meta = getattr(m0, "metadata", None) or m0.get("metadata", {})
-    stored_hash = meta.get("content_hash")
-
-    # If no current hash provided, assume unchanged
-    if not current_hash:
-        logger.debug(
-            "[INGEST][POSTGRES-CONTENT] Content %s already ingested (no hash comparison)",
-            content_id[:8],
-        )
-        return True, stored_hash
-
-    # Compare hashes
-    if stored_hash and stored_hash == current_hash:
-        logger.debug(
-            "[INGEST][POSTGRES-CONTENT] Content %s already ingested with same hash",
-            content_id[:8],
-        )
-        return True, stored_hash
+    # NOTE: Removed pinecone-specific deduplication check
+    # Content will be reprocessed if ingested multiple times
+    # TODO: Implement pgvector-based deduplication if needed
+    return False, None
 
     # Content has changed - need to delete old vectors
     logger.info(

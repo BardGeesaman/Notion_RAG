@@ -11,30 +11,6 @@ class DummyCfg:
     def __init__(self, backend: str):
         self.vector_backend = backend
 
-        class _P:
-            namespace = "default"
-
-        self.pinecone = _P()
-
-
-def test_get_vector_store_returns_pinecone(monkeypatch: pytest.MonkeyPatch):
-    class FakeIndex:
-        def query(self, **kwargs):
-            return {"matches": []}
-
-        def upsert(self, vectors, namespace):
-            return None
-
-        def delete(self, **kwargs):
-            return None
-
-    monkeypatch.setattr(vs, "get_config", lambda: DummyCfg("pinecone"))
-    # Ensure PineconeStore init doesn't hit real pinecone client
-    monkeypatch.setattr(vs.PineconeStore, "__init__", lambda self, index=None: setattr(self, "_index", FakeIndex()))
-
-    store = vs.get_vector_store()
-    assert isinstance(store, vs.PineconeStore)
-
 
 def test_get_vector_store_returns_pgvector(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(vs, "get_config", lambda: DummyCfg("pgvector"))
@@ -42,22 +18,11 @@ def test_get_vector_store_returns_pgvector(monkeypatch: pytest.MonkeyPatch):
     assert isinstance(store, vs.PgVectorStore)
 
 
-def test_pinecone_store_query_parses_matches(monkeypatch: pytest.MonkeyPatch):
-    class FakeIndex:
-        def query(self, **kwargs):
-            return {
-                "matches": [
-                    {"id": "c1", "score": 0.9, "metadata": {"a": 1}},
-                    {"id": "c2", "score": 0.1, "metadata": {}},
-                ]
-            }
-
+def test_get_vector_store_pinecone_raises_error(monkeypatch: pytest.MonkeyPatch):
+    """Test that attempting to use deprecated pinecone backend raises error."""
     monkeypatch.setattr(vs, "get_config", lambda: DummyCfg("pinecone"))
-    store = vs.PineconeStore(index=FakeIndex())
-    out = store.query([0.0, 1.0], top_k=2)
-    assert out[0]["id"] == "c1"
-    assert out[0]["score"] == 0.9
-    assert out[0]["metadata"] == {"a": 1}
+    with pytest.raises(RuntimeError, match="Pinecone backend is deprecated"):
+        vs.get_vector_store()
 
 
 def test_pgvector_store_query_executes_sql(monkeypatch: pytest.MonkeyPatch):

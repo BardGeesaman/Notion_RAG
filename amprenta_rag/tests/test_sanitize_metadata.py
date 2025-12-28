@@ -1,6 +1,6 @@
 # tests/test_sanitize_metadata.py
 
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 
 
 def test_sanitize_metadata_removes_none_and_converts_types():

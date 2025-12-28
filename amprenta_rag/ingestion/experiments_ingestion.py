@@ -18,7 +18,7 @@ from amprenta_rag.ingestion.feature_extraction import (
     extract_features_from_text, link_features_to_notion_items)
 from amprenta_rag.ingestion.metadata_semantic import \
     get_experiment_semantic_metadata
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 from amprenta_rag.ingestion.signature_integration import \
     detect_and_ingest_signatures_from_content
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts

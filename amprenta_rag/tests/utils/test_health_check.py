@@ -17,7 +17,7 @@ class FakeResp:
 def test_health_check_configuration_only(monkeypatch):
     hc = health_check.HealthChecker()
 
-    fake_cfg = type("Cfg", (), {"notion": type("N", (), {"base_url": "", "api_key": "", "version": ""})(), "pinecone": type("P", (), {"index_name": "idx"})(), "openai": type("O", (), {"api_key": "k"})()})
+    fake_cfg = type("Cfg", (), {"notion": type("N", (), {"base_url": "", "api_key": "", "version": ""})(), "openai": type("O", (), {"api_key": "k"})()})
     monkeypatch.setattr(health_check, "get_config", lambda: fake_cfg)
     class FakeRequests:
         @staticmethod
@@ -25,12 +25,11 @@ def test_health_check_configuration_only(monkeypatch):
             return FakeResp(401)
 
     monkeypatch.setitem(health_check.__dict__, "requests", FakeRequests)
-    monkeypatch.setattr(health_check, "get_pinecone_index", lambda: None, raising=False)
     monkeypatch.setattr(health_check, "openai", type("O", (), {"OpenAI": lambda api_key: type("C", (), {"models": type("M", (), {"list": lambda self: []})()})()})(), raising=False)
 
     # Skip ingestion checks
     hc._check_notion()
-    hc._check_pinecone()
+    # Pinecone check removed (deprecated)
     hc._check_openai()
     hc._check_configuration()
 
@@ -52,13 +51,13 @@ def test_check_all_aggregates(monkeypatch):
     hc = health_check.HealthChecker()
 
     monkeypatch.setattr(hc, "_check_notion", lambda: hc.results.append(health_check.HealthCheckResult("n", "healthy", "ok")))
-    monkeypatch.setattr(hc, "_check_pinecone", lambda: hc.results.append(health_check.HealthCheckResult("p", "degraded", "slow")))
+    # Pinecone check removed (deprecated)
     monkeypatch.setattr(hc, "_check_openai", lambda: hc.results.append(health_check.HealthCheckResult("o", "unhealthy", "down")))
     monkeypatch.setattr(hc, "_check_configuration", lambda: hc.results.append(health_check.HealthCheckResult("c", "healthy", "ok")))
 
     summary = hc.check_all()
     assert summary["components"]["healthy"] == 2
-    assert summary["components"]["degraded"] == 1
+    assert summary["components"]["degraded"] == 0
     assert summary["components"]["unhealthy"] == 1
-    assert summary["components"]["total"] == 4
+    assert summary["components"]["total"] == 3
 

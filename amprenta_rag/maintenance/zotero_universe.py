@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Set
 
 import requests
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
 from amprenta_rag.ingestion import (incremental_ingest_collection,
                                     resync_collection)
@@ -77,13 +76,13 @@ def iter_literature_pages() -> List[Dict[str, Any]]:
 
 def delete_pinecone_vectors_for_item(item_key: str) -> None:
     """
-    Delete all Pinecone vectors with metadata.zotero_item_key == item_key.
+    Stub: Pinecone support removed.
+    
+    Previously deleted all Pinecone vectors for a Zotero item.
+    Use pgvector instead.
     """
-    index = get_pinecone_index()
-    cfg = get_config()
-    index.delete(
-        filter={"zotero_item_key": {"$eq": item_key}},
-        namespace=cfg.pinecone.namespace,
+    logger.debug(
+        "[MAINTENANCE][ZOTERO-UNIVERSE] delete_pinecone_vectors_for_item() is a no-op (Pinecone deprecated)"
     )
 
 

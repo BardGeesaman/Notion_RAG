@@ -20,7 +20,7 @@ from amprenta_rag.ingestion.feature_extraction import extract_features_from_text
 from amprenta_rag.ingestion.features.postgres_linking import (
     batch_link_features_to_dataset_in_postgres,
 )
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.domain import FeatureType

@@ -29,7 +29,7 @@ from amprenta_rag.ingestion.mwtab_extraction import (
     extract_metadata_from_mwtab,
     fetch_mwtab_from_api,
 )
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 from amprenta_rag.ingestion.postgres_signature_matching import (
     find_matching_signatures_for_postgres_dataset,
 )

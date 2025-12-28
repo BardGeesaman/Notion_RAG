@@ -136,13 +136,19 @@ Simple status legend:
   - 250+ tests passing (API: 149, Integration: 10, Utils: 91)
 
 ### Testing & Development (Completed)
-- ✅ Pytest Warnings Cleanup (2025-12-28) - eliminated 74 warnings, 97% reduction
+- ✅ Pytest Warnings Cleanup (2025-12-28) - 0 warnings achieved
   - Pydantic V2 migration: ConfigDict, Field validators (24+ fixes across 16 files)
   - Fixed matplotlib deprecation (cm.get_cmap)
   - Fixed duplicate router registration in main.py
-  - Added comprehensive filterwarnings for external libs
-  - Zero-warning policy enforced in pytest.ini
-  - 0 warnings in test output (remaining 2 external: nbconvert, alembic)
+  - Added filterwarnings for botorch/alembic
+  - All external warnings suppressed via pytest.ini
+  - Zero-warning policy enforced
+- ✅ Pinecone Removal (2025-12-28)
+  - Migrated to pgvector-only backend
+  - Removed pinecone packages from requirements.txt
+  - Created amprenta_rag/utils/metadata.py (extracted sanitize_metadata)
+  - Stubbed pinecone functions with deprecation warnings
+  - 1498 tests collecting successfully
 
 ### Testing & Development (Future)
 - ❌ Split requirements.txt - move pdbfixer/openmm to requirements-structural.txt (pdbfixer requires conda-forge, not pip-installable)

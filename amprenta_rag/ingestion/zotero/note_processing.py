@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.pinecone_utils import note_already_ingested, sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.ingestion.text_extraction import html_to_text, is_boilerplate
 from amprenta_rag.ingestion.zotero_api import ZoteroItem
@@ -83,16 +83,9 @@ def process_notes(
         # Collect text for feature extraction
         all_text_parts.append(text)
 
-        if not force and note_already_ingested(
-            item_key=item.key,
-            note_key=note_key,
-            note_hash=note_hash,
-        ):
-            logger.info(
-                "[INGEST][ZOTERO] Note already ingested with same hash; skipping %s",
-                note_key,
-            )
-            continue
+        # NOTE: Removed pinecone-specific deduplication check
+        # Notes will be reprocessed if ingested multiple times
+        # TODO: Implement pgvector-based deduplication if needed
 
         header = f"{item.title}\n[Zotero Note]\n\n"
         full_text = header + text

@@ -41,7 +41,7 @@ class HealthChecker:
 
         # Check external services
         self._check_notion()
-        self._check_pinecone()
+        # Pinecone deprecated - using pgvector instead
         self._check_openai()
 
         # Check internal systems
@@ -136,54 +136,8 @@ class HealthChecker:
                 )
             )
 
-    def _check_pinecone(self):
-        """Check Pinecone API health."""
-        start = time.time()
-        try:
-            from amprenta_rag.clients.pinecone_client import get_pinecone_index
-
-            index = get_pinecone_index()
-            latency = (time.time() - start) * 1000
-
-            if index:
-                stats = index.describe_index_stats()
-                vector_count = sum(
-                    ns.get("vector_count", 0)
-                    for ns in stats.get("namespaces", {}).values()
-                )
-
-                self.results.append(
-                    HealthCheckResult(
-                        component="Pinecone API",
-                        status="healthy",
-                        message="Connected successfully",
-                        latency_ms=latency,
-                        details={
-                            "index_name": get_config().pinecone.index_name,
-                            "total_vectors": vector_count,
-                            "namespaces": list(stats.get("namespaces", {}).keys()),
-                        },
-                    )
-                )
-            else:
-                self.results.append(
-                    HealthCheckResult(
-                        component="Pinecone API",
-                        status="unhealthy",
-                        message="Failed to connect to index",
-                        latency_ms=latency,
-                    )
-                )
-        except Exception as e:
-            latency = (time.time() - start) * 1000
-            self.results.append(
-                HealthCheckResult(
-                    component="Pinecone API",
-                    status="unhealthy",
-                    message=f"Error: {str(e)[:100]}",
-                    latency_ms=latency,
-                )
-            )
+    # Pinecone support removed - using pgvector backend
+    pass
 
     def _check_openai(self):
         """Check OpenAI API health."""
@@ -239,8 +193,7 @@ class HealthChecker:
 
             if not cfg.openai.api_key:
                 issues.append("OpenAI API key missing")
-            if not cfg.pinecone.api_key:
-                issues.append("Pinecone API key missing")
+            # Pinecone deprecated - using pgvector
             if not cfg.notion.api_key:
                 issues.append("Notion API key missing")
 

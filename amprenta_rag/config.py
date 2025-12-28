@@ -35,8 +35,8 @@ except ImportError:
 # ---------------------------------------------------------
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")
-VECTOR_BACKEND = os.getenv("VECTOR_BACKEND", "pinecone")
+# Pinecone deprecated - using pgvector
+VECTOR_BACKEND = os.getenv("VECTOR_BACKEND", "pgvector")
 
 # Notion API key - OPTIONAL (only required if ENABLE_NOTION_SYNC=true)
 ENABLE_NOTION_SYNC_ENV = os.getenv("ENABLE_NOTION_SYNC", "false").lower() == "true"
@@ -163,7 +163,7 @@ NOTION_PARENT_PAGE_ID = "2b9adf6142ab8026853ef58f725665a6"
 ZOTERO_LIBRARY_TYPE = "group"
 ZOTERO_LIBRARY_ID = "6259755"
 
-# Pinecone index config
+# Pinecone config (deprecated - kept for backwards compatibility)
 PINECONE_INDEX_NAME = "amprenta-rag"
 PINECONE_REGION = "us-east-1"
 PINECONE_NAMESPACE = "default"
@@ -189,7 +189,8 @@ class OpenAIConfig:
 
 @dataclass(frozen=True)
 class PineconeConfig:
-    api_key: str = PINECONE_API_KEY
+    """Deprecated: Pinecone support removed. Kept for backwards compatibility."""
+    api_key: str = ""
     index_name: str = PINECONE_INDEX_NAME
     region: str = PINECONE_REGION
     namespace: str = PINECONE_NAMESPACE
@@ -296,8 +297,7 @@ def _validate_required_keys():
     missing = []
     if not OPENAI_API_KEY:
         missing.append("OPENAI_API_KEY")
-    if not PINECONE_API_KEY:
-        missing.append("PINECONE_API_KEY")
+    # Pinecone deprecated - no longer required
     if not ZOTERO_API_KEY:
         missing.append("ZOTERO_API_KEY")
     if ENABLE_NOTION_SYNC_ENV and not NOTION_API_KEY:

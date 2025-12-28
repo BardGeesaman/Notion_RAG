@@ -3,20 +3,11 @@ import pytest
 from types import SimpleNamespace
 from amprenta_rag.maintenance import core
 
-def test_delete_all_pinecone_vectors(monkeypatch, capsys):
-    mock_config = SimpleNamespace(pinecone=SimpleNamespace(namespace="test-ns"))
-    
-    class FakeIndex:
-        def delete(self, delete_all=False, namespace=""):
-            assert delete_all is True
-            assert namespace == "test-ns"
-            
-    monkeypatch.setattr(core, "get_config", lambda: mock_config)
-    monkeypatch.setattr(core, "get_pinecone_index", lambda: FakeIndex())
-    
+def test_delete_all_pinecone_vectors(capsys):
+    """Test that delete_all_pinecone_vectors is now a no-op stub."""
     core.delete_all_pinecone_vectors()
     captured = capsys.readouterr()
-    assert "Pinecone vectors deleted" in captured.out
+    assert "is a no-op" in captured.out or "support removed" in captured.out
 
 def test_archive_all_pages_in_db(capsys):
     core.archive_all_pages_in_db("db123", "Label")
@@ -45,15 +36,16 @@ def test_reset_all(monkeypatch, capsys):
     mock_config = SimpleNamespace(notion=SimpleNamespace(
         rag_db_id="rag_id",
         lit_db_id="lit_id"
-    ), pinecone=SimpleNamespace(namespace="ns"))
+    ))
     
     monkeypatch.setattr(core, "get_config", lambda: mock_config)
-    monkeypatch.setattr(core, "delete_all_pinecone_vectors", lambda: calls.append("pinecone"))
+    # delete_all_pinecone_vectors is now a no-op, but reset_all still calls it
+    monkeypatch.setattr(core, "delete_all_pinecone_vectors", lambda: calls.append("pinecone_noop"))
     monkeypatch.setattr(core, "archive_all_pages_in_db", lambda db_id, label: calls.append(f"archive {label}"))
     
     core.reset_all()
     
-    assert "pinecone" in calls
+    assert "pinecone_noop" in calls
     assert "archive RAG Engine" in calls
     assert "archive Literature" in calls
     
@@ -67,10 +59,10 @@ def test_reset_all_missing_ids(monkeypatch, capsys):
     mock_config = SimpleNamespace(notion=SimpleNamespace(
         rag_db_id=None,
         lit_db_id=None
-    ), pinecone=SimpleNamespace(namespace="ns"))
+    ))
     
     monkeypatch.setattr(core, "get_config", lambda: mock_config)
-    monkeypatch.setattr(core, "delete_all_pinecone_vectors", lambda: calls.append("pinecone"))
+    monkeypatch.setattr(core, "delete_all_pinecone_vectors", lambda: calls.append("pinecone_noop"))
     
     core.reset_all()
     

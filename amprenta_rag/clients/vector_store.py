@@ -56,9 +56,10 @@ class PineconeStore:
 
     def __init__(self, index: Any | None = None) -> None:
         if index is None:
-            from amprenta_rag.clients.pinecone_client import get_pinecone_index
-
-            index = get_pinecone_index()
+            raise RuntimeError(
+                "Pinecone backend is deprecated. Please use pgvector backend instead. "
+                "Set VECTOR_BACKEND=pgvector in your environment."
+            )
         self._index = index
 
     def query(
@@ -318,10 +319,14 @@ class PgVectorStore:
 def get_vector_store() -> VectorStore:
     """Factory: return configured vector store backend."""
     cfg = get_config()
-    backend = (cfg.vector_backend or "pinecone").lower()
+    backend = (cfg.vector_backend or "pgvector").lower()
 
     if backend == "pinecone":
-        return PineconeStore()
+        raise RuntimeError(
+            "Pinecone backend is deprecated and has been removed. "
+            "Please use pgvector backend instead. "
+            "Set VECTOR_BACKEND=pgvector in your environment."
+        )
     if backend in {"pgvector", "postgres", "postgresql"}:
         return PgVectorStore()
 

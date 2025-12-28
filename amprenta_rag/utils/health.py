@@ -53,15 +53,8 @@ def check_api_connectivity() -> Dict[str, bool]:
     except Exception as e:
         logger.debug("[HEALTH] OpenAI connectivity check failed: %r", e)
 
-    # Check Pinecone
-    try:
-        from amprenta_rag.clients.pinecone_client import get_pinecone_client
-        pine_client: Any = get_pinecone_client()
-        # Try listing indexes (lightweight operation)
-        pine_client.list_indexes()
-        result["pinecone"] = True
-    except Exception as e:
-        logger.debug("[HEALTH] Pinecone connectivity check failed: %r", e)
+    # Pinecone backend deprecated - using pgvector instead
+    result["pinecone"] = False  # No longer supported
 
     return result
 

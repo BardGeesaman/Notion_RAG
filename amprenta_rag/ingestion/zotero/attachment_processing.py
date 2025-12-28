@@ -13,10 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.pinecone_utils import (
-    attachment_already_ingested,
-    sanitize_metadata,
-)
+from amprenta_rag.utils.metadata import sanitize_metadata
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.ingestion.text_extraction import (
     extract_text_from_attachment_bytes,
@@ -99,16 +96,9 @@ def process_attachments(
             )
             continue
 
-        if not force and attachment_already_ingested(
-            item_key=item.key,
-            attachment_key=att_key,
-            current_md5=att_md5,
-        ):
-            logger.info(
-                "[INGEST][ZOTERO] Already ingested with matching md5; skipping attachment %s",
-                att_key,
-            )
-            continue
+        # NOTE: Removed pinecone-specific deduplication check
+        # Attachments will be reprocessed if ingested multiple times
+        # TODO: Implement pgvector-based deduplication if needed
 
         try:
             data = download_zotero_file(att_key)

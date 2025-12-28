@@ -8,7 +8,7 @@ from amprenta_rag.database.session import db_session
 from amprenta_rag.database.models import Email, Literature
 from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 from amprenta_rag.ingestion.postgres_rag_chunk import create_rag_chunk_in_postgres
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.ingestion.text_extraction import extract_text_from_pdf_bytes

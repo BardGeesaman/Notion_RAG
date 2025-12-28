@@ -12,7 +12,7 @@ def test_rag_query_engine_reexports():
     assert rqe.cross_omics_dataset_summary_postgres is not None
     assert rqe.build_meta_filter is not None
     assert rqe.embed_query is not None
-    assert rqe.query_pinecone is not None
+    # query_pinecone check removed (pinecone deprecated)
     assert rqe.MatchSummary is not None
     assert rqe.RAGQueryResult is not None
 

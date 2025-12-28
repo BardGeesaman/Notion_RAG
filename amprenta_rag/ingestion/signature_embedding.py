@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 
 from amprenta_rag.clients.vector_store import get_vector_store
 from amprenta_rag.config import get_config
-from amprenta_rag.ingestion.pinecone_utils import sanitize_metadata
+from amprenta_rag.utils.metadata import sanitize_metadata
 from amprenta_rag.ingestion.text_embedding_utils import chunk_text, embed_texts
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.signatures.signature_loader import Signature

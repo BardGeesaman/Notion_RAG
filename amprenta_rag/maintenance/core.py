@@ -8,7 +8,6 @@ Notion support has been removed - Postgres is now the source of truth.
 from __future__ import annotations
 
 
-from amprenta_rag.clients.pinecone_client import get_pinecone_index
 from amprenta_rag.config import get_config
 from amprenta_rag.logging_utils import get_logger
 
@@ -17,13 +16,13 @@ logger = get_logger(__name__)
 
 def delete_all_pinecone_vectors() -> None:
     """
-    Delete ALL vectors from the configured Pinecone index.
-    Mirrors legacy delete_pinecone_data.py.
+    Stub: Pinecone support removed.
+    
+    Previously deleted all vectors from Pinecone index.
+    Use pgvector instead.
     """
-    cfg = get_config()
-    index = get_pinecone_index()
-    index.delete(delete_all=True, namespace=cfg.pinecone.namespace)
-    print("🧹 Pinecone vectors deleted (namespace:", cfg.pinecone.namespace, ")")
+    logger.warning("[MAINTENANCE][CORE] delete_all_pinecone_vectors() is a no-op (Pinecone deprecated)")
+    print("⚠️  delete_all_pinecone_vectors() is a no-op (Pinecone support removed - use pgvector)")
 
 
 def archive_all_pages_in_db(db_id: str, label: str = "") -> None:

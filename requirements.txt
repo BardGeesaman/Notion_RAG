@@ -55,9 +55,6 @@ pdfminer.six==20251107
 pdfplumber==0.11.8
 pexpect
 pillow
-pinecone==8.0.0
-pinecone-plugin-assistant==3.0.1
-pinecone-plugin-interface==0.0.7
 platformdirs
 pluggy
 prompt-toolkit
