@@ -10,6 +10,8 @@ import httpx
 import pandas as pd
 import streamlit as st
 
+# Removed direct import - using API endpoint instead
+
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 
@@ -69,7 +71,7 @@ def render_biomarker_discovery_page() -> None:
     st.header("Biomarker Discovery")
     st.caption("Run statistical + stability selection + CV importance and view a consensus feature ranking.")
 
-    tab_setup, tab_methods, tab_results = st.tabs(["Setup", "Methods", "Results"])
+    tab_setup, tab_methods, tab_results, tab_bayesian = st.tabs(["Setup", "Methods", "Results", "Bayesian Selection"])
 
     with tab_setup:
         st.subheader("Experiment + Sample Groups")
@@ -224,6 +226,69 @@ def render_biomarker_discovery_page() -> None:
                     st.dataframe(dfm, use_container_width=True, hide_index=True)
                 else:
                     st.json(rows)
+
+    with tab_bayesian:
+        st.subheader("Bayesian Variable Selection (Horseshoe)")
+        st.caption("Compute Posterior Inclusion Probabilities for feature selection with uncertainty.")
+        
+        # Need feature matrix and response
+        if "feature_matrix" not in st.session_state or "response" not in st.session_state:
+            st.info("Load a dataset with features and response variable first.")
+            return
+        
+        pip_threshold = st.slider("PIP Threshold", 0.1, 0.9, 0.5, 0.05,
+                                  help="Features with PIP > threshold are 'included'")
+        
+        if st.button("Run Bayesian Selection", key="run_pip"):
+            with st.spinner("Running MCMC sampling..."):
+                try:
+                    # Prepare data for API call
+                    feature_matrix = st.session_state["feature_matrix"]
+                    response = st.session_state["response"]
+                    feature_names = st.session_state["feature_names"]
+                    
+                    # Convert numpy arrays to lists for JSON serialization
+                    features_list = [
+                        {"name": name, "values": feature_matrix[:, i].tolist()}
+                        for i, name in enumerate(feature_names)
+                    ]
+                    
+                    # Call API endpoint
+                    result = _api_post("/api/v1/bayesian-optimization/variable-selection", {
+                        "features": features_list,
+                        "response": response.tolist(),
+                        "pip_threshold": pip_threshold,
+                        "n_samples": 1000,
+                    })
+                    
+                    st.success(f"Found {result['n_included']} features with PIP > {pip_threshold}")
+                    
+                    # PIP bar chart
+                    import plotly.express as px
+                    pips_df = pd.DataFrame([
+                        {"Feature": k, "PIP": v} for k, v in result["pips"].items()
+                    ])
+                    fig = px.bar(pips_df.head(20), x="Feature", y="PIP",
+                                title="Posterior Inclusion Probabilities (Top 20)")
+                    fig.add_hline(y=pip_threshold, line_dash="dash", 
+                                 annotation_text=f"Threshold: {pip_threshold}")
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Included features table
+                    if result["included_features"]:
+                        st.subheader("Included Features")
+                        included_df = pd.DataFrame([
+                            {"Feature": f, "PIP": result["pips"][f], 
+                             "Coefficient": result["coefficients"][f]}
+                            for f in result["included_features"]
+                        ])
+                        st.dataframe(included_df)
+                except httpx.HTTPStatusError as e:
+                    st.error(f"API request failed: {e.response.status_code} - {e.response.text}")
+                except httpx.RequestError as e:
+                    st.error(f"Network error: {e}")
+                except Exception as e:
+                    st.error(f"Bayesian selection failed: {e}")
 
 
 __all__ = ["render_biomarker_discovery_page"]

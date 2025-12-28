@@ -89,6 +89,30 @@ def _render_qc_metrics(campaign) -> None:
     col3.metric("Hits", summary.hits)
     st.caption(f"Controls — Pos: {summary.pos_controls}, Neg: {summary.neg_controls}")
 
+    # Bayesian Dose-Response Toggle
+    st.markdown("---")
+    
+    use_bayesian = st.checkbox("Use Bayesian Dose-Response", value=False, 
+                               help="Fit 4PL model with uncertainty quantification")
+
+    if use_bayesian:
+        with st.expander("Prior Configuration", expanded=False):
+            col_a, col_b = st.columns(2)
+            with col_a:
+                ec50_mean = st.slider("EC50 Prior Mean (log)", -5.0, 5.0, 0.0, 0.1)
+                ec50_sd = st.slider("EC50 Prior SD", 0.1, 3.0, 1.0, 0.1)
+            with col_b:
+                hill_mean = st.slider("Hill Prior Mean", -2.0, 4.0, 1.0, 0.1)
+                hill_sd = st.slider("Hill Prior SD", 0.1, 3.0, 2.0, 0.1)
+        
+        # Store in session state for later use
+        st.session_state["bayesian_prior_config"] = {
+            "ec50_prior_mean": ec50_mean,
+            "ec50_prior_sd": ec50_sd,
+            "hill_prior_mean": hill_mean,
+            "hill_prior_sd": hill_sd,
+        }
+
     st.markdown("---")
     st.subheader("Plate Heatmap")
     try:

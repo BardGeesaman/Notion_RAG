@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+# Import PriorConfig from analysis layer (no circular import)
+from amprenta_rag.analysis.models import PriorConfig
+
 
 def _require_pymc():
     try:
@@ -27,6 +30,7 @@ def fit_bayesian_dose_response(
     responses: List[float],
     prior_ec50: Optional[float] = None,
     likelihood: str = "normal",  # or "student_t"
+    prior_config: Optional["PriorConfig"] = None,
 ) -> Dict[str, Any]:
     """
     Fit a 4-parameter logistic dose-response model with PyMC.
@@ -67,15 +71,28 @@ def fit_bayesian_dose_response(
         raise ValueError("likelihood must be 'normal' or 'student_t'")
 
     with pm.Model():
-        # Bottom/top centered around observed range with weak priors.
-        bottom = pm.Normal("bottom", mu=y_min, sigma=2.0 * y_range)
-        top = pm.Normal("top", mu=y_max, sigma=2.0 * y_range)
-
-        # EC50 strictly positive.
-        ec50 = pm.LogNormal("ec50", mu=np.log(max(1e-12, prior_ec50)), sigma=1.0)
-
-        # Hill slope can be positive or negative; typically positive.
-        hill_slope = pm.Normal("hill_slope", mu=1.0, sigma=2.0)
+        # Configure priors based on prior_config or use defaults
+        if prior_config:
+            # Bottom prior
+            bottom_mean = prior_config.bottom_prior_mean if prior_config.bottom_prior_mean is not None else y_min
+            bottom = pm.Normal("bottom", mu=bottom_mean, sigma=2.0 * y_range)
+            
+            # Top prior  
+            top_mean = prior_config.top_prior_mean if prior_config.top_prior_mean is not None else y_max
+            top = pm.Normal("top", mu=top_mean, sigma=2.0 * y_range)
+            
+            # EC50 prior (log-scale)
+            ec50_mean = prior_config.ec50_prior_mean if prior_config.ec50_prior_mean is not None else np.log(max(1e-12, prior_ec50))
+            ec50 = pm.LogNormal("ec50", mu=ec50_mean, sigma=prior_config.ec50_prior_sd)
+            
+            # Hill slope prior
+            hill_slope = pm.Normal("hill_slope", mu=prior_config.hill_prior_mean, sigma=prior_config.hill_prior_sd)
+        else:
+            # Default priors (original behavior)
+            bottom = pm.Normal("bottom", mu=y_min, sigma=2.0 * y_range)
+            top = pm.Normal("top", mu=y_max, sigma=2.0 * y_range)
+            ec50 = pm.LogNormal("ec50", mu=np.log(max(1e-12, prior_ec50)), sigma=1.0)
+            hill_slope = pm.Normal("hill_slope", mu=1.0, sigma=2.0)
 
         mu = bottom + (top - bottom) / (1.0 + (x / ec50) ** (-hill_slope))
 

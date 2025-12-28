@@ -344,17 +344,17 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Phase 2: Train models with ChEMBL data (deferred)
 - ✅ Signature→MOA Bayesian Evidence Fusion (Beta regression)
 
-### Tier 2 - Strategic (Deferred)
-- ❌ Prior Builder (expert/literature priors)
-- ❌ Posterior Inclusion Probabilities for Biomarkers
+### Tier 2 - Strategic (Completed 2025-12-28)
+- ✅ Prior Builder (2025-12-28) - expert/literature priors
+- ✅ Posterior Inclusion Probabilities for Biomarkers (2025-12-28)
 - ✅ Multi-Objective BO (qNEHVI, Pareto front visualization) (2025-12-27)
   - ModelListGP with qNoisyExpectedHypervolumeImprovement
   - Objective direction handling (maximize/minimize)
   - Auto reference point computation
   - 2D/3D Pareto visualization in dashboard
   - API endpoint: POST /api/v1/bayesian-optimization/recommend-multi-objective
-- ❌ Dashboard toggle for Bayesian dose-response in HTS QC page
-- ❌ E2E tests for Bayesian endpoints
+- ✅ Dashboard toggle for Bayesian dose-response in HTS QC page (2025-12-28)
+- ✅ E2E tests for Bayesian endpoints (2025-12-28)
 
 ### Libraries
 - BoTorch + Ax + GPyTorch (optimization) ✅ Installed

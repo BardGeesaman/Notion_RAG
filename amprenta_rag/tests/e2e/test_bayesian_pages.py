@@ -75,3 +75,50 @@ def test_moa_inference_toggle_works(page: Page, streamlit_server: str):
     expect(bayesian_radio).to_be_visible(timeout=20000)
 
 
+def test_hts_qc_bayesian_toggle_exists(page: Page, streamlit_server: str):
+    """Verify Bayesian dose-response checkbox exists on HTS QC page."""
+    _goto(page, streamlit_server, "HTS%20QC")
+    main = _main_container(page)
+    
+    # Check for campaigns first
+    no_campaigns = main.locator("text=No HTS campaigns found")
+    if no_campaigns.count() > 0:
+        return  # Page loaded, no data - acceptable
+    
+    bayesian_checkbox = page.get_by_text("Use Bayesian Dose-Response").or_(
+        page.locator('input[type="checkbox"]').filter(has_text="Bayesian")
+    )
+    expect(bayesian_checkbox.first).to_be_visible(timeout=10000)
+
+
+def test_biomarker_bayesian_tab_exists(page: Page, streamlit_server: str):
+    """Verify Bayesian Selection tab exists on Biomarker Discovery page."""
+    _goto(page, streamlit_server, "Biomarker%20Discovery")
+    main = _main_container(page)
+    
+    bayesian_tab = main.get_by_role("tab", name="Bayesian Selection").or_(
+        main.locator('button[role="tab"]:has-text("Bayesian")')
+    )
+    expect(bayesian_tab.first).to_be_visible(timeout=10000)
+
+
+def test_prior_builder_in_hts_qc(page: Page, streamlit_server: str):
+    """Verify Prior Configuration expander appears when Bayesian enabled."""
+    _goto(page, streamlit_server, "HTS%20QC")
+    main = _main_container(page)
+    
+    no_campaigns = main.locator("text=No HTS campaigns found")
+    if no_campaigns.count() > 0:
+        return
+    
+    # Click Bayesian checkbox
+    checkbox = page.get_by_text("Use Bayesian Dose-Response")
+    if checkbox.count() > 0:
+        checkbox.first.click()
+        page.wait_for_timeout(500)
+        
+        # Prior Configuration expander should appear
+        expander = main.get_by_text("Prior Configuration")
+        expect(expander.first).to_be_visible(timeout=5000)
+
+

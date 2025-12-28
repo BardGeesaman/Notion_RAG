@@ -75,8 +75,28 @@ If you need runtime verification, request Architect to delegate to Tester.
 When you report a review result to Architect, use this structure by default:
 
 1. **Overall Assessment** – approve / approve with minor changes / request major changes.
-2. **Strengths** – what’s good about the implementation.
+2. **Strengths** – what's good about the implementation.
 3. **Issues & Risks** – numbered list with locations, explanations, and suggested fixes.
 4. **Recommended Next Steps** – what Implementor (or others) should do next.
 
 Be specific, concise, and actionable.
+
+---
+
+## 5. Issue Severity Definitions
+
+Use these severity levels consistently. **Architect uses these to determine workflow:**
+
+| Level | Meaning | Workflow Impact |
+|-------|---------|-----------------|
+| **P0** | Blocker - broken functionality, security issue, data loss risk | STOP. Fix immediately before any other work. |
+| **P1** | Must fix - architectural issue, pattern violation, technical debt | Fix BEFORE marking feature complete. Returns to Implementor. |
+| **P2** | Nice to have - minor cleanup, style preference, optimization | Can defer. Proceed to Documentor/Automator. |
+
+**Critical Rule:** Only issues marked P2 (or no issues) allow progression to Documentor/Automator. P0 and P1 issues are **blockers** that must be resolved first.
+
+**Example assessments:**
+- "APPROVE - no issues" → Proceed to Documentor
+- "APPROVE - P2 only" → Proceed to Documentor (P2 tracked for future)
+- "APPROVE with P1 issues" → **Returns to Implementor** (P1 = blocker)
+- "NEEDS_CHANGES - P0 blocker" → **Returns to Implementor** (P0 = critical)

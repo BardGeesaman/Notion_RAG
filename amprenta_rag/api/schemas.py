@@ -39,6 +39,10 @@ class AnnotationCreate(BaseSchema):
     annotation_type: Optional[str] = None
 
 
+# Import PriorConfig from analysis layer to avoid circular imports
+from amprenta_rag.analysis.models import PriorConfig
+
+
 # ============================================================================
 # Program schemas
 # ============================================================================
@@ -1278,3 +1282,129 @@ class CommentResponse(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     replies: List[dict] = []
+
+
+# ============================================================================
+# Entity Sharing schemas
+# ============================================================================
+
+class EntityShareCreate(BaseModel):
+    """Schema for creating entity shares."""
+    
+    shared_with_user_id: Optional[UUID] = None
+    shared_with_team_id: Optional[UUID] = None
+    permission: Literal["view", "edit", "admin"] = "view"
+    
+    @field_validator("permission")
+    @classmethod
+    def validate_permission(cls, v):
+        if v not in ["view", "edit", "admin"]:
+            raise ValueError("Permission must be view, edit, or admin")
+        return v
+
+
+class EntityShareResponse(BaseModel):
+    """Schema for entity share response."""
+    
+    id: UUID
+    entity_type: str
+    entity_id: UUID
+    shared_with_user_id: Optional[UUID] = None
+    shared_with_team_id: Optional[UUID] = None
+    permission: str
+    shared_by_id: UUID
+    created_at: datetime
+
+
+class EntityShareList(BaseModel):
+    """Schema for list of entity shares."""
+    
+    shares: List[EntityShareResponse]
+
+
+# ============================================================================
+# Entity Review schemas
+# ============================================================================
+
+class EntityReviewCreate(BaseModel):
+    """Schema for creating entity reviews."""
+    
+    pass  # No additional fields needed - entity info comes from URL
+
+
+class EntityReviewResponse(BaseModel):
+    """Schema for entity review response."""
+    
+    id: UUID
+    entity_type: str
+    entity_id: UUID
+    reviewer_id: UUID
+    status: Literal["draft", "submitted", "in_review", "approved", "rejected", "changes_requested"]
+    comments: Optional[str] = None
+    reviewed_at: datetime
+
+
+class EntityReviewList(BaseModel):
+    """Schema for list of entity reviews."""
+    
+    reviews: List[EntityReviewResponse]
+
+
+class EntityReviewDecision(BaseModel):
+    """Schema for review decision."""
+    
+    decision: Literal["approved", "rejected", "changes_requested"]
+    comment: str = Field(..., min_length=1, description="Review comment/feedback")
+
+
+class EntityReviewAssign(BaseModel):
+    """Schema for reviewer assignment."""
+    
+    reviewer_id: UUID
+
+
+class EntityReviewStatusInfo(BaseModel):
+    """Schema for review status information."""
+    
+    valid_statuses: List[str]
+    valid_transitions: Dict[str, List[str]]
+    status_descriptions: Dict[str, str]
+
+
+# ============================================================================
+# Team Management schemas
+# ============================================================================
+
+class TeamCreate(BaseModel):
+    """Schema for creating teams."""
+    
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+
+
+class TeamResponse(BaseModel):
+    """Schema for team response."""
+    
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    created_at: datetime
+    member_count: int
+    user_role: str  # owner, admin, member, viewer
+
+
+class TeamListResponse(BaseModel):
+    """Schema for list of teams."""
+    
+    teams: List[TeamResponse]
+
+
+class TeamMemberResponse(BaseModel):
+    """Schema for team member response."""
+    
+    id: UUID
+    user_id: UUID
+    username: str
+    email: str
+    role: str
+    joined_at: datetime
