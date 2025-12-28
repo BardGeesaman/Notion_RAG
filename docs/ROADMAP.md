@@ -421,11 +421,11 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 
 ## Collaboration (Future)
 
-### Tier 1 - High Impact
-- ❌ Entity-Scoped Sharing & Roles (per-entity ACLs)
-- ❌ Review & Approval Workflows (datasets, signatures, protocols)
-- ❌ Shared Notebooks & Project Library
-- ❌ Project/Team Workspaces Hub
+### Tier 1 - High Impact (Completed as MVP 2025-12-28)
+- ✅ Entity-Scoped Sharing & Roles (per-entity ACLs)
+- ✅ Review & Approval Workflows (datasets, signatures, protocols)
+- ✅ Shared Notebooks & Project Library
+- ✅ Project/Team Workspaces Hub
 
 ### Tier 2 - Strategic
 - ❌ Collaborative Notebook Editing (RTC)
