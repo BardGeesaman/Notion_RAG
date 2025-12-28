@@ -90,7 +90,31 @@ For **bug fixes**:
 
 ---
 
-## Save As You Go
+## 6. Testing Guidelines
+
+Before writing or reviewing tests, reference **`docs/TESTING.md`** for:
+
+* **E2E selector patterns** – Use semantic selectors (`get_by_text`, `get_by_role`), not CSS/XPath; use `.or_()` for optional elements
+* **Unique test module names** – No duplicate basenames across test directories (causes import collisions)
+* **UUID-based test fixtures** – Always use `f"testuser_{uuid4().hex[:8]}"` for usernames/emails to avoid unique constraint violations
+* **Foreign key handling** – Use `None` or real records for FK fields, never random `uuid4()` (causes FK violations)
+* **SQLAlchemy session management** – Use `db.expunge(obj)` before returning objects from session context
+* **FastAPI auth mocking** – Use `app.dependency_overrides[get_current_user]` with `try/finally` cleanup
+* **Streamlit E2E patterns** – Query param navigation, Tab key for reruns, scope to `stMainBlockContainer`
+
+### Quick Checklist
+- [ ] Test module name is unique
+- [ ] Test data uses UUID-based unique values
+- [ ] Foreign keys use `None` or real records
+- [ ] Objects detached with `db.expunge()` if needed
+- [ ] API tests use dependency overrides with cleanup
+- [ ] E2E selectors are semantic
+- [ ] Tests pass: `pytest path/to/test.py -v`
+- [ ] Linting clean: `ruff check path/to/test.py`
+
+---
+
+## 7. Save As You Go
 
 To prevent lost work from API/connection failures, commit after EACH file:
 

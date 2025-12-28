@@ -1,0 +1,642 @@
+# Cursor AI Rules for Amprenta RAG
+
+## Environment Setup
+
+**Project Root**: `/Users/bard/Documents/RAG`
+
+**Always activate conda environment before running commands**:
+```bash
+conda activate myenv
+```
+
+**Verify environment is ready**:
+```bash
+python -c "import fastapi, sqlalchemy; print('OK')"
+```
+
+**If packages are missing**:
+```bash
+pip install -r requirements.txt
+```
+
+**Quick preflight check**:
+```bash
+./scripts/preflight.sh
+```
+
+---
+
+## Testing Best Practices
+
+### Test Module Naming
+- Test module names MUST be unique across the entire test suite
+- Duplicate basenames cause import collisions (`ImportError: __file__ mismatch`)
+- Example: Use `test_activity_service.py` not `test_activity.py` if another exists
+
+### Test Data
+- ALWAYS use UUID-based unique values for constrained fields:
+  ```python
+  from uuid import uuid4
+  username = f"testuser_{uuid4().hex[:8]}"
+  email = f"test_{uuid4().hex[:8]}@test.com"
+  ```
+- NEVER hardcode test usernames/emails (causes unique constraint violations)
+
+### Foreign Keys in Tests
+- Use `None` for optional FK fields (system actions)
+- Create real records FIRST if FK is required
+- NEVER use random `uuid4()` for FK fields (causes FK violations)
+  ```python
+  # BAD
+  log_activity(actor_id=uuid4())  # FK violation!
+  
+  # GOOD
+  log_activity(actor_id=None)  # System action
+  
+  # GOOD
+  user = User(id=uuid4(), ...)
+  db.add(user)
+  db.commit()
+  log_activity(actor_id=user.id)
+  ```
+
+### SQLAlchemy Session Management
+- Detach objects with `db.expunge()` before returning from session context
+- Prevents `DetachedInstanceError` when accessing objects later
+  ```python
+  def get_items():
+      with db_session() as db:
+          items = db.query(Item).all()
+          for item in items:
+              db.expunge(item)  # Critical!
+          return items
+  ```
+
+### SQLAlchemy Updates with Joins
+- `.update()` doesn't work reliably with joins
+- Use two-step approach: fetch IDs, then update by ID
+  ```python
+  # Fetch IDs with joins
+  ids = db.query(Model1.id).join(Model2).filter(...).all()
+  ids_list = [id[0] for id in ids]
+  
+  # Update by ID
+  count = db.query(Model1).filter(Model1.id.in_(ids_list)).update(...)
+  ```
+
+### FastAPI Testing
+- Mock authentication with dependency overrides:
+  ```python
+  app.dependency_overrides[get_current_user] = mock_user
+  try:
+      client = TestClient(app)
+      # ... test code ...
+  finally:
+      app.dependency_overrides.clear()  # Always cleanup!
+  ```
+
+### E2E Testing (Playwright)
+- Use SEMANTIC selectors (user-facing):
+  ```python
+  page.get_by_text("Submit")  # GOOD
+  page.get_by_role("button", name="Submit")  # GOOD
+  page.locator('input[aria-label="Email"]')  # BAD (fragile)
+  ```
+- Scope to main content to avoid hidden elements:
+  ```python
+  main = page.locator('[data-testid="stMainBlockContainer"]').first
+  button = main.get_by_role("button", name="Submit")
+  ```
+- Use `domcontentloaded` + specific selectors, NOT `networkidle` (too slow)
+- For Streamlit: Press Tab after textarea input to trigger rerun
+
+### Boolean Comparisons
+- Use `.is_(False)` for SQLAlchemy, not `== False`:
+  ```python
+  # BAD
+  query.filter(Model.active == False)  # Linting error E712
+  
+  # GOOD
+  query.filter(Model.active.is_(False))
+  ```
+
+### Import Collision Fix
+```bash
+# Clear all __pycache__ directories
+find amprenta_rag/tests -name "__pycache__" -exec rm -rf {} +
+```
+
+## Code Style
+
+### Linting
+- Run `ruff check` before committing
+- Fix all F401 (unused imports), F841 (unused variables), E712 (bool comparisons)
+
+### Imports
+- Remove unused imports immediately
+- Don't assign variables if you won't use them
+
+---
+
+## Type Hints & Documentation
+
+### Type Hints Required
+All functions MUST have type hints:
+
+```python
+# GOOD
+def get_user(user_id: UUID, db: Session) -> Optional[User]:
+    """Get user by ID."""
+    return db.query(User).filter(User.id == user_id).first()
+
+# BAD
+def get_user(user_id, db):  # No type hints!
+    return db.query(User).filter(User.id == user_id).first()
+```
+
+### Docstrings Required for Public Functions
+Public functions (not starting with `_`) require docstrings:
+
+```python
+def calculate_score(
+    values: list[float],
+    weights: Optional[list[float]] = None
+) -> float:
+    """Calculate weighted score from values.
+    
+    Args:
+        values: List of numeric values to score
+        weights: Optional weights (defaults to equal weighting)
+    
+    Returns:
+        Weighted average score
+    
+    Raises:
+        ValueError: If values is empty
+    """
+    if not values:
+        raise ValueError("values cannot be empty")
+    
+    if weights is None:
+        weights = [1.0] * len(values)
+    
+    return sum(v * w for v, w in zip(values, weights)) / sum(weights)
+```
+
+### Optional Types
+Use `Optional[]` for nullable types:
+
+```python
+from typing import Optional
+
+# Function parameters
+def log_activity(
+    event_type: str,
+    actor_id: Optional[UUID] = None,  # Can be None
+    metadata: Optional[dict] = None
+) -> ActivityEvent:
+    pass
+
+# Return types
+def get_compound(compound_id: UUID) -> Optional[Compound]:
+    """Returns None if not found."""
+    pass
+```
+
+### Collection Types
+Use standard collection types (Python 3.9+):
+
+```python
+# GOOD: Use built-in types (Python 3.9+)
+def process_items(items: list[str]) -> dict[str, int]:
+    return {item: len(item) for item in items}
+
+# GOOD: Generic types for complex cases
+from typing import Dict, List, Tuple, Union
+
+def analyze(data: list[dict[str, Union[str, int]]]) -> tuple[int, float]:
+    pass
+
+# OK but older style (use if Python < 3.9)
+from typing import List, Dict
+
+def process_items(items: List[str]) -> Dict[str, int]:
+    pass
+```
+
+### Type Aliases
+Create aliases for complex types:
+
+```python
+from typing import TypeAlias
+
+CompoundData: TypeAlias = dict[str, Union[str, float, list[str]]]
+FeatureVector: TypeAlias = list[float]
+
+def extract_features(compound: CompoundData) -> FeatureVector:
+    """Extract molecular features from compound data."""
+    pass
+```
+
+---
+
+## Logging Conventions
+
+Use structured logging with Python's logging module:
+
+```python
+import logging
+logger = logging.getLogger(__name__)
+```
+
+### Log Levels
+
+Use appropriate log levels:
+
+- **DEBUG** - Detailed info for debugging (not shown in production)
+- **INFO** - General operational events (API calls, job starts/completes)
+- **WARNING** - Something unexpected but not an error (fallback used, deprecated API)
+- **ERROR** - Something failed, needs attention
+- **CRITICAL** - System is unusable
+
+### What to Log
+
+```python
+# API endpoints - log request info
+@router.get("/compounds/{compound_id}")
+def get_compound(compound_id: UUID):
+    logger.info(f"GET /compounds/{compound_id}")
+    # ... logic ...
+
+# Service operations - log start/end
+def batch_correct_datasets(datasets: list[Dataset]) -> int:
+    logger.info(f"Starting batch correction for {len(datasets)} datasets")
+    # ... processing ...
+    logger.info(f"Batch correction completed: {corrected_count} datasets processed")
+    return corrected_count
+
+# Errors - log with exception details
+try:
+    result = process_compound(compound_id)
+except Exception as e:
+    logger.exception(f"Failed to process compound {compound_id}")
+    # Use .exception() to include stack trace automatically
+
+# Performance - log timing for slow operations
+import time
+start = time.time()
+results = expensive_query()
+elapsed = time.time() - start
+if elapsed > 1.0:
+    logger.warning(f"Slow query completed in {elapsed:.2f}s")
+
+# Important state changes
+logger.info(f"User {user_id} activated compound {compound_id}")
+logger.warning(f"Cache miss for key {cache_key}")
+```
+
+### What NOT to Log
+
+❌ **Secrets, passwords, API keys**:
+```python
+# BAD
+logger.info(f"Connecting with password {password}")
+
+# GOOD
+logger.info("Database connection established")
+```
+
+❌ **Full request/response bodies** (use DEBUG if needed):
+```python
+# BAD
+logger.info(f"Response: {response.json()}")  # Could be huge!
+
+# GOOD
+logger.info(f"Response status: {response.status_code}")
+logger.debug(f"Response body: {response.json()}")  # DEBUG only
+```
+
+❌ **Every loop iteration** (log summary instead):
+```python
+# BAD
+for compound in compounds:
+    logger.info(f"Processing {compound.id}")  # 10,000 log lines!
+
+# GOOD
+logger.info(f"Processing {len(compounds)} compounds")
+# ... process all ...
+logger.info(f"Completed: {success_count} successful, {error_count} errors")
+```
+
+### Log Context
+
+Include relevant context for troubleshooting:
+
+```python
+# Good context
+logger.error(
+    f"Failed to retrieve compound {compound_id} "
+    f"for user {user_id} in program {program_id}"
+)
+
+# Structured logging (if using structlog)
+logger.info(
+    "Compound retrieved",
+    compound_id=str(compound_id),
+    user_id=str(user_id),
+    cache_hit=True
+)
+```
+
+---
+
+## Pre-Commit Checklist
+
+Before committing tests:
+- [ ] Test module name is unique (no duplicate basenames)
+- [ ] All test data uses UUID-based unique values
+- [ ] Foreign keys use `None` or real records (not random UUIDs)
+- [ ] SQLAlchemy objects are detached with `db.expunge()` if accessed outside session
+- [ ] API tests use `app.dependency_overrides` with `try/finally` cleanup
+- [ ] E2E selectors use semantic locators (not CSS/XPath)
+- [ ] E2E waits use `domcontentloaded` + specific selectors (not `networkidle`)
+- [ ] No unused imports or variables
+- [ ] Boolean comparisons use `.is_(False)` not `== False`
+- [ ] Tests pass: `pytest path/to/test.py -v`
+- [ ] Linting clean: `ruff check path/to/test.py`
+
+---
+
+## Commit Messages
+
+Use conventional commit format:
+
+```
+type(scope): message
+
+Examples:
+feat(api): add compound ranking endpoint
+fix(services): resolve DetachedInstanceError in activity service
+refactor(dashboard): extract comment widget helper
+test(e2e): add interactive plate selection tests
+docs(testing): add best practices guide
+chore(deps): update fastapi to 0.104.0
+```
+
+**Types**:
+- `feat` - New feature
+- `fix` - Bug fix
+- `refactor` - Code restructuring (no behavior change)
+- `test` - Adding or updating tests
+- `docs` - Documentation changes
+- `chore` - Maintenance (deps, config, etc.)
+
+**Scopes**: `api`, `services`, `dashboard`, `models`, `tests`, `docs`, `migrations`
+
+---
+
+## File Organization
+
+```
+amprenta_rag/
+├── api/
+│   ├── routers/        # API endpoints (one file per resource)
+│   ├── schemas.py      # Pydantic request/response models
+│   ├── dependencies.py # FastAPI dependencies (auth, db)
+│   └── main.py         # FastAPI app initialization
+├── services/           # Business logic (standalone functions)
+├── database/
+│   ├── models.py       # SQLAlchemy models
+│   ├── base.py         # Database connection
+│   └── session.py      # Session management
+├── ml/                 # Machine learning modules
+├── analysis/           # Data analysis functions
+├── tests/
+│   ├── api/            # API endpoint tests
+│   ├── services/       # Service layer tests
+│   ├── e2e/            # End-to-end tests
+│   ├── dashboard/      # Dashboard E2E tests
+│   └── integration/    # Integration tests
+└── scripts/
+    ├── dashboard/
+    │   ├── pages/      # Streamlit pages
+    │   └── components/ # Reusable dashboard components
+    └── jobs/           # Background jobs
+
+alembic/
+└── versions/           # Database migrations
+```
+
+---
+
+## API Patterns
+
+### Request/Response Models
+Always use Pydantic schemas:
+
+```python
+# In api/schemas.py
+class CompoundCreate(BaseModel):
+    smiles: str
+    name: Optional[str] = None
+
+class CompoundResponse(BaseModel):
+    id: UUID
+    smiles: str
+    name: Optional[str]
+    created_at: datetime
+```
+
+### Status Codes
+Use appropriate HTTP status codes:
+
+```python
+from fastapi import status
+
+@router.post("/compounds", status_code=status.HTTP_201_CREATED)
+def create_compound(compound: CompoundCreate):
+    # ... create logic ...
+    return compound
+
+@router.delete("/compounds/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_compound(id: UUID):
+    # ... delete logic ...
+    return None  # 204 returns no content
+```
+
+### Dependency Injection
+Use FastAPI dependencies for common operations:
+
+```python
+from fastapi import Depends
+from amprenta_rag.api.dependencies import get_db, get_current_user
+
+@router.get("/compounds")
+def list_compounds(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    compounds = db.query(Compound).filter(Compound.user_id == current_user.id).all()
+    return compounds
+```
+
+### Error Handling
+Use HTTPException for API errors:
+
+```python
+from fastapi import HTTPException, status
+
+@router.get("/compounds/{id}")
+def get_compound(id: UUID, db: Session = Depends(get_db)):
+    compound = db.query(Compound).filter(Compound.id == id).first()
+    
+    if not compound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Compound {id} not found"
+        )
+    
+    return compound
+```
+
+---
+
+## Alembic Migrations
+
+### Generate Migration
+After modifying `database/models.py`:
+
+```bash
+# Generate migration with descriptive message
+alembic revision --autogenerate -m "add compound ranking fields"
+```
+
+### Review Migration
+Always review auto-generated migrations:
+
+```python
+# Check in alembic/versions/xxxx_add_compound_ranking_fields.py
+def upgrade() -> None:
+    # Verify operations are correct
+    op.add_column('compounds', sa.Column('ranking_score', sa.Float(), nullable=True))
+
+def downgrade() -> None:
+    # Verify rollback is correct
+    op.drop_column('compounds', 'ranking_score')
+```
+
+### Apply Migration
+```bash
+# Apply to local database
+alembic upgrade head
+
+# Check current version
+alembic current
+```
+
+### Testing Migrations
+```bash
+# Test upgrade
+alembic upgrade head
+
+# Test downgrade (optional)
+alembic downgrade -1
+
+# Re-apply
+alembic upgrade head
+```
+
+### Migration Rules
+- **NEVER** edit existing migrations that are in production
+- **ALWAYS** test migrations before committing
+- **ALWAYS** include both upgrade() and downgrade()
+- **AVOID** data migrations in schema migrations (separate them)
+
+---
+
+## Error Handling
+
+### Service Layer
+Use try/except with specific exceptions, log errors:
+
+```python
+import logging
+logger = logging.getLogger(__name__)
+
+def get_compound(compound_id: UUID) -> Optional[Compound]:
+    """Get compound by ID. Returns None if not found."""
+    try:
+        with db_session() as db:
+            compound = db.query(Compound).filter(Compound.id == compound_id).first()
+            if compound:
+                db.expunge(compound)
+            return compound
+    except Exception as e:
+        logger.error(f"Failed to get compound {compound_id}: {e}")
+        return None  # Return None, don't raise for "not found"
+```
+
+### API Layer
+Convert service errors to HTTPExceptions:
+
+```python
+@router.get("/compounds/{id}")
+def get_compound_endpoint(id: UUID):
+    compound = get_compound(id)
+    
+    if not compound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Compound {id} not found"
+        )
+    
+    return compound
+```
+
+### Error Patterns
+
+**DO**: Return `None` or empty collections for "not found":
+```python
+def get_user_notifications(user_id: UUID) -> List[Notification]:
+    try:
+        # ... query ...
+        return notifications
+    except Exception as e:
+        logger.error(f"Failed to get notifications: {e}")
+        return []  # Empty list, not exception
+```
+
+**DON'T**: Raise exceptions for expected "not found" cases:
+```python
+# BAD
+def get_item(id: UUID) -> Item:
+    item = db.query(Item).first()
+    if not item:
+        raise ValueError("Not found")  # Don't do this!
+    return item
+
+# GOOD
+def get_item(id: UUID) -> Optional[Item]:
+    item = db.query(Item).first()
+    return item  # None is fine
+```
+
+**DO**: Use specific exception types:
+```python
+try:
+    result = risky_operation()
+except ValueError as e:
+    logger.warning(f"Invalid value: {e}")
+except KeyError as e:
+    logger.error(f"Missing key: {e}")
+except Exception as e:
+    logger.exception(f"Unexpected error: {e}")
+    raise
+```
+
+---
+
+## Reference
+
+Full testing guidelines: `docs/TESTING.md`
+
