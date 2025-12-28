@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, JSON, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, TSVECTOR
 from sqlalchemy.orm import Mapped, relationship
 
@@ -50,6 +50,19 @@ class Literature(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     notion_page_id = Column(String(36), nullable=True, unique=True, index=True)
     external_ids = Column(JSON, nullable=True)
+
+    # Paper source tracking
+    source = Column(String(50), default="zotero", nullable=False)
+    
+    # PubMed/PMC identifiers
+    pmid = Column(String(20), nullable=True, index=True)
+    pmc_id = Column(String(20), nullable=True)
+    
+    # MeSH terms for faceted search
+    mesh_terms = Column(ARRAY(String), default=list)
+    
+    # Full text availability flag
+    full_text_available = Column(Boolean, default=False)
 
     chunks: Mapped[List["RAGChunk"]] = relationship(
         back_populates="literature", cascade="all, delete-orphan"

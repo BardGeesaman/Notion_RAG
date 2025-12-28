@@ -91,7 +91,7 @@ Use these severity levels consistently. **Architect uses these to determine work
 | Level | Meaning | Workflow Impact |
 |-------|---------|-----------------|
 | **P0** | Blocker - broken functionality, security issue, data loss risk | STOP. Fix immediately before any other work. |
-| **P1** | Must fix - architectural issue, pattern violation, technical debt, **new warnings** | Fix BEFORE marking feature complete. Returns to Implementor. |
+| **P1** | Must fix - architectural issue, pattern violation, technical debt, **new warnings**, **missing UI for user-facing feature**, **missing E2E tests** | Fix BEFORE marking feature complete. Returns to Implementor. |
 | **P2** | Nice to have - minor cleanup, style preference, optimization | Can defer. Proceed to Documentor/Automator. |
 
 **Critical Rule:** Only issues marked P2 (or no issues) allow progression to Documentor/Automator. P0 and P1 issues are **blockers** that must be resolved first.

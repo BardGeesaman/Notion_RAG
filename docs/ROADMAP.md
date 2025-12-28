@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-28
+**Last Updated**: 2025-12-28 (Scientific Paper Ingestion added)
 
 Simple status legend:
 - ✅ DONE
@@ -93,6 +93,15 @@ Simple status legend:
   - API: 4 endpoints (create, list, update, delete)
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
+### Knowledge Management & Literature
+- ✅ Scientific Paper Ingestion (2025-12-28)
+  - CRUD API for papers, authors, affiliations (7 endpoints)
+  - Ingestion pipeline with reference parsing (DOI, PubMed ID, arXiv)
+  - Author and affiliation automatic linking with deduplication
+  - Full-text search and export functionality
+  - 22 tests (7 API + 10 functional + 5 E2E) - all passing
+  - Commits: b2dde2e, 8e5f81b, ede9605
+
 ### Collaboration & User Experience
 - ✅ Collaboration Features MVP (2025-12-28)
   - Entity-scoped sharing (view/edit/admin permissions)
@@ -161,10 +170,11 @@ Simple status legend:
   - Citation graphs & AI relevance scoring
   - Author/institution metadata enrichment
   - Automated Literature Analysis
-- ❌ Publication & Supplementary Data Extraction
-  - Extract experiment details from PDF publications
-  - Parse supplementary tables (Excel/CSV)
-  - Link publications to repository datasets
+- ⏳ Publication & Supplementary Data Extraction (Partial - see completed section)
+  - ✅ Paper ingestion with author/affiliation linking (2025-12-28)
+  - ❌ Extract experiment details from PDF publications
+  - ❌ Parse supplementary tables (Excel/CSV)
+  - ❌ Link publications to repository datasets
 - ❌ Imaging Data Support (Microscopy/HCS metadata)
 - ❌ Flow Cytometry / FACS Data Ingestion
 - ❌ Biophysical Assay Support (SPR, MST, DSC)

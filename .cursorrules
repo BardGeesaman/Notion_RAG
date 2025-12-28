@@ -158,6 +158,35 @@ find amprenta_rag/tests -name "__pycache__" -exec rm -rf {} +
 
 ---
 
+## No Bandaids Policy
+
+**Technical debt compounds. Fix problems at the source.**
+
+### NEVER Skip Tests
+- **NEVER use `@pytest.mark.skip`** to hide failing tests
+- If a test fails, FIX IT or DELETE IT - skipping is not an option
+- Skipped tests are invisible broken windows that rot the codebase
+
+### NEVER Defer Broken Code
+- Fix issues when discovered, not "later"
+- If you can't fix it now, it indicates a deeper problem - escalate to Architect
+- "TODO: fix later" comments are debt - address the root cause
+
+### Test Failures Are Bugs
+- A failing test means either:
+  1. The code is broken - fix the code
+  2. The test is wrong - fix the test
+  3. The test is obsolete - delete the test
+- There is no option 4 (skip it)
+
+### When Tests Won't Pass
+If tests cannot pass due to architectural issues (like cross-process mocking):
+1. **Redesign the test** to work correctly
+2. **Delete the test** if it's fundamentally flawed
+3. **Never skip** - that just hides the problem
+
+---
+
 ## Type Hints & Documentation
 
 ### Type Hints Required

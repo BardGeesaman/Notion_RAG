@@ -60,6 +60,16 @@ When updating ROADMAP.md after feature completion:
 
 Single source of truth: Each feature should appear only ONCE in ROADMAP.
 
+### Plan-Driven Documentation
+
+When documenting completed features, **read the plan file first**:
+- Plan files are at `/Users/bard/.cursor/plans/`
+- Use the plan's **overview** for accurate feature description
+- Use **Phase 2 (Deferred)** section for future work items
+- Use **P0/P1 resolutions** for key design decisions worth documenting
+
+This ensures ROADMAP entries accurately reflect what was planned and built.
+
 You **do not**:
 
 * Implement or change code.

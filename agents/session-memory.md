@@ -106,6 +106,23 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-28] – **Scientific Paper Ingestion Part 10 Complete**:
+  - **Commits**: b2dde2e, 8e5f81b, ede9605
+  - **Test Results**: 22/22 tests passing (7 API, 10 functional, 5 E2E)
+  - **API tests** (7/7 passed): CRUD operations for papers/authors/affiliations endpoints
+  - **Functional tests** (10/10 passed): Ingestion pipeline, reference parsing, author/affiliation linking
+  - **E2E tests** (5/5 passed): Full workflow from upload to search/export (fixed by removing broken @patch mocking, used real API)
+  - **Auth pattern fix**: paper_search.py defense-in-depth (verify JWT + check user ownership in DB)
+  - **Files**: amprenta_rag/tests/test_paper_ingestion_api.py, test_paper_ingestion_functional.py, test_paper_ingestion_e2e.py
+  - **No Bandaids**: Tests properly fixed (not skipped), P2 items addressed immediately
+
+* [2025-12-28] – **Agent Documentation Updates**:
+  - **Environment Activation Notice**: Added CRITICAL reminders to 4 agent files (automator, implementor, tester, debugger)
+  - **No Bandaids Policy**: Added policy to .cursorrules and 3 agent files (architect, implementor, tester)
+  - **Policy Rules**: NEVER skip tests, fix at source, technical debt compounds, tests are bugs (fix/delete/rewrite, never skip)
+  - **Delegation Checklist**: Added to architect.md (plan file path, batch reference, environment activation reminder)
+  - **Files**: agents/architect.md, automator.md, implementor.md, tester.md, debugger.md, .cursorrules
+
 * [2025-12-22] – **Pinecone → pgvector Migration Complete**:
   - **Commits**: ee98a48, 7a348db, 2d4da64, 04ef84e, 770e2e1, 47c8bf6
   - **Key files created**:
@@ -426,6 +443,26 @@ It should be updated at natural breakpoints in work sessions to support continui
 ## 9. Session Notes
 
 *A running notes section for the Architect to write contextual thoughts.*
+
+### Notes from 2025-12-28
+
+**SCIENTIFIC PAPER INGESTION PART 10 COMPLETE**
+
+* **Test Suite**: 22/22 tests passing (7 API, 10 functional, 5 E2E)
+* **E2E Test Fix**: Removed broken @patch mocking that attempted to mock streamlit.session_state across process boundaries (E2E tests run in separate Playwright browser process). Solution: Use real API instead of mocking for E2E tests.
+* **Auth Pattern**: Fixed paper_search.py to use defense-in-depth pattern (verify JWT + check user ownership in database). This matches auth pattern used throughout rest of codebase.
+* **No Bandaids Enforced**: Initial approach proposed skipping broken tests. Rejected this approach - tests were properly fixed instead. P2 items (auth pattern, test mocking) were addressed immediately, not deferred.
+* **Key Learning**: E2E tests should test real system integration, not mocks. Mocking across process boundaries (Playwright browser ↔ Streamlit server) is fragile and defeats purpose of E2E testing.
+
+**AGENT DOCUMENTATION UPDATES**
+
+* **Environment Activation**: Added CRITICAL notice to 4 agent files reminding them to activate conda environment before running commands. Prevents "module not found" errors when agents run pytest/ruff.
+* **No Bandaids Policy**: Codified in .cursorrules and 3 agent files. Core rules:
+  - NEVER skip tests to hide failures
+  - Fix issues when discovered, not "later"
+  - Test failures are bugs (fix code, fix test, or delete test)
+  - Technical debt compounds - address root causes
+* **Delegation Checklist**: Added to architect.md to ensure consistent delegation pattern (include plan file path, batch reference, environment reminder in every task assignment).
 
 ### Notes from 2025-12-15
 
