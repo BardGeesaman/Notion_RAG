@@ -32,6 +32,9 @@ def _api_post(path: str, payload: Dict[str, Any], *, timeout: int = 120) -> Any:
 
 def render_paper_search_page() -> None:
     """Render the Paper Search and Ingestion page."""
+    from scripts.dashboard.auth import require_auth
+    require_auth()
+    
     st.header("📄 Scientific Paper Search")
     st.caption("Search and ingest papers from PubMed, bioRxiv, and medRxiv.")
 
