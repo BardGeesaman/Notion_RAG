@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from amprenta_rag.models.domain import FeatureType, OmicsType, SignatureDirection
 
@@ -24,12 +24,13 @@ from amprenta_rag.models.domain import FeatureType, OmicsType, SignatureDirectio
 class BaseSchema(BaseModel):
     """Base schema with common configuration."""
 
-    class Config:
-        from_attributes = True
-        json_encoders = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={
             UUID: str,
             datetime: lambda v: v.isoformat(),
         }
+    )
 
 
 class AnnotationCreate(BaseSchema):
@@ -330,7 +331,7 @@ class NoveltyScoreRequest(BaseModel):
 class BatchScoreRequest(BaseModel):
     """Request schema for batch scoring."""
     
-    items: List[ScoringItemRequest] = Field(..., min_items=1, max_items=50, description="Items to score")
+    items: List[ScoringItemRequest] = Field(..., min_length=1, max_length=50, description="Items to score")
     context: ScoringContextRequest
     score_relevance: bool = Field(default=True, description="Whether to compute relevance scores")
     score_novelty: bool = Field(default=True, description="Whether to compute novelty scores")
@@ -420,7 +421,7 @@ class AssayPredictorTrainResponse(BaseModel):
 class AssayPredictionRequest(BaseModel):
     """Request schema for assay prediction."""
     
-    compound_smiles: List[str] = Field(..., min_items=1, max_items=1000, description="SMILES strings to predict")
+    compound_smiles: List[str] = Field(..., min_length=1, max_length=1000, description="SMILES strings to predict")
 
 
 class PredictionResultResponse(BaseModel):
@@ -486,7 +487,7 @@ class ActiveLearningRequest(BaseModel):
     """Request schema for active learning suggestions."""
     
     screened: List[ScreenedCompoundRequest] = Field(..., description="Already screened compounds with results")
-    candidates: List[CandidateCompoundRequest] = Field(..., min_items=1, description="Candidate compounds to choose from")
+    candidates: List[CandidateCompoundRequest] = Field(..., min_length=1, description="Candidate compounds to choose from")
     strategy: str = Field(..., description="Active learning strategy: uncertainty or diversity")
     batch_size: int = Field(default=10, ge=1, le=100, description="Number of compounds to suggest")
     model_id: Optional[UUID] = Field(default=None, description="Model ID for uncertainty-based strategies")

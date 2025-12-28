@@ -7,7 +7,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from amprenta_rag.crispr.analysis_service import run_screen_analysis
 from amprenta_rag.database.models import CRISPRResult, CRISPRScreen
@@ -38,8 +38,7 @@ class ScreenResponse(BaseModel):
     treatment_label: Optional[str] = None
     status: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AnalyzeRequest(BaseModel):
@@ -59,8 +58,7 @@ class ResultResponse(BaseModel):
     rank: Optional[int] = None
     is_hit: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.post("/screens", response_model=ScreenResponse)

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import aliased
 
 from amprenta_rag.analysis.pathway.enrichment import perform_pathway_enrichment
@@ -33,8 +33,7 @@ class VariantSetResponse(BaseModel):
     n_genes: Optional[int] = None
     status: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class VariantResponse(BaseModel):
@@ -65,8 +64,7 @@ class GeneBurdenResponse(BaseModel):
     n_benign: Optional[int] = None
     burden_score: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PathwayEnrichRequest(BaseModel):

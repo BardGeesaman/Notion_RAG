@@ -6,7 +6,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from amprenta_rag.database.models import (
     CellAnnotation,
@@ -41,8 +41,7 @@ class SingleCellDatasetResponse(BaseModel):
     processing_status: str
     processing_log: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CellClusterResponse(BaseModel):

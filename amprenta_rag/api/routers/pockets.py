@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from amprenta_rag.database.models import BindingSite, ProteinStructure
 from amprenta_rag.database.session import db_session
@@ -37,8 +37,7 @@ class BindingSiteResponse(BaseModel):
     pocket_pdb_path: Optional[str] = None
     detection_method: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.post("/structures/{structure_id}/detect-pockets", response_model=DetectPocketsResponse)

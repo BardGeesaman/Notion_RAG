@@ -6,7 +6,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from amprenta_rag.connectivity.ingest_service import ingest_lincs_data
 from amprenta_rag.connectivity.connectivity_service import ConnectivityService
@@ -36,8 +36,7 @@ class LINCSSignatureResponse(BaseModel):
     cell_id: Optional[str] = None
     tas: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConnectivityScoreResponse(BaseModel):

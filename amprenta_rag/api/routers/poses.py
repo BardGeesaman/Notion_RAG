@@ -6,7 +6,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from amprenta_rag.database.models import DockingPose, PoseInteraction, PoseQuality, ProteinStructure
 from amprenta_rag.database.session import db_session
@@ -29,8 +29,7 @@ class PoseQualityResponse(BaseModel):
     has_clashes: bool
     ligand_efficiency: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PoseInteractionResponse(BaseModel):
@@ -42,8 +41,7 @@ class PoseInteractionResponse(BaseModel):
     distance: Optional[float] = None
     angle: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 def _get_receptor_pdb_path(structure: ProteinStructure) -> Optional[str]:

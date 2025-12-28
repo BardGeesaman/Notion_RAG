@@ -7,7 +7,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_current_user_with_company, get_database_session
@@ -56,8 +56,7 @@ class CompanyResponse(BaseModel):
     storage_quota_gb: Optional[float] = None
     status: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserResponse(BaseModel):
@@ -69,8 +68,7 @@ class UserResponse(BaseModel):
     company_role: Optional[str] = None
     is_active: Optional[bool] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InviteUserRequest(BaseModel):

@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_current_user_with_company, get_database_session
@@ -45,8 +45,7 @@ class DigestScheduleResponse(BaseModel):
     last_status: Optional[str] = None
     enabled: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.post("", response_model=DigestScheduleResponse, status_code=201)

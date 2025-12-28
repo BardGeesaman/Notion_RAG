@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_current_user_with_company, get_database_session
@@ -38,8 +38,7 @@ class ReviewResponse(BaseModel):
     reviewed_at: Optional[datetime] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.post("", response_model=dict, status_code=201)

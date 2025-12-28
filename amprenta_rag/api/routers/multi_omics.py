@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from amprenta_rag.database.models import (
     FactorLoading,
@@ -45,8 +45,7 @@ class ExperimentResponse(BaseModel):
     created_at: Optional[datetime] = None
     processed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RunResponse(BaseModel):

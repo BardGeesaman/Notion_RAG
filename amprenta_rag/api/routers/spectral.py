@@ -7,7 +7,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from amprenta_rag.database.models import LipidAnnotation, SpectralLibrary, SpectralReference
 from amprenta_rag.database.session import db_session
@@ -26,8 +26,7 @@ class SpectralLibraryResponse(BaseModel):
     file_path: Optional[str] = None
     n_spectra: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class IngestLibraryRequest(BaseModel):

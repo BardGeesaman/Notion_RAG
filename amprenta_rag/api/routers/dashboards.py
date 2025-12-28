@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_current_user_with_company, get_database_session
@@ -56,8 +56,7 @@ class PinnedDashboardResponse(BaseModel):
     display_name: Optional[str] = None
     config: Optional[Dict[str, Any]] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.post("/pin", response_model=PinnedDashboardResponse, status_code=201)

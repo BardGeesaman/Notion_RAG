@@ -70,9 +70,12 @@ For **test execution reports**:
 
 1. **Summary** – overall status (pass/fail/mixed).
 2. **Results** – key passing and failing tests.
-3. **Failure Analysis** – likely causes and impacts.
-4. **Recommended Fixes** – what Implementor / Architect should do.
-5. **Additional Tests Needed** – if any.
+3. **Warning Count** – total warnings before/after changes (if applicable).
+4. **Failure Analysis** – likely causes and impacts.
+5. **Recommended Fixes** – what Implementor / Architect should do.
+6. **Additional Tests Needed** – if any.
+
+**Warning Policy:** Report warning delta when testing changes. If warnings increased, flag for Architect review. New warnings from our code are treated as P1 issues.
 
 ---
 

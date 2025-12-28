@@ -135,11 +135,11 @@ Simple status legend:
   - E2E tests: 66 total, 64 passing, 2 legitimate skips (optional ADMET UI, HPO data)
   - 250+ tests passing (API: 149, Integration: 10, Utils: 91)
 
-### Testing & Development (Future)
-- ❌ Pytest Warnings Cleanup (eliminate 70+ warnings from test runs)
-  - Deprecation warnings (future-proofing)
-  - SQLAlchemy session warnings
-  - Pydantic validation warnings
+### Testing & Development (Completed)
+- ✅ Pytest Warnings Cleanup (eliminated 74 warnings, 97% reduction)
+  - Pydantic V2 migration: ConfigDict, Field validators (24+ fixes across 16 files)
+  - Zero-warning policy enforced in pytest.ini
+  - Remaining 2 warnings are external (nbconvert, alembic)
   - Import/configuration warnings
 - ❌ OOP Refactoring Review (code structure improvements)
 

@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from amprenta_rag.database.models import ProteinStructure, StructureFile
 from amprenta_rag.database.session import db_session
@@ -46,8 +46,7 @@ class StructureFileResponse(BaseModel):
     file_size_bytes: Optional[int] = None
     md5_hash: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProteinStructureResponse(BaseModel):
@@ -63,8 +62,7 @@ class ProteinStructureResponse(BaseModel):
     prep_log: Optional[str] = None
     files: List[StructureFileResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FetchStructureRequest(BaseModel):

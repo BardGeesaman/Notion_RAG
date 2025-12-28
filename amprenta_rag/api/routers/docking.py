@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from amprenta_rag.database.models import BindingSite, Compound, DockingPose, DockingRun, ProteinStructure
 from amprenta_rag.database.session import db_session
@@ -43,8 +43,7 @@ class DockingRunResponse(BaseModel):
     progress: float
     error_log: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DockingPoseResponse(BaseModel):
@@ -57,8 +56,7 @@ class DockingPoseResponse(BaseModel):
     rmsd_ub: Optional[float] = None
     pose_pdbqt_path: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 def _progress(run: DockingRun) -> float:
