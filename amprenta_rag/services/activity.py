@@ -16,7 +16,6 @@ from amprenta_rag.database.models import (
     ActivityEventType,
     RepositoryNotification,
     Program,
-    User,
 )
 from amprenta_rag.database.session import db_session
 from amprenta_rag.logging_utils import get_logger
@@ -135,8 +134,8 @@ def route_notifications(event: ActivityEvent, db) -> List[UUID]:
             
         # Create notification for program lead
         notification = RepositoryNotification(
-            subscription_id=program.id,  # Use program_id as subscription_id for now
-            dataset_id=event.target_id,  # Use target_id as dataset_id for now
+            subscription_id=None,  # Activity notifications don't use subscriptions
+            dataset_id=None,  # Activity notifications don't use datasets
             activity_event_id=event.id,
             notification_type="activity",
             is_read=False,
@@ -243,7 +242,7 @@ def get_user_notifications(
             )
             
             if unread_only:
-                query = query.filter(RepositoryNotification.is_read == False)
+                query = query.filter(RepositoryNotification.is_read.is_(False))
             
             notifications = (
                 query.order_by(RepositoryNotification.created_at.desc())
@@ -251,6 +250,10 @@ def get_user_notifications(
                 .limit(limit)
                 .all()
             )
+            
+            # Detach from session to allow access after session closes
+            for notification in notifications:
+                db.expunge(notification)
             
             return notifications
             
@@ -311,16 +314,29 @@ def mark_all_notifications_read(user_id: UUID) -> int:
     """
     try:
         with db_session() as db:
-            # Update all unread notifications for this user
-            count = (
-                db.query(RepositoryNotification)
+            # First, get all notification IDs for this user
+            notification_ids = (
+                db.query(RepositoryNotification.id)
                 .join(ActivityEvent, RepositoryNotification.activity_event_id == ActivityEvent.id)
                 .join(Program, ActivityEvent.program_id == Program.id)
                 .filter(
                     Program.created_by_id == user_id,
-                    RepositoryNotification.is_read == False
+                    RepositoryNotification.is_read.is_(False)
                 )
-                .update({"is_read": True})
+                .all()
+            )
+            
+            # Extract IDs from result tuples
+            ids_to_update = [nid[0] for nid in notification_ids]
+            
+            if not ids_to_update:
+                return 0
+            
+            # Update notifications by ID
+            count = (
+                db.query(RepositoryNotification)
+                .filter(RepositoryNotification.id.in_(ids_to_update))
+                .update({"is_read": True}, synchronize_session=False)
             )
             
             db.commit()
@@ -351,7 +367,7 @@ def get_unread_count(user_id: UUID) -> int:
                 .join(Program, ActivityEvent.program_id == Program.id)
                 .filter(
                     Program.created_by_id == user_id,
-                    RepositoryNotification.is_read == False
+                    RepositoryNotification.is_read.is_(False)
                 )
                 .count()
             )
