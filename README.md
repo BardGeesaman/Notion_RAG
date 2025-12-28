@@ -23,6 +23,16 @@ git clone https://github.com/BardGeesaman/Notion_RAG.git
 cd Notion_RAG
 ```
 
+### Automatic Environment Activation (Recommended)
+
+This project uses direnv to auto-activate the conda environment:
+
+1. Install direnv: `brew install direnv` (macOS) or `apt install direnv` (Linux)
+2. Add hook to shell RC: `eval "$(direnv hook zsh)"`
+3. Allow direnv: `direnv allow`
+
+See [docs/TESTING.md#environment-setup](docs/TESTING.md#environment-setup) for full instructions.
+
 ## Setup
 
 ### Option A: Conda (recommended for ARM/M1)
@@ -451,6 +461,74 @@ python scripts/manage_feature_cache.py --import cache_backup.json
 
 ## Development
 
+### Development Setup
+
+**Automatic Environment Activation with direnv**:
+
+This project uses `direnv` to automatically activate the `myenv` conda environment when you enter the project directory, and deactivate it when you leave.
+
+1. **Install direnv**:
+   ```bash
+   # macOS
+   brew install direnv
+   
+   # Ubuntu/Debian
+   sudo apt-get install direnv
+   
+   # Other: see https://direnv.net/docs/installation.html
+   ```
+
+2. **Hook direnv into your shell** (add to your shell RC file):
+   ```bash
+   # For zsh (add to ~/.zshrc)
+   eval "$(direnv hook zsh)"
+   
+   # For bash (add to ~/.bashrc)
+   eval "$(direnv hook bash)"
+   
+   # For fish (add to ~/.config/fish/config.fish)
+   direnv hook fish | source
+   ```
+
+3. **Restart your shell** or source the RC file:
+   ```bash
+   source ~/.zshrc  # or ~/.bashrc
+   ```
+
+4. **Allow direnv in the project directory**:
+   ```bash
+   cd /path/to/RAG
+   direnv allow
+   ```
+
+5. **Verify auto-activation**:
+   ```bash
+   # cd into project - should auto-activate myenv
+   cd /path/to/RAG
+   # You should see: direnv: loading .envrc
+   # Prompt should show: (myenv)
+   
+   # cd out of project - should auto-deactivate
+   cd ~
+   # You should see: direnv: unloading
+   ```
+
+**Create the conda environment** (if not already created):
+```bash
+# Using environment.yml
+conda env create -f environment.yml
+
+# Or manually
+conda create -n myenv python=3.10
+conda activate myenv
+pip install -r requirements.txt
+```
+
+**Troubleshooting**:
+- **"direnv: error .envrc is blocked"**: Run `direnv allow` in the project directory
+- **"conda: command not found"**: Ensure conda is installed and initialized in your shell RC file
+- **Environment doesn't activate**: Check that direnv hook is in your shell RC file and shell is restarted
+
 ### Running Tests
 
 ```bash
@@ -463,6 +541,8 @@ pytest amprenta_rag/tests/test_signature_scoring.py -v
 # Run with coverage
 pytest --cov=amprenta_rag --cov-report=html
 ```
+
+For detailed testing guidelines, see [docs/TESTING.md](docs/TESTING.md).
 
 ### Code Quality
 

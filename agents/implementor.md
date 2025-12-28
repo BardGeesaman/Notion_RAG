@@ -103,12 +103,14 @@ Before writing or reviewing tests, reference **`docs/TESTING.md`** for:
 * **Streamlit E2E patterns** – Query param navigation, Tab key for reruns, scope to `stMainBlockContainer`
 
 ### Quick Checklist
-- [ ] Test module name is unique
+- [ ] Test module name is unique across entire test directory
 - [ ] Test data uses UUID-based unique values
 - [ ] Foreign keys use `None` or real records
 - [ ] Objects detached with `db.expunge()` if needed
 - [ ] API tests use dependency overrides with cleanup
 - [ ] E2E selectors are semantic
+- [ ] No unused imports after edits
+- [ ] Boolean comparisons use `.is_(False)` not `== False`
 - [ ] Tests pass: `pytest path/to/test.py -v`
 - [ ] Linting clean: `ruff check path/to/test.py`
 

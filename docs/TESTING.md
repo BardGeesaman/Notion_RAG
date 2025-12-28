@@ -12,7 +12,79 @@
 
 ## Environment Setup
 
-### Activate Environment
+### Automatic Environment Activation with direnv
+
+This project uses `direnv` to automatically activate the conda environment when you enter the project directory.
+
+**One-time setup**:
+
+1. Install direnv:
+   ```bash
+   # macOS
+   brew install direnv
+   
+   # Ubuntu/Debian
+   sudo apt-get install direnv
+   
+   # Other: see https://direnv.net/docs/installation.html
+   ```
+
+2. Add direnv hook to your shell RC file:
+   ```bash
+   # For zsh (add to ~/.zshrc)
+   eval "$(direnv hook zsh)"
+   
+   # For bash (add to ~/.bashrc)
+   eval "$(direnv hook bash)"
+   
+   # For fish (add to ~/.config/fish/config.fish)
+   direnv hook fish | source
+   ```
+
+3. Restart your shell or source the RC file:
+   ```bash
+   source ~/.zshrc  # or ~/.bashrc
+   ```
+
+4. Allow direnv in the project directory:
+   ```bash
+   cd /path/to/RAG
+   direnv allow
+   ```
+
+**Verification**:
+```bash
+# cd into project - should auto-activate
+cd /path/to/RAG
+# You should see: direnv: loading .envrc
+# Prompt should show: (myenv)
+
+# cd out of project - should auto-deactivate
+cd ~
+# You should see: direnv: unloading
+```
+
+**Troubleshooting**:
+
+- **"direnv: error .envrc is blocked"**: Run `direnv allow` in the project directory
+- **"conda: command not found"**: Ensure conda is installed and initialized in your shell RC file
+- **Environment doesn't activate**: Check that direnv hook is in your shell RC file and shell is restarted
+- **"myenv not found"**: Create the conda environment first (see below)
+
+**Creating the conda environment**:
+
+```bash
+# Using environment.yml (recommended)
+conda env create -f environment.yml
+
+# OR manually create environment
+conda create -n myenv python=3.11
+conda activate myenv
+pip install -r requirements.txt
+```
+
+### Manual Activation (if not using direnv)
+
 ```bash
 # Activate conda environment
 conda activate myenv
