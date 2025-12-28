@@ -473,6 +473,74 @@ filter(Model.active == False)
 filter(Model.active.is_(False))
 ```
 
+### Mock Import Errors
+**Error**: `AttributeError: module 'pytest' has no attribute 'mock'`
+
+**Cause**: Using `pytest.mock` which doesn't exist.
+
+**Fix**: Use unittest.mock:
+```python
+# WRONG
+import pytest.mock
+pytest.mock.patch(...)
+
+# CORRECT
+from unittest.mock import patch, MagicMock, ANY
+
+@patch("module.function")
+def test_foo(mock_func):
+    mock_func.return_value = "test"
+```
+
+### Mock Patch Path Errors
+**Error**: Mock doesn't intercept calls, assertions fail
+
+**Cause**: Patching where function is DEFINED instead of where it's USED.
+
+**Fix**: Patch at the import location:
+```python
+# Function defined in: amprenta_rag.utils.helpers
+# Function imported in: amprenta_rag.services.foo
+
+# WRONG - patches the definition
+@patch("amprenta_rag.utils.helpers.my_function")
+
+# CORRECT - patches where it's used
+@patch("amprenta_rag.services.foo.my_function")
+```
+
+### SQLAlchemy Mock Chain Setup
+**Error**: `db.add()` or `db.commit()` not called, mock returns MagicMock instead of data
+
+**Cause**: SQLAlchemy query chains need full mock setup.
+
+**Fix**: Configure the full chain:
+```python
+# Setup mock for: db.query(Model).filter(...).first()
+mock_db.query.return_value.filter.return_value.first.return_value = mock_entity
+
+# Setup mock for: db.query(Model).filter(...).all()
+mock_db.query.return_value.filter.return_value.all.return_value = [mock_entity]
+
+# For new record creation, return None to trigger db.add()
+mock_db.query.return_value.filter.return_value.first.return_value = None
+```
+
+### Mock Return vs Side Effect
+**Error**: Mock returns wrong value or doesn't raise exception
+
+**Fix**: Use correct mock attribute:
+```python
+# Single return value
+mock_func.return_value = "value"
+
+# Raise exception
+mock_func.side_effect = ValueError("error")
+
+# Multiple calls with different values
+mock_func.side_effect = ["first", "second", ValueError("third")]
+```
+
 ---
 
 ## Test Checklist

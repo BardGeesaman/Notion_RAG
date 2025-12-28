@@ -225,6 +225,323 @@ class CatalogSummaryResponse(BaseSchema):
 
 
 # ============================================================================
+# Dataset Finder schemas
+# ============================================================================
+
+
+class DatasetFinderRequest(BaseModel):
+    """Request schema for AI dataset finder."""
+    
+    query: str = Field(..., min_length=1, max_length=500, description="Natural language search query")
+    repositories: Optional[List[str]] = Field(default=None, description="Repositories to search (geo, arrayexpress, metabolomics_workbench)")
+    max_results: int = Field(default=50, ge=1, le=200, description="Maximum number of results to return")
+
+
+class DatasetResultSchema(BaseModel):
+    """Schema for a single dataset search result."""
+    
+    accession: str
+    title: str
+    description: str
+    source: str
+    species: Optional[str] = None
+    tissue: Optional[str] = None
+    disease: Optional[str] = None
+    assay_type: Optional[str] = None
+    sample_count: Optional[int] = None
+    url: Optional[str] = None
+    score: float = 0.0
+
+
+class DatasetFinderResponse(BaseModel):
+    """Response schema for AI dataset finder."""
+    
+    query: str
+    extracted_terms: Dict[str, List[str]]
+    results: List[DatasetResultSchema]
+    total_found: int
+    sources_searched: List[str]
+    sources_failed: List[str]
+
+
+class MetadataEnrichmentResponse(BaseModel):
+    """Response schema for metadata enrichment."""
+    
+    dataset_id: UUID
+    success: bool
+    enriched_fields: List[str]
+    extracted_metadata: Dict[str, Any]
+    error_message: Optional[str] = None
+    processing_time_seconds: Optional[float] = None
+
+
+class EnrichmentStatusResponse(BaseModel):
+    """Response schema for enrichment status."""
+    
+    enriched: bool
+    enrichment_timestamp: Optional[float] = None
+    enrichment_version: Optional[str] = None
+    available_fields: List[str] = []
+    error: Optional[str] = None
+
+
+# ============================================================================
+# Relevance & Novelty Scoring schemas
+# ============================================================================
+
+
+class ScoringItemRequest(BaseModel):
+    """Schema for an item to be scored."""
+    
+    id: str = Field(..., description="Unique identifier for the item")
+    title: Optional[str] = None
+    description: Optional[str] = None
+    species: Optional[str] = None
+    assay_type: Optional[str] = None
+    sample_count: Optional[int] = None
+    # Additional fields can be added as needed
+
+
+class ScoringContextRequest(BaseModel):
+    """Schema for research context used in scoring."""
+    
+    diseases: Optional[List[str]] = Field(default=[], description="Diseases of interest")
+    targets: Optional[List[str]] = Field(default=[], description="Target molecules of interest")
+    species: Optional[List[str]] = Field(default=[], description="Preferred species")
+    assay_types: Optional[List[str]] = Field(default=[], description="Required assay types")
+    min_sample_size: Optional[int] = Field(default=None, description="Minimum sample size")
+
+
+class RelevanceScoreRequest(BaseModel):
+    """Request schema for relevance scoring."""
+    
+    item: ScoringItemRequest
+    context: ScoringContextRequest
+    criteria: Optional[Dict[str, float]] = Field(default=None, description="Custom criteria weights")
+
+
+class NoveltyScoreRequest(BaseModel):
+    """Request schema for novelty scoring."""
+    
+    item: ScoringItemRequest
+    existing_items: List[ScoringItemRequest] = Field(..., description="Existing items to compare against")
+
+
+class BatchScoreRequest(BaseModel):
+    """Request schema for batch scoring."""
+    
+    items: List[ScoringItemRequest] = Field(..., min_items=1, max_items=50, description="Items to score")
+    context: ScoringContextRequest
+    score_relevance: bool = Field(default=True, description="Whether to compute relevance scores")
+    score_novelty: bool = Field(default=True, description="Whether to compute novelty scores")
+
+
+class RelevanceScoreResponse(BaseModel):
+    """Response schema for relevance scoring."""
+    
+    item_id: str
+    overall_score: float = Field(..., ge=0.0, le=1.0, description="Overall relevance score (0-1)")
+    disease_match: float = Field(..., ge=0.0, le=1.0, description="Disease match score (0-1)")
+    target_overlap: float = Field(..., ge=0.0, le=1.0, description="Target overlap score (0-1)")
+    data_quality: float = Field(..., ge=0.0, le=1.0, description="Data quality score (0-1)")
+    explanation: str
+    processing_time_seconds: float
+    cached: bool = Field(default=False, description="Whether result was retrieved from cache")
+
+
+class NoveltyScoreResponse(BaseModel):
+    """Response schema for novelty scoring."""
+    
+    item_id: str
+    novelty_score: float = Field(..., ge=0.0, le=1.0, description="Novelty score (0-1, higher = more novel)")
+    max_similarity: float = Field(..., ge=0.0, le=1.0, description="Maximum similarity to existing items")
+    most_similar_item_id: Optional[str] = Field(default=None, description="ID of most similar existing item")
+    explanation: str
+    processing_time_seconds: float
+    cached: bool = Field(default=False, description="Whether result was retrieved from cache")
+
+
+class ScoredItemResponse(BaseModel):
+    """Response schema for a scored item."""
+    
+    item_id: str
+    relevance_score: Optional[RelevanceScoreResponse] = None
+    novelty_score: Optional[NoveltyScoreResponse] = None
+
+
+class BatchScoreResponse(BaseModel):
+    """Response schema for batch scoring."""
+    
+    items: List[ScoredItemResponse]
+    total_items: int
+    processing_time_seconds: float
+
+
+# ============================================================================
+# Assay Predictor schemas
+# ============================================================================
+
+
+class AssayPredictorTrainRequest(BaseModel):
+    """Request schema for training assay predictor."""
+    
+    program_id: UUID = Field(..., description="UUID of the program to train model for")
+    assay_type: str = Field(..., description="Type of assay (biochemical, hts, screening)")
+    features: Optional[List[str]] = Field(default=None, description="Optional specific features to use")
+    min_actives: int = Field(default=50, ge=10, le=1000, description="Minimum active compounds required")
+    min_inactives: int = Field(default=50, ge=10, le=1000, description="Minimum inactive compounds required")
+
+
+class TrainingDataStatsResponse(BaseModel):
+    """Response schema for training data statistics."""
+    
+    total_compounds: int
+    active_compounds: int
+    inactive_compounds: int
+    activity_rate: float = Field(..., ge=0.0, le=1.0, description="Fraction of active compounds")
+    feature_count: int
+    data_quality_score: float = Field(..., ge=0.0, le=1.0, description="Overall data quality score")
+
+
+class AssayPredictorTrainResponse(BaseModel):
+    """Response schema for assay predictor training."""
+    
+    model_id: UUID
+    program_id: UUID
+    assay_type: str
+    model_performance: Dict[str, float]
+    training_stats: TrainingDataStatsResponse
+    feature_names: List[str]
+    training_time_seconds: float
+    success: bool
+    error_message: Optional[str] = None
+
+
+class AssayPredictionRequest(BaseModel):
+    """Request schema for assay prediction."""
+    
+    compound_smiles: List[str] = Field(..., min_items=1, max_items=1000, description="SMILES strings to predict")
+
+
+class PredictionResultResponse(BaseModel):
+    """Response schema for a single prediction result."""
+    
+    compound_smiles: str
+    prediction: str = Field(..., description="Predicted outcome: active or inactive")
+    probability_active: float = Field(..., ge=0.0, le=1.0, description="Probability of being active")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Prediction confidence")
+    feature_vector: Optional[List[float]] = Field(default=None, description="Optional feature vector")
+
+
+class AssayPredictionResponse(BaseModel):
+    """Response schema for assay prediction."""
+    
+    model_id: UUID
+    predictions: List[PredictionResultResponse]
+    total_predictions: int
+    processing_time_seconds: float
+
+
+class AssayModelResponse(BaseModel):
+    """Response schema for assay model metadata."""
+    
+    model_id: UUID
+    name: str
+    version: str
+    program_id: Optional[str] = None
+    assay_type: Optional[str] = None
+    created_at: datetime
+    performance: Dict[str, float] = {}
+    training_stats: Dict[str, Any] = {}
+
+
+class AssayModelsListResponse(BaseModel):
+    """Response schema for listing assay models."""
+    
+    models: List[AssayModelResponse]
+    total_models: int
+
+
+# ============================================================================
+# Active Learning schemas
+# ============================================================================
+
+
+class ScreenedCompoundRequest(BaseModel):
+    """Schema for a screened compound."""
+    
+    compound_id: UUID
+    smiles: str
+    activity: bool = Field(..., description="True if compound is active")
+
+
+class CandidateCompoundRequest(BaseModel):
+    """Schema for a candidate compound."""
+    
+    compound_id: UUID
+    smiles: str
+
+
+class ActiveLearningRequest(BaseModel):
+    """Request schema for active learning suggestions."""
+    
+    screened: List[ScreenedCompoundRequest] = Field(..., description="Already screened compounds with results")
+    candidates: List[CandidateCompoundRequest] = Field(..., min_items=1, description="Candidate compounds to choose from")
+    strategy: str = Field(..., description="Active learning strategy: uncertainty or diversity")
+    batch_size: int = Field(default=10, ge=1, le=100, description="Number of compounds to suggest")
+    model_id: Optional[UUID] = Field(default=None, description="Model ID for uncertainty-based strategies")
+
+
+class ProgramActiveLearningRequest(BaseModel):
+    """Request schema for program-based active learning."""
+    
+    program_id: UUID
+    strategy: str = Field(default="uncertainty", description="Active learning strategy: uncertainty or diversity")
+    batch_size: int = Field(default=10, ge=1, le=100, description="Number of compounds to suggest")
+    model_id: Optional[UUID] = Field(default=None, description="Model ID for uncertainty-based strategies")
+
+
+class SuggestionResultResponse(BaseModel):
+    """Response schema for a compound suggestion."""
+    
+    compound_id: UUID
+    smiles: str
+    acquisition_score: float = Field(..., ge=0.0, description="Acquisition score (higher = better)")
+    strategy_used: str
+    rank: int = Field(..., ge=1, description="Rank in suggestion list")
+    explanation: str
+
+
+class ActiveLearningResponse(BaseModel):
+    """Response schema for active learning suggestions."""
+    
+    suggestions: List[SuggestionResultResponse]
+    strategy_used: str
+    total_candidates: int
+    total_screened: int
+    batch_size: int
+    processing_time_seconds: float
+
+
+class AcquisitionScoreResponse(BaseModel):
+    """Response schema for acquisition scores."""
+    
+    compound_id: UUID
+    score: float = Field(..., ge=0.0, description="Acquisition score")
+    explanation: str
+
+
+class StrategyPerformanceResponse(BaseModel):
+    """Response schema for strategy performance evaluation."""
+    
+    hit_rate: float = Field(..., ge=0.0, le=1.0, description="Fraction of suggested compounds that are active")
+    enrichment: float = Field(..., ge=0.0, description="Enrichment over random selection")
+    coverage: float = Field(..., ge=0.0, le=1.0, description="Fraction of suggestions with known activity")
+    total_suggested: int
+    total_hits: int
+
+
+# ============================================================================
 # ADMET prediction schemas
 # ============================================================================
 

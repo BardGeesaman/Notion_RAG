@@ -101,6 +101,10 @@ Before writing or reviewing tests, reference **`docs/TESTING.md`** for:
 * **SQLAlchemy session management** – Use `db.expunge(obj)` before returning objects from session context
 * **FastAPI auth mocking** – Use `app.dependency_overrides[get_current_user]` with `try/finally` cleanup
 * **Streamlit E2E patterns** – Query param navigation, Tab key for reruns, scope to `stMainBlockContainer`
+* **E2E fixture check** – BEFORE writing E2E tests, check `conftest.py` for `base_url`/`streamlit_server` fixtures. Copy patterns from existing tests.
+* **Mock imports** – Use `from unittest.mock import patch, MagicMock, ANY` (NOT pytest.mock)
+* **Mock patch paths** – Patch where function is USED, not where it's DEFINED
+* **SQLAlchemy mock chains** – `mock_db.query.return_value.filter.return_value.first.return_value = entity`
 
 ### Quick Checklist
 - [ ] Test module name is unique across entire test directory
@@ -109,10 +113,35 @@ Before writing or reviewing tests, reference **`docs/TESTING.md`** for:
 - [ ] Objects detached with `db.expunge()` if needed
 - [ ] API tests use dependency overrides with cleanup
 - [ ] E2E selectors are semantic
+- [ ] Mock imports use `unittest.mock`, NOT `pytest.mock`
+- [ ] Mock patches target where function is USED
 - [ ] No unused imports after edits
 - [ ] Boolean comparisons use `.is_(False)` not `== False`
 - [ ] Tests pass: `pytest path/to/test.py -v`
 - [ ] Linting clean: `ruff check path/to/test.py`
+
+### Test Writing Verification (Anti-Confabulation)
+
+When writing tests, you MUST verify they actually work before reporting completion:
+
+1. **Read source FIRST** - Before writing tests for module X, read X's source code to get exact:
+   - Function signatures (parameters, return types)
+   - Class/dataclass field names
+   - Import paths (for correct patch targets)
+
+2. **Run after EACH file** - After creating each test file:
+   ```bash
+   pytest path/to/test.py -v --tb=short
+   ```
+   Do NOT move to next file until current file passes.
+
+3. **Include raw output** - In your completion report, include actual pytest output (copy/paste), not summaries like "tests passed".
+
+4. **Fix failures immediately** - If tests fail, fix them before moving on. Do not accumulate failures.
+
+5. **No assumed signatures** - Never mock functions with parameters/return values you haven't verified exist in the source.
+
+**Critical Rule**: Do NOT report "tests ready" or "tests created" until you have run pytest and seen actual PASSED output.
 
 ---
 

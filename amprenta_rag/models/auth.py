@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import List, Optional, TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, JSON, func, Integer, Float
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, JSON, func, Integer, Float, CheckConstraint, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, relationship
 
@@ -127,6 +127,63 @@ class FeaturePermission(Base):
     )
 
 
+class EntityShare(Base):
+    """Entity-level sharing permissions."""
+
+    __tablename__ = "entity_shares"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    entity_type = Column(String(50), nullable=False)  # dataset, experiment, compound, signature
+    entity_id = Column(UUID(as_uuid=True), nullable=False)
+    shared_with_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    shared_with_team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=True)
+    permission = Column(String(20), nullable=False)  # view, edit, admin
+    shared_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    shared_with_user: Mapped[Optional["User"]] = relationship(
+        "User", foreign_keys=[shared_with_user_id], backref="shared_entities"
+    )
+    shared_with_team: Mapped[Optional["Team"]] = relationship(
+        "Team", foreign_keys=[shared_with_team_id], backref="shared_entities"
+    )
+    shared_by: Mapped["User"] = relationship(
+        "User", foreign_keys=[shared_by_id], backref="entities_shared"
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "(shared_with_user_id IS NULL) != (shared_with_team_id IS NULL)",
+            name="ck_entity_shares_xor_user_team"
+        ),
+        Index("ix_entity_shares_entity", "entity_type", "entity_id"),
+        Index("ix_entity_shares_user", "shared_with_user_id"),
+        Index("ix_entity_shares_team", "shared_with_team_id"),
+    )
+
+
+class EntityReview(Base):
+    """Entity review/approval workflow."""
+
+    __tablename__ = "entity_reviews"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    entity_type = Column(String(50), nullable=False)  # dataset, experiment, compound, signature
+    entity_id = Column(UUID(as_uuid=True), nullable=False)
+    reviewer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    status = Column(String(20), nullable=False)  # pending, approved, rejected, changes_requested
+    comments = Column(Text, nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    reviewer: Mapped["User"] = relationship("User", backref="entity_reviews")
+
+    __table_args__ = (
+        Index("ix_entity_reviews_entity", "entity_type", "entity_id"),
+        Index("ix_entity_reviews_reviewer", "reviewer_id"),
+        Index("ix_entity_reviews_status", "status"),
+    )
+
+
 class AuditLog(Base):
     """Audit trail for user actions."""
 
@@ -152,6 +209,8 @@ __all__ = [
     "TeamMember",
     "Project",
     "FeaturePermission",
+    "EntityShare",
+    "EntityReview",
     "AuditLog",
 ]
 

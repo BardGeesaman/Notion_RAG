@@ -136,6 +136,11 @@ Simple status legend:
   - 250+ tests passing (API: 149, Integration: 10, Utils: 91)
 
 ### Testing & Development (Future)
+- ❌ Pytest Warnings Cleanup (eliminate 70+ warnings from test runs)
+  - Deprecation warnings (future-proofing)
+  - SQLAlchemy session warnings
+  - Pydantic validation warnings
+  - Import/configuration warnings
 - ❌ OOP Refactoring Review (code structure improvements)
 
 ---
@@ -267,10 +272,10 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - ✅ Repository Subscriptions & Alerts (saved queries) - 2024-12-18
 - ✅ External Data Catalog Page (health, freshness dashboard) - 2024-12-18
 
-### Tier 3 - AI-Assisted
-- ❌ AI Dataset Finder (NL → cross-repo query)
-- ❌ Metadata Enrichment from Abstracts (LLM extraction)
-- ❌ AI Relevance & Novelty Scoring
+### Tier 3 - AI-Assisted (Completed 2025-12-28)
+- ✅ AI Dataset Finder (2025-12-28) - NL → cross-repo query
+- ✅ Metadata Enrichment from Abstracts (2025-12-28) - LLM extraction
+- ✅ AI Relevance & Novelty Scoring (2025-12-28)
 
 ## Machine Learning (Future)
 
@@ -309,8 +314,8 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - 4 presets: balanced, potency-first, safety-first, CNS-optimized
   - 2D Pareto visualization (liability vs potency)
   - API: 3 endpoints (score, pareto, presets)
-- ❌ Assay Outcome Predictors (program-specific)
-- ❌ Active Learning for Screening
+- ✅ Assay Outcome Predictors (2025-12-28) - program-specific
+- ✅ Active Learning for Screening (2025-12-28)
 
 ### Tier 3 - Platform
 - ✅ Lightweight Model Registry + Reproducibility (2025-12-23)

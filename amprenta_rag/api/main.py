@@ -66,6 +66,11 @@ from amprenta_rag.api.routers import (
     ranking,
     monitoring,
     activity,
+    sharing,
+    entity_reviews,
+    teams,
+    scoring,
+    predictors,
 )
 from amprenta_rag.config import get_config
 
@@ -155,6 +160,11 @@ app.include_router(monitoring.router, prefix="/api/v1")
 app.include_router(multi_omics_viz.router, prefix="/api")
 app.include_router(activity.activity_router, prefix="/api/v1")
 app.include_router(activity.notifications_router, prefix="/api/v1")
+app.include_router(sharing.router, prefix="/api/v1")
+app.include_router(entity_reviews.router, prefix="/api/v1")
+app.include_router(teams.router, prefix="/api/v1")
+app.include_router(scoring.router, prefix="/api/v1/score", tags=["Scoring"])
+app.include_router(predictors.router, prefix="/api/v1/predictors", tags=["Predictors"])
 
 
 @app.get("/")

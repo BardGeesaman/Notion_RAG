@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from enum import Enum
+from enum import Enum as PyEnum
 from typing import List, Optional
 
 from sqlalchemy import (
@@ -18,7 +18,6 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum,
     Float,
     ForeignKey,
     Index,
@@ -50,7 +49,7 @@ def generate_uuid() -> uuid.UUID:
     return uuid.uuid4()
 
 
-class ActivityEventType(str, Enum):
+class ActivityEventType(str, PyEnum):
     """Types of activity events that can be tracked."""
     
     COMPOUND_ADDED = "compound_added"
@@ -61,6 +60,11 @@ class ActivityEventType(str, Enum):
     NOTEBOOK_REVIEWED = "notebook_reviewed"
     COMMENT_ADDED = "comment_added"
     MENTION_RECEIVED = "mention_received"
+    ENTITY_SHARED = "entity_shared"
+    ENTITY_UNSHARED = "entity_unshared"
+    REVIEW_SUBMITTED = "review_submitted"
+    REVIEW_ASSIGNED = "review_assigned"
+    REVIEW_DECIDED = "review_decided"
 
 
 # Association tables for many-to-many relationships

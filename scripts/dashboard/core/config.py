@@ -6,7 +6,7 @@ import os
 
 AUTH_DISABLED = os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true", "yes")
 
-DISCOVERY_PAGES = ["Overview", "Experiments", "Discovery Workflow", "Variant Tracking", "Activity Feed"]
+DISCOVERY_PAGES = ["Overview", "Workspaces", "Experiments", "Discovery Workflow", "Variant Tracking", "Activity Feed"]
 ANALYSIS_PAGES = [
     "Analysis Tools",
     "Chemistry",
@@ -178,6 +178,7 @@ ALL_PAGES = [
 # Mapping page name -> (module_path, function_name)
 PAGE_REGISTRY = {
     "Overview": ("scripts.dashboard.pages.overview", "render_overview_page"),
+    "Workspaces": ("scripts.dashboard.pages.Workspaces", "render_workspaces_page"),
     "Getting Started": ("scripts.dashboard.pages.getting_started", "render_getting_started_page"),
     "Evaluation Wizard": ("scripts.dashboard.pages.evaluation_wizard", "render_evaluation_wizard"),
     "Chat": ("scripts.dashboard.pages.chat", "render_chat_page"),

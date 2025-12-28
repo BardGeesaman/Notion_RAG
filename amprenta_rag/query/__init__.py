@@ -1,14 +1,13 @@
-"""
-Query package exports for cross-omics and RAG engines.
-"""
+"""Query and search utilities."""
 
-from __future__ import annotations
+from amprenta_rag.query.dataset_finder import (
+    DatasetFinderResult,
+    DatasetResult,
+    find_datasets_by_nl,
+)
 
 __all__ = [
-    "cross_omics",
-    "rag",
-    "rag_engine",
-    "rag_query_engine",
-    "pinecone_query",
+    "DatasetResult",
+    "DatasetFinderResult",
+    "find_datasets_by_nl",
 ]
-

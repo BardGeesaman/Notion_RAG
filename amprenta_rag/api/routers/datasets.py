@@ -12,9 +12,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_database_session
-from amprenta_rag.api.schemas import AnnotationCreate, Dataset, DatasetCreate, DatasetUpdate
+from amprenta_rag.api.schemas import (
+    AnnotationCreate,
+    Dataset,
+    DatasetCreate,
+    DatasetFinderRequest,
+    DatasetFinderResponse,
+    DatasetUpdate,
+    EnrichmentStatusResponse,
+    MetadataEnrichmentResponse,
+)
 from amprenta_rag.api.services import datasets as dataset_service
-from amprenta_rag.database.models import Note
+from amprenta_rag.database.models import Dataset as DatasetModel, Note
 from amprenta_rag.models.domain import OmicsType
 from amprenta_rag.notebooks import generate_dataset_notebook
 from amprenta_rag.utils.optimistic_lock import ConflictError, update_with_lock
@@ -186,4 +195,138 @@ async def delete_dataset(
     success = dataset_service.delete_dataset(db, dataset_id)
     if not success:
         raise HTTPException(status_code=404, detail="Dataset not found")
+
+
+@router.post("/find", response_model=DatasetFinderResponse)
+async def find_datasets(
+    request: DatasetFinderRequest,
+) -> DatasetFinderResponse:
+    """
+    Find datasets across repositories using natural language query.
+    
+    Uses AI to extract search terms from natural language and searches
+    across GEO, ArrayExpress, and Metabolomics Workbench databases.
+    """
+    try:
+        from amprenta_rag.query.dataset_finder import find_datasets_by_nl
+        
+        result = find_datasets_by_nl(
+            query=request.query,
+            repositories=request.repositories,
+            max_results=request.max_results,
+        )
+        
+        # Convert to response schema
+        return DatasetFinderResponse(
+            query=result.query,
+            extracted_terms=result.extracted_terms,
+            results=[
+                {
+                    "accession": r.accession,
+                    "title": r.title,
+                    "description": r.description,
+                    "source": r.source,
+                    "species": r.species,
+                    "tissue": r.tissue,
+                    "disease": r.disease,
+                    "assay_type": r.assay_type,
+                    "sample_count": r.sample_count,
+                    "url": r.url,
+                    "score": r.score,
+                }
+                for r in result.results
+            ],
+            total_found=result.total_found,
+            sources_searched=result.sources_searched,
+            sources_failed=result.sources_failed,
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Dataset search failed: {str(e)}"
+        )
+
+
+@router.post("/{dataset_id}/enrich", response_model=MetadataEnrichmentResponse)
+async def enrich_dataset_metadata(
+    dataset_id: UUID,
+    db: Session = Depends(get_database_session),
+) -> MetadataEnrichmentResponse:
+    """
+    Enrich dataset metadata using LLM semantic extraction.
+    
+    Extracts structured metadata from dataset description/abstract using AI
+    and merges it with existing metadata. LLM-extracted values take precedence.
+    """
+    try:
+        from amprenta_rag.services.metadata_enrichment import enrich_dataset_metadata as enrich_func
+        
+        # Check if dataset exists first
+        dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
+        if not dataset:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        
+        # Perform enrichment
+        result = enrich_func(dataset_id)
+        
+        return MetadataEnrichmentResponse(
+            dataset_id=result.dataset_id,
+            success=result.success,
+            enriched_fields=result.enriched_fields,
+            extracted_metadata=result.extracted_metadata,
+            error_message=result.error_message,
+            processing_time_seconds=result.processing_time_seconds,
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Metadata enrichment failed: {str(e)}"
+        )
+
+
+@router.get("/{dataset_id}/enrichment-status", response_model=EnrichmentStatusResponse)
+async def get_dataset_enrichment_status(
+    dataset_id: UUID,
+    db: Session = Depends(get_database_session),
+) -> EnrichmentStatusResponse:
+    """
+    Get enrichment status for a dataset.
+    
+    Returns information about whether the dataset has been enriched,
+    when it was enriched, and what fields are available.
+    """
+    try:
+        from amprenta_rag.services.metadata_enrichment import get_enrichment_status
+        
+        # Check if dataset exists first
+        dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
+        if not dataset:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        
+        status = get_enrichment_status(dataset_id)
+        
+        if "error" in status:
+            return EnrichmentStatusResponse(
+                enriched=False,
+                error=status["error"]
+            )
+        
+        return EnrichmentStatusResponse(
+            enriched=status["enriched"],
+            enrichment_timestamp=status["enrichment_timestamp"],
+            enrichment_version=status["enrichment_version"],
+            available_fields=status["available_fields"],
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get enrichment status: {str(e)}"
+        )
 

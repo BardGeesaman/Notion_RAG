@@ -28,6 +28,14 @@ Extract the following information:
 3. **Signatures**: List any biomarker signatures, lipid signatures, or signature identifiers mentioned
 4. **Phenotype Axes**: List any phenotype axes, disease axes, or clinical axes mentioned
 5. **Biomarker Roles**: List any biomarker roles mentioned (e.g., "diagnostic", "prognostic", "predictive")
+6. **Sample Count**: Extract the number of samples/subjects if mentioned (return as integer, null if not found)
+7. **Study Design**: List study design types mentioned (e.g., "case-control", "longitudinal", "cross-sectional", "randomized")
+8. **Timepoints**: List any timepoints mentioned (e.g., "baseline", "6 months", "1 year", "pre-treatment", "post-treatment")
+9. **Cell Lines**: List any cell line names mentioned (e.g., "HeLa", "MCF-7", "HEK293")
+10. **Tissue Types**: List any tissue/organ types mentioned (e.g., "brain", "liver", "blood", "muscle", "adipose")
+11. **Species**: List any species/organisms mentioned (e.g., "human", "mouse", "rat", "zebrafish")
+12. **Assay Types**: List any experimental assay types mentioned (e.g., "RNA-seq", "proteomics", "metabolomics", "microarray", "ChIP-seq")
+13. **Therapeutic Area**: List any therapeutic areas mentioned (e.g., "oncology", "neurology", "cardiology", "immunology")
 
 Return your response as a JSON object with the following structure:
 {{
@@ -35,10 +43,18 @@ Return your response as a JSON object with the following structure:
   "targets": ["target1", "target2"],
   "signatures": ["signature1", "signature2"],
   "phenotype_axes": ["axis1", "axis2"],
-  "biomarker_roles": ["role1", "role2"]
+  "biomarker_roles": ["role1", "role2"],
+  "sample_count": 123,
+  "study_design": ["design1", "design2"],
+  "timepoints": ["timepoint1", "timepoint2"],
+  "cell_lines": ["cell_line1", "cell_line2"],
+  "tissue_types": ["tissue1", "tissue2"],
+  "species": ["species1", "species2"],
+  "assay_types": ["assay1", "assay2"],
+  "therapeutic_area": ["area1", "area2"]
 }}
 
-If a category has no matches, return an empty array for that field.
+If a category has no matches, return an empty array for that field. For sample_count, return null if no count is mentioned.
 Only extract information that is explicitly mentioned in the text. Do not infer or make assumptions.
 """
 
@@ -66,29 +82,25 @@ def extract_semantic_metadata_with_llm(
         - signatures: List[str]
         - phenotype_axes: List[str]
         - biomarker_roles: List[str]
+        - sample_count: int | None
+        - study_design: List[str]
+        - timepoints: List[str]
+        - cell_lines: List[str]
+        - tissue_types: List[str]
+        - species: List[str]
+        - assay_types: List[str]
+        - therapeutic_area: List[str]
     """
     if not text or len(text.strip()) < 50:
         logger.debug("[LLM-SEMANTIC] Text too short for LLM extraction")
-        return {
-            "diseases": [],
-            "targets": [],
-            "signatures": [],
-            "phenotype_axes": [],
-            "biomarker_roles": [],
-        }
+        return _empty_metadata()
 
     cfg = get_config()
 
     # Check if LLM extraction is enabled
     if not cfg.pipeline.enable_llm_semantic_extraction:
         logger.debug("[LLM-SEMANTIC] LLM semantic extraction is disabled")
-        return {
-            "diseases": [],
-            "targets": [],
-            "signatures": [],
-            "phenotype_axes": [],
-            "biomarker_roles": [],
-        }
+        return _empty_metadata()
 
     # Truncate text if too long
     if len(text) > max_length:
@@ -139,15 +151,31 @@ def extract_semantic_metadata_with_llm(
                 "signatures": _normalize_list(extracted.get("signatures", [])),
                 "phenotype_axes": _normalize_list(extracted.get("phenotype_axes", [])),
                 "biomarker_roles": _normalize_list(extracted.get("biomarker_roles", [])),
+                "sample_count": _normalize_int(extracted.get("sample_count")),
+                "study_design": _normalize_list(extracted.get("study_design", [])),
+                "timepoints": _normalize_list(extracted.get("timepoints", [])),
+                "cell_lines": _normalize_list(extracted.get("cell_lines", [])),
+                "tissue_types": _normalize_list(extracted.get("tissue_types", [])),
+                "species": _normalize_list(extracted.get("species", [])),
+                "assay_types": _normalize_list(extracted.get("assay_types", [])),
+                "therapeutic_area": _normalize_list(extracted.get("therapeutic_area", [])),
             }
 
             logger.info(
-                "[LLM-SEMANTIC] Extracted metadata: %d diseases, %d targets, %d signatures, %d axes, %d roles",
+                "[LLM-SEMANTIC] Extracted metadata: %d diseases, %d targets, %d signatures, %d axes, %d roles, %s samples, %d designs, %d timepoints, %d cell_lines, %d tissues, %d species, %d assays, %d therapeutic_areas",
                 len(result["diseases"]),
                 len(result["targets"]),
                 len(result["signatures"]),
                 len(result["phenotype_axes"]),
                 len(result["biomarker_roles"]),
+                result["sample_count"] or "no",
+                len(result["study_design"]),
+                len(result["timepoints"]),
+                len(result["cell_lines"]),
+                len(result["tissue_types"]),
+                len(result["species"]),
+                len(result["assay_types"]),
+                len(result["therapeutic_area"]),
             )
 
             return result
@@ -229,6 +257,16 @@ def _normalize_list(value: Any) -> list[str]:
     return [str(value).strip()] if str(value).strip() else []
 
 
+def _normalize_int(value: Any) -> int | None:
+    """Normalize a value to an integer or None."""
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
+
 def _empty_metadata() -> Dict[str, Any]:
     """Return empty metadata structure."""
     return {
@@ -237,5 +275,13 @@ def _empty_metadata() -> Dict[str, Any]:
         "signatures": [],
         "phenotype_axes": [],
         "biomarker_roles": [],
+        "sample_count": None,
+        "study_design": [],
+        "timepoints": [],
+        "cell_lines": [],
+        "tissue_types": [],
+        "species": [],
+        "assay_types": [],
+        "therapeutic_area": [],
     }
 

@@ -96,6 +96,10 @@ pip install -r requirements.txt
   ```
 
 ### E2E Testing (Playwright)
+- **BEFORE writing new E2E tests**: Check `conftest.py` for available fixtures:
+  - `base_url` or `streamlit_server` fixture for server URL
+  - `page` fixture setup
+  - Copy patterns from existing E2E tests in same directory
 - Use SEMANTIC selectors (user-facing):
   ```python
   page.get_by_text("Submit")  # GOOD
@@ -109,6 +113,22 @@ pip install -r requirements.txt
   ```
 - Use `domcontentloaded` + specific selectors, NOT `networkidle` (too slow)
 - For Streamlit: Press Tab after textarea input to trigger rerun
+- **NEVER use `page.base_url`** - it doesn't exist. Use fixture instead
+
+### Mock Patterns (unittest.mock)
+- NEVER use `pytest.mock` (doesn't exist) - use `from unittest.mock import patch, MagicMock, ANY`
+- Patch where function is USED, not DEFINED:
+  ```python
+  # Function in utils/helpers.py, imported in services/foo.py
+  @patch("amprenta_rag.services.foo.my_function")  # CORRECT
+  @patch("amprenta_rag.utils.helpers.my_function")  # WRONG
+  ```
+- SQLAlchemy mock chains need full setup:
+  ```python
+  mock_db.query.return_value.filter.return_value.first.return_value = mock_entity
+  mock_db.query.return_value.filter.return_value.all.return_value = [entity1, entity2]
+  ```
+- Run tests IMMEDIATELY after writing - no confabulating results
 
 ### Boolean Comparisons
 - Use `.is_(False)` for SQLAlchemy, not `== False`:
