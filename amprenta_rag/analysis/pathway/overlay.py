@@ -22,11 +22,11 @@ def value_to_color(value: float, vmin: float, vmax: float, colormap: str) -> str
     Convert a numeric value into a hex color using a diverging colormap.
     """
     try:
-        import matplotlib.cm as cm  # type: ignore
+        import matplotlib as mpl  # type: ignore
         import matplotlib.colors as mcolors  # type: ignore
 
         norm = mcolors.TwoSlopeNorm(vmin=float(vmin), vcenter=0.0, vmax=float(vmax))
-        cmap = cm.get_cmap(str(colormap))
+        cmap = mpl.colormaps.get_cmap(str(colormap))
         rgba = cmap(norm(float(value)))
         return str(mcolors.to_hex(rgba, keep_alpha=False))
     except Exception:
