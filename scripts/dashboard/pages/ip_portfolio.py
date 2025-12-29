@@ -204,8 +204,7 @@ def render_evidence_links_tab() -> None:
     links = st.session_state.get("entity_links")
     
     if links:
-        if links:
-            df = pd.DataFrame(links)
+        df = pd.DataFrame(links)
             st.dataframe(df, use_container_width=True, hide_index=True)
         else:
             st.info("No IP links found for this entity")
