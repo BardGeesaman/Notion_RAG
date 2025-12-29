@@ -116,4 +116,56 @@ class TestProgramPathwayAnalysis:
         assert data["pathways"][0]["pathway_id"] == "path:0001"
 
 
+class TestPathwayFeatures:
+    """Tests for GET /api/pathways/{pathway_id}/features endpoint."""
+
+    @patch("amprenta_rag.api.routers.pathways.combine_omics_features")
+    def test_pathway_features_success(self, mock_combine):
+        """Test successful pathway features retrieval."""
+        pathway_id = "path:0001"
+        dataset1_id = uuid4()
+        dataset2_id = uuid4()
+        
+        # Mock combined features
+        mock_combined = MagicMock()
+        mock_combined.asdict.return_value = {
+            "transcriptomics": ["gene1", "gene2"],
+            "proteomics": ["protein1"],
+        }
+        mock_combine.return_value = mock_combined
+        
+        # FastAPI handles list query params by repeating the param
+        response = client.get(
+            f"/api/v1/pathways/{pathway_id}/features?dataset_ids={dataset1_id}&dataset_ids={dataset2_id}",
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["pathway_id"] == pathway_id
+        assert "features_by_omics" in data
+        assert "transcriptomics" in data["features_by_omics"]
+        assert "proteomics" in data["features_by_omics"]
+
+    @patch("amprenta_rag.api.routers.pathways.combine_omics_features")
+    def test_pathway_features_single_dataset(self, mock_combine):
+        """Test pathway features with single dataset."""
+        pathway_id = "path:0001"
+        dataset_id = uuid4()
+        
+        # Mock combined features
+        mock_combined = MagicMock()
+        mock_combined.asdict.return_value = {
+            "transcriptomics": ["gene1"],
+        }
+        mock_combine.return_value = mock_combined
+        
+        response = client.get(
+            f"/api/v1/pathways/{pathway_id}/features?dataset_ids={dataset_id}",
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["pathway_id"] == pathway_id
+
+
 

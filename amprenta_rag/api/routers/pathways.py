@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import List, Set
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from amprenta_rag.analysis.cross_omics_pathways import (
     combine_omics_features,
@@ -103,7 +103,7 @@ def program_pathway_analysis(program_id: UUID) -> schemas.CrossOmicsEnrichmentRe
     summary="Features mapped to a pathway by omics type",
     response_model=schemas.PathwayFeatures,
 )
-def pathway_features(pathway_id: str, dataset_ids: List[UUID]) -> schemas.PathwayFeatures:
+def pathway_features(pathway_id: str, dataset_ids: List[UUID] = Query(...)) -> schemas.PathwayFeatures:
     """Return features grouped by omics type for the provided datasets (placeholder mapping)."""
     # Combine features across provided datasets
     combined = combine_omics_features(dataset_ids)
