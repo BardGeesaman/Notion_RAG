@@ -63,9 +63,30 @@ class Literature(Base):
     
     # Full text availability flag
     full_text_available = Column(Boolean, default=False)
+    
+    # Semantic Scholar / OpenAlex integration
+    semantic_scholar_id = Column(String(50), nullable=True, index=True)
+    openalex_id = Column(String(50), nullable=True, index=True)
+    tldr_summary = Column(Text, nullable=True)  # AI-generated summary from S2
+    citation_count = Column(Integer, nullable=True)
+    influential_citation_count = Column(Integer, nullable=True)
+    open_access_status = Column(String(50), nullable=True)
 
     chunks: Mapped[List["RAGChunk"]] = relationship(
         back_populates="literature", cascade="all, delete-orphan"
+    )
+    
+    # Citation relationships
+    citations_made: Mapped[List["PaperCitation"]] = relationship(
+        foreign_keys="[PaperCitation.citing_paper_id]",
+        back_populates="citing_paper",
+        cascade="all, delete-orphan"
+    )
+    
+    citations_received: Mapped[List["PaperCitation"]] = relationship(
+        foreign_keys="[PaperCitation.cited_paper_id]",
+        back_populates="cited_paper",
+        cascade="all, delete-orphan"
     )
 
 
@@ -130,6 +151,38 @@ class RAGChunk(Base):
     )
 
 
+class PaperCitation(Base):
+    """Citation relationship between papers."""
+
+    __tablename__ = "paper_citations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    
+    # Citing paper (the paper that cites another)
+    citing_paper_id = Column(UUID(as_uuid=True), ForeignKey("literature.id"), nullable=False, index=True)
+    citing_paper: Mapped["Literature"] = relationship(
+        foreign_keys=[citing_paper_id],
+        back_populates="citations_made"
+    )
+    
+    # Cited paper (the paper being cited - may not be in our system yet)
+    cited_paper_id = Column(UUID(as_uuid=True), ForeignKey("literature.id"), nullable=True, index=True)
+    cited_paper: Mapped[Optional["Literature"]] = relationship(
+        foreign_keys=[cited_paper_id],
+        back_populates="citations_received"
+    )
+    
+    # Citation metadata for papers not yet in system
+    cited_doi = Column(String(500), nullable=True)
+    cited_title = Column(String(1000), nullable=True)
+    
+    # Semantic Scholar specific fields
+    citation_context = Column(Text, nullable=True)  # Context snippet from citing paper
+    is_influential = Column(Boolean, default=False)  # S2's influential citation flag
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class LiteratureCritique(Base):
     """Critical analysis of scientific literature."""
 
@@ -147,5 +200,5 @@ class LiteratureCritique(Base):
     created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
 
-__all__ = ["Literature", "Email", "RAGChunk", "LiteratureCritique"]
+__all__ = ["Literature", "Email", "RAGChunk", "PaperCitation", "LiteratureCritique"]
 
