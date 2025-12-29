@@ -302,3 +302,31 @@ PAGE_REGISTRY = {
     "Company Settings": ("scripts.dashboard.pages.company_settings", "render_company_settings_page"),
 }
 
+# Navigation groups for organized sidebar
+PAGE_GROUPS = {
+    "Home": ["Cockpit"],
+    "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue"],
+    "Chemistry": ["Chemical Sketcher", "Compounds", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network"],
+    "HTS": ["HTS QC", "Dose-Response Explorer", "Screening"],
+    "Structure": ["Protein Structures", "Binding Sites", "Docking Runs", "Docking Triage", "Molecule Viewer"],
+    "Omics": ["Single-Cell Viewer", "CRISPR Analysis", "Variant Analysis", "Connectivity Map", "Biomarker Discovery"],
+    "ML/Predictive": ["Target QSAR", "MOA Inference", "Predictors", "Scoring", "Model Monitoring"],
+    "Visualization": ["Projector", "Graph Explorer", "Pathway Map Viewer"],
+    "Notebooks": ["Notebook Generator", "Notebook Copilot", "Notebook Gallery", "Notebooks"],
+    "Pipelines": ["Nextflow Orchestrator", "Pipeline Runner", "Sync Monitor", "AI Extraction"],
+    "Collaboration": ["Activity Feed", "Workspaces"],
+    "Reports": ["Executive Digests", "Spectral Matching"],
+    "Admin": ["Company Settings"],
+    "Other": [],
+}
+
+GROUP_ORDER = ["Home", "Discovery", "Chemistry", "HTS", "Structure", "Omics", "ML/Predictive", "Visualization", "Notebooks", "Pipelines", "Collaboration", "Reports", "Admin", "Other"]
+
+GROUP_ICONS = {
+    "Home": "🏠", "Discovery": "🔍", "Chemistry": "⚗️", "HTS": "🧪",
+    "Structure": "🔬", "Omics": "🧬", "ML/Predictive": "🤖", "Visualization": "📊",
+    "Notebooks": "📓", "Pipelines": "🔄", "Collaboration": "👥", "Reports": "📋",
+    "Admin": "⚙️", "Other": "📁"
+}
+
+
