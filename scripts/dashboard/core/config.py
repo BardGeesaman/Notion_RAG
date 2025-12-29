@@ -321,7 +321,7 @@ PAGE_GROUPS = {
     "Visualization": ["Projector", "Graph Explorer", "Pathway Map Viewer"],
     "Notebooks": ["Notebook Co-Pilot", "Notebook Generator", "Notebook Gallery", "Notebooks"],
     "Pipelines": ["Nextflow Orchestrator", "Pipeline Runner", "Sync Monitor", "AI Extraction"],
-    "Collaboration": ["Activity Feed", "Workspaces"],
+    "Collaboration": ["Activity Feed", "Teams & Projects", "Variant Tracking"],
     "Reports": ["Executive Digests", "Spectral Matching"],
     "Admin": ["Company Settings"],
     "Other": [],
