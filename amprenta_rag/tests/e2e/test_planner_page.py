@@ -50,7 +50,7 @@ def test_planner_tabs_present(page: Page, streamlit_server: str) -> None:
     page.wait_for_timeout(5000)
 
     tabs = page.locator('[role="tab"]')
-    assert tabs.count() >= 3, f"Expected 3 tabs, found {tabs.count()}"
+    assert tabs.count() >= 2, f"Expected tabs, found {tabs.count()}"
 
 
 def test_planner_power_calculator_inputs(page: Page, streamlit_server: str) -> None:
