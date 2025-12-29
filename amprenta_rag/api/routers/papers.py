@@ -462,23 +462,29 @@ async def enrich_paper(
                 # Update citation counts if available in S2 metadata
                 logger.info("[PAPERS_API] Enriched with Semantic Scholar: %s", s2_metadata.paper_id)
         
-        # Fetch citations if requested
+        # Fetch citations if requested (papers that CITE our paper)
         if request.fetch_citations and s2_paper_id:
             try:
                 citations = s2_repo.get_citations(s2_paper_id, limit=100)
                 for cite in citations:
                     citing_paper_s2_id = cite.get("paperId")
                     if citing_paper_s2_id:
-                        # Check if we already have this citation
+                        cite_title = cite.get("title", "")
+                        # Check if we already have this citation (avoid duplicates by title)
                         existing = db.query(PaperCitation).filter(
-                            PaperCitation.citing_paper_id == paper_id,
+                            PaperCitation.cited_paper_id == paper_id,
+                            PaperCitation.cited_title == cite_title,
                         ).first()
                         
-                        if not existing:
+                        if not existing and cite_title:
+                            # External paper cites our paper
+                            external_ids = cite.get("externalIds", {}) or {}
                             citation = PaperCitation(
-                                citing_paper_id=paper_id,  # This will need to be matched later
-                                cited_paper_id=paper_id,
-                                cited_title=cite.get("title", ""),
+                                citing_paper_id=None,  # External paper not in system yet
+                                cited_paper_id=paper_id,  # Our paper being cited
+                                cited_doi=external_ids.get("DOI"),
+                                cited_title=cite_title,
+                                citation_context="",  # S2 citations API doesn't include context
                                 is_influential=cite.get("isInfluential", False),
                             )
                             db.add(citation)
@@ -486,23 +492,29 @@ async def enrich_paper(
             except Exception as e:
                 logger.warning("[PAPERS_API] Failed to fetch S2 citations: %r", e)
         
-        # Fetch references if requested
+        # Fetch references if requested (papers that our paper CITES)
         if request.fetch_references and s2_paper_id:
             try:
                 references = s2_repo.get_references(s2_paper_id, limit=100)
                 for ref in references:
                     cited_paper_s2_id = ref.get("paperId")
                     if cited_paper_s2_id:
-                        # Check if we already have this reference
+                        ref_title = ref.get("title", "")
+                        # Check if we already have this reference (avoid duplicates by title)
                         existing = db.query(PaperCitation).filter(
                             PaperCitation.citing_paper_id == paper_id,
+                            PaperCitation.cited_title == ref_title,
                         ).first()
                         
-                        if not existing:
+                        if not existing and ref_title:
+                            # Our paper cites an external paper
+                            external_ids = ref.get("externalIds", {}) or {}
                             reference = PaperCitation(
-                                citing_paper_id=paper_id,
-                                cited_paper_id=None,  # Don't know if it's in our system
-                                cited_title=ref.get("title", ""),
+                                citing_paper_id=paper_id,  # Our paper doing the citing
+                                cited_paper_id=None,  # External paper not in system yet
+                                cited_doi=external_ids.get("DOI"),
+                                cited_title=ref_title,
+                                citation_context=None,  # References don't have context
                                 is_influential=ref.get("isInfluential", False),
                             )
                             db.add(reference)

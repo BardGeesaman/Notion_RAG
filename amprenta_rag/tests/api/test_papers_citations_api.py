@@ -256,3 +256,112 @@ class TestEnrichPaper:
         finally:
             app.dependency_overrides.clear()
 
+    @patch("amprenta_rag.api.routers.papers.OpenAlexRepository")
+    @patch("amprenta_rag.api.routers.papers.SemanticScholarRepository")
+    def test_enrich_paper_creates_correct_citations(self, mock_s2_class, mock_oa_class):
+        """Verify citations are stored with correct paper relationships."""
+        paper_id = uuid4()
+        
+        # Mock paper
+        mock_literature = MagicMock()
+        mock_literature.id = paper_id
+        mock_literature.doi = "10.1234/our-paper"
+        mock_literature.pmid = "12345678"
+        mock_literature.semantic_scholar_id = None
+        mock_literature.openalex_id = None
+        mock_literature.citation_count = None
+        
+        # Mock S2 repository with citation and reference data
+        mock_s2 = MagicMock()
+        mock_s2.fetch_metadata.return_value = None  # Skip metadata enrichment
+        
+        # Mock citation: external paper CITES our paper
+        mock_s2.get_citations.return_value = [{
+            "paperId": "s2_citing_123",
+            "title": "Paper That Cites Us",
+            "externalIds": {"DOI": "10.5678/citing-paper"},
+            "isInfluential": True,
+        }]
+        
+        # Mock reference: our paper CITES external paper
+        mock_s2.get_references.return_value = [{
+            "paperId": "s2_cited_456",
+            "title": "Paper We Cite",
+            "externalIds": {"DOI": "10.9012/cited-paper"},
+            "isInfluential": False,
+        }]
+        
+        mock_s2_class.return_value = mock_s2
+        
+        # Mock OA repository
+        mock_oa = MagicMock()
+        mock_oa.get_work.return_value = None  # Skip OA enrichment
+        mock_oa_class.return_value = mock_oa
+        
+        # Track what gets added to database
+        added_citations = []
+        
+        # Mock database session
+        mock_session = MagicMock()
+        
+        # Setup queries:
+        # - First query: get paper (returns mock_literature)
+        # - Subsequent queries: check for existing citations (returns None)
+        call_count = [0]
+        def mock_query_side_effect(*args):
+            call_count[0] += 1
+            mock_query = MagicMock()
+            mock_query.filter.return_value = mock_query
+            
+            if call_count[0] == 1:
+                # First call: get paper
+                mock_query.first.return_value = mock_literature
+            else:
+                # All subsequent calls: check for existing citations (return None)
+                mock_query.first.return_value = None
+            
+            return mock_query
+        
+        mock_session.query.side_effect = mock_query_side_effect
+        
+        # Mock db.add to capture PaperCitation objects
+        def mock_add(obj):
+            added_citations.append(obj)
+        
+        mock_session.add = mock_add
+        
+        def mock_get_db():
+            yield mock_session
+        
+        from amprenta_rag.api.dependencies import get_database_session
+        
+        app.dependency_overrides[get_database_session] = mock_get_db
+        
+        try:
+            response = client.post(
+                f"/api/v1/papers/{paper_id}/enrich",
+                json={"fetch_citations": True, "fetch_references": True},
+            )
+            
+            assert response.status_code == 200
+            data = response.json()
+            
+            # Should have added 2 PaperCitation records
+            assert len(added_citations) == 2
+            
+            # First citation: external paper cites our paper
+            citation_obj = added_citations[0]
+            assert citation_obj.citing_paper_id is None, "External citing paper should have None ID"
+            assert citation_obj.cited_paper_id == paper_id, "Our paper should be cited_paper_id"
+            assert citation_obj.cited_title == "Paper That Cites Us"
+            assert citation_obj.is_influential is True
+            
+            # Second reference: our paper cites external paper
+            reference_obj = added_citations[1]
+            assert reference_obj.citing_paper_id == paper_id, "Our paper should be citing_paper_id"
+            assert reference_obj.cited_paper_id is None, "External cited paper should have None ID"
+            assert reference_obj.cited_title == "Paper We Cite"
+            assert reference_obj.is_influential is False
+        finally:
+            app.dependency_overrides.clear()
+
