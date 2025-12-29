@@ -10,6 +10,7 @@ DISCOVERY_PAGES = ["Overview", "Workspaces", "Experiments", "Discovery Workflow"
 ANALYSIS_PAGES = [
     "Analysis Tools",
     "Chemistry",
+    "Chemical Sketcher",
     "Visualizations",
     "Literature Analysis",
     "Paper Search",
@@ -121,6 +122,7 @@ ALL_PAGES = [
     "Emails",
     "RAG Chunks",
     "Chemistry",
+    "Chemical Sketcher",
     "HTS QC",
     "MOA Inference",
     "SAR What-If",
@@ -230,6 +232,7 @@ PAGE_REGISTRY = {
     "Emails": ("scripts.dashboard.pages.emails", "render_emails_page"),
     "RAG Chunks": ("scripts.dashboard.pages.rag_chunks", "render_rag_chunks_page"),
     "Chemistry": ("scripts.dashboard.pages.chemistry", "render_chemistry_page"),
+    "Chemical Sketcher": ("scripts.dashboard.pages.chemical_sketcher", "render_chemical_sketcher_page"),
     "HTS QC": ("scripts.dashboard.pages.hts_qc", "render_hts_qc_page"),
     "MOA Inference": ("scripts.dashboard.pages.moa_inference", "render_moa_inference_page"),
     "SAR What-If": ("scripts.dashboard.pages.sar_whatif", "render_sar_whatif_page"),
