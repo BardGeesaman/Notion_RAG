@@ -6,7 +6,7 @@ Provides portfolio summary, ADMET rollup, SAR gaps, and recommendations.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import List
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
