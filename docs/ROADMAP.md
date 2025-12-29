@@ -592,9 +592,18 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - ✅ Project/Team Workspaces Hub
 
 ### Tier 2 - Strategic
+- ✅ Voila Share Links with Expiring Tokens (2025-12-29)
+  - Secure token generation (secrets.token_urlsafe)
+  - Time-limited expiration
+  - View count limits
+  - Public validate endpoint for external access
+  - ShareLink model with token, expiration, view tracking
+  - 6 service functions (generate, validate, revoke, list, cleanup, stats)
+  - 5 API endpoints at /api/v1/share-links/* (including PUBLIC /validate)
+  - Share Links UI page with Create/Manage tabs
+  - 22 tests (4 model + 7 service + 6 API + 5 E2E) - 100% pass rate
 - ❌ Collaborative Notebook Editing (RTC)
 - ❌ Notebook Review Threads + Diffs
-- ❌ Voila Share Links with Expiring Tokens
 - ❌ Scheduled Review Cycles & SLAs
 
 ### Approved Features (2025-12-13) - ✅ Completed
