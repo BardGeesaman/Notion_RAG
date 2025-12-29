@@ -22,6 +22,7 @@ from scripts.dashboard.core.favorites import (
     get_user_favorites,
     update_recent_pages,
 )
+from scripts.dashboard.components.sidebar_nav import render_grouped_sidebar
 from scripts.dashboard.core.jupyter_auth import get_jupyterhub_url, get_voila_url
 from scripts.dashboard.components.alerts_bell import render_alerts_bell
 
@@ -342,15 +343,17 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
 
         render_command_palette()
 
-    nav_groups: Dict[str, List[str]] = {
-        "DISCOVERY_PAGES": getattr(groups, "DISCOVERY_PAGES", []),
-        "ANALYSIS_PAGES": getattr(groups, "ANALYSIS_PAGES", []),
-        "ELN_PAGES": getattr(groups, "ELN_PAGES", []),
-        "ADMIN_PAGES": getattr(groups, "ADMIN_PAGES", []),
-        "ALL_PAGES": getattr(groups, "ALL_PAGES", []),
-    }
-
-    page = render_navigation(user, visible_pages, groups=nav_groups)
+    # Use new grouped navigation
+    current_page = st.session_state.get("selected_page", "Overview")
+    selected = render_grouped_sidebar(current_page=current_page)
+    
+    if selected:
+        page = selected
+        st.session_state["selected_page"] = selected
+        update_recent_pages(selected)
+        st.rerun()
+    else:
+        page = current_page
 
     page = st.session_state.get("selected_page", page)
 
