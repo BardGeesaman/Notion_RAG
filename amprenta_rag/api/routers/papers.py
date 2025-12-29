@@ -21,7 +21,9 @@ from amprenta_rag.ingestion.papers.embedding import embed_paper_sections
 from amprenta_rag.ingestion.papers.jats_parser import PaperSection, parse_jats_xml
 from amprenta_rag.ingestion.papers.semantic_scholar import SemanticScholarRepository
 from amprenta_rag.ingestion.papers.openalex import OpenAlexRepository
-from amprenta_rag.models.content import PaperCitation
+from amprenta_rag.models.content import PaperCitation, PublicationExtraction, SupplementaryFile
+from amprenta_rag.extraction.publication_extractor import extract_from_pdf_bytes
+from amprenta_rag.extraction.supplementary_parser import parse_supplementary_file
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -138,6 +140,45 @@ class EnrichPaperResponse(BaseModel):
     semantic_scholar_id: Optional[str] = None
     openalex_id: Optional[str] = None
     citation_count: Optional[int] = None
+
+
+class ExperimentResponse(BaseModel):
+    """Extracted experiment response."""
+
+    id: UUID
+    experiment_type: str
+    cell_line: Optional[str] = None
+    treatment: Optional[str] = None
+    concentration: Optional[str] = None
+    timepoint: Optional[str] = None
+    replicate_count: Optional[int] = None
+    measured_entities: List[str] = Field(default_factory=list)
+    key_findings: Optional[str] = None
+    extraction_confidence: Optional[int] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExtractExperimentsResponse(BaseModel):
+    """Response for experiment extraction from PDF."""
+
+    experiments_extracted: int
+    extraction_confidence: float
+
+
+class LinkDatasetRequest(BaseModel):
+    """Request to link supplementary file to dataset."""
+
+    supplementary_file_id: UUID
+    dataset_id: UUID
+
+
+class LinkDatasetResponse(BaseModel):
+    """Response for dataset linking."""
+
+    linked: bool
+    supplementary_file_id: UUID
+    dataset_id: UUID
 
 
 @router.post("/search", response_model=PaperSearchResponse)
@@ -546,5 +587,95 @@ async def enrich_paper(
         semantic_scholar_id=literature.semantic_scholar_id,
         openalex_id=literature.openalex_id,
         citation_count=literature.citation_count,
+    )
+
+
+@router.post("/{paper_id}/extract", response_model=ExtractExperimentsResponse)
+async def extract_experiments_from_paper(
+    paper_id: UUID,
+    db: Session = Depends(get_database_session),
+) -> ExtractExperimentsResponse:
+    """
+    Extract structured experiment data from paper PDF.
+
+    NOTE: Requires PDF to be available. Currently placeholder - full implementation
+    requires PDF storage integration.
+    """
+    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    if not literature:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    
+    # Placeholder: Would need PDF bytes from storage
+    # For now, return empty extraction
+    logger.warning("[PAPERS_API] PDF extraction not yet implemented - requires PDF storage")
+    
+    return ExtractExperimentsResponse(
+        experiments_extracted=0,
+        extraction_confidence=0.0,
+    )
+
+
+@router.get("/{paper_id}/experiments", response_model=List[ExperimentResponse])
+async def get_paper_experiments(
+    paper_id: UUID,
+    db: Session = Depends(get_database_session),
+) -> List[ExperimentResponse]:
+    """
+    Get extracted experiments for a paper.
+
+    Returns all PublicationExtraction records for the specified paper.
+    """
+    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    if not literature:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    
+    experiments = (
+        db.query(PublicationExtraction)
+        .filter(PublicationExtraction.literature_id == paper_id)
+        .all()
+    )
+    
+    return [ExperimentResponse.model_validate(exp) for exp in experiments]
+
+
+@router.post("/{paper_id}/link-dataset", response_model=LinkDatasetResponse)
+async def link_supplementary_to_dataset(
+    paper_id: UUID,
+    request: LinkDatasetRequest,
+    db: Session = Depends(get_database_session),
+) -> LinkDatasetResponse:
+    """
+    Link a supplementary file to an existing Dataset.
+
+    Updates the SupplementaryFile record to reference a Dataset ID.
+    """
+    # Verify paper exists
+    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    if not literature:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    
+    # Get supplementary file
+    supp_file = db.query(SupplementaryFile).filter(
+        SupplementaryFile.id == request.supplementary_file_id,
+        SupplementaryFile.literature_id == paper_id,
+    ).first()
+    
+    if not supp_file:
+        raise HTTPException(status_code=404, detail="Supplementary file not found for this paper")
+    
+    # Update linked dataset
+    supp_file.linked_dataset_id = request.dataset_id
+    db.commit()
+    
+    logger.info(
+        "[PAPERS_API] Linked supplementary file %s to dataset %s",
+        request.supplementary_file_id,
+        request.dataset_id,
+    )
+    
+    return LinkDatasetResponse(
+        linked=True,
+        supplementary_file_id=request.supplementary_file_id,
+        dataset_id=request.dataset_id,
     )
 

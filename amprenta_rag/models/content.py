@@ -200,5 +200,64 @@ class LiteratureCritique(Base):
     created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
 
 
-__all__ = ["Literature", "Email", "RAGChunk", "PaperCitation", "LiteratureCritique"]
+class PublicationExtraction(Base):
+    """Extracted experiment data from scientific publication."""
+
+    __tablename__ = "publication_extractions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    literature_id = Column(UUID(as_uuid=True), ForeignKey("literature.id"), nullable=False, index=True)
+    
+    # Experiment metadata
+    experiment_type = Column(String(200), nullable=False)
+    cell_line = Column(String(200), nullable=True)
+    treatment = Column(String(500), nullable=True)
+    concentration = Column(String(100), nullable=True)
+    timepoint = Column(String(100), nullable=True)
+    replicate_count = Column(Integer, nullable=True)
+    measured_entities = Column(ARRAY(String), nullable=True)
+    key_findings = Column(Text, nullable=True)
+    
+    # Extraction metadata
+    extraction_confidence = Column(Integer, nullable=True)  # 0-100
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    literature: Mapped["Literature"] = relationship(foreign_keys=[literature_id])
+
+
+class SupplementaryFile(Base):
+    """Supplementary data file associated with a publication."""
+
+    __tablename__ = "supplementary_files"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    literature_id = Column(UUID(as_uuid=True), ForeignKey("literature.id"), nullable=False, index=True)
+    
+    # File metadata
+    filename = Column(String(500), nullable=False)
+    file_type = Column(String(50), nullable=False)  # csv, excel
+    schema_type = Column(String(100), nullable=True)  # gene_expression, compound_activity, etc.
+    
+    # Data structure
+    row_count = Column(Integer, nullable=True)
+    columns = Column(ARRAY(String), nullable=True)
+    data = Column(JSON, nullable=True)  # Stores first 100 rows
+    
+    # Dataset linking
+    linked_dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=True, index=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    literature: Mapped["Literature"] = relationship(foreign_keys=[literature_id])
+
+
+__all__ = [
+    "Literature",
+    "Email",
+    "RAGChunk",
+    "PaperCitation",
+    "LiteratureCritique",
+    "PublicationExtraction",
+    "SupplementaryFile",
+]
 
