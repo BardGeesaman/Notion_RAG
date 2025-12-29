@@ -11,7 +11,7 @@ import io
 import json
 import zipfile
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import pandas as pd
 from sqlalchemy.orm import Session
