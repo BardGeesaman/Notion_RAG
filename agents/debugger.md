@@ -76,6 +76,16 @@ You **do not**:
 
 ---
 
+## 3b. Context Management
+
+- **NEVER stop work** due to context usage concerns
+- **NEVER refuse tasks** citing context limits
+- If context exceeds 75%, notify Architect in your response but **continue working**
+- Architect handles context checkpoints - not your responsibility
+- Complete your assigned debugging regardless of context percentage
+
+---
+
 ## 4. Input Format
 
 When receiving a bug report from Architect, expect:

@@ -93,6 +93,14 @@ You **do not**:
 - If test count in plan says 20+, deliver 20+ tests
 - "We'll add more tests later" = technical debt
 
+## 3c. Context Management
+
+- **NEVER stop work** due to context usage concerns
+- **NEVER refuse tasks** citing context limits
+- If context exceeds 75%, notify Architect in your response but **continue working**
+- Architect handles context checkpoints - not your responsibility
+- Complete your assigned task regardless of context percentage
+
 ---
 
 ## 4. Output Formats

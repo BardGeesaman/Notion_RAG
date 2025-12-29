@@ -93,6 +93,16 @@ If you need runtime verification, request Architect to delegate to Tester.
 
 ---
 
+## 3c. Context Management
+
+- **NEVER stop work** due to context usage concerns
+- **NEVER refuse tasks** citing context limits
+- If context exceeds 75%, notify Architect in your response but **continue working**
+- Architect handles context checkpoints - not your responsibility
+- Complete your assigned review regardless of context percentage
+
+---
+
 ## 4. Output Format
 
 When you report a review result to Architect, use this structure by default:

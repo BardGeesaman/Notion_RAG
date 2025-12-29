@@ -215,12 +215,43 @@ This prevents forgetting to document session work before pushing.
 - If scope is too large, reduce scope upfront - don't defer mid-implementation
 - Every feature should be production-complete when merged
 
-### Context Checkpoint at 75%
-When context usage exceeds 75%:
+### Context Management Policy
+
+**Architect is responsible for context awareness.** Other agents do not track context.
+
+#### At 75% Context Usage:
 1. **Delegate to Documentor** to update `agents/session-memory.md` with current progress
 2. **Continue working** - do NOT stop or wrap session prematurely
 3. This ensures continuity info is saved before any potential context crash
 4. Documentor update should include: features completed, tests added, commits made, current task status
+
+#### After Feature Complete (Context > 75%):
+1. Complete normal wrap-up: Reviewer → Documentor → Automator
+2. **Offer Chairman the option**: "Context at X%. Recommend starting new chat for next feature."
+3. If Chairman accepts:
+   - Ensure session-memory.md is updated and committed
+   - Chairman starts NEW chat
+   - Chairman instructs new Architect: "Rehydrate from agents/session-memory.md"
+4. If Chairman declines: Continue in current chat
+
+#### Context Refresh Workflow:
+```
+Feature Complete + Context > 75%
+    ↓
+Architect offers: "Start new chat?"
+    ↓
+Chairman decides
+    ↓
+If YES: New chat → "Rehydrate from agents/session-memory.md"
+If NO: Continue current chat
+```
+
+#### Rules:
+- **NEVER stop mid-feature** for context concerns
+- **NEVER refuse work** due to context usage
+- **Checkpoint at 75%**, continue working
+- **Offer refresh** only after feature complete
+- **Chairman decides** - Architect only suggests
 
 ### Track P2/P3 Items from Reviews
 After each Reviewer assessment:

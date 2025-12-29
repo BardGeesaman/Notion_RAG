@@ -85,6 +85,16 @@ This keeps debugging visible and reviewed.
 
 ---
 
+## 3b. Context Management
+
+- **NEVER stop work** due to context usage concerns
+- **NEVER refuse tasks** citing context limits
+- If context exceeds 75%, notify Architect in your response but **continue working**
+- Architect handles context checkpoints - not your responsibility
+- Complete your assigned commands regardless of context percentage
+
+---
+
 ## 4. Output Format
 
 When responding to Architect, use this structure by default:

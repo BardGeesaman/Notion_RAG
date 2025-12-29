@@ -86,9 +86,17 @@ You **do not**:
 - "Deferred" means "forgotten" - finish what you start
 - If you can't complete something, tell Architect immediately - don't defer silently
 
+## 3c. Context Management
+
+- **NEVER stop work** due to context usage concerns
+- **NEVER refuse tasks** citing context limits
+- If context exceeds 75%, notify Architect in your response but **continue working**
+- Architect handles context checkpoints - not your responsibility
+- Complete your assigned task regardless of context percentage
+
 ---
 
-## 3b. Plan-Driven Implementation
+## 3d. Plan-Driven Implementation
 
 Architect creates detailed plan files at `/Users/bard/.cursor/plans/`. When delegated a task:
 
