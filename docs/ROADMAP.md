@@ -94,6 +94,11 @@ Simple status legend:
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
 ### Visualization & UI/UX
+- ✅ Compound Portfolio Dashboard (2025-12-29)
+  - Unified view of compound collection
+  - 4-tab layout: Overview, ADMET Summary, SAR Gaps, Recommendations
+  - Integration with Chemical Sketcher
+  - 4 API endpoints + 17 tests (6 service + 6 API + 5 E2E)
 - ✅ Scientist's Cockpit Dashboard (2025-12-29)
   - Unified scientist portal with workspace-aware context
   - Quick actions for common workflows (create experiment, upload dataset, register compound)

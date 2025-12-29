@@ -798,8 +798,14 @@ The system has reached **production maturity** with **50+ features**, **1133+ un
 
 *   **System Status**: Production-Ready with Cloud Deployment Capability. Code quality at 10/10 (Phase 1 & 2 complete).
 *   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (51+ pages), JupyterHub operational, AWS Terraform infrastructure.
-*   **Dashboard Pages**: 55+ pages including Scientist's Cockpit, Chemical Sketcher, High-Dimensional Projector, Publication Upload, and Analysis Pages. All major API routers now have UI coverage.
-*   **Test Coverage**: 1133+ tests (796 baseline + 337 session), ~80% coverage, E2E ~62%, API ~96%
+*   **Dashboard Pages**: 56+ pages including Compound Portfolio Dashboard, Scientist's Cockpit, Chemical Sketcher, High-Dimensional Projector, Publication Upload, and Analysis Pages. All major API routers now have UI coverage.
+*   **Test Coverage**: 1150+ tests (796 baseline + ~370 session), ~80% coverage, E2E ~62%, API ~96%
+*   **Compound Portfolio Dashboard**: COMPLETE (4 batches)
+    - Batch 1: portfolio_service.py (6 tests)
+    - Batch 2: portfolio.py router (6 tests)
+    - Batch 3: compound_portfolio.py UI (5 E2E tests)
+    - Batch 4: Documentation
+*   **Session totals**: 59 commits, ~370 tests
 *   **Test Suite Breakdown**:
     - Unit/integration tests: 796 baseline + 23 Semantic Scholar/OpenAlex + 29 Publication Extraction + 10 Projector
     - E2E tests: 107+ files (~60% coverage - was 36%) [+6 Publication + 6 Projector]
