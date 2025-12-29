@@ -111,6 +111,14 @@ Simple status legend:
   - 38 tests (6 service sharing + 8 service reviews + 10 API sharing + 14 API reviews)
 
 ### Testing & Development
+- ✅ UI Development for API Routers (2025-12-28)
+  - 4 new UI pages (Screening, Predictors, Scoring, Phenotypes)
+  - 40 tests (24 E2E + 16 API)
+  - 100% pass rate, zero skipped tests
+  - All 4 routers that lacked UI now have full dashboard pages
+  - Pages registered in PAGE_REGISTRY under Analysis Pages
+  - E2E coverage: ~56% → ~58% (additional 24 tests)
+  - API coverage: ~90% → ~92% (additional 16 tests)
 - ✅ Test Coverage Remediation (2025-12-28)
   - 25 new test files (15 E2E + 10 API)
   - 153 tests with 100% pass rate
