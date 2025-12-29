@@ -149,6 +149,16 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-29] – **IP & Patent Tracking Complete**:
+  - **Results**: 4 batches complete, 29 tests, 100% pass rate
+  - **Batch 1 - Database Models**: 5 models (InventionDisclosure, DisclosureInventor, PatentApplication, PatentClaim, IPLink) (6 tests)
+  - **Batch 2 - Service Layer**: 8 functions with status workflow validation (8 tests)
+  - **Batch 3 - API Endpoints**: 9 endpoints at /api/v1/ip/* (9 tests)
+  - **Batch 4 - UI Dashboard**: IP Portfolio page with 3 tabs (Disclosures/Patents/Evidence Links) (6 E2E tests)
+  - **Key Features**: Invention Disclosure Registry, Patent Portfolio Manager with jurisdiction tracking, Experiment-to-IP linking
+  - **Dashboard Integration**: Page registered in PAGE_REGISTRY under Compliance category
+  - **Zero @pytest.mark.skip decorators** - No Bandaids policy enforced
+
 * [2025-12-29] – **Electronic Signatures (21 CFR Part 11 Phase 2) Complete**:
   - **Results**: 3 batches complete, 15 tests, 100% pass rate
   - **Batch 1 - Signature Model & Service**: ElectronicSignature model + signatures.py service (6 tests)

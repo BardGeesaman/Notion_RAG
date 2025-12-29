@@ -278,10 +278,14 @@ Simple status legend:
   - Phase 2: Password confirmation for signing (COMPLETE)
   - Phase 2: Tamper detection via signature verification (COMPLETE)
   - 15 tests for electronic signatures (6 service + 5 API + 4 E2E)
-- ❌ IP & Patent Tracking
-  - Invention Disclosure Registry
-  - Patent Portfolio Manager
-  - Experiment-to-IP Linking
+- ✅ IP & Patent Tracking (2025-12-29)
+  - Invention Disclosure Registry with status workflow (draft → submitted → under_review → approved/rejected/abandoned)
+  - Patent Portfolio Manager with jurisdiction tracking (US, EU, PCT, CN, JP)
+  - Experiment-to-IP Linking (evidence linking between experiments/datasets/compounds and disclosures/patents)
+  - 5 database models (InventionDisclosure, DisclosureInventor, PatentApplication, PatentClaim, IPLink)
+  - 9 API endpoints at /api/v1/ip/*
+  - 3-tab UI (Disclosures/Patents/Evidence Links)
+  - 29 tests (6 model + 8 service + 9 API + 6 E2E) - 100% pass rate
 
 **Infrastructure & Operations:**
 - ❌ Job Queue System (Celery/Redis)
