@@ -153,6 +153,11 @@ Simple status legend:
   - Commits: b2dde2e, 8e5f81b, ede9605
 
 ### Analytics & Planning Tools
+- ✅ Data Export Wizard (2025-12-29)
+  - Multi-format export (CSV, Excel, JSON, ZIP)
+  - Dataset, experiment, compound exports
+  - Package builder with SHA256 checksums
+  - 4 API endpoints + 15 tests (7 engine + 4 API + 4 E2E)
 - ✅ Experiment Planner with Power Analysis (2025-12-29)
   - Statistical power calculations (t-test, ANOVA, correlation, chi-square)
   - Effect size estimation from historical data
