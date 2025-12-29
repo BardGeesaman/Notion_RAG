@@ -122,11 +122,11 @@ def render_structure_search_tab() -> None:
         try:
             with st.spinner(f"Performing {search_type.lower()} search..."):
                 if search_type == "Substructure":
-                    from amprenta_rag.chemistry.search import substructure_search
+                    from amprenta_rag.chemistry.structure_search import substructure_search
                     
                     results = substructure_search(search_smiles, limit=50)
                 else:
-                    from amprenta_rag.chemistry.search import similarity_search
+                    from amprenta_rag.chemistry.structure_search import similarity_search
                     
                     results = similarity_search(search_smiles, threshold=threshold, limit=50)
                 
