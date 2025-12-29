@@ -319,7 +319,7 @@ PAGE_GROUPS = {
     "Omics": ["Single-Cell Viewer", "CRISPR Analysis", "Variant Analysis", "Connectivity Map", "Biomarker Discovery"],
     "ML/Predictive": ["Target QSAR", "MOA Inference", "Predictors", "Scoring", "Model Monitoring"],
     "Visualization": ["Projector", "Graph Explorer", "Pathway Map Viewer"],
-    "Notebooks": ["Notebook Generator", "Notebook Copilot", "Notebook Gallery", "Notebooks"],
+    "Notebooks": ["Notebook Co-Pilot", "Notebook Generator", "Notebook Gallery", "Notebooks"],
     "Pipelines": ["Nextflow Orchestrator", "Pipeline Runner", "Sync Monitor", "AI Extraction"],
     "Collaboration": ["Activity Feed", "Workspaces"],
     "Reports": ["Executive Digests", "Spectral Matching"],
