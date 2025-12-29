@@ -198,6 +198,11 @@ class AuditLog(Base):
     details = Column(JSON, nullable=True)  # Additional context
     ip_address = Column(String(50), nullable=True)
     timestamp = Column(DateTime, default=func.now(), index=True)
+    
+    # Checksum extension for data integrity
+    old_checksum = Column(String(64), nullable=True)
+    new_checksum = Column(String(64), nullable=True)
+    changes = Column(JSON, nullable=True)
 
     user: Mapped[Optional["User"]] = relationship(backref="audit_logs")
 
