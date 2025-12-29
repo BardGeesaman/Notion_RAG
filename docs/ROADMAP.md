@@ -111,9 +111,17 @@ Simple status legend:
   - 38 tests (6 service sharing + 8 service reviews + 10 API sharing + 14 API reviews)
 
 ### Testing & Development
+- ✅ Test Coverage Remediation (2025-12-28)
+  - 25 new test files (15 E2E + 10 API)
+  - 153 tests with 100% pass rate
+  - E2E coverage: 36% → ~56% (83 new tests covering Activity Feed, Digest Manager, Model Monitoring, MOA Inference, Biomarker Discovery, AI Extraction, Sync Monitor, Programs, Datasets, Experiments, Review Queue, Notebook Generator, Notebook Copilot, Nextflow Orchestrator, Pipeline Runner)
+  - API coverage: 71% → ~90% (68 new tests covering digests, extraction, sync, automl, batch, pathways, protocols, quality, reports, scoring)
+  - Zero skipped tests (No Bandaids policy enforced)
+  - Technical debt cleaned: 29 networkidle → domcontentloaded replacements
+  - Bug fixed: pathways.py endpoint List[UUID] query parameter
 - ✅ Comprehensive Test Data Seeding Suite (all domains, size presets, deterministic)
 - ✅ Phase 2 Code Quality (2025-12-19): ruff.toml config, 6,252 whitespace fixes, 213 F401 fixes, 22 E712 fixes, model re-exports restored
-- ✅ Test Suite: 796 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker, in CI)
+- ✅ Test Suite Baseline: 796 unit/integration passed, 32 skipped, 76 E2E tests (requires_server marker, in CI)
 - ✅ Playwright E2E Separation (2025-12-19): chromium installed, server-dependent tests marked and deselected from default runs
 - ✅ Mypy Type Checking Setup (2025-12-19): gradual typing with strict API layer, 54% error reduction (597→273), type stubs installed
 - ✅ Code Quality Optimization (2025-12-21): 70% coverage achieved, type ignores reduced 69%, pre-commit hooks, Bandit security scanning, E2E tests in CI

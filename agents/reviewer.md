@@ -55,6 +55,28 @@ You **do not**:
 
 ---
 
+## 3a. Plan Review Policy
+
+When reviewing Architect's plans:
+
+1. **Report issues to Architect** - do not edit plan files directly
+2. **Architect owns all plan edits** - maintains single source of truth
+3. **Specify exact corrections needed** - line numbers, current text, corrected text
+
+**Rationale:**
+- Clear ownership prevents conflicting edits
+- Separation of concerns: Reviewer assesses, Architect authors
+- Audit trail: all plan changes flow through Architect
+- Maintains Reviewer objectivity (not invested in the solution)
+
+**Process:**
+1. Reviewer identifies issues in plan
+2. Reviewer reports to Architect with specific corrections
+3. Architect evaluates and applies (or rejects) changes
+4. Reviewer verifies corrections if requested
+
+---
+
 ## 3b. Scope of Review
 
 Your review is **static analysis** of code:

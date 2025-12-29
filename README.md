@@ -316,8 +316,15 @@ python scripts/check_dataset_quality.py
 
 ```
 amprenta_rag/
-├── clients/              # API client wrappers (OpenAI, Pinecone)
+├── api/                  # FastAPI service layer
+│   ├── routers/         # API endpoints (programs, datasets, compounds, etc.)
+│   ├── schemas.py       # Pydantic request/response models
+│   └── main.py          # FastAPI app
+├── clients/              # API client wrappers (OpenAI, pgvector)
 ├── config.py             # Configuration management
+├── database/             # PostgreSQL models and session
+│   ├── models.py        # SQLAlchemy models
+│   └── session.py       # Database session management
 ├── ingestion/            # Data ingestion pipelines
 │   ├── lipidomics/      # Lipidomics ingestion
 │   ├── metabolomics/    # Metabolomics ingestion
@@ -336,12 +343,19 @@ amprenta_rag/
 │   ├── dataset_comparison.py
 │   ├── pathway_analysis.py
 │   └── ...
+├── tests/                # Test suite
+│   ├── api/             # API endpoint tests
+│   ├── e2e/             # End-to-end tests
+│   └── ...
 └── utils/                # Utilities
     ├── error_handling.py
     ├── performance.py
     └── ...
 
-scripts/                  # Command-line scripts
+scripts/                  # Command-line scripts & dashboard
+├── dashboard/           # Streamlit dashboard
+│   ├── pages/          # 40+ dashboard pages
+│   └── app.py          # Dashboard entry point
 ├── ingest_lipidomics.py
 ├── ingest_metabolomics.py
 ├── batch_ingest_omics.py
@@ -569,29 +583,14 @@ Common issues and quick fixes:
 
 ## Roadmap
 
-### Completed ✅
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the current project roadmap.
 
-- Multi-omics ingestion (lipidomics, metabolomics, proteomics, transcriptomics)
-- Multi-omics signature support
-- Automated signature discovery
-- Cross-omics reasoning
-- Batch ingestion framework
-- Performance optimization (feature caching)
-- Production hardening
-
-### In Progress 🚧
-
-- Enhanced cross-omics reasoning
-- Visualization dashboards
-- Advanced analytics
-
-### Planned 📋
-
-- Architecture evolution (Postgres + FastAPI)
-- Enhanced batch ingestion features
-- Extended testing suite
-
-📖 **See [Strategic Roadmap](context/UNIFIED_STRATEGIC_ROADMAP.md) for full roadmap**
+**Recent Highlights (December 2025):**
+- Scientific Paper Ingestion (PubMed, bioRxiv)
+- Activity Feed & Notifications
+- Multi-Objective Bayesian Optimization
+- 40+ Streamlit dashboard pages
+- Comprehensive E2E test coverage
 
 ## Contributing
 
@@ -617,4 +616,4 @@ Built for ceramide/sphingolipid neurodegeneration research, with extensibility t
 
 ---
 
-**Last Updated**: 2025-01-XX | **Version**: 2.0.0
+**Last Updated**: 2025-12-28 | **Version**: 2.0.0
