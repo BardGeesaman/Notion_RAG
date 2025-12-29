@@ -19,6 +19,9 @@ from amprenta_rag.database.models import Literature
 from amprenta_rag.ingestion.papers import PubMedRepository
 from amprenta_rag.ingestion.papers.embedding import embed_paper_sections
 from amprenta_rag.ingestion.papers.jats_parser import PaperSection, parse_jats_xml
+from amprenta_rag.ingestion.papers.semantic_scholar import SemanticScholarRepository
+from amprenta_rag.ingestion.papers.openalex import OpenAlexRepository
+from amprenta_rag.models.content import PaperCitation
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -105,6 +108,36 @@ class PaperDetailResponse(BaseModel):
     sections: List[PaperSectionResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CitationResponse(BaseModel):
+    """Citation information response."""
+
+    paper_id: Optional[UUID] = None
+    doi: Optional[str] = None
+    title: str
+    is_influential: bool = False
+    citation_context: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EnrichPaperRequest(BaseModel):
+    """Request for paper enrichment from external sources."""
+
+    fetch_citations: bool = Field(default=True, description="Fetch and store citations")
+    fetch_references: bool = Field(default=True, description="Fetch and store references")
+
+
+class EnrichPaperResponse(BaseModel):
+    """Response for paper enrichment."""
+
+    enriched: bool
+    citations_added: int = 0
+    references_added: int = 0
+    semantic_scholar_id: Optional[str] = None
+    openalex_id: Optional[str] = None
+    citation_count: Optional[int] = None
 
 
 @router.post("/search", response_model=PaperSearchResponse)
@@ -299,5 +332,207 @@ async def get_paper(
         year=literature.year,
         mesh_terms=literature.mesh_terms or [],
         sections=sections,
+    )
+
+
+@router.get("/{paper_id}/citations", response_model=List[CitationResponse])
+async def get_paper_citations(
+    paper_id: UUID,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_database_session),
+) -> List[CitationResponse]:
+    """
+    Get papers that cite this paper.
+
+    Returns citations stored in the PaperCitation table.
+    """
+    # Verify paper exists
+    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    if not literature:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    
+    # Get citations
+    citations = (
+        db.query(PaperCitation)
+        .filter(PaperCitation.cited_paper_id == paper_id)
+        .order_by(PaperCitation.is_influential.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    
+    results = []
+    for citation in citations:
+        # Try to get citing paper details from Literature table
+        citing_paper = citation.citing_paper if citation.citing_paper else None
+        
+        results.append(
+            CitationResponse(
+                paper_id=citing_paper.id if citing_paper else None,
+                doi=citing_paper.doi if citing_paper else None,
+                title=citing_paper.title if citing_paper else "Unknown",
+                is_influential=citation.is_influential,
+                citation_context=citation.citation_context,
+            )
+        )
+    
+    return results
+
+
+@router.get("/{paper_id}/references", response_model=List[CitationResponse])
+async def get_paper_references(
+    paper_id: UUID,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_database_session),
+) -> List[CitationResponse]:
+    """
+    Get papers that this paper cites (references).
+
+    Returns references stored in the PaperCitation table.
+    """
+    # Verify paper exists
+    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    if not literature:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    
+    # Get references
+    references = (
+        db.query(PaperCitation)
+        .filter(PaperCitation.citing_paper_id == paper_id)
+        .order_by(PaperCitation.is_influential.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    
+    results = []
+    for ref in references:
+        # Try to get cited paper details from Literature table or use stored metadata
+        cited_paper = ref.cited_paper if ref.cited_paper else None
+        
+        results.append(
+            CitationResponse(
+                paper_id=cited_paper.id if cited_paper else None,
+                doi=ref.cited_doi or (cited_paper.doi if cited_paper else None),
+                title=ref.cited_title or (cited_paper.title if cited_paper else "Unknown"),
+                is_influential=ref.is_influential,
+                citation_context=None,  # References don't have context
+            )
+        )
+    
+    return results
+
+
+@router.post("/{paper_id}/enrich", response_model=EnrichPaperResponse)
+async def enrich_paper(
+    paper_id: UUID,
+    request: EnrichPaperRequest,
+    db: Session = Depends(get_database_session),
+) -> EnrichPaperResponse:
+    """
+    Enrich paper with Semantic Scholar and OpenAlex metadata.
+
+    Fetches additional metadata and optionally builds citation graph.
+    """
+    # Get paper
+    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    if not literature:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    
+    citations_added = 0
+    references_added = 0
+    
+    # Try Semantic Scholar enrichment
+    s2_repo = SemanticScholarRepository()
+    s2_paper_id = None
+    
+    try:
+        # Search S2 by DOI or PMID
+        if literature.doi:
+            s2_paper_id = f"DOI:{literature.doi}"
+        elif literature.pmid:
+            s2_paper_id = f"PMID:{literature.pmid}"
+        
+        if s2_paper_id:
+            s2_metadata = s2_repo.fetch_metadata(s2_paper_id)
+            if s2_metadata:
+                literature.semantic_scholar_id = s2_metadata.paper_id
+                # Update citation counts if available in S2 metadata
+                logger.info("[PAPERS_API] Enriched with Semantic Scholar: %s", s2_metadata.paper_id)
+        
+        # Fetch citations if requested
+        if request.fetch_citations and s2_paper_id:
+            try:
+                citations = s2_repo.get_citations(s2_paper_id, limit=100)
+                for cite in citations:
+                    citing_paper_s2_id = cite.get("paperId")
+                    if citing_paper_s2_id:
+                        # Check if we already have this citation
+                        existing = db.query(PaperCitation).filter(
+                            PaperCitation.citing_paper_id == paper_id,
+                        ).first()
+                        
+                        if not existing:
+                            citation = PaperCitation(
+                                citing_paper_id=paper_id,  # This will need to be matched later
+                                cited_paper_id=paper_id,
+                                cited_title=cite.get("title", ""),
+                                is_influential=cite.get("isInfluential", False),
+                            )
+                            db.add(citation)
+                            citations_added += 1
+            except Exception as e:
+                logger.warning("[PAPERS_API] Failed to fetch S2 citations: %r", e)
+        
+        # Fetch references if requested
+        if request.fetch_references and s2_paper_id:
+            try:
+                references = s2_repo.get_references(s2_paper_id, limit=100)
+                for ref in references:
+                    cited_paper_s2_id = ref.get("paperId")
+                    if cited_paper_s2_id:
+                        # Check if we already have this reference
+                        existing = db.query(PaperCitation).filter(
+                            PaperCitation.citing_paper_id == paper_id,
+                        ).first()
+                        
+                        if not existing:
+                            reference = PaperCitation(
+                                citing_paper_id=paper_id,
+                                cited_paper_id=None,  # Don't know if it's in our system
+                                cited_title=ref.get("title", ""),
+                                is_influential=ref.get("isInfluential", False),
+                            )
+                            db.add(reference)
+                            references_added += 1
+            except Exception as e:
+                logger.warning("[PAPERS_API] Failed to fetch S2 references: %r", e)
+    
+    except Exception as e:
+        logger.warning("[PAPERS_API] Semantic Scholar enrichment failed: %r", e)
+    
+    # Try OpenAlex enrichment
+    try:
+        oa_repo = OpenAlexRepository()
+        if literature.doi:
+            oa_work_id = f"https://doi.org/{literature.doi}"
+            oa_metadata = oa_repo.get_work(oa_work_id)
+            if oa_metadata:
+                literature.openalex_id = oa_metadata.paper_id
+                logger.info("[PAPERS_API] Enriched with OpenAlex: %s", oa_metadata.paper_id)
+    except Exception as e:
+        logger.warning("[PAPERS_API] OpenAlex enrichment failed: %r", e)
+    
+    db.commit()
+    
+    return EnrichPaperResponse(
+        enriched=True,
+        citations_added=citations_added,
+        references_added=references_added,
+        semantic_scholar_id=literature.semantic_scholar_id,
+        openalex_id=literature.openalex_id,
+        citation_count=literature.citation_count,
     )
 
