@@ -35,9 +35,9 @@ def render_audit_trail_page() -> None:
     require_auth()
     
     st.header("🔍 Audit Trail")
-    st.caption("View audit history and verify data integrity with checksums.")
+    st.caption("View audit history, verify data integrity, and manage electronic signatures.")
     
-    tab1, tab2, tab3 = st.tabs(["Entity Audit", "Recent Activity", "Integrity Check"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Entity Audit", "Recent Activity", "Integrity Check", "Signatures"])
     
     with tab1:
         render_entity_audit_tab()
@@ -47,6 +47,9 @@ def render_audit_trail_page() -> None:
     
     with tab3:
         render_integrity_check_tab()
+    
+    with tab4:
+        render_signatures_tab()
 
 
 def render_entity_audit_tab() -> None:
@@ -158,6 +161,140 @@ def render_integrity_check_tab() -> None:
             st.error("Invalid JSON format")
         except Exception as e:
             st.error(f"Verification failed: {e}")
+
+
+def render_signatures_tab() -> None:
+    """Render electronic signatures tab."""
+    st.subheader("Electronic Signatures")
+    
+    # Sign action form
+    st.markdown("### Create Signature")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        entity_type = st.selectbox(
+            "Entity Type",
+            options=["Dataset", "Experiment", "Compound", "Protocol"],
+            key="sig_entity_type",
+        )
+    
+    with col2:
+        entity_id = st.text_input("Entity ID", placeholder="UUID", key="sig_entity_id")
+    
+    action = st.selectbox(
+        "Action",
+        options=["Approve", "Reject", "Review", "Certify"],
+        key="sig_action",
+    )
+    
+    meaning = st.text_input(
+        "Meaning",
+        placeholder="e.g., I approve this compound for synthesis",
+        key="sig_meaning",
+    )
+    
+    password = st.text_input(
+        "Password Confirmation",
+        type="password",
+        placeholder="Enter your password to sign",
+        key="sig_password",
+    )
+    
+    user_id = st.text_input(
+        "User ID",
+        placeholder="Your user UUID",
+        key="sig_user_id",
+        help="Get from your profile",
+    )
+    
+    if st.button("✍️ Sign", type="primary", disabled=not all([entity_id, meaning, password, user_id])):
+        try:
+            result = _api_post(
+                "/api/v1/signatures/sign",
+                {
+                    "user_id": user_id,
+                    "action": action.lower(),
+                    "entity_type": entity_type.lower(),
+                    "entity_id": entity_id,
+                    "meaning": meaning,
+                    "password": password,
+                },
+            )
+            
+            st.success(f"✅ Signature created! ID: {result.get('signature_id')}")
+            st.code(result.get("signature_hash", ""), language=None)
+            
+            # Refresh signature list
+            st.session_state.pop("signature_list", None)
+            
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                st.error("❌ Authentication failed - incorrect password")
+            else:
+                st.error(f"Failed to create signature: {e}")
+        except Exception as e:
+            st.error(f"Failed to create signature: {e}")
+    
+    # Signature history
+    st.markdown("---")
+    st.markdown("### Signature History")
+    
+    col1, col2, col3 = st.columns([2, 2, 1])
+    
+    with col1:
+        hist_entity_type = st.selectbox(
+            "Entity Type",
+            options=["Dataset", "Experiment", "Compound"],
+            key="hist_entity_type",
+        )
+    
+    with col2:
+        hist_entity_id = st.text_input("Entity ID", key="hist_entity_id")
+    
+    with col3:
+        if st.button("Load Signatures"):
+            if hist_entity_id:
+                try:
+                    sigs = _api_get(f"/api/v1/signatures/{hist_entity_type.lower()}/{hist_entity_id}")
+                    st.session_state["signature_list"] = sigs
+                except Exception as e:
+                    st.error(f"Failed to load signatures: {e}")
+    
+    # Display signatures
+    signature_list = st.session_state.get("signature_list")
+    
+    if signature_list:
+        if signature_list:
+            import pandas as pd
+            
+            df = pd.DataFrame(signature_list)
+            
+            # Truncate signature hash for display
+            if "signature_hash" in df.columns:
+                df["signature_hash"] = df["signature_hash"].str[:16] + "..."
+            
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            
+            # Verify signature
+            if signature_list:
+                sig_ids = [s.get("id") for s in signature_list if s.get("id")]
+                if sig_ids:
+                    selected_sig_id = st.selectbox("Select signature to verify", sig_ids)
+                    
+                    if st.button("🔒 Verify Signature"):
+                        try:
+                            verify_result = _api_get(f"/api/v1/signatures/{selected_sig_id}/verify")
+                            
+                            if verify_result.get("valid"):
+                                st.success("✅ Signature is valid and untampered")
+                            else:
+                                st.error("❌ Signature verification failed - may be tampered")
+                            
+                        except Exception as e:
+                            st.error(f"Verification failed: {e}")
+        else:
+            st.info("No signatures found for this entity")
 
 
 if __name__ == "__main__":
