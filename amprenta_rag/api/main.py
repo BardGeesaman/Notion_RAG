@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from amprenta_rag.api.routers import (
+    audit,
     datasets,
     export,
     planner,
@@ -174,6 +175,7 @@ app.include_router(projector.router, prefix="/api/v1", tags=["Projector"])
 app.include_router(portfolio.router, prefix="/api/v1", tags=["Portfolio"])
 app.include_router(planner.router, prefix="/api/v1", tags=["Planner"])
 app.include_router(export.router, prefix="/api/v1", tags=["Export"])
+app.include_router(audit.router, prefix="/api/v1", tags=["Audit"])
 
 
 @app.get("/")
