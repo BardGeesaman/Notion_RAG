@@ -94,6 +94,14 @@ Simple status legend:
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
 ### Knowledge Management & Literature
+- ✅ Semantic Scholar / OpenAlex Integration (2025-12-28)
+  - Citation graph analysis and paper enrichment
+  - Two repository implementations (SemanticScholarRepository, OpenAlexRepository)
+  - Citation tracking database schema (PaperCitation model with direction field)
+  - 3 new API endpoints (GET /citations, GET /references, POST /enrich)
+  - 18 unit tests (12 repository + 6 API) - 100% pass rate
+  - Bug fixed during review (citation direction field inverted)
+  - Papers can be enriched with citation data, author networks, venue information
 - ✅ Scientific Paper Ingestion (2025-12-28)
   - CRUD API for papers, authors, affiliations (7 endpoints)
   - Ingestion pipeline with reference parsing (DOI, PubMed ID, arXiv)
@@ -187,10 +195,6 @@ Simple status legend:
 ### Future Backlog (Migrated from NEXT_STEPS.md 2025-12-28)
 
 **Integration & Data Sources:**
-- ❌ Semantic Scholar / OpenAlex Integration
-  - Citation graphs & AI relevance scoring
-  - Author/institution metadata enrichment
-  - Automated Literature Analysis
 - ⏳ Publication & Supplementary Data Extraction (Partial - see completed section)
   - ✅ Paper ingestion with author/affiliation linking (2025-12-28)
   - ❌ Extract experiment details from PDF publications

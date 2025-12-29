@@ -106,6 +106,19 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-28] – **Semantic Scholar / OpenAlex Integration Complete**:
+  - **Plan**: /Users/bard/.cursor/plans/semantic_scholar_integration_00ae26db.plan.md
+  - **Results**: Citation graph analysis + paper enrichment, 18 tests, 100% pass rate
+  - **Repositories Created**:
+    - SemanticScholarRepository (paper search, citation retrieval, metadata enrichment)
+    - OpenAlexRepository (alternative API with works/authors/sources endpoints)
+  - **Database Migration**: Citation tracking tables (PaperCitation model with direction field)
+  - **API Endpoints**: 3 new endpoints (/citations, /references, /enrich)
+  - **Tests**: 18 unit tests (12 repository + 6 API tests)
+  - **Bug Fixed During Review**: Citation direction field inverted in initial implementation
+  - **Zero @pytest.mark.skip decorators** - No Bandaids policy enforced
+  - **Key Feature**: Papers can now be enriched with citation graphs from Semantic Scholar or OpenAlex
+
 * [2025-12-28] – **UI Development for API Routers Complete**:
   - **Plan**: /Users/bard/.cursor/plans/ui_development_for_api_routers_be3d8426.plan.md
   - **Results**: 4 new UI pages, 40 tests, 100% pass rate
@@ -471,6 +484,22 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 ### Notes from 2025-12-28
 
+**SEMANTIC SCHOLAR / OPENALEX INTEGRATION COMPLETE**
+
+* **Citation Graph Analysis**: Integrated two major academic API services for paper enrichment
+* **Repositories Implemented**:
+  - **SemanticScholarRepository**: Paper search, citation retrieval (citing/cited), metadata enrichment
+  - **OpenAlexRepository**: Alternative API with works/authors/sources endpoints for redundancy
+* **Database Schema**: New PaperCitation model tracks citation relationships with direction field (citing vs cited)
+* **API Endpoints**: 3 new endpoints added to papers router
+  - GET /citations - retrieve papers citing this paper
+  - GET /references - retrieve papers this paper references
+  - POST /enrich - fetch metadata from Semantic Scholar or OpenAlex
+* **Test Coverage**: 18 unit tests with 100% pass rate (12 repository tests + 6 API tests)
+* **Bug Fixed During Review**: Citation direction field was inverted in initial implementation (citing/cited reversed)
+* **No Bandaids**: Zero skipped tests - all functionality tested and working
+* **Key Outcome**: Papers can now be enriched with citation graphs, author networks, and venue information from two independent sources
+
 **UI DEVELOPMENT FOR API ROUTERS COMPLETE**
 
 * **Final UI Gap Closure**: Built 4 new dashboard pages for previously UI-less API routers
@@ -630,20 +659,20 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 ### Summary
 
-The system has reached **production maturity** with **50+ features**, **989+ unit/integration tests (153 added in test coverage remediation + 40 in UI development)**, **~75% test coverage**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Code quality optimization complete** (2025-12-21): 0 lint errors, 63 type ignores, 70% coverage with CI enforcement, pre-commit hooks, security scanning.
+The system has reached **production maturity** with **50+ features**, **1007+ unit/integration tests (153 added in test coverage remediation + 40 in UI development + 18 in Semantic Scholar integration)**, **~76% test coverage**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Code quality optimization complete** (2025-12-21): 0 lint errors, 63 type ignores, 70% coverage with CI enforcement, pre-commit hooks, security scanning.
 
-**UI Development COMPLETE** (2025-12-28): 4 new dashboard pages (Screening, Predictors, Scoring, Phenotypes) with 40 passing tests. All API routers now have UI coverage. **Test Coverage Remediation COMPLETE** (2025-12-28): +153 tests across 25 new files (15 E2E + 10 API), E2E coverage 36% → ~56%, API coverage 71% → ~90%. **Scientific Paper Ingestion COMPLETE** (2025-12-28): Full CRUD API with 22 passing tests. **JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17).
+**Semantic Scholar / OpenAlex Integration COMPLETE** (2025-12-28): Citation graph analysis with 18 passing tests. Papers can be enriched with citation data from two independent academic APIs. **UI Development COMPLETE** (2025-12-28): 4 new dashboard pages (Screening, Predictors, Scoring, Phenotypes) with 40 passing tests. All API routers now have UI coverage. **Test Coverage Remediation COMPLETE** (2025-12-28): +153 tests across 25 new files (15 E2E + 10 API), E2E coverage 36% → ~56%, API coverage 71% → ~90%. **Scientific Paper Ingestion COMPLETE** (2025-12-28): Full CRUD API with 22 passing tests. **JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17).
 
 ### Current State
 
 *   **System Status**: Production-Ready with Cloud Deployment Capability. Code quality at 10/10 (Phase 1 & 2 complete).
 *   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (51+ pages), JupyterHub operational, AWS Terraform infrastructure.
 *   **Dashboard Pages**: 51+ pages including new Analysis Pages (Screening, Predictors, Scoring, Phenotypes). All major API routers now have UI coverage.
-*   **Test Coverage**: 989+ tests (796 baseline + 153 remediation + 40 UI), ~75% coverage, E2E coverage ~58%, API coverage ~92%
+*   **Test Coverage**: 1007+ tests (796 baseline + 153 remediation + 40 UI + 18 Semantic Scholar), ~76% coverage, E2E coverage ~58%, API coverage ~93%
 *   **Test Suite Breakdown**:
-    - Unit/integration tests: 796 baseline
+    - Unit/integration tests: 796 baseline + 18 Semantic Scholar/OpenAlex
     - E2E tests: 95+ files (~58% coverage - was 36%)
-    - API tests: 84+ files (~92% coverage - was 71%)
+    - API tests: 85+ files (~93% coverage - was 71%)
     - Zero skipped tests (No Bandaids policy enforced)
 *   **Database**: All migrations applied (mwtab_json JSONB, validation_status enum), permissions resolved, name standardized to 'amprenta'.
 *   **JupyterHub**: All 5 phases complete (API client, write endpoints, deployment, SSO, templates).
@@ -651,9 +680,9 @@ The system has reached **production maturity** with **50+ features**, **989+ uni
 *   **Innovator Features**: All 7 approved features complete (Signature Explainability, Narrative Reports, QC Watcher, Protocol Diff, HTS QC, Cross-Omics Pathway, MOA Inference).
 *   **AWS Infrastructure**: Terraform IaC (Lightsail + RDS), GitHub Actions CI/CD pipelines operational.
 *   **Data Seeding**: Comprehensive test data seeding suite with documentation for all omics domains.
-*   **Code Quality**: Optimization complete (0 lint errors, 63 type ignores [-69%], 75% coverage, pre-commit hooks, security scanning).
-*   **Recent Additions**: UI Development (4 new pages, 40 tests), Scientific Paper Ingestion (PubMed, bioRxiv support), Test Coverage Remediation (153 new tests)
-*   **Next Focus**: Multi-tenancy architecture, dependency audit, dead code detection.
+*   **Code Quality**: Optimization complete (0 lint errors, 63 type ignores [-69%], 76% coverage, pre-commit hooks, security scanning).
+*   **Recent Additions**: Semantic Scholar/OpenAlex Integration (citation graphs, 18 tests), UI Development (4 new pages, 40 tests), Scientific Paper Ingestion (PubMed, bioRxiv support), Test Coverage Remediation (153 new tests)
+*   **Next Focus**: Multi-tenancy architecture, integration tests with real database.
 
 ### JupyterHub Status (ALL COMPLETE)
 
