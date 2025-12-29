@@ -114,7 +114,7 @@ def render_alerts_widget() -> None:
         notif_data = _api_get("/api/v1/notifications/count")
         
         if notif_data:
-            unread = notif_data.get("unread", 0)
+            unread = notif_data.get("unread_count", 0)
             
             if unread > 0:
                 st.warning(f"{unread} unread notifications")
