@@ -135,6 +135,7 @@ ALL_PAGES = [
     "Compound-Target Network",
     "Dose-Response Explorer",
     "Pathway Map Viewer",
+    "Compound Ranking",
     "AI Extraction",
     "Sync Monitor",
     "RAG Query",
