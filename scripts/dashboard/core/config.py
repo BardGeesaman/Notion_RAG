@@ -311,20 +311,21 @@ PAGE_REGISTRY = {
 
 # Navigation groups for organized sidebar
 PAGE_GROUPS = {
-    "Home": ["Cockpit"],
-    "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue"],
-    "Chemistry": ["Chemistry", "Chemical Sketcher", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network"],
+    "Home": ["Overview", "Cockpit", "Getting Started"],
+    "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue", "Discovery Workflow", "Discovery", "Repositories", "Search", "Features", "Signatures"],
+    "Chemistry": ["Chemistry", "Chemical Sketcher", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network", "SAR What-If", "Candidate Selection"],
     "HTS": ["HTS QC", "Dose-Response Explorer", "Screening"],
     "Structure": ["Protein Structures", "Binding Sites", "Docking Runs", "Docking Triage", "Molecule Viewer"],
-    "Omics": ["Single-Cell Viewer", "CRISPR Analysis", "Variant Analysis", "Connectivity Map", "Biomarker Discovery"],
-    "ML/Predictive": ["Target QSAR", "MOA Inference", "Predictors", "Scoring", "Model Monitoring"],
-    "Visualization": ["Projector", "Graph Explorer", "Pathway Map Viewer"],
+    "Omics": ["Single-Cell Viewer", "CRISPR Analysis", "Variant Analysis", "Multi-Omics Integration", "Connectivity Map", "Biomarker Discovery", "Cross-Omics", "Cross-Omics Pathways", "Sphingolipid Imbalance"],
+    "ML/Predictive": ["Target QSAR", "MOA Inference", "Predictors", "Scoring", "Phenotypes", "Model Monitoring", "Model Registry", "AutoML Templates", "Experiment Optimizer"],
+    "Visualization": ["Projector", "Graph Explorer", "Pathway Map Viewer", "Visualizations", "Cytoscape Demo", "Entity Explorer", "Data Grid", "Genome Browser"],
     "Notebooks": ["Notebook Co-Pilot", "Notebook Generator", "Notebook Gallery", "Notebooks"],
-    "Pipelines": ["Nextflow Orchestrator", "Pipeline Runner", "Sync Monitor", "AI Extraction"],
+    "Pipelines": ["Nextflow Orchestrator", "Pipeline Runner", "Sync Monitor", "AI Extraction", "Batch Correction"],
+    "Analysis": ["Analysis Tools", "RAG Query", "Statistical Analysis", "Quality Checks", "Literature Analysis", "Compare", "Timeline", "Data Quality", "Coverage Map", "Feature Recurrence", "Evidence Report"],
     "Collaboration": ["Activity Feed", "Teams & Projects", "Variant Tracking"],
-    "Reports": ["Executive Digests", "Spectral Matching"],
-    "Admin": ["Company Settings"],
-    "Other": [],
+    "Reports": ["Executive Digests", "Spectral Matching", "Report History"],
+    "Admin": ["Company Settings", "Audit Logs", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion"],
+    "Other": ["Lab Notebook", "Sample Inventory", "Chat", "Evaluation Wizard", "Emails", "RAG Chunks", "Protocols", "Q&A Tracker", "Relationships", "Generic Assays"],
 }
 
 GROUP_ORDER = ["Home", "Discovery", "Chemistry", "HTS", "Structure", "Omics", "ML/Predictive", "Visualization", "Notebooks", "Pipelines", "Collaboration", "Reports", "Admin", "Other"]

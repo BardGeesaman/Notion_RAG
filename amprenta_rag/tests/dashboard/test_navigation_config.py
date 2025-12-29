@@ -39,6 +39,15 @@ class TestPageGroups:
         for group, pages in PAGE_GROUPS.items():
             for page in pages:
                 assert page in ALL_PAGES, f"Page '{page}' in group '{group}' not in ALL_PAGES"
+    
+    def test_all_pages_assigned_to_groups(self):
+        """Test that all pages in ALL_PAGES are assigned to groups."""
+        all_assigned = set()
+        for pages in PAGE_GROUPS.values():
+            all_assigned.update(pages)
+        
+        unassigned = set(ALL_PAGES) - all_assigned
+        assert len(unassigned) == 0, f"Unassigned pages: {sorted(unassigned)}"
 
 
 class TestGroupOrder:
