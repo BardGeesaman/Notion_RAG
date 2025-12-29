@@ -86,6 +86,7 @@ ADMIN_PAGES = [
 
 ALL_PAGES = [
     "Overview",
+    "Cockpit",
     "Getting Started",
     "Evaluation Wizard",
     "Chat",
@@ -191,6 +192,7 @@ ALL_PAGES = [
 # Mapping page name -> (module_path, function_name)
 PAGE_REGISTRY = {
     "Overview": ("scripts.dashboard.pages.overview", "render_overview_page"),
+    "Cockpit": ("scripts.dashboard.pages.cockpit", "render_cockpit_page"),
     "Workspaces": ("scripts.dashboard.pages.Workspaces", "render_workspaces_page"),
     "Getting Started": ("scripts.dashboard.pages.getting_started", "render_getting_started_page"),
     "Evaluation Wizard": ("scripts.dashboard.pages.evaluation_wizard", "render_evaluation_wizard"),
