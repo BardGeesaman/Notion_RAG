@@ -91,11 +91,30 @@ async def compute_projection(
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset not found")
         
-        # Placeholder: would need to load actual dataset matrix
-        # For now, create a random matrix
-        logger.warning("[PROJECTOR] Dataset loading not implemented - using placeholder")
-        np.random.seed(42)
-        data_matrix = np.random.randn(100, 20)
+        # Load feature matrix from dataset
+        feat_map = {}
+        for feat in dataset.features:
+            val = 1.0
+            ext = feat.external_ids or {}
+            if isinstance(ext, dict):
+                for key in ("log2FC", "log2fc", "value", "fold_change"):
+                    if key in ext and ext[key] is not None:
+                        try:
+                            val = float(ext[key])
+                        except Exception:
+                            pass
+                        break
+            feat_name = str(feat.name) if feat.name is not None else ""
+            if feat_name:
+                feat_map[feat_name] = val
+        
+        if not feat_map:
+            raise HTTPException(status_code=400, detail="Dataset has no feature data for projection")
+        
+        # Convert to matrix (single sample = the dataset's feature vector)
+        data_matrix = np.array([list(feat_map.values())])
+        
+        logger.info("[PROJECTOR] Loaded dataset with %d features", len(feat_map))
     else:
         # Use provided matrix
         data_matrix = np.array(request.matrix)

@@ -65,6 +65,13 @@ def render_projector_page() -> None:
             help="Dimensionality reduction algorithm",
         )
         
+        # Color-by selector
+        color_by = st.selectbox(
+            "Color By",
+            options=["None", "Index"],
+            help="Color points by metadata",
+        )
+        
         # Dimensionality
         n_components = st.radio("Dimensions", options=[2, 3], horizontal=True, index=0)
         
@@ -78,6 +85,9 @@ def render_projector_page() -> None:
         random_state = st.number_input("Random Seed", min_value=0, value=42, step=1)
         
         compute_button = st.button("🚀 Compute Projection", type="primary", disabled=not selected_dataset_id)
+        
+        # Store color setting
+        st.session_state["color_by_setting"] = color_by
     
     # Main area
     if compute_button and selected_dataset_id:
@@ -114,6 +124,8 @@ def render_projector_page() -> None:
         st.success(f"Projected {n_samples} samples using {algorithm_used.upper()} {'(cached)' if cached else ''}")
         
         # Create Plotly visualization
+        color_by_setting = st.session_state.get("color_by_setting", "None")
+        
         if n_components == 2:
             import plotly.express as px
             import pandas as pd
@@ -121,10 +133,17 @@ def render_projector_page() -> None:
             df = pd.DataFrame(coords, columns=["X", "Y"])
             df["Sample"] = [f"sample_{i}" for i in range(len(coords))]
             
+            # Add color column if requested
+            color_col = None
+            if color_by_setting == "Index":
+                df["Color"] = df.index
+                color_col = "Color"
+            
             fig = px.scatter(
                 df,
                 x="X",
                 y="Y",
+                color=color_col,
                 hover_data=["Sample"],
                 title=f"{algorithm_used.upper()} 2D Projection",
             )
@@ -137,11 +156,18 @@ def render_projector_page() -> None:
             df = pd.DataFrame(coords, columns=["X", "Y", "Z"])
             df["Sample"] = [f"sample_{i}" for i in range(len(coords))]
             
+            # Add color column if requested
+            color_col = None
+            if color_by_setting == "Index":
+                df["Color"] = df.index
+                color_col = "Color"
+            
             fig = px.scatter_3d(
                 df,
                 x="X",
                 y="Y",
                 z="Z",
+                color=color_col,
                 hover_data=["Sample"],
                 title=f"{algorithm_used.upper()} 3D Projection",
             )
