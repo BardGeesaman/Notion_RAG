@@ -12,7 +12,7 @@ pytestmark = pytest.mark.requires_server
 def _goto(page: Page, base_url: str) -> None:
     page.goto(f"{base_url}/?page=Company%20Settings")
     try:
-        page.wait_for_load_state("networkidle", timeout=15000)
+        page.wait_for_load_state("domcontentloaded")
     except Exception:
         page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(2500)

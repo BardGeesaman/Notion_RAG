@@ -18,7 +18,7 @@ def _goto_chemistry_page(page: Page, base_url: str) -> None:
     """Navigate to the chemistry page."""
     page.goto(f"{base_url}/?page=Chemistry")
     try:
-        page.wait_for_load_state("networkidle", timeout=15000)
+        page.wait_for_load_state("domcontentloaded")
     except Exception:
         page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(2000)

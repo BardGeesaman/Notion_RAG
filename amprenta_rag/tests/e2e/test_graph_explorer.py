@@ -12,7 +12,7 @@ pytestmark = pytest.mark.requires_server
 def _goto(page: Page, base_url: str) -> None:
     page.goto(f"{base_url}/?page=Graph%20Explorer")
     try:
-        page.wait_for_load_state("networkidle", timeout=15000)
+        page.wait_for_load_state("domcontentloaded")
     except Exception:
         # Streamlit can keep long-lived connections; fall back to a shorter readiness heuristic.
         page.wait_for_load_state("domcontentloaded")

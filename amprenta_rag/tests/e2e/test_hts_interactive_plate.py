@@ -18,7 +18,7 @@ def _goto_hts_page(page: Page, base_url: str) -> None:
     """Navigate to the HTS QC page."""
     page.goto(f"{base_url}/?page=HTS%20QC")
     try:
-        page.wait_for_load_state("networkidle", timeout=15000)
+        page.wait_for_load_state("domcontentloaded")
     except Exception:
         page.wait_for_load_state("domcontentloaded")
     page.wait_for_timeout(2000)
@@ -154,7 +154,7 @@ def test_no_obvious_errors(page: Page, streamlit_server: str) -> None:
 def test_hts_page_accessible(page: Page, streamlit_server: str) -> None:
     """Verify HTS QC page loads without errors (honest test)."""
     page.goto(f"{streamlit_server}/?page=HTS%20QC")
-    page.wait_for_load_state("networkidle", timeout=15000)
+    page.wait_for_load_state("domcontentloaded")
     
     # Basic accessibility check
     expect(page).to_have_title(re.compile(".*", re.IGNORECASE))
