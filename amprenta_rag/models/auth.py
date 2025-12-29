@@ -207,6 +207,25 @@ class AuditLog(Base):
     user: Mapped[Optional["User"]] = relationship(backref="audit_logs")
 
 
+class ElectronicSignature(Base):
+    """Electronic signature for regulatory compliance."""
+
+    __tablename__ = "electronic_signatures"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    action = Column(String(100), nullable=False)
+    entity_type = Column(String(100), nullable=False, index=True)
+    entity_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    signature_hash = Column(String(128), nullable=False)  # HMAC-SHA256 hex
+    meaning = Column(Text, nullable=False)  # "I approve this compound for testing"
+    timestamp = Column(DateTime, default=func.now(), nullable=False, index=True)
+    ip_address = Column(String(50), nullable=True)
+    verified_at = Column(DateTime, nullable=True)
+    
+    user: Mapped["User"] = relationship(backref="signatures")
+
+
 __all__ = [
     "Company",
     "User",
@@ -217,5 +236,6 @@ __all__ = [
     "EntityShare",
     "EntityReview",
     "AuditLog",
+    "ElectronicSignature",
 ]
 
