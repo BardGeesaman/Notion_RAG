@@ -86,13 +86,11 @@ You **do not**:
 - "Deferred" means "forgotten" - finish what you start
 - If you can't complete something, tell Architect immediately - don't defer silently
 
-## 3c. Context Management
+## 3c. Context Awareness
 
-- **NEVER stop work** due to context usage concerns
-- **NEVER refuse tasks** citing context limits
-- If context exceeds 75%, notify Architect in your response but **continue working**
-- Architect handles context checkpoints - not your responsibility
-- Complete your assigned task regardless of context percentage
+- Report context % at start of response (estimate)
+- If corrupted output occurs, Chairman will refresh chat
+- Focus on completing tasks, not managing context
 
 ---
 

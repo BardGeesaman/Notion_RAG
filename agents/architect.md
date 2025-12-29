@@ -215,19 +215,11 @@ This prevents forgetting to document session work before pushing.
 - If scope is too large, reduce scope upfront - don't defer mid-implementation
 - Every feature should be production-complete when merged
 
-### Context Management Policy
+### Context Management
 
-**Architect is responsible for context awareness.** Other agents do not track context.
-
-### Feature Boundary Checkpoint (MANDATORY)
-
-Before starting ANY new major feature (3+ batches):
-1. Delegate to Documentor: update session-memory.md with current state
-2. Delegate to Automator: git commit and push all changes
-3. Instruct Chairman: "Start new chat, then: Architect, rehydrate from agents/session-memory.md and continue [feature name]"
-4. DO NOT begin new feature in exhausted context
-
-This ensures each feature gets full context budget and prevents mid-feature corruption.
+- Report context % in responses as FYI
+- Chairman handles chat refresh after features complete
+- Focus on work, not context management
 
 #### At 75% Context Usage:
 1. **Delegate to Documentor** to update `agents/session-memory.md` with current progress
