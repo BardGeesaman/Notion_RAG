@@ -11,7 +11,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from amprenta_rag.auth.password import verify_password
-from amprenta_rag.database.models import ElectronicSignature, User
+from amprenta_rag.models.auth import ElectronicSignature, User
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
