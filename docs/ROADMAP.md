@@ -269,9 +269,15 @@ Simple status legend:
 - ❌ Scientist's Cockpit Dashboard (widgets for recent data, alerts, tasks)
 
 **Compliance & IP:**
-- ❌ 21 CFR Part 11 Readiness
-  - Electronic signatures
-  - Data immutability logs
+- ✅ 21 CFR Part 11 Foundation (2025-12-29)
+  - Phase 1: Audit trails with SHA256 checksums
+  - Phase 1: User authentication and attribution
+  - Phase 1: Timestamp tracking on all changes
+  - Phase 1: Data integrity verification
+  - Phase 2: Electronic signatures with HMAC-SHA256 (COMPLETE)
+  - Phase 2: Password confirmation for signing (COMPLETE)
+  - Phase 2: Tamper detection via signature verification (COMPLETE)
+  - 15 tests for electronic signatures (6 service + 5 API + 4 E2E)
 - ❌ IP & Patent Tracking
   - Invention Disclosure Registry
   - Patent Portfolio Manager

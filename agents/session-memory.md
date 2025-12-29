@@ -149,6 +149,15 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-29] – **Electronic Signatures (21 CFR Part 11 Phase 2) Complete**:
+  - **Results**: 3 batches complete, 15 tests, 100% pass rate
+  - **Batch 1 - Signature Model & Service**: ElectronicSignature model + signatures.py service (6 tests)
+  - **Batch 2 - API Endpoints**: 3 endpoints at /api/v1/signatures/* (create, verify, get) (5 tests)
+  - **Batch 3 - UI Integration**: Signatures tab in audit_trail.py dashboard (4 E2E tests)
+  - **Key Features**: HMAC-SHA256 signatures, password confirmation, tamper detection, signature verification
+  - **Compliance**: 21 CFR Part 11 Phase 2 complete (Phase 1: audit trails with checksums)
+  - **Zero @pytest.mark.skip decorators** - No Bandaids policy enforced
+
 * [2025-12-29] – **Scientist's Cockpit Dashboard Complete**:
   - **Results**: 3 batches complete, 13 tests, 100% pass rate
   - **Batch 1 - Hub Dashboard**: Centralized scientist portal with quick actions (5 E2E tests)
