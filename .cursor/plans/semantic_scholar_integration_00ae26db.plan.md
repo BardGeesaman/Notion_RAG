@@ -111,5 +111,3 @@ Existing paper system (from Scientific Paper Ingestion feature):
 - `amprenta_rag/api/routers/papers.py` - Add citation endpoints
 
 **Endpoints:**
-
-- GET /papers/{id}/citations - Get papers that cite this paper

@@ -655,13 +655,13 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *To be produced automatically by the Architect at the end of each session.*
 
-**Last Updated:** 2025-12-28
+**Last Updated:** 2025-12-29
 
 ### Summary
 
-The system has reached **production maturity** with **50+ features**, **1007+ unit/integration tests (153 added in test coverage remediation + 40 in UI development + 18 in Semantic Scholar integration)**, **~76% test coverage**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Code quality optimization complete** (2025-12-21): 0 lint errors, 63 type ignores, 70% coverage with CI enforcement, pre-commit hooks, security scanning.
+The system has reached **production maturity** with **50+ features**, **1007+ unit/integration tests**, **~76% test coverage**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Code quality optimization complete** (2025-12-21): 0 lint errors, 63 type ignores, 70% coverage with CI enforcement, pre-commit hooks, security scanning.
 
-**Semantic Scholar / OpenAlex Integration COMPLETE** (2025-12-28): Citation graph analysis with 18 passing tests. Papers can be enriched with citation data from two independent academic APIs. **UI Development COMPLETE** (2025-12-28): 4 new dashboard pages (Screening, Predictors, Scoring, Phenotypes) with 40 passing tests. All API routers now have UI coverage. **Test Coverage Remediation COMPLETE** (2025-12-28): +153 tests across 25 new files (15 E2E + 10 API), E2E coverage 36% → ~56%, API coverage 71% → ~90%. **Scientific Paper Ingestion COMPLETE** (2025-12-28): Full CRUD API with 22 passing tests. **JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17).
+**Session 2025-12-29 Completed:** Semantic Scholar / OpenAlex Integration (3 batches, 23 tests, citation graph analysis + paper enrichment). Publication Data Extraction plan created (4-batch plan ready for next session). **Session 2025-12-28 Completed:** UI Development (4 new pages, 40 tests), Test Coverage Remediation (153 tests), Scientific Paper Ingestion (22 tests). **JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17).
 
 ### Current State
 
@@ -681,8 +681,10 @@ The system has reached **production maturity** with **50+ features**, **1007+ un
 *   **AWS Infrastructure**: Terraform IaC (Lightsail + RDS), GitHub Actions CI/CD pipelines operational.
 *   **Data Seeding**: Comprehensive test data seeding suite with documentation for all omics domains.
 *   **Code Quality**: Optimization complete (0 lint errors, 63 type ignores [-69%], 76% coverage, pre-commit hooks, security scanning).
-*   **Recent Additions**: Semantic Scholar/OpenAlex Integration (citation graphs, 18 tests), UI Development (4 new pages, 40 tests), Scientific Paper Ingestion (PubMed, bioRxiv support), Test Coverage Remediation (153 new tests)
-*   **Next Focus**: Multi-tenancy architecture, integration tests with real database.
+*   **Recent Additions**: Semantic Scholar/OpenAlex Integration (citation graphs, 23 tests), UI Development (4 new pages, 40 tests), Scientific Paper Ingestion (PubMed, bioRxiv support), Test Coverage Remediation (153 new tests)
+*   **In Progress**: Publication Data Extraction (plan created, Batch 1 ready to start)
+*   **Next Session**: Resume Publication Data Extraction Batch 1 (PDF parsing + metadata extraction)
+*   **Plan File**: /Users/bard/Documents/RAG/.cursor/plans/publication_data_extraction_5234f9c4.plan.md
 
 ### JupyterHub Status (ALL COMPLETE)
 
@@ -724,21 +726,55 @@ The system has reached **production maturity** with **50+ features**, **1007+ un
 | Cross-Omics Pathway Analysis | ✓ Complete | e968da5 |
 | MOA Inference | ✓ Complete | 0d32166 |
 
+### Session 2025-12-29 Summary
+
+**Completed:**
+- Semantic Scholar / OpenAlex Integration (3 batches)
+  - Repository clients: semantic_scholar.py, openalex.py
+  - Database schema: 6 Literature columns + PaperCitation model
+  - API endpoints: /citations, /references, /enrich
+  - 23 tests passing (12 repository + 6 API + 5 integration)
+  - P1 bugs fixed during development (citation direction field)
+
+**Planning:**
+- Publication Data Extraction plan created
+  - 4 batches: PDF extraction, supplementary parsing, schema/API, UI/tests
+  - Plan file: /Users/bard/Documents/RAG/.cursor/plans/publication_data_extraction_5234f9c4.plan.md
+  - Batch 1 delegated but not started
+
+**Next Session:**
+- Resume Publication Data Extraction Batch 1
+- Focus: PDF parsing with PyMuPDF + metadata extraction
+
 ### Key Files to Review
-*   `docs/ROADMAP.md`: The canonical roadmap (updated this session).
-*   `docs/INNOVATION_LOG.md`: Innovator feature tracking.
-*   `agents/innovator.md`: New Innovator agent charter.
+*   `docs/ROADMAP.md`: The canonical roadmap (updated 2025-12-29).
+*   `/Users/bard/Documents/RAG/.cursor/plans/publication_data_extraction_5234f9c4.plan.md`: Next task plan.
+*   `agents/session-memory.md`: Session continuity (this file).
 
 ---
 
 ## 11. Resume Instructions (For User)
 
-1. Open `agents/session-memory.md`.
-2. Read the **Continuity Summary**.
-3. Check `NEXT_STEPS.md` for the latest task status.
-4. In your IDE/agent environment, say:
+**To resume work on Publication Data Extraction:**
+
+1. Open `/Users/bard/Documents/RAG/.cursor/plans/publication_data_extraction_5234f9c4.plan.md`
+2. Review Batch 1 specifications
+3. In your IDE/agent environment, say:
 
    ```text
    Architect:
-   Please rehydrate your context from agents/session-memory.md and generate a fresh plan for next steps.
+   Resume Publication Data Extraction from plan file: publication_data_extraction_5234f9c4.plan.md
+   Start with Batch 1 (PDF extraction).
+   ```
+
+**To start fresh work:**
+
+1. Open `agents/session-memory.md`
+2. Read the **Continuity Summary**
+3. Check `docs/ROADMAP.md` for next priorities
+4. Say:
+
+   ```text
+   Architect:
+   Rehydrate context from agents/session-memory.md and propose next steps.
    ```
