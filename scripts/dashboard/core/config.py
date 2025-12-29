@@ -328,13 +328,13 @@ PAGE_GROUPS = {
     "Other": ["Lab Notebook", "Sample Inventory", "Chat", "Evaluation Wizard", "Emails", "RAG Chunks", "Protocols", "Q&A Tracker", "Relationships", "Generic Assays"],
 }
 
-GROUP_ORDER = ["Home", "Discovery", "Chemistry", "HTS", "Structure", "Omics", "ML/Predictive", "Visualization", "Notebooks", "Pipelines", "Collaboration", "Reports", "Admin", "Other"]
+GROUP_ORDER = ["Home", "Discovery", "Chemistry", "HTS", "Structure", "Omics", "ML/Predictive", "Visualization", "Analysis", "Notebooks", "Pipelines", "Collaboration", "Reports", "Admin", "Other"]
 
 GROUP_ICONS = {
     "Home": "🏠", "Discovery": "🔍", "Chemistry": "⚗️", "HTS": "🧪",
     "Structure": "🔬", "Omics": "🧬", "ML/Predictive": "🤖", "Visualization": "📊",
-    "Notebooks": "📓", "Pipelines": "🔄", "Collaboration": "👥", "Reports": "📋",
-    "Admin": "⚙️", "Other": "📁"
+    "Analysis": "📈", "Notebooks": "📓", "Pipelines": "🔄", "Collaboration": "👥",
+    "Reports": "📋", "Admin": "⚙️", "Other": "📁"
 }
 
 
