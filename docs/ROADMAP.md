@@ -94,6 +94,13 @@ Simple status legend:
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
 ### Visualization & UI/UX
+- ✅ Scientist's Cockpit Dashboard (2025-12-29)
+  - Unified scientist portal with workspace-aware context
+  - Quick actions for common workflows (create experiment, upload dataset, register compound)
+  - Program/project-aware dashboard with contextual tools
+  - Recent activity feed and notifications
+  - Registered as default home page for scientists
+  - 13 tests (5 E2E + 4 integration + 4 unit) - 100% pass rate
 - ✅ Chemical Sketcher (2025-12-29)
   - Ketcher structure editor (CDN-based, no backend required)
   - Draw molecules to generate SMILES

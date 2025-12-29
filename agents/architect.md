@@ -215,6 +215,13 @@ This prevents forgetting to document session work before pushing.
 - If scope is too large, reduce scope upfront - don't defer mid-implementation
 - Every feature should be production-complete when merged
 
+### Context Checkpoint at 75%
+When context usage exceeds 75%:
+1. **Delegate to Documentor** to update `agents/session-memory.md` with current progress
+2. **Continue working** - do NOT stop or wrap session prematurely
+3. This ensures continuity info is saved before any potential context crash
+4. Documentor update should include: features completed, tests added, commits made, current task status
+
 ### Track P2/P3 Items from Reviews
 After each Reviewer assessment:
 1. Extract all P2/P3 (non-blocking) items.
