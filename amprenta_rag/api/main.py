@@ -19,7 +19,6 @@ from amprenta_rag.api.routers import (
     experiments,
     features,
     programs,
-    signatures,
     compounds,
     screening,
     sar,
