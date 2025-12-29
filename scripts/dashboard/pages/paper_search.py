@@ -258,6 +258,56 @@ def render_ingested_papers_tab() -> None:
                 st.info("Full text is available but sections are not yet parsed.")
             else:
                 st.info("Full text is not available for this paper. Only abstract is shown.")
+        
+        # Extraction Actions
+        st.markdown("---")
+        st.markdown("### Data Extraction")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔬 Extract Experiments", help="Extract structured experiment data from PDF"):
+                with st.spinner("Extracting experiments..."):
+                    try:
+                        result = _api_post(f"/api/v1/papers/{literature_id}/extract", {})
+                        st.success(f"Extracted {result.get('experiments_extracted', 0)} experiments")
+                        # Refresh experiments list
+                        st.session_state.pop("viewed_experiments", None)
+                    except Exception as e:
+                        st.error(f"Extraction failed: {e}")
+        
+        with col2:
+            if st.button("📊 View Extracted Experiments"):
+                with st.spinner("Loading extracted experiments..."):
+                    try:
+                        experiments = _api_get(f"/api/v1/papers/{literature_id}/experiments")
+                        st.session_state["viewed_experiments"] = experiments
+                    except Exception as e:
+                        st.error(f"Failed to load experiments: {e}")
+        
+        # Display extracted experiments
+        if st.session_state.get("viewed_experiments"):
+            experiments = st.session_state["viewed_experiments"]
+            
+            if experiments:
+                st.markdown("#### Extracted Experiments")
+                for i, exp in enumerate(experiments, 1):
+                    with st.expander(f"Experiment {i}: {exp.get('experiment_type', 'Unknown')}"):
+                        if exp.get("cell_line"):
+                            st.markdown(f"**Cell Line:** {exp['cell_line']}")
+                        if exp.get("treatment"):
+                            st.markdown(f"**Treatment:** {exp['treatment']}")
+                        if exp.get("concentration"):
+                            st.markdown(f"**Concentration:** {exp['concentration']}")
+                        if exp.get("timepoint"):
+                            st.markdown(f"**Timepoint:** {exp['timepoint']}")
+                        if exp.get("measured_entities"):
+                            st.markdown(f"**Measured:** {', '.join(exp['measured_entities'][:10])}")
+                        if exp.get("key_findings"):
+                            st.markdown(f"**Findings:** {exp['key_findings']}")
+                        if exp.get("extraction_confidence"):
+                            st.progress(exp["extraction_confidence"] / 100.0, text=f"Confidence: {exp['extraction_confidence']}%")
+            else:
+                st.info("No experiments extracted yet. Click 'Extract Experiments' to analyze this paper.")
 
     # Show recently ingested papers
     if st.session_state.get("ingested_ids"):
