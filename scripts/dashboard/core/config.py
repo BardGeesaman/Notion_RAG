@@ -312,7 +312,7 @@ PAGE_REGISTRY = {
 PAGE_GROUPS = {
     "Home": ["Cockpit"],
     "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue"],
-    "Chemistry": ["Chemical Sketcher", "Compounds", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network"],
+    "Chemistry": ["Chemistry", "Chemical Sketcher", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network"],
     "HTS": ["HTS QC", "Dose-Response Explorer", "Screening"],
     "Structure": ["Protein Structures", "Binding Sites", "Docking Runs", "Docking Triage", "Molecule Viewer"],
     "Omics": ["Single-Cell Viewer", "CRISPR Analysis", "Variant Analysis", "Connectivity Map", "Biomarker Discovery"],
