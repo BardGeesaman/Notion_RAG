@@ -1,9 +1,13 @@
 """Audit logging utilities."""
+import hashlib
+import json
 import logging
-from typing import Optional, Any, cast
+from typing import Any, Dict, List, Optional, cast
 from datetime import datetime
-from amprenta_rag.utils.uuid_utils import ensure_uuid
 
+from sqlalchemy.orm import Session
+
+from amprenta_rag.utils.uuid_utils import ensure_uuid
 from amprenta_rag.database.base import get_db
 from amprenta_rag.database.models import AuditLog
 
