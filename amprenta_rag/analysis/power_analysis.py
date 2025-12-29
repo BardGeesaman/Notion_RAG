@@ -190,3 +190,95 @@ def calculate_power(
     except Exception as e:
         logger.error("[POWER] Error calculating power: %r", e)
         raise
+
+
+def estimate_effect_size_from_data(group1: list, group2: list) -> float:
+    """
+    Calculate Cohen's d effect size from two groups of data.
+
+    Args:
+        group1: First group measurements
+        group2: Second group measurements
+
+    Returns:
+        Cohen's d effect size (standardized mean difference)
+    """
+    import numpy as np
+    
+    if not group1 or not group2:
+        return 0.0
+    
+    arr1 = np.array(group1)
+    arr2 = np.array(group2)
+    
+    mean1 = np.mean(arr1)
+    mean2 = np.mean(arr2)
+    
+    # Calculate pooled standard deviation
+    var1 = np.var(arr1, ddof=1) if len(arr1) > 1 else 0.0
+    var2 = np.var(arr2, ddof=1) if len(arr2) > 1 else 0.0
+    
+    pooled_std = np.sqrt((var1 + var2) / 2)
+    
+    if pooled_std == 0:
+        return 0.0
+    
+    cohen_d = (mean1 - mean2) / pooled_std
+    
+    return float(cohen_d)
+
+
+def calculate_plate_layout(n: int, plate_format: int = 96) -> dict:
+    """
+    Calculate plate layout requirements for n samples.
+
+    Args:
+        n: Number of samples
+        plate_format: Wells per plate (96, 384, or 1536)
+
+    Returns:
+        Dictionary with plates_needed, wells_used, empty_wells
+    """
+    if n <= 0:
+        return {"plates_needed": 0, "wells_used": 0, "empty_wells": 0}
+    
+    if plate_format not in [96, 384, 1536]:
+        raise ValueError(f"Invalid plate format: {plate_format}. Use 96, 384, or 1536")
+    
+    plates_needed = (n + plate_format - 1) // plate_format
+    wells_used = n
+    total_wells = plates_needed * plate_format
+    empty_wells = total_wells - wells_used
+    
+    return {
+        "plates_needed": plates_needed,
+        "wells_used": wells_used,
+        "empty_wells": empty_wells,
+    }
+
+
+def estimate_experiment_cost(
+    n: int,
+    cost_per_sample: float,
+    overhead_pct: float = 0.1,
+) -> dict:
+    """
+    Estimate total experiment cost with overhead.
+
+    Args:
+        n: Number of samples
+        cost_per_sample: Cost per sample in dollars
+        overhead_pct: Overhead percentage (default 10%)
+
+    Returns:
+        Dictionary with sample_cost, overhead, total
+    """
+    sample_cost = n * cost_per_sample
+    overhead = sample_cost * overhead_pct
+    total = sample_cost + overhead
+    
+    return {
+        "sample_cost": round(sample_cost, 2),
+        "overhead": round(overhead, 2),
+        "total": round(total, 2),
+    }
