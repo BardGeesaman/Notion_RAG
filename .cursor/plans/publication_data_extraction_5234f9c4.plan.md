@@ -4,20 +4,20 @@ overview: Extract structured experiment data from scientific publication PDFs an
 todos:
   - id: pub-batch-1
     content: PDF Methods & Experiment Extraction (publication_extractor.py)
-    status: in_progress
+    status: completed
   - id: pub-batch-2
     content: Supplementary File Processing (supplementary_parser.py)
-    status: pending
+    status: completed
     dependencies:
       - pub-batch-1
   - id: pub-batch-3
     content: Database Schema & API endpoints
-    status: pending
+    status: completed
     dependencies:
       - pub-batch-2
   - id: pub-batch-4
     content: Dashboard Integration & Tests
-    status: pending
+    status: completed
     dependencies:
       - pub-batch-3
 ---

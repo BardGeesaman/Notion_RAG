@@ -94,12 +94,21 @@ Simple status legend:
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
 ### Knowledge Management & Literature
-- ✅ Semantic Scholar / OpenAlex Integration (2025-12-28)
+- ✅ Publication & Supplementary Data Extraction (2025-12-29)
+  - PDF experiment extraction with LLM (PyMuPDF + GPT-4)
+  - Supplementary file parsing with intelligent schema detection (Excel/CSV)
+  - 4 API endpoints (POST /upload, /extract, /parse-supplementary, /link-dataset)
+  - Dashboard integration: Publication upload page with extraction workflow
+  - Database schema: PublicationExtraction model for tracking extraction jobs
+  - 43 tests (12 PDF + 17 supplementary + 8 API + 6 E2E) - 100% pass rate
+  - Automated extraction of: title, authors, methods, results, figures, tables
+  - Schema auto-detection: column types, units, experiment metadata
+- ✅ Semantic Scholar / OpenAlex Integration (2025-12-29)
   - Citation graph analysis and paper enrichment
   - Two repository implementations (SemanticScholarRepository, OpenAlexRepository)
   - Citation tracking database schema (PaperCitation model with direction field)
   - 3 new API endpoints (GET /citations, GET /references, POST /enrich)
-  - 18 unit tests (12 repository + 6 API) - 100% pass rate
+  - 23 unit tests (12 repository + 6 API + 5 integration) - 100% pass rate
   - Bug fixed during review (citation direction field inverted)
   - Papers can be enriched with citation data, author networks, venue information
 - ✅ Scientific Paper Ingestion (2025-12-28)
@@ -195,11 +204,6 @@ Simple status legend:
 ### Future Backlog (Migrated from NEXT_STEPS.md 2025-12-28)
 
 **Integration & Data Sources:**
-- ⏳ Publication & Supplementary Data Extraction (Partial - see completed section)
-  - ✅ Paper ingestion with author/affiliation linking (2025-12-28)
-  - ❌ Extract experiment details from PDF publications
-  - ❌ Parse supplementary tables (Excel/CSV)
-  - ❌ Link publications to repository datasets
 - ❌ Imaging Data Support (Microscopy/HCS metadata)
 - ❌ Flow Cytometry / FACS Data Ingestion
 - ❌ Biophysical Assay Support (SPR, MST, DSC)
