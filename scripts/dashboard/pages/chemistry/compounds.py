@@ -342,6 +342,15 @@ def _render_compounds(tab, db_session, compound_model, export_compounds):
 def _render_register(tab, register_compound):
     with tab:
         st.subheader("Register Compound")
+        
+        # Add "Draw Structure" expander
+        with st.expander("✏️ Draw Structure", expanded=False):
+            from scripts.dashboard.components.ketcher_sketcher import render_ketcher_editor
+            
+            st.caption("Draw structure and click 'Get SMILES' to export")
+            render_ketcher_editor(key="register_sketcher", width=700, height=500)
+            st.info("Copy SMILES from editor above and paste into SMILES field below")
+        
         name = st.text_input("Compound Name")
         smiles = st.text_input("SMILES")
         salt_form = st.selectbox(
