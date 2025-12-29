@@ -16,6 +16,7 @@ from amprenta_rag.models.automation import *  # noqa: F401,F403
 from amprenta_rag.models.misc import *  # noqa: F401,F403
 from amprenta_rag.models.domain import *  # noqa: F401,F403
 from amprenta_rag.models.repository import *  # noqa: F401,F403
+from amprenta_rag.models.ip import *  # noqa: F401,F403
 
 __all__ = []  # Exported via wildcard imports above for backward compatibility
 
