@@ -165,6 +165,14 @@ Simple status legend:
   - Cost estimator with overhead
   - 4 API endpoints + 19 tests (8 engine + 5 API + 6 E2E)
 
+### Compliance & Data Integrity
+- ✅ Audit Trail / Provenance Ledger (2025-12-29)
+  - SHA256 checksums for data integrity verification
+  - Extended existing AuditLog model with checksum columns
+  - Integrity verification endpoint
+  - 4 API endpoints + 18 tests (7 service + 6 API + 5 E2E)
+  - Foundation for 21 CFR Part 11 compliance
+
 ### Collaboration & User Experience
 - ✅ Collaboration Features MVP (2025-12-28)
   - Entity-scoped sharing (view/edit/admin permissions)
