@@ -3,12 +3,12 @@
 ## December 29, 2025 - Epic Implementation Sprint
 
 **Metrics:**
-- Git Commits: 53
-- Test Files: 61
-- Total Tests: 352
+- Git Commits: 62
+- Test Files: 64
+- Total Tests: 388
 - Pass Rate: 100%
 - Skipped: 0
-- Pages Created: 9
+- Pages Created: 10
 - Components: 3
 
 **Features Completed:**
@@ -21,6 +21,8 @@
 7. Chemical Sketcher (Ketcher integration)
 8. Scientist's Cockpit Dashboard
 9. Navigation & UI Organization (108 pages in 15 groups)
+10. Compound Portfolio Dashboard (4 batches, 17 tests)
+11. Experiment Planner Extensions (3 batches, 19 tests)
 
 **Bugs Fixed:** 5
 - Pathways endpoint List[UUID] annotation
@@ -798,14 +800,18 @@ The system has reached **production maturity** with **50+ features**, **1133+ un
 
 *   **System Status**: Production-Ready with Cloud Deployment Capability. Code quality at 10/10 (Phase 1 & 2 complete).
 *   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (51+ pages), JupyterHub operational, AWS Terraform infrastructure.
-*   **Dashboard Pages**: 56+ pages including Compound Portfolio Dashboard, Scientist's Cockpit, Chemical Sketcher, High-Dimensional Projector, Publication Upload, and Analysis Pages. All major API routers now have UI coverage.
-*   **Test Coverage**: 1150+ tests (796 baseline + ~370 session), ~80% coverage, E2E ~62%, API ~96%
-*   **Compound Portfolio Dashboard**: COMPLETE (4 batches)
+*   **Dashboard Pages**: 57+ pages including Experiment Planner, Compound Portfolio Dashboard, Scientist's Cockpit, Chemical Sketcher, High-Dimensional Projector, Publication Upload, and Analysis Pages. All major API routers now have UI coverage.
+*   **Test Coverage**: 1169+ tests (796 baseline + ~388 session), ~81% coverage, E2E ~63%, API ~96%
+*   **Compound Portfolio Dashboard**: COMPLETE (4 batches, 17 tests)
     - Batch 1: portfolio_service.py (6 tests)
     - Batch 2: portfolio.py router (6 tests)
     - Batch 3: compound_portfolio.py UI (5 E2E tests)
     - Batch 4: Documentation
-*   **Session totals**: 59 commits, ~370 tests
+*   **Experiment Planner Extensions**: COMPLETE (3 batches, 19 tests)
+    - Batch 1: Power analysis engine (8 tests)
+    - Batch 2: Planner API endpoints (5 tests)
+    - Batch 3: Experiment Planner UI (6 E2E tests)
+*   **Session totals**: 62 commits, ~388 tests
 *   **Test Suite Breakdown**:
     - Unit/integration tests: 796 baseline + 23 Semantic Scholar/OpenAlex + 29 Publication Extraction + 10 Projector
     - E2E tests: 107+ files (~60% coverage - was 36%) [+6 Publication + 6 Projector]

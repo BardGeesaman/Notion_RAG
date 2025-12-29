@@ -152,6 +152,14 @@ Simple status legend:
   - 22 tests (7 API + 10 functional + 5 E2E) - all passing
   - Commits: b2dde2e, 8e5f81b, ede9605
 
+### Analytics & Planning Tools
+- ✅ Experiment Planner with Power Analysis (2025-12-29)
+  - Statistical power calculations (t-test, ANOVA, correlation, chi-square)
+  - Effect size estimation from historical data
+  - Plate layout calculator (96/384/1536 formats)
+  - Cost estimator with overhead
+  - 4 API endpoints + 19 tests (8 engine + 5 API + 6 E2E)
+
 ### Collaboration & User Experience
 - ✅ Collaboration Features MVP (2025-12-28)
   - Entity-scoped sharing (view/edit/admin permissions)
