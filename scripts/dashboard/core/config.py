@@ -110,6 +110,7 @@ ALL_PAGES = [
     "Data Management",
     "System Health",
     "Audit Logs",
+    "Audit Trail",
     "Data Export",
     "Relationships",
     "Datasets",
@@ -231,6 +232,7 @@ PAGE_REGISTRY = {
     "Data Management": ("scripts.dashboard.pages.management", "render_management_page"),
     "System Health": ("scripts.dashboard.pages.system_health", "render_system_health_page"),
     "Audit Logs": ("scripts.dashboard.pages.audit_logs", "render_audit_logs_page"),
+    "Audit Trail": ("scripts.dashboard.pages.audit_trail", "render_audit_trail_page"),
     "Data Export": ("scripts.dashboard.pages.data_export", "render_data_export_page"),
     "Relationships": ("scripts.dashboard.pages.relationships", "render_relationships_page"),
     "Datasets": ("scripts.dashboard.pages.datasets", "render_datasets_page"),
@@ -330,7 +332,7 @@ PAGE_GROUPS = {
     "Analysis": ["Analysis Tools", "Experiment Planner", "RAG Query", "Statistical Analysis", "Quality Checks", "Literature Analysis", "Compare", "Timeline", "Data Quality", "Coverage Map", "Feature Recurrence", "Evidence Report"],
     "Collaboration": ["Activity Feed", "Teams & Projects", "Variant Tracking"],
     "Reports": ["Executive Digests", "Spectral Matching", "Report History"],
-    "Admin": ["Company Settings", "Audit Logs", "Data Export", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion"],
+    "Admin": ["Company Settings", "Audit Logs", "Audit Trail", "Data Export", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion"],
     "Other": ["Lab Notebook", "Sample Inventory", "Chat", "Evaluation Wizard", "Emails", "RAG Chunks", "Protocols", "Q&A Tracker", "Relationships", "Generic Assays"],
 }
 
