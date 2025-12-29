@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
@@ -164,6 +164,16 @@ class ExtractExperimentsResponse(BaseModel):
 
     experiments_extracted: int
     extraction_confidence: float
+
+
+class SupplementaryUploadResponse(BaseModel):
+    """Response for supplementary file upload."""
+
+    file_id: UUID
+    filename: str
+    schema_type: str
+    row_count: int
+    tables_extracted: int
 
 
 class LinkDatasetRequest(BaseModel):
@@ -613,6 +623,84 @@ async def extract_experiments_from_paper(
         experiments_extracted=0,
         extraction_confidence=0.0,
     )
+
+
+@router.post("/{paper_id}/supplementary", response_model=SupplementaryUploadResponse)
+async def upload_supplementary_file(
+    paper_id: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_database_session),
+) -> SupplementaryUploadResponse:
+    """
+    Upload and parse supplementary file for a paper.
+
+    Accepts Excel or CSV files, auto-detects schema, and stores parsed data.
+    """
+    import tempfile
+    from pathlib import Path
+    
+    # Verify paper exists
+    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    if not literature:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    
+    # Save uploaded file temporarily
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename or "file").suffix) as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_path = tmp_file.name
+        
+        # Parse file
+        result = parse_supplementary_file(tmp_path)
+        
+        # Extract first table's schema info
+        schema_type = "generic"
+        row_count = 0
+        columns = []
+        data = {}
+        
+        if result.tables:
+            first_table = result.tables[0]
+            schema_type = first_table.detected_schema.schema_type
+            row_count = first_table.row_count
+            columns = first_table.columns
+            data = {"tables": [t.dict() for t in result.tables]}
+        
+        # Store in database
+        supp_file = SupplementaryFile(
+            literature_id=paper_id,
+            filename=file.filename or "unknown",
+            file_type=result.file_type,
+            schema_type=schema_type,
+            row_count=row_count,
+            columns=columns,
+            data=data,
+        )
+        db.add(supp_file)
+        db.commit()
+        db.refresh(supp_file)
+        
+        logger.info(
+            "[PAPERS_API] Uploaded supplementary file %s for paper %s",
+            file.filename,
+            paper_id,
+        )
+        
+        # Cleanup temp file
+        Path(tmp_path).unlink()
+        
+        return SupplementaryUploadResponse(
+            file_id=supp_file.id,
+            filename=supp_file.filename,
+            schema_type=schema_type,
+            row_count=row_count,
+            tables_extracted=len(result.tables),
+        )
+    
+    except Exception as e:
+        logger.error("[PAPERS_API] Supplementary upload failed: %r", e)
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @router.get("/{paper_id}/experiments", response_model=List[ExperimentResponse])

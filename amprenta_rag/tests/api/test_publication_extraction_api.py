@@ -152,6 +152,37 @@ class TestGetPaperExperiments:
             app.dependency_overrides.clear()
 
 
+class TestUploadSupplementary:
+    """Tests for POST /api/v1/papers/{paper_id}/supplementary endpoint."""
+
+    def test_upload_supplementary_paper_not_found(self):
+        """Test supplementary upload for non-existent paper."""
+        paper_id = uuid4()
+        
+        mock_session = MagicMock()
+        mock_session.query.return_value.filter.return_value.first.return_value = None
+        
+        def mock_get_db():
+            yield mock_session
+        
+        from amprenta_rag.api.dependencies import get_database_session
+        
+        app.dependency_overrides[get_database_session] = mock_get_db
+        
+        try:
+            # Create a fake file upload
+            files = {"file": ("test.csv", b"Gene,log2FC\nTP53,2.5", "text/csv")}
+            response = client.post(
+                f"/api/v1/papers/{paper_id}/supplementary",
+                files=files,
+            )
+            
+            assert response.status_code == 404
+            assert "not found" in response.json()["detail"].lower()
+        finally:
+            app.dependency_overrides.clear()
+
+
 class TestLinkSupplementaryToDataset:
     """Tests for POST /api/v1/papers/{paper_id}/link-dataset endpoint."""
 
