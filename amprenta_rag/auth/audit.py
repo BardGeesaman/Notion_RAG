@@ -157,7 +157,7 @@ def get_audit_trail(db: Session, entity_type: str, entity_id: str) -> List[Audit
     return (
         db.query(AuditLog)
         .filter(AuditLog.entity_type == entity_type, AuditLog.entity_id == entity_id)
-        .order_by(AuditLog.created_at.desc())
+        .order_by(AuditLog.timestamp.desc())
         .all()
     )
 
@@ -183,7 +183,7 @@ def verify_integrity(
     latest = (
         db.query(AuditLog)
         .filter(AuditLog.entity_type == entity_type, AuditLog.entity_id == entity_id)
-        .order_by(AuditLog.created_at.desc())
+        .order_by(AuditLog.timestamp.desc())
         .first()
     )
     
