@@ -94,6 +94,15 @@ Simple status legend:
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
 ### Visualization & UI/UX
+- ✅ Chemical Sketcher (2025-12-29)
+  - Ketcher structure editor (CDN-based, no backend required)
+  - Draw molecules to generate SMILES
+  - Compound registration from drawings
+  - Structure search from drawings
+  - postMessage API integration for seamless data exchange
+  - Dashboard page registered in PAGE_REGISTRY under Chemistry category
+  - 17 tests (7 unit + 6 E2E + 4 integration) - 100% pass rate
+  - P1 bug fixed: compounds.py import path issue
 - ✅ High-Dimensional Projector (2025-12-29)
   - Interactive 3D scatter plots with UMAP, t-SNE, PCA algorithms
   - Real dataset integration with feature loading
@@ -221,9 +230,6 @@ Simple status legend:
 - ❌ Biophysical Assay Support (SPR, MST, DSC)
 
 **Visualization & UI/UX:**
-- ❌ Chemical Sketcher (Ketcher/MarvinJS)
-  - Draw structures to generate SMILES
-  - Visual structure editor for registration
 - ❌ Navigation & UI Organization
   - Functional grouping (Discovery, ELN, Analysis, Admin)
   - Collapsible sidebar sections
