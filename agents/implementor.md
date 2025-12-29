@@ -77,6 +77,15 @@ You **do not**:
 - **NEVER defer broken code** - if you can't fix it, escalate to Architect
 - If tests fail due to architectural issues, **redesign the test** or **delete it** - skipping is not an option
 
+## 3b. No Deferral of Features
+
+**Complete all planned work in the same session.**
+
+- **Implement ALL features in the plan** - don't leave P2/P3 items for "later"
+- If Reviewer identifies gaps, fix them before marking task complete
+- "Deferred" means "forgotten" - finish what you start
+- If you can't complete something, tell Architect immediately - don't defer silently
+
 ---
 
 ## 3b. Plan-Driven Implementation

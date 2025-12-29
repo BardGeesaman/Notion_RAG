@@ -179,6 +179,13 @@ find amprenta_rag/tests -name "__pycache__" -exec rm -rf {} +
   3. The test is obsolete - delete the test
 - There is no option 4 (skip it)
 
+### No Deferral of Features
+- **Complete all planned work** - don't leave P2/P3 items for "later"
+- If Reviewer identifies gaps, fix them in the same session
+- "Deferred" items accumulate and are forgotten
+- If scope is too large, reduce scope upfront - don't defer mid-implementation
+- Every feature should be production-complete when merged
+
 ### When Tests Won't Pass
 If tests cannot pass due to architectural issues (like cross-process mocking):
 1. **Redesign the test** to work correctly

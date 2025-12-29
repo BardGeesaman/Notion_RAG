@@ -208,6 +208,13 @@ This prevents forgetting to document session work before pushing.
 - If a bug is found during testing, fix it before committing.
 - Pre-existing bugs discovered during work should be fixed or explicitly tracked.
 
+### No Deferral of Features (CRITICAL)
+- **Complete all planned work** - don't leave P2/P3 items for "later"
+- If Reviewer identifies gaps, delegate fixes in the same session
+- "Deferred" items accumulate and are forgotten
+- If scope is too large, reduce scope upfront - don't defer mid-implementation
+- Every feature should be production-complete when merged
+
 ### Track P2/P3 Items from Reviews
 After each Reviewer assessment:
 1. Extract all P2/P3 (non-blocking) items.

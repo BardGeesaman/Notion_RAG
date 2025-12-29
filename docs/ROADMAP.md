@@ -93,6 +93,18 @@ Simple status legend:
   - API: 4 endpoints (create, list, update, delete)
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
 
+### Visualization & UI/UX
+- ✅ High-Dimensional Projector (2025-12-29)
+  - Interactive 3D scatter plots with UMAP, t-SNE, PCA algorithms
+  - Real dataset integration with feature loading
+  - Color-by support for categorical and continuous variables
+  - 3 API endpoints (POST /compute, GET /datasets, POST /export)
+  - Dashboard page with Plotly 3D visualization
+  - Algorithm selector with parameter controls
+  - 25 tests (10 engine + 9 API + 6 E2E) - 100% pass rate
+  - P3 fixes applied: Real dataset loading, color-by visualization, dataset listing
+  - Registered in PAGE_REGISTRY under Visualization category
+
 ### Knowledge Management & Literature
 - ✅ Publication & Supplementary Data Extraction (2025-12-29)
   - PDF experiment extraction with LLM (PyMuPDF + GPT-4)
@@ -209,9 +221,6 @@ Simple status legend:
 - ❌ Biophysical Assay Support (SPR, MST, DSC)
 
 **Visualization & UI/UX:**
-- ❌ High-Dimensional Projector
-  - Interactive 3D scatter plots (UMAP/t-SNE)
-  - TensorBoard-style point cloud visualization
 - ❌ Chemical Sketcher (Ketcher/MarvinJS)
   - Draw structures to generate SMILES
   - Visual structure editor for registration

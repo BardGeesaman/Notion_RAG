@@ -84,6 +84,15 @@ You **do not**:
 - Report test failures honestly - don't rationalize them away
 - Escalate to Architect if tests reveal deeper problems
 
+## 3b. No Deferral Policy
+
+**Complete all test coverage in the same session.**
+
+- Write tests for ALL features, not just "happy path"
+- Don't defer edge case tests for "later"
+- If test count in plan says 20+, deliver 20+ tests
+- "We'll add more tests later" = technical debt
+
 ---
 
 ## 4. Output Formats
