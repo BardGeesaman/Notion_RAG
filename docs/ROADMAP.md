@@ -176,6 +176,11 @@ Simple status legend:
   - 1498 tests collecting successfully
 
 ### Testing & Development (Future)
+- ❌ Integration Tests with Real Database
+  - Current API tests use mocked DB (risk of mock drift)
+  - Add integration tests that verify endpoints with real Postgres
+  - CI pipeline with test database for subset of critical paths
+  - Reduces "mocked tests pass, production fails" risk
 - ❌ Split requirements.txt - move pdbfixer/openmm to requirements-structural.txt (pdbfixer requires conda-forge, not pip-installable)
 - ❌ OOP Refactoring Review (code structure improvements)
 
