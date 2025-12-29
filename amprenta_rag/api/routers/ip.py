@@ -113,7 +113,7 @@ async def create_disclosure_endpoint(
     db: Session = Depends(get_database_session),
 ) -> DisclosureResponse:
     """Create invention disclosure."""
-    inventors_data = [inv.dict() for inv in request.inventors]
+    inventors_data = [inv.model_dump() for inv in request.inventors]
     
     disclosure = create_disclosure(
         request.title,
