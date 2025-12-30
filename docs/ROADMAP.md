@@ -258,7 +258,18 @@ Simple status legend:
 ### Future Backlog (Migrated from NEXT_STEPS.md 2025-12-28)
 
 **Integration & Data Sources:**
-- ❌ Imaging Data Support (Microscopy/HCS metadata)
+- ✅ Imaging Data Support (Microscopy/HCS metadata) (2025-12-30)
+  - Database: 7 models (Microscope, Objective, LightSource, FilterSet, ChannelConfig, AcquisitionSettings, ImageFileSet)
+  - OME-TIFF parser with tifffile + ome-types libraries for complete metadata extraction
+  - Multi-vendor parsers: PerkinElmer Opera/Operetta, Molecular Devices ImageXpress, Yokogawa Cell Voyager
+  - Image QC pipeline: focus scoring (Laplacian, Brenner, variance), saturation detection, illumination uniformity, artifact detection
+  - 10 REST API endpoints for OME-TIFF import, batch vendor import, instrument management, QC reporting, 5D browsing
+  - 4-tab Streamlit dashboard (Batch Import, 5D Browser, QC Dashboard, Instruments) with Plotly visualizations
+  - Comprehensive instrument registry with microscope, objective, light source, and channel configurations
+  - Quality control metrics with configurable thresholds and automated pass/fail determination
+  - 5D data browsing across Plate-Well-Channel-Z-Timepoint dimensions with filtering and pagination
+  - Seed script for demo data generation with varied QC characteristics
+  - 112+ tests (15 models + 23 OME parser + 24 vendor parsers + 21 QC pipeline + 15 API + 14 dashboard E2E + 6 integration)
 - ✅ Flow Cytometry / FACS Data Ingestion (2025-12-30)
   - FCS 2.0/3.0/3.1 file parsing with metadata extraction
   - Logicle and arcsinh transformations with auto-parameter detection
