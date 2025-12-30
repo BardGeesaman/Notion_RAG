@@ -61,7 +61,13 @@ if _MULTIPART_AVAILABLE:
         job = svc.create_job(saved)
 
         # Kick off background job processing
-        asyncio.create_task(_run_job_in_background(job.id))
+        import os
+        if os.environ.get("USE_CELERY", "true").lower() == "true":
+            from amprenta_rag.jobs.tasks.extraction import process_extraction_job
+            process_extraction_job.delay(str(job.id))
+        else:
+            # Fallback to asyncio for gradual rollout
+            asyncio.create_task(_run_job_in_background(job.id))
 
         return {"job_id": str(job.id), "status": job.status, "file_count": job.file_count}
 

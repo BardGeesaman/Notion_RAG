@@ -72,8 +72,15 @@ def recluster_dataset(single_cell_dataset_id: UUID, *, resolution: float = 0.5) 
         scd.processing_log = None
         db.add(scd)
 
-    thread = threading.Thread(target=_process_single_cell_async, args=(single_cell_dataset_id,), daemon=True)
-    thread.start()
+    # Submit job via Celery or fallback to threading
+    import os
+    if os.environ.get("USE_CELERY", "true").lower() == "true":
+        from amprenta_rag.jobs.tasks.single_cell import process_single_cell
+        process_single_cell.delay(str(single_cell_dataset_id))
+    else:
+        # Fallback to threading for gradual rollout
+        thread = threading.Thread(target=_process_single_cell_async, args=(single_cell_dataset_id,), daemon=True)
+        thread.start()
 
 
 def _process_single_cell_async(single_cell_dataset_id: UUID) -> None:

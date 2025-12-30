@@ -49,7 +49,15 @@ async def run_sync(req: RunSyncRequest) -> Dict[str, Any]:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    asyncio.create_task(_run_sync_in_background(job.id))
+    # Submit job via Celery or fallback to asyncio
+    import os
+    if os.environ.get("USE_CELERY", "true").lower() == "true":
+        from amprenta_rag.jobs.tasks.sync import run_sync_job
+        run_sync_job.delay(str(job.id))
+    else:
+        # Fallback to asyncio for gradual rollout
+        asyncio.create_task(_run_sync_in_background(job.id))
+    
     return {"job_id": str(job.id), "status": job.status}
 
 

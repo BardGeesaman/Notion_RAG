@@ -31,8 +31,15 @@ class DockingService:
         self.max_workers = max_workers
 
     def start_run(self, run_id: UUID) -> None:
-        thread = threading.Thread(target=self._run_async, args=(run_id,), daemon=True)
-        thread.start()
+        # Submit job via Celery or fallback to threading
+        import os
+        if os.environ.get("USE_CELERY", "true").lower() == "true":
+            from amprenta_rag.jobs.tasks.docking import run_docking
+            run_docking.delay(str(run_id))
+        else:
+            # Fallback to threading for gradual rollout
+            thread = threading.Thread(target=self._run_async, args=(run_id,), daemon=True)
+            thread.start()
 
     def _run_async(self, run_id: UUID) -> None:
         try:
