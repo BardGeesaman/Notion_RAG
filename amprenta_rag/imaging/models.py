@@ -61,8 +61,8 @@ class MicroscopyImage(Base):
 
     # Relationships
     well: Mapped[Optional["HTSWell"]] = relationship()  # Optional for standalone OME-TIFF
-    objective: Mapped[Optional["Objective"]] = relationship()
-    acquisition_settings: Mapped[Optional["AcquisitionSettings"]] = relationship(back_populates="microscopy_image")
+    objective: Mapped[Optional["Objective"]] = relationship("amprenta_rag.imaging.models_metadata.Objective")
+    acquisition_settings: Mapped[Optional["AcquisitionSettings"]] = relationship("amprenta_rag.imaging.models_metadata.AcquisitionSettings", back_populates="microscopy_image")
     segmentations: Mapped[List["CellSegmentation"]] = relationship(
         back_populates="image", cascade="all, delete-orphan"
     )
