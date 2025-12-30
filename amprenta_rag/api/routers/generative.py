@@ -117,7 +117,7 @@ async def interpolate_molecules(
         )
         
         # Convert to response format
-        molecules = [MoleculeSchema(**mol) for mol in molecules_data]
+        molecules = [MoleculeSchema(**mol) for mol in molecules_data["molecules"]]
         
         return InterpolateResponse(
             molecules=molecules,

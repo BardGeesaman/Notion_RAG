@@ -36,10 +36,13 @@ class TestGenerativeAPI:
             "status": "loaded",
         }
         
-        service.sample.return_value = [
-            {"smiles": "CCO", "properties": {"mw": 46.07}, "score": None},
-            {"smiles": "CCC", "properties": {"mw": 44.10}, "score": None},
-        ]
+        service.sample.return_value = {
+            "molecules": [
+                {"smiles": "CCO", "properties": {"mw": 46.07}, "score": None},
+                {"smiles": "CCC", "properties": {"mw": 44.10}, "score": None},
+            ],
+            "count": 2
+        }
         
         service.interpolate.return_value = [
             {"smiles": "CCO", "properties": {}, "score": None, "step": 0},
