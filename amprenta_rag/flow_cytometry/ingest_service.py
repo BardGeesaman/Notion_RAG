@@ -38,8 +38,6 @@ from amprenta_rag.flow_cytometry.fcs_parser import (
     validate_fcs,
 )
 from amprenta_rag.flow_cytometry.gating import (
-    PopulationStats,
-    apply_boolean_gate,
     apply_polygon_gate,
     apply_quadrant_gate,
     apply_rectangle_gate,
@@ -47,7 +45,6 @@ from amprenta_rag.flow_cytometry.gating import (
 )
 from amprenta_rag.flow_cytometry.transforms import (
     apply_compensation,
-    arcsinh_transform,
     auto_logicle_params,
     logicle_transform,
     subsample_events,
@@ -175,7 +172,7 @@ def _process_fcs_async(flow_dataset_id: UUID, fcs_path: str) -> None:
         logger.info(f"Processing FCS file: {fcs_path}")
         
         # Load and parse FCS file
-        data, meta = load_fcs(fcs_path)
+        meta, data = load_fcs(fcs_path)
         flow_metadata = extract_metadata(meta)
         
         logger.info(f"Loaded {data.shape[0]} events with {data.shape[1]} parameters")

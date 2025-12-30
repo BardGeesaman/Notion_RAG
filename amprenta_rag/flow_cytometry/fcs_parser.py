@@ -10,7 +10,6 @@ Supports FCS 2.0, 3.0, and 3.1 file formats.
 
 from __future__ import annotations
 
-import os
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
@@ -59,6 +58,12 @@ class FlowMetadata:
     
     # Additional metadata
     keywords: Dict[str, str] = None
+    sample_volume_ul: Optional[float] = None
+    dilution_factor: Optional[float] = None
+    staining_protocol: Optional[str] = None
+    parameter_short_names: List[str] = None
+    fluorophores: List[str] = None
+    data_ranges: List[Tuple[float, float]] = None
     
     def __post_init__(self):
         """Initialize default values for mutable fields."""
@@ -68,6 +73,12 @@ class FlowMetadata:
             self.parameter_ranges = {}
         if self.keywords is None:
             self.keywords = {}
+        if self.parameter_short_names is None:
+            self.parameter_short_names = []
+        if self.fluorophores is None:
+            self.fluorophores = []
+        if self.data_ranges is None:
+            self.data_ranges = []
 
 
 def load_fcs(path: Union[str, Path]) -> Tuple[Dict, np.ndarray]:
@@ -90,7 +101,7 @@ def load_fcs(path: Union[str, Path]) -> Tuple[Dict, np.ndarray]:
     if not path.exists():
         raise FileNotFoundError(f"FCS file not found: {path}")
     
-    if not path.suffix.lower() in ['.fcs', '.lmd']:
+    if path.suffix.lower() not in ['.fcs', '.lmd']:
         logger.warning(f"File extension {path.suffix} is not typical for FCS files")
     
     try:
@@ -372,7 +383,7 @@ def save_events_parquet(
         raise OSError(f"Failed to save Parquet file {path}: {e}") from e
 
 
-def load_events_parquet(path: Union[str, Path]) -> pd.DataFrame:
+def load_events_parquet(path: Union[str, Path]) -> Tuple[np.ndarray, List[str]]:
     """
     Load event data from Parquet format.
     
@@ -380,7 +391,7 @@ def load_events_parquet(path: Union[str, Path]) -> pd.DataFrame:
         path: Path to Parquet file
         
     Returns:
-        DataFrame with event data
+        Tuple of (events_array, parameter_names)
         
     Raises:
         FileNotFoundError: If file doesn't exist
@@ -397,7 +408,7 @@ def load_events_parquet(path: Union[str, Path]) -> pd.DataFrame:
         df = table.to_pandas()
         
         logger.info(f"Loaded {len(df)} events from {path}")
-        return df
+        return df.values, df.columns.tolist()
         
     except Exception as e:
         raise OSError(f"Failed to load Parquet file {path}: {e}") from e

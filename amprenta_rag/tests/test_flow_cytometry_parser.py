@@ -242,12 +242,12 @@ def test_parquet_roundtrip(mock_fcs_events):
         assert tmp_path.exists()
         
         # Load from Parquet
-        loaded_df = load_events_parquet(tmp_path)
+        loaded_events, loaded_param_names = load_events_parquet(tmp_path)
         
         # Verify data integrity
-        assert loaded_df.shape == mock_fcs_events.shape
-        assert list(loaded_df.columns) == param_names
-        np.testing.assert_array_almost_equal(loaded_df.values, mock_fcs_events)
+        assert loaded_events.shape == mock_fcs_events.shape
+        assert loaded_param_names == param_names
+        np.testing.assert_array_almost_equal(loaded_events, mock_fcs_events)
         
     finally:
         tmp_path.unlink()

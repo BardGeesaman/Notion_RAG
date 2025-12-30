@@ -241,7 +241,7 @@ async def get_dataset_events(
                 param_indices = [parameter_names.index(param) for param in query_params.parameters]
                 events = events[:, param_indices]
                 parameter_names = query_params.parameters
-            except ValueError as e:
+            except ValueError:
                 available_params = ", ".join(parameter_names)
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -376,7 +376,7 @@ async def list_gates(
     query = db.query(FlowCytometryGate).filter(FlowCytometryGate.flow_dataset_id == dataset_id)
     
     if not include_inactive:
-        query = query.filter(FlowCytometryGate.is_active == True)
+        query = query.filter(FlowCytometryGate.is_active.is_(True))
     
     gates = query.order_by(FlowCytometryGate.created_at).all()
     
