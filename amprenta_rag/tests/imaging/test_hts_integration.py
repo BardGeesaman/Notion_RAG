@@ -287,11 +287,11 @@ class TestHTSImagingIntegration:
         """Test Z-score calculation for outlier detection."""
         qc_metrics = QCMetrics()
         
-        # Mock aggregated DataFrame
+        # Mock aggregated DataFrame with clear outlier
         import pandas as pd
         mock_df = pd.DataFrame({
             'well_position': ['A01', 'A02', 'A03', 'A04'],
-            'area_mean': [100.0, 102.0, 98.0, 200.0],  # Last one is outlier
+            'area_mean': [100.0, 102.0, 98.0, 500.0],  # A04 is clear outlier (5x higher)
             'well_id': [str(uuid.uuid4()) for _ in range(4)]
         })
         
@@ -304,11 +304,11 @@ class TestHTSImagingIntegration:
         assert "outliers_2sigma" in result
         assert len(result["zscore_data"]) == 4
         
-        # Check that outliers are detected (A04 with value 200 should be an outlier)
-        # Calculate expected Z-score: (200 - 125) / std ≈ 3.9 (should be > 2)
-        # Mean of [100, 102, 98, 200] = 125, std ≈ 49.24
+        # Check that outliers are detected (A04 with value 500 should be clear outlier)
+        # Calculate expected Z-score: (500 - 175) / std ≈ 1.9 (should be > 2)
+        # Mean of [100, 102, 98, 500] = 200, std ≈ 200
         assert len(result["outliers_2sigma"]) >= 1
-        assert "A04" in result["outliers_2sigma"] or len(result["outliers_3sigma"]) >= 1
+        assert "A04" in result["outliers_2sigma"]
 
     def test_calculate_cv(self):
         """Test coefficient of variation calculation for a well."""
