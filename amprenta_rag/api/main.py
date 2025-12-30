@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from amprenta_rag.api.routers import (
     audit,
+    backup,
     datasets,
     export,
     ip,
@@ -103,6 +104,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(backup.router, prefix="/api/v1", tags=["Backup"])
 app.include_router(programs.router, prefix="/api/v1/programs", tags=["Programs"])
 app.include_router(experiments.router, prefix="/api/v1/experiments", tags=["Experiments"])
 app.include_router(datasets.router, prefix="/api/v1/datasets", tags=["Datasets"])
