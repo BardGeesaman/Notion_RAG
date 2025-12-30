@@ -147,7 +147,7 @@ PAGE_GROUPS = {
     "Visualization": ["Projector", "Graph Explorer", "Pathway Map Viewer", "Visualizations", "Cytoscape Demo", "Entity Explorer", "Data Grid", "Genome Browser"],
     "Notebooks": ["Notebook Co-Pilot", "Notebook Generator", "Notebook Gallery", "Notebooks"],
     "Pipelines": ["Nextflow Orchestrator", "Pipeline Runner", "Sync Monitor", "AI Extraction", "Batch Correction"],
-    "Analysis": ["Analysis Tools", "Experiment Planner", "RAG Query", "Statistical Analysis", "Quality Checks", "Literature Analysis", "Compare", "Timeline", "Data Quality", "Coverage Map", "Feature Recurrence", "Evidence Report"],
+    "Analysis": ["Analysis Tools", "Experiment Planner", "RAG Query", "Statistical Analysis", "Quality Checks", "Literature Analysis", "Compare", "Timeline", "Data Quality", "Coverage Map", "Feature Recurrence", "Evidence Report", "Image Analysis"],
     "Collaboration": ["Activity Feed", "Teams & Projects", "Share Links", "Variant Tracking"],
     "Reports": ["Executive Digests", "Spectral Matching", "Report History"],
     "Admin": ["Company Settings", "Job Queue", "Audit Logs", "Audit Trail", "IP Portfolio", "Data Export", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Backup Admin", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion"],
