@@ -40,7 +40,15 @@ def submit_job(tool: str, fastq_path: str, index_id: str, user_id: str) -> uuid.
         )
         db.add(job)
 
-    threading.Thread(target=_run_job_async, args=(job_id,), daemon=True).start()
+    # Submit job via Celery or fallback to threading
+    import os
+    if os.environ.get("USE_CELERY", "true").lower() == "true":
+        from amprenta_rag.jobs.tasks.genomics import run_genomics_pipeline
+        run_genomics_pipeline.delay(str(job_id))
+    else:
+        # Fallback to threading for gradual rollout
+        threading.Thread(target=_run_job_async, args=(job_id,), daemon=True).start()
+    
     return job_id
 
 
