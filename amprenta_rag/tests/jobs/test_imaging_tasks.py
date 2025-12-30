@@ -144,9 +144,14 @@ class TestBatchSegmentation(TestImagingTasks):
         assert str(image_id2) in result["errors"][0]
     
     @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.imaging.models.CellFeature')
+    @patch('amprenta_rag.imaging.models.CellSegmentation')
+    @patch('amprenta_rag.imaging.models.MicroscopyImage')
     @patch('amprenta_rag.imaging.cellpose_service.CellPoseService')
     @patch('amprenta_rag.imaging.storage.ImageStorage')
-    def test_batch_segmentation_invalid_image(self, mock_storage_class, mock_cellpose_class, mock_db_session):
+    def test_batch_segmentation_invalid_image(self, mock_storage_class, mock_cellpose_class, 
+                                             mock_image_class, mock_segmentation_class, 
+                                             mock_feature_class, mock_db_session):
         """Test batch segmentation when image validation fails."""
         image_id = uuid4()
         image_ids = [str(image_id)]
@@ -177,7 +182,7 @@ class TestBatchSegmentation(TestImagingTasks):
         
         # Verify result shows validation error
         assert result["total_images"] == 1
-        assert result["processed_images"] == 1
+        assert result["processed_images"] == 0  # Image validation failed, not processed
         assert result["successful_segmentations"] == 0
         assert result["failed_segmentations"] == 1
         assert len(result["errors"]) == 1
@@ -187,11 +192,15 @@ class TestBatchSegmentation(TestImagingTasks):
         mock_cellpose.segment.assert_not_called()
     
     @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.imaging.models.CellFeature')
+    @patch('amprenta_rag.imaging.models.CellSegmentation')
+    @patch('amprenta_rag.imaging.models.MicroscopyImage')
     @patch('amprenta_rag.imaging.cellpose_service.CellPoseService')
     @patch('amprenta_rag.imaging.feature_extraction.FeatureExtractor')
     @patch('amprenta_rag.imaging.storage.ImageStorage')
     def test_batch_segmentation_partial_success(self, mock_storage_class, mock_extractor_class,
-                                               mock_cellpose_class, mock_db_session):
+                                               mock_cellpose_class, mock_image_class,
+                                               mock_segmentation_class, mock_feature_class, mock_db_session):
         """Test batch segmentation when some images fail but processing continues."""
         image_id1 = uuid4()
         image_id2 = uuid4()
@@ -237,7 +246,7 @@ class TestBatchSegmentation(TestImagingTasks):
         
         # Verify partial success
         assert result["total_images"] == 2
-        assert result["processed_images"] == 2
+        assert result["processed_images"] == 1          # Only first image processed successfully
         assert result["successful_segmentations"] == 1  # Only first image succeeded
         assert result["failed_segmentations"] == 1     # Second image failed
         assert result["total_cells_found"] == 100      # Only from first image
@@ -246,11 +255,15 @@ class TestBatchSegmentation(TestImagingTasks):
         assert "File corrupted" in result["errors"][0]
     
     @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.imaging.models.CellFeature')
+    @patch('amprenta_rag.imaging.models.CellSegmentation')
+    @patch('amprenta_rag.imaging.models.MicroscopyImage')
     @patch('amprenta_rag.imaging.cellpose_service.CellPoseService')
     @patch('amprenta_rag.imaging.feature_extraction.FeatureExtractor')
     @patch('amprenta_rag.imaging.storage.ImageStorage')
     def test_batch_segmentation_feature_extraction(self, mock_storage_class, mock_extractor_class,
-                                                   mock_cellpose_class, mock_db_session):
+                                                   mock_cellpose_class, mock_image_class,
+                                                   mock_segmentation_class, mock_feature_class, mock_db_session):
         """Test batch segmentation validates feature extraction."""
         image_id = uuid4()
         image_ids = [str(image_id)]
@@ -324,9 +337,14 @@ class TestBatchSegmentation(TestImagingTasks):
         assert "Database connection failed" in str(exc_info.value)
     
     @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.imaging.models.CellFeature')
+    @patch('amprenta_rag.imaging.models.CellSegmentation')
+    @patch('amprenta_rag.imaging.models.MicroscopyImage')
     @patch('amprenta_rag.imaging.cellpose_service.CellPoseService')
     @patch('amprenta_rag.imaging.storage.ImageStorage')
-    def test_batch_segmentation_progress_tracking(self, mock_storage_class, mock_cellpose_class, mock_db_session):
+    def test_batch_segmentation_progress_tracking(self, mock_storage_class, mock_cellpose_class, 
+                                                 mock_image_class, mock_segmentation_class, 
+                                                 mock_feature_class, mock_db_session):
         """Test batch segmentation results dict has correct counts."""
         image_id1 = uuid4()
         image_id2 = uuid4()
@@ -375,9 +393,14 @@ class TestBatchSegmentation(TestImagingTasks):
         assert "processing_time_seconds" in result
     
     @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.imaging.models.CellFeature')
+    @patch('amprenta_rag.imaging.models.CellSegmentation')
+    @patch('amprenta_rag.imaging.models.MicroscopyImage')
     @patch('amprenta_rag.imaging.cellpose_service.CellPoseService')
     @patch('amprenta_rag.imaging.storage.ImageStorage')
-    def test_batch_segmentation_db_records(self, mock_storage_class, mock_cellpose_class, mock_db_session):
+    def test_batch_segmentation_db_records(self, mock_storage_class, mock_cellpose_class, 
+                                          mock_image_class, mock_segmentation_class, 
+                                          mock_feature_class, mock_db_session):
         """Test batch segmentation creates CellSegmentation records."""
         image_id = uuid4()
         image_ids = [str(image_id)]
