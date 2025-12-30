@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-30 (Generative Chemistry added)
+**Last Updated**: 2025-12-30 (Generative Chemistry, Navigation & UI Organization added)
 
 Simple status legend:
 - ✅ DONE
@@ -263,10 +263,14 @@ Simple status legend:
 - ❌ Biophysical Assay Support (SPR, MST, DSC)
 
 **Visualization & UI/UX:**
-- ❌ Navigation & UI Organization
-  - Functional grouping (Discovery, ELN, Analysis, Admin)
-  - Collapsible sidebar sections
-- ❌ Scientist's Cockpit Dashboard (widgets for recent data, alerts, tasks)
+- ✅ Navigation & UI Organization (2025-12-30)
+  - Consolidated PAGE_GROUPS with functional grouping (Discovery, Analysis, Chemistry, Admin, Collaboration, Visualization, Compliance)
+  - Unified sidebar component across all pages
+  - Breadcrumb navigation with context awareness
+  - Ctrl+K command palette for fuzzy search
+  - Mobile-responsive collapsible navigation
+  - 46 tests (8 config + 12 breadcrumbs + 9 sidebar + 9 quicknav + 8 responsive) - 100% pass rate
+  - Cleanup: Removed duplicate pages, dead code, migrated legacy PAGE_LIST
 
 **Compliance & IP:**
 - ✅ 21 CFR Part 11 Foundation (2025-12-29)
