@@ -137,7 +137,7 @@ PAGE_REGISTRY = {
 # Navigation groups for organized sidebar
 PAGE_GROUPS = {
     "Home": ["Overview", "Cockpit", "Getting Started"],
-    "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue", "Discovery Workflow", "Discovery", "Repositories", "Search", "Features", "Signatures"],
+    "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue", "Discovery Workflow", "Discovery", "Repositories", "Search", "Features", "Signatures", "Workspaces"],
     "Chemistry": ["Chemistry", "Chemical Sketcher", "Generative Chemistry", "Compound Portfolio", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network", "SAR What-If", "Candidate Selection"],
     "HTS": ["HTS QC", "Dose-Response Explorer", "Screening"],
     "Structure": ["Protein Structures", "Binding Sites", "Docking Runs", "Docking Triage", "Molecule Viewer"],
