@@ -47,6 +47,101 @@ from amprenta_rag.analysis.models import PriorConfig
 
 
 # ============================================================================
+# LLM-based Planning schemas
+# ============================================================================
+
+
+class PlanRequest(BaseModel):
+    """Request for LLM-based experiment planning."""
+    
+    goal: str = Field(..., description="Research goal or hypothesis")
+    context: Optional[ScoringContextRequest] = Field(None, description="Research context")
+    constraints: Optional[List[str]] = Field(None, description="Budget, time, or resource constraints")
+    
+
+class CritiqueRequest(BaseModel):
+    """Request for LLM-based plan critique."""
+    
+    plan: str = Field(..., description="Experimental plan to critique")
+    criteria: Optional[List[str]] = Field(None, description="Specific criteria to evaluate")
+    context: Optional[ScoringContextRequest] = Field(None, description="Research context")
+
+
+class RefineRequest(BaseModel):
+    """Request for LLM-based plan refinement."""
+    
+    original_plan: str = Field(..., description="Original experimental plan")
+    critique: str = Field(..., description="Critique feedback")
+    additional_requirements: Optional[str] = Field(None, description="Additional requirements")
+
+
+class ExecuteRequest(BaseModel):
+    """Request for LLM-based execution guidance."""
+    
+    plan: str = Field(..., description="Experimental plan to execute")
+    current_step: Optional[int] = Field(None, description="Current execution step")
+    issues: Optional[List[str]] = Field(None, description="Issues encountered during execution")
+
+
+class PlanStep(BaseModel):
+    """Individual step in an experimental plan."""
+    
+    step_number: int
+    description: str
+    duration: Optional[str] = None
+    resources: Optional[List[str]] = None
+    dependencies: Optional[List[int]] = None
+
+
+class PlanResult(BaseModel):
+    """LLM-based planning result."""
+    
+    plan_id: str
+    title: str
+    objective: str
+    steps: List[PlanStep]
+    estimated_duration: Optional[str] = None
+    estimated_cost: Optional[str] = None
+    risks: Optional[List[str]] = None
+    processing_time_seconds: float
+    cached: bool = False
+
+
+class CritiqueResult(BaseModel):
+    """LLM-based critique result."""
+    
+    overall_score: float = Field(..., ge=0, le=10, description="Overall plan quality score")
+    strengths: List[str]
+    weaknesses: List[str]
+    recommendations: List[str]
+    feasibility_score: Optional[float] = Field(None, ge=0, le=10)
+    processing_time_seconds: float
+    cached: bool = False
+
+
+class RefinementResult(BaseModel):
+    """LLM-based refinement result."""
+    
+    refined_plan: PlanResult
+    changes_made: List[str]
+    rationale: str
+    processing_time_seconds: float
+    cached: bool = False
+
+
+class ExecutionGuidance(BaseModel):
+    """LLM-based execution guidance."""
+    
+    current_step: PlanStep
+    next_steps: List[PlanStep]
+    recommendations: List[str]
+    potential_issues: Optional[List[str]] = None
+    troubleshooting: Optional[List[str]] = None
+    processing_time_seconds: float
+    cached: bool = False
+
+
+# ============================================================================
 # LLM-based Ranking schemas
 # ============================================================================
 
