@@ -2,12 +2,12 @@
 
 from .config import (
     AUTH_DISABLED,
-    DISCOVERY_PAGES,
-    ANALYSIS_PAGES,
-    ELN_PAGES,
     ADMIN_PAGES,
     ALL_PAGES,
     PAGE_REGISTRY,
+    PAGE_GROUPS,
+    GROUP_ORDER,
+    GROUP_ICONS,
 )
 from .auth import check_authentication, handle_session_timeout, get_mock_user
 from .sidebar import render_sidebar
@@ -16,12 +16,12 @@ from .routing import route_to_page
 
 __all__ = [
     "AUTH_DISABLED",
-    "DISCOVERY_PAGES",
-    "ANALYSIS_PAGES",
-    "ELN_PAGES",
     "ADMIN_PAGES",
     "ALL_PAGES",
     "PAGE_REGISTRY",
+    "PAGE_GROUPS",
+    "GROUP_ORDER",
+    "GROUP_ICONS",
     "check_authentication",
     "handle_session_timeout",
     "get_mock_user",
