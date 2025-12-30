@@ -18,7 +18,7 @@ def run_sync_job(self, job_id: str) -> dict:
     try:
         # Create manager and register adapters
         mgr = SyncManager(db_session)
-        mgr.register_adapter(ChEMBLAdapter(db_session))
+        mgr.register_adapter(ChEMBLAdapter())
         mgr.register_adapter(PubChemAdapter(db_session))
         
         # Run sync job
