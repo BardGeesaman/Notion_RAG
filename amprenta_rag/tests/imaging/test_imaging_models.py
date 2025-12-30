@@ -217,7 +217,7 @@ class TestImagingModels:
             bit_depth=16,
             pixel_size_um=0.325,
             image_path="images/well_123/DAPI_z000_t000.tiff",
-            metadata={"exposure_ms": 100, "gain": 2.0}
+            image_metadata={"exposure_ms": 100, "gain": 2.0}
         )
         
         db_session.add(image)
@@ -229,7 +229,7 @@ class TestImagingModels:
         assert image.width == 2048
         assert image.height == 2048
         assert image.well_id == sample_well.id
-        assert image.metadata["exposure_ms"] == 100
+        assert image.image_metadata["exposure_ms"] == 100
 
     def test_cell_segmentation_creation(self, db_session, sample_well):
         """Test creating cell segmentation with image FK."""

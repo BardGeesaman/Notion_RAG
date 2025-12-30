@@ -42,7 +42,7 @@ class MicroscopyImage(Base):
     thumbnail_path = Column(String(500), nullable=True)  # Path to thumbnail
     
     # Image metadata
-    metadata = Column(JSON, nullable=True)  # Acquisition settings, exposure, etc.
+    image_metadata = Column(JSON, nullable=True)  # Acquisition settings, exposure, etc.
     
     # Quality metrics
     focus_score = Column(Float, nullable=True)  # Image focus quality
