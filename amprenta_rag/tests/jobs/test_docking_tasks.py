@@ -23,8 +23,8 @@ class TestDockingTasks:
         """Clean up test environment."""
         os.environ.pop("CELERY_TASK_ALWAYS_EAGER", None)
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
-    @patch('amprenta_rag.jobs.tasks.docking.prepare_receptor')
+    @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
     @patch('amprenta_rag.jobs.tasks.docking.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_success(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
@@ -103,7 +103,7 @@ class TestDockingTasks:
         assert mock_run.status == "completed"
         assert mock_run.completed_at is not None
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
+    @patch('amprenta_rag.database.session.db_session')
     def test_docking_run_not_found(self, mock_db_session):
         """Test docking task when run doesn't exist."""
         run_id = uuid4()
@@ -121,8 +121,8 @@ class TestDockingTasks:
         assert result["error"] == "Run not found"
         assert result["run_id"] == str(run_id)
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
-    @patch('amprenta_rag.jobs.tasks.docking.prepare_receptor')
+    @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
     def test_docking_receptor_prep_failure(self, mock_prepare_receptor, mock_db_session):
         """Test docking task when receptor preparation fails."""
         run_id = uuid4()
@@ -162,7 +162,7 @@ class TestDockingTasks:
         assert mock_run.status == "failed"
         assert "Failed to prepare receptor" in mock_run.error_log
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
+    @patch('amprenta_rag.database.session.db_session')
     def test_docking_no_structure(self, mock_db_session):
         """Test docking task when structure is missing."""
         run_id = uuid4()
@@ -189,8 +189,8 @@ class TestDockingTasks:
         assert result["error"] == "Run or structure not found"
         assert result["run_id"] == str(run_id)
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
-    @patch('amprenta_rag.jobs.tasks.docking.prepare_receptor')
+    @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
     @patch('amprenta_rag.jobs.tasks.docking.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_compound_selection(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
@@ -266,8 +266,8 @@ class TestDockingTasks:
         # Verify specific compounds were used
         mock_db.query.return_value.filter.assert_called_once()
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
-    @patch('amprenta_rag.jobs.tasks.docking.prepare_receptor')
+    @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
     @patch('amprenta_rag.jobs.tasks.docking.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_compound_processing_error(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
@@ -338,8 +338,8 @@ class TestDockingTasks:
         # Verify error was logged to run
         # Note: The error_log update happens in the exception handler
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
-    @patch('amprenta_rag.jobs.tasks.docking.prepare_receptor')
+    @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
     @patch('amprenta_rag.jobs.tasks.docking.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_error_log_aggregation(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
@@ -415,8 +415,8 @@ class TestDockingTasks:
         # Verify error aggregation would have happened
         # (In the actual implementation, errors are appended to error_log)
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
-    @patch('amprenta_rag.jobs.tasks.docking.prepare_receptor')
+    @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
     @patch('amprenta_rag.jobs.tasks.docking.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_status_transitions(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
@@ -489,8 +489,8 @@ class TestDockingTasks:
         assert mock_run.completed_at is not None
         assert mock_run.status == "completed"
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
-    @patch('amprenta_rag.jobs.tasks.docking.prepare_receptor')
+    @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
     def test_docking_retry_on_failure(self, mock_prepare_receptor, mock_db_session):
         """Test docking task retry logic with exponential backoff."""
         run_id = uuid4()
@@ -527,8 +527,8 @@ class TestDockingTasks:
                 args, kwargs = mock_retry.call_args
                 assert kwargs['countdown'] == 120 * (2 ** 1)  # 240 seconds for first retry
     
-    @patch('amprenta_rag.jobs.tasks.docking.db_session')
-    @patch('amprenta_rag.jobs.tasks.docking.prepare_receptor')
+    @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
     def test_docking_partial_success(self, mock_prepare_receptor, mock_db_session):
         """Test docking task when some compounds fail but run is marked failed due to errors."""
         run_id = uuid4()

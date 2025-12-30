@@ -24,9 +24,10 @@ class TestGenomicsTasks:
         os.environ.pop("CELERY_TASK_ALWAYS_EAGER", None)
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.ingestion.genomics.pipeline')
+    @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
+    @patch('amprenta_rag.ingestion.genomics.pipeline.run_kallisto_quant')
     @patch('amprenta_rag.config.get_config')
-    def test_genomics_success(self, mock_get_config, mock_pipeline, mock_db_session):
+    def test_genomics_success(self, mock_get_config, mock_kallisto, mock_salmon, mock_db_session):
         """Test successful genomics pipeline task execution."""
         job_id = uuid4()
         index_id = uuid4()
@@ -61,7 +62,7 @@ class TestGenomicsTasks:
         
         # Mock pipeline result
         result_file = Path("/tmp/jobs") / str(job_id) / "quant.sf"
-        mock_pipeline.run_salmon_quant.return_value = result_file
+        mock_salmon.return_value = result_file
         
         # Execute task
         result = run_genomics_pipeline(str(job_id))
@@ -72,7 +73,7 @@ class TestGenomicsTasks:
         assert result["result_file"] == str(result_file)
         
         # Verify pipeline was called correctly
-        mock_pipeline.run_salmon_quant.assert_called_once()
+        mock_salmon.assert_called_once()
         
         # Verify job status updates
         assert mock_job.status == "complete"
@@ -81,9 +82,15 @@ class TestGenomicsTasks:
         assert mock_job.error_message is None
     
     @patch('amprenta_rag.database.session.db_session')
-    def test_genomics_job_not_found(self, mock_db_session):
+    @patch('amprenta_rag.config.get_config')
+    def test_genomics_job_not_found(self, mock_get_config, mock_db_session):
         """Test genomics pipeline task when job doesn't exist."""
         job_id = uuid4()
+        
+        # Mock config
+        mock_config = MagicMock()
+        mock_config.genomics.job_root = "/tmp/jobs"
+        mock_get_config.return_value = mock_config
         
         # Mock database session - return None for job query
         mock_db = MagicMock()
@@ -140,9 +147,9 @@ class TestGenomicsTasks:
         assert "Index not found" in mock_job.error_message
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.ingestion.genomics.pipeline')
+    @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
-    def test_genomics_pipeline_salmon_success(self, mock_get_config, mock_pipeline, mock_db_session):
+    def test_genomics_pipeline_salmon_success(self, mock_get_config, mock_salmon, mock_db_session):
         """Test successful Salmon tool execution."""
         job_id = uuid4()
         index_id = uuid4()
@@ -174,13 +181,13 @@ class TestGenomicsTasks:
         
         # Mock pipeline result
         result_file = Path("/tmp/jobs") / str(job_id) / "quant.sf"
-        mock_pipeline.run_salmon_quant.return_value = result_file
+        mock_salmon.return_value = result_file
         
         # Execute task
         result = run_genomics_pipeline(str(job_id))
         
         # Verify salmon was called
-        mock_pipeline.run_salmon_quant.assert_called_once_with(
+        mock_salmon.assert_called_once_with(
             fastq_path=Path("/data/sample.fastq"),
             index_path=Path("/indices/salmon_index"),
             output_dir=Path("/tmp/jobs") / str(job_id)
@@ -190,9 +197,9 @@ class TestGenomicsTasks:
         assert result["status"] == "complete"
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.ingestion.genomics.pipeline')
+    @patch('amprenta_rag.ingestion.genomics.pipeline.run_kallisto_quant')
     @patch('amprenta_rag.config.get_config')
-    def test_genomics_pipeline_kallisto_success(self, mock_get_config, mock_pipeline, mock_db_session):
+    def test_genomics_pipeline_kallisto_success(self, mock_get_config, mock_kallisto, mock_db_session):
         """Test successful Kallisto tool execution."""
         job_id = uuid4()
         index_id = uuid4()
@@ -224,13 +231,13 @@ class TestGenomicsTasks:
         
         # Mock pipeline result
         result_file = Path("/tmp/jobs") / str(job_id) / "abundance.tsv"
-        mock_pipeline.run_kallisto_quant.return_value = result_file
+        mock_kallisto.return_value = result_file
         
         # Execute task
         result = run_genomics_pipeline(str(job_id))
         
         # Verify kallisto was called
-        mock_pipeline.run_kallisto_quant.assert_called_once_with(
+        mock_kallisto.assert_called_once_with(
             fastq_path=Path("/data/sample.fastq"),
             index_path=Path("/indices/kallisto_index"),
             output_dir=Path("/tmp/jobs") / str(job_id)
@@ -284,9 +291,9 @@ class TestGenomicsTasks:
         assert "Unknown tool" in mock_job.error_message
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.ingestion.genomics.pipeline')
+    @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
-    def test_genomics_pipeline_error(self, mock_get_config, mock_pipeline, mock_db_session):
+    def test_genomics_pipeline_error(self, mock_get_config, mock_salmon, mock_db_session):
         """Test genomics pipeline task handling pipeline execution error."""
         job_id = uuid4()
         index_id = uuid4()
@@ -317,7 +324,7 @@ class TestGenomicsTasks:
         ]
         
         # Mock pipeline to raise exception
-        mock_pipeline.run_salmon_quant.side_effect = RuntimeError("Pipeline execution failed")
+        mock_salmon.side_effect = RuntimeError("Pipeline execution failed")
         
         # Execute task
         result = run_genomics_pipeline(str(job_id))
@@ -332,9 +339,9 @@ class TestGenomicsTasks:
         assert "Pipeline execution failed" in mock_job.error_message
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.ingestion.genomics.pipeline')
+    @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
-    def test_genomics_status_transitions(self, mock_get_config, mock_pipeline, mock_db_session):
+    def test_genomics_status_transitions(self, mock_get_config, mock_salmon, mock_db_session):
         """Test genomics pipeline task status transitions."""
         job_id = uuid4()
         index_id = uuid4()
@@ -367,7 +374,7 @@ class TestGenomicsTasks:
         
         # Mock pipeline result
         result_file = Path("/tmp/jobs") / str(job_id) / "quant.sf"
-        mock_pipeline.run_salmon_quant.return_value = result_file
+        mock_salmon.return_value = result_file
         
         # Execute task
         result = run_genomics_pipeline(str(job_id))
@@ -383,9 +390,9 @@ class TestGenomicsTasks:
         assert mock_job.completed_at is not None
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.ingestion.genomics.pipeline')
+    @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
-    def test_genomics_retry_on_failure(self, mock_get_config, mock_pipeline, mock_db_session):
+    def test_genomics_retry_on_failure(self, mock_get_config, mock_salmon, mock_db_session):
         """Test genomics pipeline task retry logic with exponential backoff."""
         job_id = uuid4()
         index_id = uuid4()
@@ -416,7 +423,7 @@ class TestGenomicsTasks:
         ]
         
         # Mock pipeline to raise exception
-        mock_pipeline.run_salmon_quant.side_effect = RuntimeError("Temporary failure")
+        mock_salmon.side_effect = RuntimeError("Temporary failure")
         
         # Mock the task itself to simulate retry behavior
         with patch.object(run_genomics_pipeline, 'request') as mock_request:
@@ -435,9 +442,9 @@ class TestGenomicsTasks:
                 assert kwargs['countdown'] == 60 * (2 ** 1)  # 120 seconds for first retry
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.ingestion.genomics.pipeline')
+    @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
-    def test_genomics_max_retries_exceeded(self, mock_get_config, mock_pipeline, mock_db_session):
+    def test_genomics_max_retries_exceeded(self, mock_get_config, mock_salmon, mock_db_session):
         """Test genomics pipeline task when max retries are exceeded."""
         job_id = uuid4()
         index_id = uuid4()
@@ -468,7 +475,7 @@ class TestGenomicsTasks:
         ]
         
         # Mock pipeline to raise exception
-        mock_pipeline.run_salmon_quant.side_effect = RuntimeError("Persistent failure")
+        mock_salmon.side_effect = RuntimeError("Persistent failure")
         
         # Mock the task to simulate max retries exceeded
         with patch.object(run_genomics_pipeline, 'request') as mock_request:
