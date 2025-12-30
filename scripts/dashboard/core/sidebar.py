@@ -22,7 +22,7 @@ from scripts.dashboard.core.favorites import (
     get_user_favorites,
     update_recent_pages,
 )
-from scripts.dashboard.components.sidebar_nav import render_grouped_sidebar
+# Import moved inside function to avoid circular import
 from scripts.dashboard.core.jupyter_auth import get_jupyterhub_url, get_voila_url
 from scripts.dashboard.components.alerts_bell import render_alerts_bell
 
@@ -282,8 +282,11 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
 
         render_command_palette()
 
-    # Use new grouped navigation
+    # Use enhanced grouped navigation
     current_page = st.session_state.get("selected_page", "Overview")
+    
+    # Import here to avoid circular import
+    from scripts.dashboard.components.sidebar_nav import render_grouped_sidebar
     selected = render_grouped_sidebar(current_page=current_page)
     
     if selected:
