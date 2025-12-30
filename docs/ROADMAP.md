@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-28 (Scientific Paper Ingestion added)
+**Last Updated**: 2025-12-30 (Generative Chemistry added)
 
 Simple status legend:
 - ✅ DONE
@@ -298,7 +298,13 @@ Simple status legend:
   - Extended health monitoring (CPU/Memory/Queue)
 
 **Future ML/AI Innovations:**
-- ❌ Generative Chemistry (De Novo Design / VAEs)
+- ✅ Generative Chemistry (De Novo Design) (2025-12-30)
+  - VAE-based molecular generation with property optimization
+  - 5 API endpoints (/sample, /optimize, /interpolate, /latent, /reconstruct)
+  - 4-tab dashboard (Sample/Optimize/Interpolate/Train)
+  - Demo model included (<1MB, trains <2s)
+  - 56 tests (12 VAE + 11 optimization + 11 API + 10 E2E + 12 training) - 100% pass rate
+  - Key capabilities: latent space traversal, property-guided generation, scaffold hopping, SMILES reconstruction
 - ❌ Image Analysis Pipeline (CellPose for HCS)
 - ❌ Power Analysis for Sample Size Estimation
 

@@ -167,6 +167,19 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-30] – **Generative Chemistry (De Novo Design) Complete**:
+  - **Plan**: .cursor/plans/generative_chemistry_vae_b7e3a9f2.plan.md
+  - **Results**: 5 batches complete, 56 tests, 100% pass rate
+  - **Batch 1 - VAE Engine**: Encoder/Decoder/Loss with multi-objective optimization (12 tests)
+  - **Batch 2 - Property Optimization**: Latent space traversal, interpolation, optimization (11 tests)
+  - **Batch 3 - API Endpoints**: 5 endpoints (/sample, /optimize, /interpolate, /latent, /reconstruct) (11 tests)
+  - **Batch 4 - Dashboard UI**: 4-tab interface (Sample/Optimize/Interpolate/Train) (10 tests)
+  - **Batch 5 - Training Pipeline**: Model training with demo model included (12 tests)
+  - **Key Features**: VAE-based molecular generation, property-guided optimization, scaffold hopping, latent space exploration
+  - **Demo Model**: Included pre-trained model (<1MB, trains <2s) for immediate testing
+  - **New Files**: 15 files (~3500 lines) across ml/generative/, api/routers/, dashboard/pages/
+  - **Zero skipped tests** - No Bandaids policy enforced
+
 * [2025-12-29] – **Automated Backup & Disaster Recovery Complete**:
   - **Plan**: .cursor/plans/backup_disaster_recovery.plan.md
   - **Results**: 5 batches complete, 57 tests, 100% pass rate
