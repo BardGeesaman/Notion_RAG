@@ -48,6 +48,7 @@ from amprenta_rag.api.routers import (
     chemistry,
     sphingolipid,
     phenotypes,
+    generative,
     graph,
     structures,
     pockets,
@@ -142,6 +143,7 @@ app.include_router(digests.router, prefix="/api")
 app.include_router(reviews.router, prefix="/api")
 app.include_router(automl.router, prefix="/api")
 app.include_router(ml.router, prefix="/api")
+app.include_router(generative.router, prefix="/api/v1", tags=["Generative Chemistry"])
 
 app.include_router(phenotypes.router, prefix="/api")
 app.include_router(graph.router, prefix="/api")

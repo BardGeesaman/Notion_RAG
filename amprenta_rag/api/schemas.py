@@ -15,6 +15,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from amprenta_rag.models.domain import FeatureType, OmicsType, SignatureDirection
 
+# Generative chemistry schemas (added inline to avoid circular imports)
+
 
 # ============================================================================
 # Common schemas
