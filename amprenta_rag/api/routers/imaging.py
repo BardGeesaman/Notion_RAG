@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_current_user, get_db
 from amprenta_rag.api import schemas as api_schemas
-from amprenta_rag.api.schemas.imaging import (
+from amprenta_rag.api.schemas_imaging.imaging import (
     OMETiffImportRequest,
     OMETiffImportResponse,
     BatchImportRequest,
