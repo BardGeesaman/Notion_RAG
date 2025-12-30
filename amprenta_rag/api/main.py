@@ -82,6 +82,7 @@ from amprenta_rag.api.routers import (
     scoring,
     predictors,
     papers,
+    imaging,
 )
 from amprenta_rag.config import get_config
 

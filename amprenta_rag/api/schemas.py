@@ -1890,3 +1890,134 @@ class ErrorResponse(BaseModel):
     detail: Optional[str] = Field(None, description="Detailed error information")
     error_type: str = Field(..., description="Type of error")
     request_id: Optional[str] = Field(None, description="Request identifier for tracking")
+
+
+# ============================================================================
+# Imaging schemas
+# ============================================================================
+
+
+class ImageUploadRequest(BaseModel):
+    """Request for uploading microscopy image."""
+    
+    well_id: Optional[UUID] = Field(None, description="Well ID to associate with image")
+    channel: str = Field(..., description="Channel name (e.g., DAPI, GFP, RFP)")
+    z_slice: int = Field(0, description="Z-stack slice index")
+    timepoint: int = Field(0, description="Time series index")
+    pixel_size_um: Optional[float] = Field(None, description="Pixel size in microns")
+
+
+class ImageUploadResponse(BaseModel):
+    """Response for image upload."""
+    
+    image_id: UUID = Field(description="Unique image identifier")
+    image_path: str = Field(description="Storage path of uploaded image")
+    width: int = Field(description="Image width in pixels")
+    height: int = Field(description="Image height in pixels")
+    channel: str = Field(description="Channel name")
+    well_id: Optional[UUID] = Field(description="Associated well ID")
+    message: str = Field(description="Success message")
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SegmentationRequest(BaseModel):
+    """Request for cell segmentation."""
+    
+    image_id: UUID = Field(description="Image to segment")
+    model_name: Optional[str] = Field("cyto", description="CellPose model type")
+    diameter: Optional[float] = Field(30.0, description="Expected cell diameter in pixels")
+    channels: Optional[List[int]] = Field([0, 0], description="Channel configuration [cytoplasm, nucleus]")
+    extract_features: bool = Field(True, description="Whether to extract morphological features")
+
+
+class SegmentationResponse(BaseModel):
+    """Response for cell segmentation."""
+    
+    segmentation_id: UUID = Field(description="Unique segmentation identifier")
+    image_id: UUID = Field(description="Source image ID")
+    cell_count: int = Field(description="Number of cells detected")
+    model_name: str = Field(description="Model used for segmentation")
+    mask_path: str = Field(description="Storage path of segmentation mask")
+    features_extracted: bool = Field(description="Whether features were extracted")
+    processing_time_seconds: float = Field(description="Processing time")
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BatchSegmentationRequest(BaseModel):
+    """Request for batch segmentation."""
+    
+    image_ids: List[UUID] = Field(description="List of images to segment")
+    model_name: Optional[str] = Field("cyto", description="CellPose model type")
+    diameter: Optional[float] = Field(30.0, description="Expected cell diameter in pixels")
+    channels: Optional[List[int]] = Field([0, 0], description="Channel configuration")
+    extract_features: bool = Field(True, description="Whether to extract features")
+
+
+class BatchSegmentationResponse(BaseModel):
+    """Response for batch segmentation."""
+    
+    task_id: str = Field(description="Celery task ID for tracking")
+    image_count: int = Field(description="Number of images queued")
+    status: str = Field(description="Task status")
+    message: str = Field(description="Status message")
+
+
+class ImageMetadataResponse(BaseModel):
+    """Response for image metadata."""
+    
+    image_id: UUID = Field(description="Image identifier")
+    well_id: Optional[UUID] = Field(description="Associated well ID")
+    channel: str = Field(description="Channel name")
+    z_slice: int = Field(description="Z-stack slice index")
+    timepoint: int = Field(description="Time series index")
+    width: int = Field(description="Image width in pixels")
+    height: int = Field(description="Image height in pixels")
+    bit_depth: int = Field(description="Image bit depth")
+    pixel_size_um: Optional[float] = Field(description="Pixel size in microns")
+    image_path: str = Field(description="Storage path")
+    metadata: Optional[Dict[str, Any]] = Field(description="Additional metadata")
+    acquired_at: Optional[datetime] = Field(description="Image acquisition time")
+    created_at: datetime = Field(description="Record creation time")
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SegmentationResultResponse(BaseModel):
+    """Response for segmentation results."""
+    
+    segmentation_id: UUID = Field(description="Segmentation identifier")
+    image_id: UUID = Field(description="Source image ID")
+    model_name: str = Field(description="Model used")
+    model_version: Optional[str] = Field(description="Model version")
+    cell_count: int = Field(description="Number of cells detected")
+    mask_path: str = Field(description="Segmentation mask path")
+    parameters: Optional[Dict[str, Any]] = Field(description="Segmentation parameters")
+    confidence_score: Optional[float] = Field(description="Overall confidence score")
+    created_at: datetime = Field(description="Segmentation time")
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CellFeaturesResponse(BaseModel):
+    """Response for cell features."""
+    
+    segmentation_id: UUID = Field(description="Source segmentation ID")
+    cell_count: int = Field(description="Number of cells")
+    features: List[Dict[str, Any]] = Field(description="List of cell features")
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WellSummaryResponse(BaseModel):
+    """Response for well-level summary."""
+    
+    well_id: UUID = Field(description="Well identifier")
+    image_count: int = Field(description="Number of images in well")
+    total_cell_count: int = Field(description="Total cells across all images")
+    channels: List[str] = Field(description="Available channels")
+    aggregated_features: Dict[str, Any] = Field(description="Aggregated morphology features")
+    summary_metrics: Dict[str, Any] = Field(description="High-level well metrics")
+    
+    model_config = ConfigDict(from_attributes=True)
