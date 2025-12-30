@@ -273,6 +273,24 @@ class PostgresConfig:
     echo: bool = POSTGRES_ECHO
 
 
+# Backup configuration environment variables
+BACKUP_S3_ENABLED = os.getenv("BACKUP_S3_ENABLED", "false").lower() == "true"
+BACKUP_S3_BUCKET = os.getenv("BACKUP_S3_BUCKET", "")
+BACKUP_KMS_KEY_ID = os.getenv("BACKUP_KMS_KEY_ID", "")
+BACKUP_LOCAL_DIR = os.getenv("BACKUP_LOCAL_DIR", "./backups")
+BACKUP_RETENTION_DAYS = int(os.getenv("BACKUP_RETENTION_DAYS", "365"))
+
+
+@dataclass(frozen=True)
+class BackupConfig:
+    """Backup and disaster recovery configuration."""
+    s3_enabled: bool = BACKUP_S3_ENABLED
+    s3_bucket: str = BACKUP_S3_BUCKET
+    kms_key_id: str = BACKUP_KMS_KEY_ID
+    local_dir: str = BACKUP_LOCAL_DIR
+    retention_days: int = BACKUP_RETENTION_DAYS
+
+
 @dataclass(frozen=True)
 class AppConfig:
     openai: OpenAIConfig
@@ -283,6 +301,7 @@ class AppConfig:
     feature_cache: FeatureCacheConfig
     postgres: PostgresConfig
     server: ServerConfig
+    backup: BackupConfig
     vector_backend: str = VECTOR_BACKEND
 
 
@@ -321,6 +340,7 @@ def get_config() -> AppConfig:
             feature_cache=FeatureCacheConfig(),
             postgres=PostgresConfig(),
             server=ServerConfig(),
+            backup=BackupConfig(),
             vector_backend=VECTOR_BACKEND,
         )
     return _config_singleton

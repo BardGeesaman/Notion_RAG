@@ -41,6 +41,10 @@ resource "aws_db_instance" "postgres" {
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   db_subnet_group_name   = aws_db_subnet_group.rds.name
 
+  # Automated backups for Point-in-Time Recovery (PITR)
+  backup_retention_period = var.backup_retention_period
+  backup_window           = "03:00-04:00"  # UTC, must not overlap maintenance window
+
   tags = {
     Name        = "${var.project_name}-postgres"
     Project     = var.project_name

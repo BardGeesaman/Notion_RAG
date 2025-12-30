@@ -10,6 +10,12 @@ variable "project_name" {
   default     = "amprenta"
 }
 
+variable "app_name" {
+  description = "Application name for resource naming"
+  type        = string
+  default     = "amprenta-rag"
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the ECS VPC"
   type        = string
@@ -96,5 +102,18 @@ variable "allowed_ssh_cidrs" {
   description = "CIDR blocks allowed for SSH to Lightsail"
   type        = list(string)
   default     = ["0.0.0.0/0"]
+}
+
+# Backup configuration
+variable "backup_retention_period" {
+  description = "Days to retain RDS automated backups (0 to disable)"
+  type        = number
+  default     = 7
+}
+
+variable "backup_retention_days" {
+  description = "Days to retain S3 backup files before expiration"
+  type        = number
+  default     = 365
 }
 
