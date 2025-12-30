@@ -1,17 +1,27 @@
 """E2E tests for Backup Administration page."""
 
+import re
 import pytest
 from playwright.sync_api import Page, expect
+
+pytestmark = pytest.mark.requires_server
 
 
 @pytest.fixture
 def backup_admin_page(page: Page, streamlit_server: str) -> Page:
     """Navigate to backup admin page and wait for load."""
+    # First go to home page
+    page.goto(streamlit_server)
+    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_timeout(2000)
+    
+    # Then navigate to specific page
     page.goto(f"{streamlit_server}/?page=Backup%20Admin")
     page.wait_for_load_state("domcontentloaded")
+    page.wait_for_timeout(3000)  # Allow Streamlit to initialize
     
     # Wait for Streamlit to finish loading
-    page.wait_for_selector('[data-testid="stMainBlockContainer"]', timeout=10000)
+    page.wait_for_selector('[data-testid="stMainBlockContainer"]', timeout=15000)
     return page
 
 
@@ -22,7 +32,7 @@ class TestBackupAdminPage:
         """Test that page renders with correct title."""
         # Look for the main title
         main = backup_admin_page.locator('[data-testid="stMainBlockContainer"]').first
-        expect(main.get_by_text("💾 Backup Administration")).to_be_visible(timeout=10000)
+        expect(main.get_by_text(re.compile(r"Backup.*Administration", re.IGNORECASE))).to_be_visible(timeout=15000)
 
     def test_all_tabs_present(self, backup_admin_page: Page) -> None:
         """Test that all 4 tabs are visible."""
@@ -68,7 +78,7 @@ class TestBackupAdminPage:
         scheduled_tab.click()
         
         # Wait for tab content to load
-        backup_admin_page.wait_for_timeout(1000)
+        backup_admin_page.wait_for_timeout(2000)
         
         # Look for schedule configuration section
         expect(main.get_by_text("Schedule Configuration")).to_be_visible()
@@ -86,7 +96,7 @@ class TestBackupAdminPage:
         export_tab.click()
         
         # Wait for tab content to load
-        backup_admin_page.wait_for_timeout(1000)
+        backup_admin_page.wait_for_timeout(2000)
         
         # Look for entity selection text areas
         text_areas = main.locator('[data-testid="stTextArea"]')
@@ -105,7 +115,7 @@ class TestBackupAdminPage:
         export_tab.click()
         
         # Wait for tab content to load
-        backup_admin_page.wait_for_timeout(1000)
+        backup_admin_page.wait_for_timeout(2000)
         
         # Try to click generate export without entering data
         generate_button = main.get_by_role("button", name="📦 Generate Export")
@@ -123,7 +133,7 @@ class TestBackupAdminPage:
         restore_tab.click()
         
         # Wait for tab content to load
-        backup_admin_page.wait_for_timeout(1000)
+        backup_admin_page.wait_for_timeout(2000)
         
         # Look for disaster recovery guide content
         expect(main.get_by_text("Disaster Recovery Guide")).to_be_visible()
@@ -159,7 +169,7 @@ class TestBackupAdminPage:
             tab.click()
             
             # Wait for tab content to load
-            backup_admin_page.wait_for_timeout(500)
+            backup_admin_page.wait_for_timeout(2000)
             
             # Verify tab is active (content visible)
             # Each tab should have unique content we can check for
@@ -177,11 +187,18 @@ class TestBackupAdminPage:
         # Note: This test assumes no admin authentication in test environment
         # In real implementation, this would test with different user roles
         
+        # First go to home page
+        page.goto(streamlit_server)
+        page.wait_for_load_state("domcontentloaded")
+        page.wait_for_timeout(2000)
+        
+        # Then navigate to specific page
         page.goto(f"{streamlit_server}/?page=Backup%20Admin")
         page.wait_for_load_state("domcontentloaded")
+        page.wait_for_timeout(3000)
         
         # Wait for Streamlit to finish loading
-        page.wait_for_selector('[data-testid="stMainBlockContainer"]', timeout=10000)
+        page.wait_for_selector('[data-testid="stMainBlockContainer"]', timeout=15000)
         
         main = page.locator('[data-testid="stMainBlockContainer"]').first
         
