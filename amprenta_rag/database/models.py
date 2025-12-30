@@ -1824,6 +1824,14 @@ from amprenta_rag.database.models_flow_cytometry import (  # noqa: F401
     FlowCytometryGate,
     FlowCytometryPopulation,
 )
+from amprenta_rag.database.models_biophysical import (  # noqa: F401
+    SPRExperiment,
+    SPRSensorgram,
+    MSTExperiment,
+    MSTDoseResponse,
+    DSCExperiment,
+    DSCScan,
+)
 from amprenta_rag.models.eln import (  # noqa: F401
     Protocol,
     ExperimentProtocol,
