@@ -223,6 +223,9 @@ class HTSCampaign(Base):
     results: Mapped[List["HTSResult"]] = relationship(
         back_populates="campaign", cascade="all, delete-orphan"
     )
+    plates: Mapped[List["HTSPlate"]] = relationship(
+        back_populates="campaign", cascade="all, delete-orphan"
+    )
     programs: Mapped[List["Program"]] = relationship(
         secondary="hts_campaign_program", back_populates="hts_campaigns"
     )
@@ -237,6 +240,7 @@ class HTSResult(Base):
     result_id = Column(String(200), nullable=False, unique=True, index=True)
     campaign_id = Column(UUID(as_uuid=True), ForeignKey("hts_campaigns.id"), nullable=False, index=True)
     compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=False, index=True)
+    well_id = Column(UUID(as_uuid=True), ForeignKey("hts_wells.id"), nullable=True, index=True)  # P3 fix: nullable for backward compat
     well_position = Column(String(50), nullable=True)
     raw_value = Column(Float, nullable=True)
     normalized_value = Column(Float, nullable=True)
@@ -250,6 +254,7 @@ class HTSResult(Base):
     # Relationships
     campaign: Mapped["HTSCampaign"] = relationship(back_populates="results")
     compound: Mapped["Compound"] = relationship(back_populates="hts_results")
+    well: Mapped[Optional["HTSWell"]] = relationship(back_populates="results")  # P3 fix: well relationship
 
 
 class BiochemicalResult(Base):
@@ -282,6 +287,50 @@ class BiochemicalResult(Base):
     programs: Mapped[List["Program"]] = relationship(
         secondary="biochemical_result_program", back_populates="biochemical_results"
     )
+
+
+class HTSPlate(Base):
+    """HTS plate containing wells for compound screening."""
+
+    __tablename__ = "hts_plates"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    campaign_id = Column(UUID(as_uuid=True), ForeignKey("hts_campaigns.id"), nullable=False, index=True)
+    barcode = Column(String(200), nullable=False, unique=True, index=True)
+    plate_format = Column(String(50), nullable=False)  # e.g., "384", "1536"
+    layout_metadata = Column(JSON, nullable=True)  # Control well positions, dilution series, etc.
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    campaign: Mapped["HTSCampaign"] = relationship(back_populates="plates")
+    wells: Mapped[List["HTSWell"]] = relationship(
+        back_populates="plate", cascade="all, delete-orphan"
+    )
+
+
+class HTSWell(Base):
+    """Individual well within an HTS plate."""
+
+    __tablename__ = "hts_wells"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    plate_id = Column(UUID(as_uuid=True), ForeignKey("hts_plates.id"), nullable=False, index=True)
+    position = Column(String(10), nullable=False)  # e.g., "A01", "P24"
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=True, index=True)  # Nullable for controls
+    concentration = Column(Float, nullable=True)  # Compound concentration in nM/uM
+    treatment_metadata = Column(JSON, nullable=True)  # Treatment conditions, controls, etc.
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    plate: Mapped["HTSPlate"] = relationship(back_populates="wells")
+    compound: Mapped[Optional["Compound"]] = relationship()
+    results: Mapped[List["HTSResult"]] = relationship(back_populates="well")
 
 
 class TargetProductProfile(Base):
