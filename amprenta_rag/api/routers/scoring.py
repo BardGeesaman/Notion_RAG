@@ -1,6 +1,7 @@
 """API router for relevance and novelty scoring."""
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import List
 
@@ -19,6 +20,25 @@ from amprenta_rag.api.schemas import (
 router = APIRouter()
 
 
+# Sync helper functions for thread pool execution
+def _sync_score_relevance(item: dict, context: dict, criteria: str):
+    """Sync helper for relevance scoring."""
+    from amprenta_rag.analysis.relevance_scoring import score_relevance
+    return score_relevance(item, context, criteria)
+
+
+def _sync_score_novelty(item: dict, existing_items: List[dict]):
+    """Sync helper for novelty scoring."""
+    from amprenta_rag.analysis.relevance_scoring import score_novelty
+    return score_novelty(item, existing_items)
+
+
+def _sync_batch_score(items: List[dict], context: dict, score_relevance_flag: bool, score_novelty_flag: bool):
+    """Sync helper for batch scoring."""
+    from amprenta_rag.analysis.relevance_scoring import batch_score
+    return batch_score(items, context, score_relevance_flag, score_novelty_flag)
+
+
 @router.post("/relevance", response_model=RelevanceScoreResponse)
 async def score_relevance_endpoint(
     request: RelevanceScoreRequest,
@@ -30,8 +50,6 @@ async def score_relevance_endpoint(
     research context based on disease match, target overlap, and data quality.
     """
     try:
-        from amprenta_rag.analysis.relevance_scoring import score_relevance
-        
         # Convert request to internal format
         item = {
             "id": request.item.id,
@@ -50,8 +68,13 @@ async def score_relevance_endpoint(
             "min_sample_size": request.context.min_sample_size,
         }
         
-        # Score relevance
-        result = score_relevance(item, context, request.criteria)
+        # Score relevance using async thread pool
+        result = await asyncio.to_thread(
+            _sync_score_relevance,
+            item,
+            context,
+            request.criteria
+        )
         
         return RelevanceScoreResponse(
             item_id=result.item_id,
@@ -82,8 +105,6 @@ async def score_novelty_endpoint(
     similarity and provides LLM-generated explanation.
     """
     try:
-        from amprenta_rag.analysis.relevance_scoring import score_novelty
-        
         # Convert request to internal format
         item = {
             "id": request.item.id,
@@ -105,8 +126,12 @@ async def score_novelty_endpoint(
                 "sample_count": existing_item.sample_count,
             })
         
-        # Score novelty
-        result = score_novelty(item, existing_items)
+        # Score novelty using async thread pool
+        result = await asyncio.to_thread(
+            _sync_score_novelty,
+            item,
+            existing_items
+        )
         
         return NoveltyScoreResponse(
             item_id=result.item_id,
@@ -136,8 +161,6 @@ async def batch_score_endpoint(
     Useful for ranking large sets of datasets or papers.
     """
     try:
-        from amprenta_rag.analysis.relevance_scoring import batch_score
-        
         start_time = time.time()
         
         # Convert request to internal format
@@ -160,12 +183,13 @@ async def batch_score_endpoint(
             "min_sample_size": request.context.min_sample_size,
         }
         
-        # Batch score
-        results = batch_score(
-            items, 
-            context, 
-            score_relevance_flag=request.score_relevance,
-            score_novelty_flag=request.score_novelty
+        # Batch score using async thread pool
+        results = await asyncio.to_thread(
+            _sync_batch_score,
+            items,
+            context,
+            request.score_relevance,
+            request.score_novelty
         )
         
         # Convert results to response format

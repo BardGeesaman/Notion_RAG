@@ -7,11 +7,13 @@ Note: These endpoints use lazy imports, so we test with real implementations.
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 from amprenta_rag.api.main import app
 
@@ -285,3 +287,238 @@ class TestBatchScore:
         
         # Should fail validation (min_length=1 for items)
         assert response.status_code == 422
+
+
+class TestAsyncScoringEndpoints:
+    """Test async execution of scoring endpoints using mocked async functions."""
+
+    @pytest.mark.asyncio
+    async def test_relevance_async(self):
+        """Test relevance endpoint executes asynchronously."""
+        with patch('amprenta_rag.api.routers.scoring._sync_score_relevance') as mock_score:
+            # Mock the scoring function to return a simple result
+            mock_result = MagicMock()
+            mock_result.item_id = "async_item_123"
+            mock_result.overall_score = 0.85
+            mock_result.disease_match = 0.9
+            mock_result.target_overlap = 0.8
+            mock_result.data_quality = 0.85
+            mock_result.explanation = "High relevance async test"
+            mock_result.processing_time_seconds = 0.1
+            mock_result.cached = False
+            mock_score.return_value = mock_result
+            
+            # Import the endpoint function and call it directly
+            from amprenta_rag.api.routers.scoring import score_relevance_endpoint
+            from amprenta_rag.api.schemas import RelevanceScoreRequest, ScoringItemRequest, ScoringContextRequest
+            
+            request = RelevanceScoreRequest(
+                item=ScoringItemRequest(
+                    id="async_item_123",
+                    title="Async Test Dataset",
+                    description="Testing async execution",
+                    species="human",
+                    assay_type="RNA-seq",
+                    sample_count=25,
+                ),
+                context=ScoringContextRequest(
+                    diseases=["ALS"],
+                    targets=["SOD1"],
+                    species=["human"],
+                    assay_types=["RNA-seq"],
+                    min_sample_size=10,
+                ),
+                criteria=None,
+            )
+            
+            result = await score_relevance_endpoint(request)
+            
+            # Verify async execution and result
+            assert result.item_id == "async_item_123"
+            assert result.overall_score == 0.85
+            assert result.explanation == "High relevance async test"
+            mock_score.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_novelty_async(self):
+        """Test novelty endpoint executes asynchronously."""
+        with patch('amprenta_rag.api.routers.scoring._sync_score_novelty') as mock_score:
+            # Mock the scoring function
+            mock_result = MagicMock()
+            mock_result.item_id = "async_novelty_123"
+            mock_result.novelty_score = 0.75
+            mock_result.max_similarity = 0.25
+            mock_result.most_similar_item_id = "existing_123"
+            mock_result.explanation = "Moderately novel async test"
+            mock_result.processing_time_seconds = 0.2
+            mock_result.cached = False
+            mock_score.return_value = mock_result
+            
+            from amprenta_rag.api.routers.scoring import score_novelty_endpoint
+            from amprenta_rag.api.schemas import NoveltyScoreRequest, ScoringItemRequest
+            
+            request = NoveltyScoreRequest(
+                item=ScoringItemRequest(
+                    id="async_novelty_123",
+                    title="Async Novelty Dataset",
+                    description="Testing async novelty scoring",
+                    species="human",
+                    assay_type="proteomics",
+                    sample_count=30,
+                ),
+                existing_items=[
+                    ScoringItemRequest(
+                        id="existing_123",
+                        title="Existing Dataset",
+                        description="Previous study",
+                        species="human",
+                        assay_type="RNA-seq",
+                        sample_count=20,
+                    )
+                ],
+            )
+            
+            result = await score_novelty_endpoint(request)
+            
+            # Verify async execution and result
+            assert result.item_id == "async_novelty_123"
+            assert result.novelty_score == 0.75
+            assert result.explanation == "Moderately novel async test"
+            mock_score.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_batch_async(self):
+        """Test batch endpoint executes asynchronously."""
+        with patch('amprenta_rag.api.routers.scoring._sync_batch_score') as mock_batch:
+            # Mock batch scoring results
+            mock_result1 = MagicMock()
+            mock_result1.item_id = "async_batch_1"
+            mock_result1.relevance_score = MagicMock()
+            mock_result1.relevance_score.item_id = "async_batch_1"
+            mock_result1.relevance_score.overall_score = 0.8
+            mock_result1.relevance_score.disease_match = 0.85
+            mock_result1.relevance_score.target_overlap = 0.75
+            mock_result1.relevance_score.data_quality = 0.8
+            mock_result1.relevance_score.explanation = "Good relevance"
+            mock_result1.relevance_score.processing_time_seconds = 0.1
+            mock_result1.relevance_score.cached = False
+            mock_result1.novelty_score = None
+            
+            mock_result2 = MagicMock()
+            mock_result2.item_id = "async_batch_2"
+            mock_result2.relevance_score = MagicMock()
+            mock_result2.relevance_score.item_id = "async_batch_2"
+            mock_result2.relevance_score.overall_score = 0.7
+            mock_result2.relevance_score.disease_match = 0.8
+            mock_result2.relevance_score.target_overlap = 0.6
+            mock_result2.relevance_score.data_quality = 0.7
+            mock_result2.relevance_score.explanation = "Moderate relevance"
+            mock_result2.relevance_score.processing_time_seconds = 0.1
+            mock_result2.relevance_score.cached = False
+            mock_result2.novelty_score = None
+            
+            mock_batch.return_value = [mock_result1, mock_result2]
+            
+            from amprenta_rag.api.routers.scoring import batch_score_endpoint
+            from amprenta_rag.api.schemas import BatchScoreRequest, ScoringItemRequest, ScoringContextRequest
+            
+            request = BatchScoreRequest(
+                items=[
+                    ScoringItemRequest(
+                        id="async_batch_1",
+                        title="Async Batch Dataset 1",
+                        description="First dataset for async batch testing",
+                        species="human",
+                        assay_type="RNA-seq",
+                        sample_count=15,
+                    ),
+                    ScoringItemRequest(
+                        id="async_batch_2",
+                        title="Async Batch Dataset 2",
+                        description="Second dataset for async batch testing",
+                        species="human",
+                        assay_type="proteomics",
+                        sample_count=25,
+                    ),
+                ],
+                context=ScoringContextRequest(
+                    diseases=["ALS"],
+                    targets=[],
+                    species=["human"],
+                    assay_types=[],
+                    min_sample_size=10,
+                ),
+                score_relevance=True,
+                score_novelty=False,
+            )
+            
+            result = await batch_score_endpoint(request)
+            
+            # Verify async execution and result
+            assert result.total_items == 2
+            assert len(result.items) == 2
+            assert result.items[0].item_id == "async_batch_1"
+            assert result.items[1].item_id == "async_batch_2"
+            mock_batch.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_concurrent_requests(self):
+        """Test multiple simultaneous async requests."""
+        with patch('amprenta_rag.api.routers.scoring._sync_score_relevance') as mock_score:
+            # Mock function to return different results for different calls
+            def mock_score_func(item, context, criteria):
+                mock_result = MagicMock()
+                mock_result.item_id = item["id"]
+                mock_result.overall_score = 0.8
+                mock_result.disease_match = 0.85
+                mock_result.target_overlap = 0.75
+                mock_result.data_quality = 0.8
+                mock_result.explanation = f"Concurrent test for {item['id']}"
+                mock_result.processing_time_seconds = 0.1
+                mock_result.cached = False
+                return mock_result
+            
+            mock_score.side_effect = mock_score_func
+            
+            from amprenta_rag.api.routers.scoring import score_relevance_endpoint
+            from amprenta_rag.api.schemas import RelevanceScoreRequest, ScoringItemRequest, ScoringContextRequest
+            
+            async def make_relevance_request(item_id: str):
+                request = RelevanceScoreRequest(
+                    item=ScoringItemRequest(
+                        id=item_id,
+                        title=f"Concurrent Dataset {item_id}",
+                        description="Testing concurrent execution",
+                        species="human",
+                        assay_type="RNA-seq",
+                        sample_count=20,
+                    ),
+                    context=ScoringContextRequest(
+                        diseases=["ALS"],
+                        targets=[],
+                        species=["human"],
+                        assay_types=[],
+                        min_sample_size=5,
+                    ),
+                    criteria=None,
+                )
+                return await score_relevance_endpoint(request)
+            
+            # Make 3 concurrent requests
+            tasks = [
+                make_relevance_request("concurrent_1"),
+                make_relevance_request("concurrent_2"),
+                make_relevance_request("concurrent_3"),
+            ]
+            
+            results = await asyncio.gather(*tasks)
+            
+            # All requests should succeed
+            assert len(results) == 3
+            for i, result in enumerate(results, 1):
+                assert result.item_id == f"concurrent_{i}"
+                assert result.overall_score == 0.8
+                assert f"concurrent_{i}" in result.explanation
+            
+            # Verify all calls were made
+            assert mock_score.call_count == 3
