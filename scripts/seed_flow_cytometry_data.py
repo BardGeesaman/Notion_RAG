@@ -199,7 +199,7 @@ def generate_synthetic_events(n_events: int) -> pd.DataFrame:
     return df
 
 
-def create_flow_dataset(reset: bool = False) -> FlowCytometryDataset:
+def create_flow_dataset(reset: bool = False) -> UUID:
     """Create or retrieve the demo flow cytometry dataset."""
     
     with db_session() as db:
@@ -213,7 +213,7 @@ def create_flow_dataset(reset: bool = False) -> FlowCytometryDataset:
             flow_dataset = db.query(FlowCytometryDataset).filter(
                 FlowCytometryDataset.dataset_id == existing_dataset.id
             ).first()
-            return flow_dataset
+            return flow_dataset.id if flow_dataset else None
         
         if existing_dataset and reset:
             print(f"🗑️  Removing existing dataset: {existing_dataset.name}")
@@ -260,7 +260,7 @@ def create_flow_dataset(reset: bool = False) -> FlowCytometryDataset:
             name=f"{DATASET_PREFIX}{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             description=DATASET_DESCRIPTION,
             omics_type="flow_cytometry",
-            created_by=user.id,
+            created_by_id=user.id,  # Use FK field, not relationship field
             created_at=_now_utc()
         )
         db.add(dataset)
@@ -274,7 +274,7 @@ def create_flow_dataset(reset: bool = False) -> FlowCytometryDataset:
         parquet_dir.mkdir(exist_ok=True)
         parquet_path = parquet_dir / f"events_{dataset_id}.parquet"
         
-        save_events_parquet(events_df, str(parquet_path))
+        save_events_parquet(events_df.values, list(events_df.columns), str(parquet_path))
         print(f"✅ Saved events to: {parquet_path}")
         
         # Create FlowCytometryDataset
@@ -289,8 +289,8 @@ def create_flow_dataset(reset: bool = False) -> FlowCytometryDataset:
             cytometer_model=CYTOMETER_MODEL,
             sample_id=SAMPLE_ID,
             processing_status="completed",
-            created_at=_now_utc(),
-            updated_at=_now_utc()
+            ingested_at=_now_utc(),
+            processed_at=_now_utc()
         )
         db.add(flow_dataset)
         db.commit()
@@ -302,10 +302,8 @@ def create_flow_dataset(reset: bool = False) -> FlowCytometryDataset:
                 flow_dataset_id=flow_dataset.id,
                 parameter_name=param["name"],
                 parameter_index=i,
-                range_min=float(param["range_min"]),
-                range_max=float(param["range_max"]),
-                display_name=param["display"],
-                created_at=_now_utc()
+                min_value=float(param["range_min"]),
+                max_value=float(param["range_max"])
             )
             db.add(parameter)
         
@@ -313,13 +311,20 @@ def create_flow_dataset(reset: bool = False) -> FlowCytometryDataset:
         print(f"✅ Created dataset: {dataset.name}")
         print(f"✅ Created flow dataset with {N_EVENTS:,} events and {N_PARAMETERS} parameters")
         
-        return flow_dataset
+        return flow_dataset.id
 
 
-def create_sample_gates(flow_dataset: FlowCytometryDataset, reset: bool = False) -> List[FlowCytometryGate]:
+def create_sample_gates(flow_dataset_id: UUID, reset: bool = False) -> List[FlowCytometryGate]:
     """Create sample gates for the demo dataset."""
     
     with db_session() as db:
+        # Get the flow dataset
+        flow_dataset = db.query(FlowCytometryDataset).filter(
+            FlowCytometryDataset.id == flow_dataset_id
+        ).first()
+        if not flow_dataset:
+            raise ValueError(f"FlowCytometryDataset {flow_dataset_id} not found")
+        
         # Check for existing gates
         existing_gates = db.query(FlowCytometryGate).filter(
             FlowCytometryGate.flow_dataset_id == flow_dataset.id,
@@ -344,21 +349,35 @@ def create_sample_gates(flow_dataset: FlowCytometryDataset, reset: bool = False)
         events_df = pd.read_parquet(flow_dataset.events_parquet_path)
         total_events = len(events_df)
         
+        # Get parameter lookup by name
+        parameters = db.query(FlowCytometryParameter).filter(
+            FlowCytometryParameter.flow_dataset_id == flow_dataset.id
+        ).all()
+        param_lookup = {param.parameter_name: param.id for param in parameters}
+        
         created_gates = []
         
         for gate_def in SAMPLE_GATES:
             gate_id = uuid4()
+            
+            # Get parameter IDs
+            x_param_id = param_lookup.get(gate_def["x_param"])
+            y_param_id = param_lookup.get(gate_def["y_param"]) if gate_def.get("y_param") else None
+            
+            if not x_param_id:
+                print(f"⚠️  Parameter {gate_def['x_param']} not found, skipping gate {gate_def['name']}")
+                continue
+            
             gate = FlowCytometryGate(
                 id=gate_id,
                 flow_dataset_id=flow_dataset.id,
                 gate_name=f"{GATE_PREFIX}{gate_def['name']}",
                 gate_type=gate_def["type"],
-                x_parameter=gate_def["x_param"],
-                y_parameter=gate_def["y_param"],
+                x_parameter_id=x_param_id,
+                y_parameter_id=y_param_id,
                 gate_definition=gate_def["definition"],
                 is_active=True,
-                created_at=_now_utc(),
-                updated_at=_now_utc()
+                created_at=_now_utc()
             )
             db.add(gate)
             created_gates.append(gate)
@@ -377,23 +396,44 @@ def compute_gate_population(gate: FlowCytometryGate, events_df: pd.DataFrame, to
     """Compute population statistics for a gate."""
     
     with db_session() as db:
+        # Get parameter names from the gate's parameter relationships
+        x_param = db.query(FlowCytometryParameter).filter(
+            FlowCytometryParameter.id == gate.x_parameter_id
+        ).first()
+        y_param = db.query(FlowCytometryParameter).filter(
+            FlowCytometryParameter.id == gate.y_parameter_id
+        ).first() if gate.y_parameter_id else None
+        
+        if not x_param:
+            print(f"⚠️  X parameter not found for gate {gate.gate_name}")
+            return
+            
         # Apply gate to get boolean mask
-        x_data = events_df[gate.x_parameter].values
-        y_data = events_df[gate.y_parameter].values
+        x_data = events_df[x_param.parameter_name].values
+        y_data = events_df[y_param.parameter_name].values if y_param else None
         
         if gate.gate_type == GateType.POLYGON:
+            if y_data is None:
+                print(f"⚠️  Polygon gate {gate.gate_name} requires Y parameter")
+                return
             vertices = gate.gate_definition["vertices"]
             mask = apply_polygon_gate(
                 np.column_stack([x_data, y_data]),
                 0, 1, vertices
             )
         elif gate.gate_type == GateType.RECTANGLE:
+            if y_data is None:
+                print(f"⚠️  Rectangle gate {gate.gate_name} requires Y parameter")
+                return
             bounds = gate.gate_definition
             mask = apply_rectangle_gate(
                 np.column_stack([x_data, y_data]),
                 0, 1, bounds
             )
         elif gate.gate_type == GateType.QUADRANT:
+            if y_data is None:
+                print(f"⚠️  Quadrant gate {gate.gate_name} requires Y parameter")
+                return
             # For quadrant gates, take Q1 (upper right)
             x_thresh = gate.gate_definition["x_thresh"]
             y_thresh = gate.gate_definition["y_thresh"]
@@ -410,7 +450,7 @@ def compute_gate_population(gate: FlowCytometryGate, events_df: pd.DataFrame, to
         param_names = list(events_df.columns)
         stats = compute_population_stats(
             events_df.values, mask, param_names, 
-            parent_event_count=total_events,
+            parent_mask=None,  # No parent gate for demo gates
             total_events=total_events
         )
         
@@ -420,14 +460,19 @@ def compute_gate_population(gate: FlowCytometryGate, events_df: pd.DataFrame, to
             flow_dataset_id=gate.flow_dataset_id,
             gate_id=gate.id,
             population_name=f"{gate.gate_name} Population",
-            n_events=stats.n_events,
-            pct_of_parent=stats.pct_of_parent,
-            pct_of_total=stats.pct_of_total,
-            median_values=dict(zip(param_names, stats.median_values)) if stats.median_values is not None else None,
-            mean_values=dict(zip(param_names, stats.mean_values)) if stats.mean_values is not None else None,
-            cv_values=dict(zip(param_names, stats.cv_values)) if stats.cv_values is not None else None,
-            created_at=_now_utc(),
-            updated_at=_now_utc()
+            event_count=stats.n_events,
+            parent_event_count=total_events,
+            percentage_of_parent=stats.pct_of_parent,
+            percentage_of_total=stats.pct_of_total,
+            parameter_statistics={
+                param_name: {
+                    "median": stats.median_values.get(param_name) if stats.median_values is not None else None,
+                    "mean": stats.mean_values.get(param_name) if stats.mean_values is not None else None,
+                    "cv": stats.cv_values.get(param_name) if stats.cv_values is not None else None
+                }
+                for param_name in param_names
+            } if any([stats.median_values, stats.mean_values, stats.cv_values]) else None,
+            analyzed_at=_now_utc()
         )
         db.add(population)
         db.commit()
@@ -444,17 +489,27 @@ def main(reset: bool = False) -> None:
         print("🔄 Reset mode: Will recreate all data")
     
     # Create dataset and events
-    flow_dataset = create_flow_dataset(reset=reset)
+    flow_dataset_id = create_flow_dataset(reset=reset)
     
-    # Create sample gates and populations
-    gates = create_sample_gates(flow_dataset, reset=reset)
+    # Create sample gates and populations (pass ID to avoid DetachedInstanceError)
+    gates = create_sample_gates(flow_dataset_id, reset=reset)
+    
+    # Get final dataset info for display
+    with db_session() as db:
+        flow_dataset = db.query(FlowCytometryDataset).filter(
+            FlowCytometryDataset.id == flow_dataset_id
+        ).first()
+        
+        dataset_id = flow_dataset.id
+        n_events = flow_dataset.n_events
+        n_parameters = flow_dataset.n_parameters
     
     print("\n" + "=" * 50)
     print("✅ Flow Cytometry Demo Data Seeding Complete!")
-    print(f"📊 Dataset: {flow_dataset.id}")
-    print(f"📈 Events: {flow_dataset.n_events:,}")
+    print(f"📊 Dataset: {dataset_id}")
+    print(f"📈 Events: {n_events:,}")
     print(f"🎯 Gates: {len(gates)}")
-    print(f"🔬 Parameters: {flow_dataset.n_parameters}")
+    print(f"🔬 Parameters: {n_parameters}")
     print("\nYou can now:")
     print("1. View data in the Flow Cytometry dashboard")
     print("2. Test API endpoints with the seeded data")
