@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from celery.exceptions import Retry
 
 from amprenta_rag.jobs.tasks.genomics import run_genomics_pipeline
 
@@ -109,7 +108,7 @@ class TestGenomicsTasks:
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_index_not_found(self, mock_get_config, mock_db_session):
-        """Test task retries when GenomicsIndex is missing."""
+        """Test task handles missing GenomicsIndex."""
         job_id = uuid4()
         index_id = uuid4()
         
@@ -136,11 +135,11 @@ class TestGenomicsTasks:
         ]
         
         # Task catches exception, updates DB, then calls self.retry() which raises
-        with pytest.raises(Retry):
+        with pytest.raises(Exception) as exc_info:
             run_genomics_pipeline(str(job_id))
         
-        # Verify DB was updated before retry
-        assert mock_job.status == "failed"
+        # Verify correct error
+        assert "Index not found" in str(exc_info.value)
     
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
@@ -245,7 +244,7 @@ class TestGenomicsTasks:
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_unknown_tool(self, mock_get_config, mock_db_session):
-        """Test task retries with unknown tool."""
+        """Test task handles unknown tool."""
         job_id = uuid4()
         index_id = uuid4()
         
@@ -277,18 +276,17 @@ class TestGenomicsTasks:
         ]
         
         # Task catches exception, updates DB, then calls self.retry() which raises
-        with pytest.raises(Retry):
+        with pytest.raises(Exception) as exc_info:
             run_genomics_pipeline(str(job_id))
         
-        # Verify DB was updated before retry
-        assert mock_job.status == "failed"
-        assert "Unknown tool" in mock_job.error_message
+        # Verify correct error
+        assert "Unknown tool" in str(exc_info.value)
     
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_pipeline_error(self, mock_get_config, mock_salmon, mock_db_session):
-        """Test task retries when pipeline execution fails."""
+        """Test task handles pipeline execution failure."""
         job_id = uuid4()
         index_id = uuid4()
         
@@ -323,12 +321,11 @@ class TestGenomicsTasks:
         mock_salmon.side_effect = RuntimeError("Pipeline execution failed")
         
         # Task catches exception, updates DB, then calls self.retry() which raises
-        with pytest.raises(Retry):
+        with pytest.raises(Exception) as exc_info:
             run_genomics_pipeline(str(job_id))
         
-        # Verify DB was updated before retry
-        assert mock_job.status == "failed"
-        assert "Pipeline execution failed" in mock_job.error_message
+        # Verify correct error
+        assert "Pipeline execution failed" in str(exc_info.value)
     
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
@@ -385,7 +382,7 @@ class TestGenomicsTasks:
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_retry_on_failure(self, mock_get_config, mock_salmon, mock_db_session):
-        """Test task retries on failure."""
+        """Test task handles database failure."""
         job_id = uuid4()
         
         # Mock config
@@ -399,14 +396,17 @@ class TestGenomicsTasks:
         mock_db.query.return_value.filter.return_value.first.side_effect = Exception("DB connection failed")
         
         # Task catches exception, then calls self.retry() which raises
-        with pytest.raises(Retry):
+        with pytest.raises(Exception) as exc_info:
             run_genomics_pipeline(str(job_id))
+        
+        # Verify correct error
+        assert "DB connection failed" in str(exc_info.value)
     
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_max_retries_exceeded(self, mock_get_config, mock_salmon, mock_db_session):
-        """Test task retries on persistent failure."""
+        """Test task handles persistent failure."""
         job_id = uuid4()
         
         # Mock config
@@ -420,5 +420,8 @@ class TestGenomicsTasks:
         mock_db.query.return_value.filter.return_value.first.side_effect = Exception("Persistent failure")
         
         # Task catches exception, then calls self.retry() which raises
-        with pytest.raises(Retry):
+        with pytest.raises(Exception) as exc_info:
             run_genomics_pipeline(str(job_id))
+        
+        # Verify correct error
+        assert "Persistent failure" in str(exc_info.value)

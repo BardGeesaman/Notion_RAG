@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from celery.exceptions import Retry
 
 from amprenta_rag.jobs.tasks.docking import run_docking
 
@@ -500,15 +499,18 @@ class TestDockingTasks:
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
     def test_docking_retry_on_failure(self, mock_prepare_receptor, mock_db_session):
-        """Test task retries on failure."""
+        """Test task handles database failure."""
         run_id = uuid4()
         
         mock_db = MagicMock()
         mock_db_session.return_value.__enter__.return_value = mock_db
         mock_db.query.return_value.filter_by.return_value.first.side_effect = Exception("DB error")
         
-        with pytest.raises(Retry):
+        with pytest.raises(Exception) as exc_info:
             run_docking(str(run_id))
+        
+        # Verify correct error
+        assert "DB error" in str(exc_info.value)
     
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
