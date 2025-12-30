@@ -82,10 +82,10 @@ def process_single_cell(self, dataset_id: str) -> dict:
                 db.add(
                     CellAnnotation(
                         single_cell_dataset_id=dataset_uuid,
-                        cell_barcode=str(barcode),
+                        barcode=str(barcode),
                         cluster_id=cluster_id,
-                        umap_x=float(umap_x) if umap_x is not None else None,
-                        umap_y=float(umap_y) if umap_y is not None else None,
+                        umap_1=float(umap_x) if umap_x is not None else None,
+                        umap_2=float(umap_y) if umap_y is not None else None,
                     )
                 )
 
@@ -101,9 +101,8 @@ def process_single_cell(self, dataset_id: str) -> dict:
                     CellCluster(
                         single_cell_dataset_id=dataset_uuid,
                         cluster_id=cid,
-                        cluster_label=f"Cluster {cid}",
-                        cell_count=int(cluster_cells),
-                        cluster_color=None,
+                        cell_type=f"Cluster {cid}",
+                        n_cells=int(cluster_cells),
                     )
                 )
 

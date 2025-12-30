@@ -172,7 +172,8 @@ class TestBatchSegmentation(TestImagingTasks):
         mock_cellpose.validate_image.return_value = False  # Invalid image
         
         # Execute task
-        result = process_batch_segmentation(image_ids=image_ids)
+        with patch.object(process_batch_segmentation, 'update_state'):
+            result = process_batch_segmentation(image_ids=image_ids)
         
         # Verify result shows validation error
         assert result["total_images"] == 1
@@ -231,7 +232,8 @@ class TestBatchSegmentation(TestImagingTasks):
         mock_extractor.extract_morphology_features.return_value = [mock_feature] * 100
         
         # Execute task
-        result = process_batch_segmentation(image_ids=image_ids, extract_features=True)
+        with patch.object(process_batch_segmentation, 'update_state'):
+            result = process_batch_segmentation(image_ids=image_ids, extract_features=True)
         
         # Verify partial success
         assert result["total_images"] == 2
@@ -294,7 +296,8 @@ class TestBatchSegmentation(TestImagingTasks):
         mock_extractor.extract_morphology_features.return_value = mock_features
         
         # Execute task with feature extraction
-        result = process_batch_segmentation(image_ids=image_ids, extract_features=True)
+        with patch.object(process_batch_segmentation, 'update_state'):
+            result = process_batch_segmentation(image_ids=image_ids, extract_features=True)
         
         # Verify feature extraction was performed
         assert result["features_extracted"] == 50
@@ -357,7 +360,8 @@ class TestBatchSegmentation(TestImagingTasks):
         mock_cellpose.count_cells.side_effect = [75, 100, 125]  # Different cell counts
         
         # Execute task
-        result = process_batch_segmentation(image_ids=image_ids, extract_features=False)
+        with patch.object(process_batch_segmentation, 'update_state'):
+            result = process_batch_segmentation(image_ids=image_ids, extract_features=False)
         
         # Verify progress tracking
         assert result["total_images"] == 3
@@ -402,7 +406,8 @@ class TestBatchSegmentation(TestImagingTasks):
         mock_cellpose.count_cells.return_value = 80
         
         # Execute task
-        result = process_batch_segmentation(image_ids=image_ids, model_name="nuclei", diameter=25.0)
+        with patch.object(process_batch_segmentation, 'update_state'):
+            result = process_batch_segmentation(image_ids=image_ids, model_name="nuclei", diameter=25.0)
         
         # Verify segmentation record creation
         assert result["successful_segmentations"] == 1
@@ -531,9 +536,12 @@ class TestExtractFeatures(TestImagingTasks):
     """Test extract features task."""
     
     @patch('amprenta_rag.database.session.db_session')
+    @patch('amprenta_rag.imaging.models.CellFeature')
+    @patch('amprenta_rag.imaging.models.CellSegmentation')
     @patch('amprenta_rag.imaging.feature_extraction.FeatureExtractor')
     @patch('amprenta_rag.imaging.storage.ImageStorage')
-    def test_extract_features_success(self, mock_storage_class, mock_extractor_class, mock_db_session):
+    def test_extract_features_success(self, mock_storage_class, mock_extractor_class, 
+                                     mock_segmentation_class, mock_feature_class, mock_db_session):
         """Test successful feature extraction."""
         segmentation_id = uuid4()
         
