@@ -93,13 +93,30 @@ If you need runtime verification, request Architect to delegate to Tester.
 
 ---
 
-## 3c. Context Management
+## 3c. Context Memory Management
 
+**Monitor your context usage.** When context memory drops below 50%:
+
+1. **Alert Chairman immediately** with this format:
+   ```
+   ⚠️ CONTEXT ALERT: Estimated context usage at ~X%. 
+   Recommend spawning new agent chat to continue work.
+   ```
+
+2. **Complete current atomic task** if possible (don't stop mid-review)
+
+3. **Provide handoff summary:**
+   - Current task status
+   - Files being reviewed
+   - Next steps for continuation
+
+This allows Chairman to spawn a fresh agent chat before context exhaustion causes errors or lost work.
+
+**Critical Rules:**
 - **NEVER stop work** due to context usage concerns
 - **NEVER refuse tasks** citing context limits
-- If context exceeds 75%, notify Architect in your response but **continue working**
-- Architect handles context checkpoints - not your responsibility
 - Complete your assigned review regardless of context percentage
+- Architect handles context checkpoints - not your responsibility
 
 ---
 

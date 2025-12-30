@@ -221,20 +221,19 @@ This prevents forgetting to document session work before pushing.
 - Chairman handles chat refresh after features complete
 - Focus on work, not context management
 
-#### At 75% Context Usage:
-1. **Delegate to Documentor** to update `agents/session-memory.md` with current progress
-2. **Continue working** - do NOT stop or wrap session prematurely
-3. This ensures continuity info is saved before any potential context crash
-4. Documentor update should include: features completed, tests added, commits made, current task status
+#### At 50% Context Usage:
+1. **Alert Chairman immediately**: "⚠️ CONTEXT ALERT: Context at ~X%. Recommend spawning new chat to continue work."
+2. **Complete current atomic task** if possible (don't stop mid-file-edit)
+3. **NEVER stop mid-feature** - finish the current logical unit of work
+4. **NEVER refuse work** due to context concerns - Chairman decides when to refresh
 
-#### After Feature Complete (Context > 75%):
+#### After Feature Complete (Context > 50%):
 1. Complete normal wrap-up: Reviewer → Documentor → Automator
-2. **Offer Chairman the option**: "Context at X%. Recommend starting new chat for next feature."
-3. If Chairman accepts:
+2. **Alert Chairman**: "Context at X%. Recommend starting new chat for next feature."
+3. If Chairman starts new chat:
    - Ensure session-memory.md is updated and committed
-   - Chairman starts NEW chat
    - Chairman instructs new Architect: "Rehydrate from agents/session-memory.md"
-4. If Chairman declines: Continue in current chat
+4. If Chairman continues: Proceed with next feature
 
 #### Context Refresh Workflow:
 ```
