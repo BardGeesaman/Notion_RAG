@@ -22,6 +22,31 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(hour=8, minute=0, day_of_week=1),  # Monday 8:00 AM
         'options': {'queue': 'scheduled'},
     },
+    # Daily database backup (1:00 AM UTC)
+    'daily-database-backup': {
+        'task': 'amprenta_rag.jobs.tasks.backup.run_database_backup',
+        'schedule': crontab(hour=1, minute=0),  # 1:00 AM daily
+        'args': ['full'],
+        'options': {'queue': 'scheduled'},
+    },
+    # Weekly backup cleanup (Sundays at 4:00 AM UTC)
+    'weekly-backup-cleanup': {
+        'task': 'amprenta_rag.jobs.tasks.backup.cleanup_old_backups',
+        'schedule': crontab(hour=4, minute=0, day_of_week=0),  # Sunday 4:00 AM
+        'options': {'queue': 'scheduled'},
+    },
+    # Weekly backup verification (Sundays at 5:00 AM UTC)
+    'weekly-backup-verify': {
+        'task': 'amprenta_rag.jobs.tasks.backup.verify_latest_backup',
+        'schedule': crontab(hour=5, minute=0, day_of_week=0),  # Sunday 5:00 AM
+        'options': {'queue': 'scheduled'},
+    },
+    # Daily backup health check (6:00 AM UTC)
+    'daily-backup-health-check': {
+        'task': 'amprenta_rag.jobs.tasks.backup.backup_health_check',
+        'schedule': crontab(hour=6, minute=0),  # 6:00 AM daily
+        'options': {'queue': 'scheduled'},
+    },
 }
 
 # Note: Dynamic harvest schedules are managed by database-driven periodic checks

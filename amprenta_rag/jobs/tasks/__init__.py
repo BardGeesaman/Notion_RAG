@@ -1,5 +1,11 @@
 """Celery task definitions for background processing."""
 
+from .backup import (
+    backup_health_check,
+    cleanup_old_backups,
+    run_database_backup,
+    verify_latest_backup,
+)
 from .docking import run_docking
 from .extraction import process_extraction_job
 from .genomics import run_genomics_pipeline
@@ -24,4 +30,8 @@ __all__ = [
     "run_external_sync",
     "check_harvest_schedules",
     "check_digest_schedules",
+    "run_database_backup",
+    "cleanup_old_backups",
+    "verify_latest_backup",
+    "backup_health_check",
 ]
