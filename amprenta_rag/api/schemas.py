@@ -47,6 +47,47 @@ from amprenta_rag.analysis.models import PriorConfig
 
 
 # ============================================================================
+# LLM-based Ranking schemas
+# ============================================================================
+
+
+class RankRequest(BaseModel):
+    """Request for LLM-based ranking of items."""
+    
+    items: List[ScoringItemRequest] = Field(..., min_length=1, description="Items to rank")
+    criteria: Optional[str] = Field(None, description="Ranking criteria")
+    context: Optional[ScoringContextRequest] = Field(None, description="Ranking context")
+
+
+class RerankRequest(BaseModel):
+    """Request for LLM-based re-ranking of items."""
+    
+    items: List[ScoringItemRequest] = Field(..., min_length=1, description="Items to re-rank")
+    previous_ranking: List[str] = Field(..., description="Previous ranking order (item IDs)")
+    criteria: Optional[str] = Field(None, description="Re-ranking criteria")
+    context: Optional[ScoringContextRequest] = Field(None, description="Re-ranking context")
+
+
+class RankingItem(BaseModel):
+    """Ranked item result."""
+    
+    item_id: str
+    rank: int
+    score: Optional[float] = None
+    explanation: Optional[str] = None
+
+
+class RankingResult(BaseModel):
+    """LLM-based ranking result."""
+    
+    ranked_items: List[RankingItem]
+    criteria_used: Optional[str] = None
+    explanation: Optional[str] = None
+    processing_time_seconds: float
+    cached: bool = False
+
+
+# ============================================================================
 # Program schemas
 # ============================================================================
 

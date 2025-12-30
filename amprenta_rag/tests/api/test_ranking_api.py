@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -335,3 +337,254 @@ def test_pareto_endpoint_specific_objective(monkeypatch) -> None:
         
     finally:
         del app.dependency_overrides[ranking_router.get_db]
+
+
+class TestAsyncLLMRanking:
+    """Test async execution of LLM-based ranking endpoints."""
+
+    @pytest.mark.asyncio
+    async def test_rank_async(self):
+        """Test rank endpoint executes asynchronously."""
+        with patch('amprenta_rag.api.routers.ranking._sync_rank_items') as mock_rank:
+            from amprenta_rag.api.schemas import RankingItem
+            
+            # Mock the ranking function
+            mock_result = MagicMock()
+            mock_result.ranked_items = [
+                RankingItem(
+                    item_id="item_1",
+                    rank=1,
+                    score=0.95,
+                    explanation="Highest relevance"
+                ),
+                RankingItem(
+                    item_id="item_2",
+                    rank=2,
+                    score=0.82,
+                    explanation="Good relevance"
+                )
+            ]
+            mock_result.criteria_used = "Relevance to ALS research"
+            mock_result.explanation = "Ranked by disease relevance and data quality"
+            mock_result.processing_time_seconds = 0.5
+            mock_result.cached = False
+            mock_rank.return_value = mock_result
+            
+            from amprenta_rag.api.routers.ranking import rank_items_endpoint
+            from amprenta_rag.api.schemas import RankRequest, ScoringItemRequest, ScoringContextRequest
+            
+            request = RankRequest(
+                items=[
+                    ScoringItemRequest(
+                        id="item_1",
+                        title="ALS RNA-seq Dataset",
+                        description="Comprehensive RNA-seq data from ALS patients",
+                        species="human",
+                        assay_type="RNA-seq",
+                        sample_count=50,
+                    ),
+                    ScoringItemRequest(
+                        id="item_2",
+                        title="ALS Proteomics Dataset",
+                        description="Proteomics analysis of ALS samples",
+                        species="human",
+                        assay_type="proteomics",
+                        sample_count=30,
+                    ),
+                ],
+                criteria="Relevance to ALS research",
+                context=ScoringContextRequest(
+                    diseases=["ALS"],
+                    targets=["SOD1"],
+                    species=["human"],
+                    assay_types=["RNA-seq", "proteomics"],
+                    min_sample_size=20,
+                ),
+            )
+            
+            result = await rank_items_endpoint(request)
+            
+            # Verify async execution and result
+            assert len(result.ranked_items) == 2
+            assert result.ranked_items[0].item_id == "item_1"
+            assert result.ranked_items[0].rank == 1
+            assert result.ranked_items[1].item_id == "item_2"
+            assert result.ranked_items[1].rank == 2
+            assert result.criteria_used == "Relevance to ALS research"
+            mock_rank.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_rerank_async(self):
+        """Test rerank endpoint executes asynchronously."""
+        with patch('amprenta_rag.api.routers.ranking._sync_rerank_items') as mock_rerank:
+            from amprenta_rag.api.schemas import RankingItem
+            
+            # Mock the re-ranking function
+            mock_result = MagicMock()
+            mock_result.ranked_items = [
+                RankingItem(
+                    item_id="item_2",
+                    rank=1,
+                    score=0.88,
+                    explanation="Re-ranked higher due to sample size"
+                ),
+                RankingItem(
+                    item_id="item_1",
+                    rank=2,
+                    score=0.85,
+                    explanation="Re-ranked lower due to new criteria"
+                )
+            ]
+            mock_result.criteria_used = "Sample size priority"
+            mock_result.explanation = "Re-ranked prioritizing larger sample sizes"
+            mock_result.processing_time_seconds = 0.3
+            mock_result.cached = False
+            mock_rerank.return_value = mock_result
+            
+            from amprenta_rag.api.routers.ranking import rerank_items_endpoint
+            from amprenta_rag.api.schemas import RerankRequest, ScoringItemRequest, ScoringContextRequest
+            
+            request = RerankRequest(
+                items=[
+                    ScoringItemRequest(
+                        id="item_1",
+                        title="Small Dataset",
+                        description="Dataset with fewer samples",
+                        species="human",
+                        assay_type="RNA-seq",
+                        sample_count=20,
+                    ),
+                    ScoringItemRequest(
+                        id="item_2",
+                        title="Large Dataset",
+                        description="Dataset with more samples",
+                        species="human",
+                        assay_type="RNA-seq",
+                        sample_count=100,
+                    ),
+                ],
+                previous_ranking=["item_1", "item_2"],
+                criteria="Sample size priority",
+                context=ScoringContextRequest(
+                    diseases=["ALS"],
+                    targets=[],
+                    species=["human"],
+                    assay_types=["RNA-seq"],
+                    min_sample_size=50,
+                ),
+            )
+            
+            result = await rerank_items_endpoint(request)
+            
+            # Verify async execution and result
+            assert len(result.ranked_items) == 2
+            assert result.ranked_items[0].item_id == "item_2"  # Re-ranked to top
+            assert result.ranked_items[0].rank == 1
+            assert result.ranked_items[1].item_id == "item_1"  # Re-ranked to bottom
+            assert result.ranked_items[1].rank == 2
+            assert result.criteria_used == "Sample size priority"
+            mock_rerank.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_ranking_concurrent(self):
+        """Test multiple simultaneous ranking requests."""
+        with patch('amprenta_rag.api.routers.ranking._sync_rank_items') as mock_rank:
+            from amprenta_rag.api.schemas import RankingItem
+            
+            # Mock function to return different results for different calls
+            def mock_rank_func(items, criteria, context):
+                mock_result = MagicMock()
+                mock_result.ranked_items = [
+                    RankingItem(
+                        item_id=items[0]["id"],
+                        rank=1,
+                        score=0.9,
+                        explanation=f"Top ranked for {criteria}"
+                    )
+                ]
+                mock_result.criteria_used = criteria
+                mock_result.explanation = f"Ranked using {criteria}"
+                mock_result.processing_time_seconds = 0.2
+                mock_result.cached = False
+                return mock_result
+            
+            mock_rank.side_effect = mock_rank_func
+            
+            from amprenta_rag.api.routers.ranking import rank_items_endpoint
+            from amprenta_rag.api.schemas import RankRequest, ScoringItemRequest, ScoringContextRequest
+            
+            async def make_ranking_request(item_id: str, criteria: str):
+                request = RankRequest(
+                    items=[
+                        ScoringItemRequest(
+                            id=item_id,
+                            title=f"Dataset {item_id}",
+                            description=f"Test dataset {item_id}",
+                            species="human",
+                            assay_type="RNA-seq",
+                            sample_count=25,
+                        )
+                    ],
+                    criteria=criteria,
+                    context=ScoringContextRequest(
+                        diseases=["ALS"],
+                        targets=[],
+                        species=["human"],
+                        assay_types=["RNA-seq"],
+                        min_sample_size=10,
+                    ),
+                )
+                return await rank_items_endpoint(request)
+            
+            # Make 3 concurrent requests
+            tasks = [
+                make_ranking_request("concurrent_1", "criteria_1"),
+                make_ranking_request("concurrent_2", "criteria_2"),
+                make_ranking_request("concurrent_3", "criteria_3"),
+            ]
+            
+            results = await asyncio.gather(*tasks)
+            
+            # All requests should succeed
+            assert len(results) == 3
+            for i, result in enumerate(results, 1):
+                assert result.ranked_items[0].item_id == f"concurrent_{i}"
+                assert result.criteria_used == f"criteria_{i}"
+                assert f"criteria_{i}" in result.explanation
+            
+            # Verify all calls were made
+            assert mock_rank.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_ranking_error_handling(self):
+        """Test exception propagation in async ranking."""
+        with patch('amprenta_rag.api.routers.ranking._sync_rank_items') as mock_rank:
+            # Mock function to raise an exception
+            mock_rank.side_effect = Exception("LLM service unavailable")
+            
+            from amprenta_rag.api.routers.ranking import rank_items_endpoint
+            from amprenta_rag.api.schemas import RankRequest, ScoringItemRequest
+            
+            request = RankRequest(
+                items=[
+                    ScoringItemRequest(
+                        id="error_test",
+                        title="Error Test Dataset",
+                        description="Dataset for testing error handling",
+                        species="human",
+                        assay_type="RNA-seq",
+                        sample_count=20,
+                    )
+                ],
+                criteria="Test criteria",
+                context=None,
+            )
+            
+            # Should raise HTTPException
+            with pytest.raises(Exception) as exc_info:
+                await rank_items_endpoint(request)
+            
+            # Verify the exception is properly handled
+            # (In a real FastAPI app, this would be converted to HTTPException)
+            assert "LLM service unavailable" in str(exc_info.value)
+            mock_rank.assert_called_once()

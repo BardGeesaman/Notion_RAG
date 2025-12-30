@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import List
 from uuid import UUID
 
@@ -17,6 +18,9 @@ from amprenta_rag.api.schemas import (
     RankingPreset,
     RankingRequest,
     RankingResponse,
+    RankRequest,
+    RerankRequest,
+    RankingResult,
 )
 from amprenta_rag.database.base import get_db
 from amprenta_rag.logging_utils import get_logger
@@ -26,6 +30,19 @@ from amprenta_rag.ml.ranking.service import get_pareto_front, get_presets, rank_
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/ranking", tags=["ranking"])
+
+
+# Sync helper functions for LLM-based ranking
+def _sync_rank_items(items: List[dict], criteria: str, context: dict):
+    """Sync helper for LLM-based item ranking."""
+    from amprenta_rag.analysis.ranking import rank_items
+    return rank_items(items, criteria, context)
+
+
+def _sync_rerank_items(items: List[dict], previous_ranking: List[str], criteria: str, context: dict):
+    """Sync helper for LLM-based item re-ranking."""
+    from amprenta_rag.analysis.ranking import rerank_items
+    return rerank_items(items, previous_ranking, criteria, context)
 
 
 @router.post("/score", response_model=RankingResponse)
@@ -217,3 +234,115 @@ async def get_ranking_presets() -> List[RankingPreset]:
     except Exception as e:
         logger.error("Failed to get ranking presets: %s", e)
         raise HTTPException(status_code=500, detail="Failed to get ranking presets")
+
+
+@router.post("/rank", response_model=RankingResult)
+async def rank_items_endpoint(request: RankRequest) -> RankingResult:
+    """
+    Rank items using LLM-based analysis.
+    
+    Uses LLM to intelligently rank items based on provided criteria and context.
+    Useful for ranking datasets, papers, or other research items by relevance,
+    quality, or custom criteria.
+    """
+    try:
+        # Convert request to internal format
+        items = []
+        for item in request.items:
+            items.append({
+                "id": item.id,
+                "title": item.title,
+                "description": item.description,
+                "species": item.species,
+                "assay_type": item.assay_type,
+                "sample_count": item.sample_count,
+            })
+        
+        context = {}
+        if request.context:
+            context = {
+                "diseases": request.context.diseases or [],
+                "targets": request.context.targets or [],
+                "species": request.context.species or [],
+                "assay_types": request.context.assay_types or [],
+                "min_sample_size": request.context.min_sample_size,
+            }
+        
+        # Rank items using async thread pool
+        result = await asyncio.to_thread(
+            _sync_rank_items,
+            items,
+            request.criteria or "",
+            context
+        )
+        
+        return RankingResult(
+            ranked_items=result.ranked_items,
+            criteria_used=result.criteria_used,
+            explanation=result.explanation,
+            processing_time_seconds=result.processing_time_seconds,
+            cached=result.cached,
+        )
+        
+    except Exception as e:
+        logger.error("LLM-based ranking failed: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"LLM-based ranking failed: {str(e)}"
+        )
+
+
+@router.post("/rerank", response_model=RankingResult)
+async def rerank_items_endpoint(request: RerankRequest) -> RankingResult:
+    """
+    Re-rank items using LLM-based analysis.
+    
+    Takes a previous ranking and re-ranks items based on new criteria or context.
+    Useful for refining rankings with additional information or different priorities.
+    """
+    try:
+        # Convert request to internal format
+        items = []
+        for item in request.items:
+            items.append({
+                "id": item.id,
+                "title": item.title,
+                "description": item.description,
+                "species": item.species,
+                "assay_type": item.assay_type,
+                "sample_count": item.sample_count,
+            })
+        
+        context = {}
+        if request.context:
+            context = {
+                "diseases": request.context.diseases or [],
+                "targets": request.context.targets or [],
+                "species": request.context.species or [],
+                "assay_types": request.context.assay_types or [],
+                "min_sample_size": request.context.min_sample_size,
+            }
+        
+        # Re-rank items using async thread pool
+        result = await asyncio.to_thread(
+            _sync_rerank_items,
+            items,
+            request.previous_ranking,
+            request.criteria or "",
+            context
+        )
+        
+        return RankingResult(
+            ranked_items=result.ranked_items,
+            criteria_used=result.criteria_used,
+            explanation=result.explanation,
+            processing_time_seconds=result.processing_time_seconds,
+            cached=result.cached,
+        )
+        
+    except Exception as e:
+        logger.error("LLM-based re-ranking failed: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"LLM-based re-ranking failed: {str(e)}"
+        )
