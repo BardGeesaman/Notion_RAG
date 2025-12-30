@@ -10,24 +10,39 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_current_user, get_db
-from amprenta_rag.api.schemas import (
-    ImageUploadRequest,
-    ImageUploadResponse,
-    SegmentationRequest,
-    SegmentationResponse,
-    BatchSegmentationRequest,
-    BatchSegmentationResponse,
-    ImageMetadataResponse,
-    SegmentationResultResponse,
-    CellFeaturesResponse,
-    WellSummaryResponse,
-    ErrorResponse,
+from amprenta_rag.api import schemas as api_schemas
+from amprenta_rag.api.schemas.imaging import (
+    OMETiffImportRequest,
+    OMETiffImportResponse,
+    BatchImportRequest,
+    BatchImportResponse,
+    ImportStatusResponse,
+    MicroscopeCreate,
+    MicroscopeResponse,
+    ObjectiveCreate,
+    ObjectiveResponse,
+    ChannelConfigCreate,
+    ChannelConfigResponse,
+    ImageQCResponse,
+    PlateQCResponse,
+    BrowseQuery,
+    BrowseResponse,
+    ThumbnailRequest,
+    ThumbnailResponse,
 )
 from amprenta_rag.models.auth import User
+from amprenta_rag.models.chemistry import HTSWell
 from amprenta_rag.imaging.models import MicroscopyImage, CellSegmentation, CellFeature
+from amprenta_rag.imaging.models_metadata import (
+    Microscope, Objective, LightSource, FilterSet, ChannelConfig, 
+    AcquisitionSettings, ImageFileSet
+)
 from amprenta_rag.imaging.cellpose_service import CellPoseService
 from amprenta_rag.imaging.feature_extraction import FeatureExtractor
 from amprenta_rag.imaging.storage import ImageStorage
+from amprenta_rag.imaging.ome_parser import parse_ome_tiff
+from amprenta_rag.imaging.vendor_parsers import parse_vendor_export
+from amprenta_rag.imaging.image_qc import run_image_qc, generate_plate_qc_report
 from amprenta_rag.jobs.tasks.imaging import process_batch_segmentation
 from amprenta_rag.logging_utils import get_logger
 
@@ -73,7 +88,7 @@ def get_image_storage() -> ImageStorage:
 
 @router.post(
     "/imaging/upload",
-    response_model=ImageUploadResponse,
+    response_model=api_schemas.ImageUploadResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Upload microscopy image",
     description="Upload a microscopy image with metadata and optional well association."
@@ -162,7 +177,7 @@ def upload_image(
         
         logger.info(f"Uploaded image {image_record.id} for user {current_user.id}")
         
-        return ImageUploadResponse(
+        return api_schemas.ImageUploadResponse(
             image_id=image_record.id,
             image_path=image_path,
             width=width,
@@ -184,7 +199,7 @@ def upload_image(
 
 @router.post(
     "/imaging/segment",
-    response_model=SegmentationResponse,
+    response_model=api_schemas.SegmentationResponse,
     status_code=status.HTTP_200_OK,
     summary="Segment cells in image",
     description="Run CellPose segmentation on a microscopy image."
@@ -285,7 +300,7 @@ def segment_image(
         
         logger.info(f"Segmented image {request.image_id}, found {cell_count} cells")
         
-        return SegmentationResponse(
+        return api_schemas.SegmentationResponse(
             segmentation_id=segmentation.id,
             image_id=request.image_id,
             cell_count=cell_count,
@@ -307,7 +322,7 @@ def segment_image(
 
 @router.post(
     "/imaging/segment-batch",
-    response_model=BatchSegmentationResponse,
+    response_model=api_schemas.BatchSegmentationResponse,
     status_code=status.HTTP_202_ACCEPTED,
     summary="Queue batch segmentation",
     description="Queue multiple images for batch segmentation processing using Celery."
@@ -344,7 +359,7 @@ def segment_batch(
         
         logger.info(f"Queued batch segmentation task {task.id} for {len(image_ids)} images")
         
-        return BatchSegmentationResponse(
+        return api_schemas.BatchSegmentationResponse(
             task_id=task.id,
             image_count=len(request.image_ids),
             status="queued",
@@ -363,7 +378,7 @@ def segment_batch(
 
 @router.get(
     "/imaging/images/{image_id}",
-    response_model=ImageMetadataResponse,
+    response_model=api_schemas.ImageMetadataResponse,
     summary="Get image metadata",
     description="Retrieve metadata for a microscopy image."
 )
@@ -381,7 +396,7 @@ def get_image_metadata(
                 detail=f"Image {image_id} not found"
             )
         
-        return ImageMetadataResponse(
+        return api_schemas.ImageMetadataResponse(
             image_id=image.id,
             well_id=image.well_id,
             channel=image.channel,
@@ -409,7 +424,7 @@ def get_image_metadata(
 
 @router.get(
     "/imaging/segmentations/{segmentation_id}",
-    response_model=SegmentationResultResponse,
+    response_model=api_schemas.SegmentationResultResponse,
     summary="Get segmentation results",
     description="Retrieve segmentation results and metadata."
 )
@@ -429,7 +444,7 @@ def get_segmentation(
                 detail=f"Segmentation {segmentation_id} not found"
             )
         
-        return SegmentationResultResponse(
+        return api_schemas.SegmentationResultResponse(
             segmentation_id=segmentation.id,
             image_id=segmentation.image_id,
             model_name=segmentation.model_name,
@@ -453,7 +468,7 @@ def get_segmentation(
 
 @router.get(
     "/imaging/features/{segmentation_id}",
-    response_model=CellFeaturesResponse,
+    response_model=api_schemas.CellFeaturesResponse,
     summary="Get cell features",
     description="Retrieve extracted cell features for a segmentation."
 )
@@ -497,7 +512,7 @@ def get_features(
             }
             feature_list.append(feature_dict)
         
-        return CellFeaturesResponse(
+        return api_schemas.CellFeaturesResponse(
             segmentation_id=segmentation_id,
             cell_count=len(features),
             features=feature_list
@@ -515,7 +530,7 @@ def get_features(
 
 @router.get(
     "/imaging/wells/{well_id}/summary",
-    response_model=WellSummaryResponse,
+    response_model=api_schemas.WellSummaryResponse,
     summary="Get well summary",
     description="Get aggregated features and statistics for all images in a well."
 )
@@ -542,7 +557,7 @@ def get_well_summary(
         ).all()
         
         if not images:
-            return WellSummaryResponse(
+            return api_schemas.WellSummaryResponse(
                 well_id=well_id,
                 image_count=0,
                 total_cell_count=0,
@@ -599,7 +614,7 @@ def get_well_summary(
             # Calculate high-level metrics
             summary_metrics = feature_extractor.calculate_well_metrics(well_aggregated)
         
-        return WellSummaryResponse(
+        return api_schemas.WellSummaryResponse(
             well_id=well_id,
             image_count=len(images),
             total_cell_count=total_cell_count,
@@ -615,4 +630,789 @@ def get_well_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get well summary"
+        )
+
+
+# ============================================================================
+# OME-TIFF Import Endpoints
+# ============================================================================
+
+
+@router.post(
+    "/imaging/import/ome-tiff",
+    response_model=OMETiffImportResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Import OME-TIFF file",
+    description="Import OME-TIFF file with metadata extraction and optional well association."
+)
+def import_ome_tiff(
+    file: UploadFile = File(..., description="OME-TIFF file"),
+    request: OMETiffImportRequest = Depends(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    storage: ImageStorage = Depends(get_image_storage)
+) -> OMETiffImportResponse:
+    """Import OME-TIFF file with metadata extraction."""
+    try:
+        # Validate file type
+        if not file.filename or not file.filename.lower().endswith(('.tif', '.tiff', '.ome.tif', '.ome.tiff')):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File must be a TIFF or OME-TIFF file"
+            )
+        
+        # Read file data
+        file_data = file.file.read()
+        
+        # Save to temporary location for parsing
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(suffix='.tiff', delete=False) as tmp_file:
+            tmp_file.write(file_data)
+            tmp_path = tmp_file.name
+        
+        try:
+            # Parse OME-TIFF metadata
+            ome_metadata = parse_ome_tiff(tmp_path)
+            
+            # Extract basic image info
+            dimensions = {
+                "x": ome_metadata.dimensions.size_x,
+                "y": ome_metadata.dimensions.size_y,
+                "z": ome_metadata.dimensions.size_z,
+                "c": ome_metadata.dimensions.size_c,
+                "t": ome_metadata.dimensions.size_t
+            }
+            
+            # Get channel names
+            channels = [ch.name or f"Channel_{i}" for i, ch in enumerate(ome_metadata.channels)]
+            
+            # Apply channel mapping if provided
+            if request.channel_mapping:
+                mapped_channels = []
+                for i, original_name in enumerate(channels):
+                    mapped_name = request.channel_mapping.get(str(i), original_name)
+                    mapped_channels.append(mapped_name)
+                channels = mapped_channels
+            
+            # Save image to storage
+            image_path = storage.save_image(
+                image_data=file_data,
+                well_id=str(request.well_id) if request.well_id else "ome_import",
+                channel=channels[0] if channels else "default",
+                z_slice=0,
+                timepoint=0,
+                format="tiff"
+            )
+            
+            # Create primary image record
+            image_record = MicroscopyImage(
+                well_id=request.well_id,
+                channel=channels[0] if channels else "default",
+                z_slice=0,
+                timepoint=0,
+                width=dimensions["x"],
+                height=dimensions["y"],
+                bit_depth=16,  # Default for OME-TIFF
+                pixel_size_um=ome_metadata.dimensions.pixel_size_x_um,
+                image_path=image_path,
+                ome_metadata=ome_metadata.raw_json,
+                image_metadata={
+                    "original_filename": file.filename,
+                    "ome_uuid": ome_metadata.ome_uuid,
+                    "acquisition_date": ome_metadata.acquisition_date.isoformat() if ome_metadata.acquisition_date else None,
+                    "description": ome_metadata.description
+                }
+            )
+            
+            # Set instrument info if available
+            if ome_metadata.instrument:
+                image_record.image_metadata["instrument"] = {
+                    "microscope_name": ome_metadata.instrument.microscope_name,
+                    "microscope_model": ome_metadata.instrument.microscope_model,
+                    "objective_name": ome_metadata.instrument.objective_name,
+                    "objective_magnification": ome_metadata.instrument.objective_magnification,
+                    "objective_na": ome_metadata.instrument.objective_na
+                }
+            
+            db.add(image_record)
+            db.commit()
+            db.refresh(image_record)
+            
+            logger.info(f"Imported OME-TIFF {file.filename} as image {image_record.id}")
+            
+            return OMETiffImportResponse(
+                image_id=image_record.id,
+                filename=file.filename,
+                dimensions=dimensions,
+                channels=channels,
+                instrument=ome_metadata.instrument.microscope_name if ome_metadata.instrument else None,
+                pixel_size_um=ome_metadata.dimensions.pixel_size_x_um,
+                ome_metadata=ome_metadata.raw_json
+            )
+            
+        finally:
+            # Clean up temporary file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to import OME-TIFF: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to import OME-TIFF: {str(e)}"
+        )
+
+
+@router.post(
+    "/imaging/import/batch",
+    response_model=BatchImportResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Batch import from vendor export",
+    description="Import multiple images from vendor export directory (Opera, ImageXpress, Cell Voyager)."
+)
+def import_batch_vendor(
+    request: BatchImportRequest,
+    import_path: str = Form(..., description="Path to vendor export directory"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> BatchImportResponse:
+    """Import batch of images from vendor export."""
+    try:
+        # Parse vendor export
+        import_result = parse_vendor_export(import_path, vendor=request.vendor)
+        
+        if import_result.errors:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Failed to parse vendor export: {'; '.join(import_result.errors)}"
+            )
+        
+        # Create ImageFileSet record
+        fileset = ImageFileSet(
+            plate_id=request.plate_id,
+            vendor=import_result.vendor,
+            import_path=import_path,
+            file_count=len(import_result.images),
+            image_count=len(import_result.images),
+            import_status="pending"
+        )
+        
+        db.add(fileset)
+        db.commit()
+        db.refresh(fileset)
+        
+        # TODO: Queue background import job here
+        # For now, just update status to importing
+        fileset.import_status = "importing"
+        db.commit()
+        
+        logger.info(f"Queued batch import {fileset.id} for {len(import_result.images)} images")
+        
+        return BatchImportResponse(
+            fileset_id=fileset.id,
+            status=fileset.import_status,
+            vendor=import_result.vendor,
+            total_images=len(import_result.images),
+            imported_count=0,
+            errors=import_result.errors
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to start batch import: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start batch import: {str(e)}"
+        )
+
+
+@router.get(
+    "/imaging/import/{fileset_id}/status",
+    response_model=ImportStatusResponse,
+    summary="Get import job status",
+    description="Get status and progress of batch import job."
+)
+def get_import_status(
+    fileset_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> ImportStatusResponse:
+    """Get import job status."""
+    try:
+        fileset = db.query(ImageFileSet).filter(ImageFileSet.id == fileset_id).first()
+        if not fileset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Import job {fileset_id} not found"
+            )
+        
+        # Calculate progress
+        progress_percent = 0.0
+        if fileset.file_count > 0:
+            progress_percent = (fileset.image_count / fileset.file_count) * 100.0
+        
+        return ImportStatusResponse(
+            fileset_id=fileset.id,
+            status=fileset.import_status,
+            progress_percent=progress_percent,
+            total_images=fileset.file_count,
+            imported_count=fileset.image_count,
+            failed_count=0,  # TODO: Track failed imports
+            errors=[fileset.error_message] if fileset.error_message else [],
+            warnings=[],
+            estimated_completion=None
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get import status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get import status"
+        )
+
+
+# ============================================================================
+# Instrument Management Endpoints
+# ============================================================================
+
+
+@router.get(
+    "/imaging/instruments",
+    response_model=List[MicroscopeResponse],
+    summary="List microscopes",
+    description="Get list of registered microscope instruments."
+)
+def list_microscopes(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> List[MicroscopeResponse]:
+    """List all registered microscopes."""
+    try:
+        microscopes = db.query(Microscope).filter(Microscope.is_active == True).all()
+        
+        result = []
+        for microscope in microscopes:
+            # Get associated objectives
+            objectives = db.query(Objective).filter(
+                Objective.microscope_id == microscope.id,
+                Objective.is_active == True
+            ).all()
+            
+            # Get associated channel configs
+            channels = db.query(ChannelConfig).filter(
+                ChannelConfig.microscope_id == microscope.id
+            ).all()
+            
+            result.append(MicroscopeResponse(
+                id=microscope.id,
+                name=microscope.name,
+                manufacturer=microscope.manufacturer,
+                model=microscope.model,
+                serial_number=microscope.serial_number,
+                facility_location=microscope.facility_location,
+                is_active=microscope.is_active,
+                objectives=[
+                    ObjectiveResponse(
+                        id=obj.id,
+                        microscope_id=obj.microscope_id,
+                        name=obj.name,
+                        magnification=obj.magnification,
+                        numerical_aperture=obj.numerical_aperture,
+                        immersion=obj.immersion,
+                        working_distance_mm=obj.working_distance_mm,
+                        correction=obj.correction,
+                        is_active=obj.is_active
+                    ) for obj in objectives
+                ],
+                channels=[
+                    ChannelConfigResponse(
+                        id=ch.id,
+                        microscope_id=ch.microscope_id,
+                        channel_name=ch.channel_name,
+                        fluorophore=ch.fluorophore,
+                        excitation_wavelength_nm=None,  # TODO: Get from filter set
+                        emission_wavelength_nm=None,    # TODO: Get from filter set
+                        default_exposure_ms=ch.default_exposure_ms,
+                        default_gain=ch.default_gain
+                    ) for ch in channels
+                ],
+                created_at=microscope.created_at
+            ))
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to list microscopes: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list microscopes"
+        )
+
+
+@router.post(
+    "/imaging/instruments",
+    response_model=MicroscopeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register microscope",
+    description="Register a new microscope instrument."
+)
+def create_microscope(
+    request: MicroscopeCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> MicroscopeResponse:
+    """Register new microscope."""
+    try:
+        # Check for duplicate serial number
+        if request.serial_number:
+            existing = db.query(Microscope).filter(
+                Microscope.serial_number == request.serial_number
+            ).first()
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Microscope with serial number {request.serial_number} already exists"
+                )
+        
+        microscope = Microscope(
+            name=request.name,
+            manufacturer=request.manufacturer,
+            model=request.model,
+            serial_number=request.serial_number,
+            facility_location=request.facility_location
+        )
+        
+        db.add(microscope)
+        db.commit()
+        db.refresh(microscope)
+        
+        logger.info(f"Created microscope {microscope.id}: {microscope.name}")
+        
+        return MicroscopeResponse(
+            id=microscope.id,
+            name=microscope.name,
+            manufacturer=microscope.manufacturer,
+            model=microscope.model,
+            serial_number=microscope.serial_number,
+            facility_location=microscope.facility_location,
+            is_active=microscope.is_active,
+            objectives=[],
+            channels=[],
+            created_at=microscope.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create microscope: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create microscope"
+        )
+
+
+@router.get(
+    "/imaging/instruments/{microscope_id}",
+    response_model=MicroscopeResponse,
+    summary="Get microscope details",
+    description="Get detailed information about a specific microscope."
+)
+def get_microscope(
+    microscope_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> MicroscopeResponse:
+    """Get microscope details."""
+    try:
+        microscope = db.query(Microscope).filter(Microscope.id == microscope_id).first()
+        if not microscope:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Microscope {microscope_id} not found"
+            )
+        
+        # Get objectives and channels (same as list_microscopes)
+        objectives = db.query(Objective).filter(
+            Objective.microscope_id == microscope.id,
+            Objective.is_active == True
+        ).all()
+        
+        channels = db.query(ChannelConfig).filter(
+            ChannelConfig.microscope_id == microscope.id
+        ).all()
+        
+        return MicroscopeResponse(
+            id=microscope.id,
+            name=microscope.name,
+            manufacturer=microscope.manufacturer,
+            model=microscope.model,
+            serial_number=microscope.serial_number,
+            facility_location=microscope.facility_location,
+            is_active=microscope.is_active,
+            objectives=[
+                ObjectiveResponse(
+                    id=obj.id,
+                    microscope_id=obj.microscope_id,
+                    name=obj.name,
+                    magnification=obj.magnification,
+                    numerical_aperture=obj.numerical_aperture,
+                    immersion=obj.immersion,
+                    working_distance_mm=obj.working_distance_mm,
+                    correction=obj.correction,
+                    is_active=obj.is_active
+                ) for obj in objectives
+            ],
+            channels=[
+                ChannelConfigResponse(
+                    id=ch.id,
+                    microscope_id=ch.microscope_id,
+                    channel_name=ch.channel_name,
+                    fluorophore=ch.fluorophore,
+                    excitation_wavelength_nm=None,
+                    emission_wavelength_nm=None,
+                    default_exposure_ms=ch.default_exposure_ms,
+                    default_gain=ch.default_gain
+                ) for ch in channels
+            ],
+            created_at=microscope.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get microscope: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get microscope"
+        )
+
+
+@router.get(
+    "/imaging/objectives",
+    response_model=List[ObjectiveResponse],
+    summary="List objectives",
+    description="Get list of available objective lenses."
+)
+def list_objectives(
+    microscope_id: Optional[UUID] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> List[ObjectiveResponse]:
+    """List objectives, optionally filtered by microscope."""
+    try:
+        query = db.query(Objective).filter(Objective.is_active == True)
+        
+        if microscope_id:
+            query = query.filter(Objective.microscope_id == microscope_id)
+        
+        objectives = query.all()
+        
+        return [
+            ObjectiveResponse(
+                id=obj.id,
+                microscope_id=obj.microscope_id,
+                name=obj.name,
+                magnification=obj.magnification,
+                numerical_aperture=obj.numerical_aperture,
+                immersion=obj.immersion,
+                working_distance_mm=obj.working_distance_mm,
+                correction=obj.correction,
+                is_active=obj.is_active
+            ) for obj in objectives
+        ]
+        
+    except Exception as e:
+        logger.error(f"Failed to list objectives: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list objectives"
+        )
+
+
+@router.get(
+    "/imaging/channels",
+    response_model=List[ChannelConfigResponse],
+    summary="List channel configurations",
+    description="Get list of channel configurations for microscopes."
+)
+def list_channel_configs(
+    microscope_id: Optional[UUID] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> List[ChannelConfigResponse]:
+    """List channel configurations."""
+    try:
+        query = db.query(ChannelConfig)
+        
+        if microscope_id:
+            query = query.filter(ChannelConfig.microscope_id == microscope_id)
+        
+        channels = query.all()
+        
+        return [
+            ChannelConfigResponse(
+                id=ch.id,
+                microscope_id=ch.microscope_id,
+                channel_name=ch.channel_name,
+                fluorophore=ch.fluorophore,
+                excitation_wavelength_nm=None,  # TODO: Get from filter set
+                emission_wavelength_nm=None,    # TODO: Get from filter set
+                default_exposure_ms=ch.default_exposure_ms,
+                default_gain=ch.default_gain
+            ) for ch in channels
+        ]
+        
+    except Exception as e:
+        logger.error(f"Failed to list channel configs: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list channel configs"
+        )
+
+
+# ============================================================================
+# Image QC Endpoints
+# ============================================================================
+
+
+@router.get(
+    "/imaging/qc/image/{image_id}",
+    response_model=ImageQCResponse,
+    summary="Get single image QC",
+    description="Get quality control metrics for a single image."
+)
+def get_image_qc(
+    image_id: UUID,
+    run_artifact_detection: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    storage: ImageStorage = Depends(get_image_storage)
+) -> ImageQCResponse:
+    """Get QC metrics for single image."""
+    try:
+        # Get image record
+        image = db.query(MicroscopyImage).filter(MicroscopyImage.id == image_id).first()
+        if not image:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Image {image_id} not found"
+            )
+        
+        # Load image data
+        image_array = storage.load_image(image.image_path)
+        
+        # Run QC analysis
+        qc_result = run_image_qc(
+            image_array,
+            image_path=image.image_path,
+            run_artifact_detection=run_artifact_detection
+        )
+        
+        return ImageQCResponse(
+            image_id=image_id,
+            focus_score=qc_result.focus.score,
+            focus_algorithm=qc_result.focus.algorithm,
+            is_focused=qc_result.focus.is_focused,
+            saturation_percent=qc_result.saturation.saturated_percent,
+            is_saturated=qc_result.saturation.is_saturated,
+            uniformity_score=qc_result.uniformity.uniformity_score,
+            vignetting_detected=qc_result.uniformity.vignetting_detected,
+            artifact_count=qc_result.artifacts.artifact_count if qc_result.artifacts else None,
+            artifact_percent=qc_result.artifacts.artifact_percent if qc_result.artifacts else None,
+            overall_score=qc_result.overall_score,
+            passed_qc=qc_result.passed_qc,
+            issues=qc_result.issues,
+            timestamp=qc_result.timestamp
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get image QC: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get image QC"
+        )
+
+
+@router.get(
+    "/imaging/qc/plate/{plate_id}",
+    response_model=PlateQCResponse,
+    summary="Get plate QC report",
+    description="Get quality control report for an entire plate."
+)
+def get_plate_qc_report(
+    plate_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    storage: ImageStorage = Depends(get_image_storage)
+) -> PlateQCResponse:
+    """Get plate-wide QC report."""
+    try:
+        # Get all images for the plate
+        images = db.query(MicroscopyImage).filter(
+            MicroscopyImage.well_id.in_(
+                db.query(HTSWell.id).filter(HTSWell.plate_id == plate_id)
+            )
+        ).all()
+        
+        if not images:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No images found for plate {plate_id}"
+            )
+        
+        # Load images and generate report
+        image_data = []
+        for image in images:
+            try:
+                image_array = storage.load_image(image.image_path)
+                well_position = f"Unknown_{len(image_data)}"  # TODO: Get actual well position
+                image_data.append((well_position, image_array))
+            except Exception as e:
+                logger.warning(f"Failed to load image {image.id}: {e}")
+                continue
+        
+        if not image_data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to load any images for QC analysis"
+            )
+        
+        # Generate plate QC report
+        qc_report = generate_plate_qc_report(image_data, str(plate_id))
+        
+        return PlateQCResponse(
+            plate_id=plate_id,
+            total_images=qc_report.total_images,
+            passed_count=qc_report.passed_count,
+            failed_count=qc_report.failed_count,
+            average_focus_score=qc_report.average_focus_score,
+            focus_heatmap=qc_report.focus_heatmap,
+            saturation_alerts=qc_report.saturation_alerts,
+            uniformity_issues=qc_report.uniformity_issues,
+            recommendations=qc_report.recommendations
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get plate QC report: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get plate QC report"
+        )
+
+
+# ============================================================================
+# 5D Browser Endpoint
+# ============================================================================
+
+
+@router.get(
+    "/imaging/browse",
+    response_model=BrowseResponse,
+    summary="5D data browser query",
+    description="Browse and filter microscopy images across 5 dimensions (X, Y, Z, C, T)."
+)
+def browse_images(
+    query: BrowseQuery = Depends(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> BrowseResponse:
+    """Browse images with 5D filtering."""
+    try:
+        # Build query
+        image_query = db.query(MicroscopyImage)
+        
+        # Apply filters
+        if query.plate_id:
+            image_query = image_query.filter(
+                MicroscopyImage.well_id.in_(
+                    db.query(HTSWell.id).filter(HTSWell.plate_id == query.plate_id)
+                )
+            )
+        
+        if query.well_position:
+            # TODO: Join with wells to filter by position
+            pass
+        
+        if query.channel:
+            image_query = image_query.filter(MicroscopyImage.channel == query.channel)
+        
+        if query.z_slice is not None:
+            image_query = image_query.filter(MicroscopyImage.z_slice == query.z_slice)
+        
+        if query.timepoint is not None:
+            image_query = image_query.filter(MicroscopyImage.timepoint == query.timepoint)
+        
+        # Get total count before pagination
+        total_count = image_query.count()
+        
+        # Apply pagination
+        images = image_query.offset(query.skip).limit(query.limit).all()
+        
+        # Get available channels and ranges
+        all_images_query = db.query(MicroscopyImage)
+        if query.plate_id:
+            all_images_query = all_images_query.filter(
+                MicroscopyImage.well_id.in_(
+                    db.query(HTSWell.id).filter(HTSWell.plate_id == query.plate_id)
+                )
+            )
+        
+        available_channels = [
+            row[0] for row in db.query(MicroscopyImage.channel.distinct()).all()
+        ]
+        
+        z_range_result = db.query(
+            db.func.min(MicroscopyImage.z_slice),
+            db.func.max(MicroscopyImage.z_slice)
+        ).first()
+        z_range = (z_range_result[0] or 0, z_range_result[1] or 0)
+        
+        t_range_result = db.query(
+            db.func.min(MicroscopyImage.timepoint),
+            db.func.max(MicroscopyImage.timepoint)
+        ).first()
+        t_range = (t_range_result[0] or 0, t_range_result[1] or 0)
+        
+        # Convert to response format
+        image_summaries = [
+            ImageSummary(
+                id=img.id,
+                well_position=None,  # TODO: Get from well relationship
+                channel=img.channel,
+                z_slice=img.z_slice,
+                timepoint=img.timepoint,
+                width=img.width,
+                height=img.height,
+                thumbnail_url=None,  # TODO: Generate thumbnails
+                focus_score=None,    # TODO: Get from QC data
+                passed_qc=None,      # TODO: Get from QC data
+                acquired_at=img.acquired_at
+            ) for img in images
+        ]
+        
+        return BrowseResponse(
+            images=image_summaries,
+            total_count=total_count,
+            available_channels=available_channels,
+            z_range=z_range,
+            t_range=t_range,
+            plate_info=None  # TODO: Add plate metadata
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to browse images: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to browse images"
         )
