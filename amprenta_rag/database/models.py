@@ -1844,3 +1844,28 @@ class ModelMonitoringLog(Base):
     input_hash = Column(String(64), index=True)
     feature_summary = Column(JSON, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, index=True)
+
+
+class BackupRecord(Base):
+    """Database backup record for tracking backup operations and metadata."""
+
+    __tablename__ = "backup_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    backup_type = Column(String(20), nullable=False, index=True)  # 'full' or 'incremental'
+    status = Column(String(20), nullable=False, index=True)  # 'pending', 'running', 'completed', 'failed'
+    file_path = Column(String(500), nullable=True)  # S3 key or local file path
+    file_size_bytes = Column(BigInteger, nullable=True)
+    checksum_sha256 = Column(String(64), nullable=True, index=True)
+    started_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    error_message = Column(Text, nullable=True)
+    backup_metadata = Column(JSONB, nullable=True)  # JSON: tables, row_counts, pg_version, etc.
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Indexes for common queries
+    __table_args__ = (
+        Index("ix_backup_records_status_created", "status", "created_at"),
+        Index("ix_backup_records_type_status", "backup_type", "status"),
+    )
