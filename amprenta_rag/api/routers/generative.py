@@ -69,7 +69,7 @@ async def sample_molecules(
         )
         
         # Convert to response format
-        molecules = [MoleculeSchema(**mol) for mol in molecules_data]
+        molecules = [MoleculeSchema(**mol) for mol in molecules_data["molecules"]]
         model_info = service.get_model_info()
         
         return SampleResponse(
