@@ -187,6 +187,7 @@ app.include_router(planner.router, prefix="/api/v1", tags=["Planner"])
 app.include_router(export.router, prefix="/api/v1", tags=["Export"])
 app.include_router(audit.router, prefix="/api/v1", tags=["Audit"])
 app.include_router(jobs.router, prefix="/api/v1", tags=["Jobs"])
+app.include_router(imaging.router, prefix="/api/v1", tags=["Imaging"])
 
 
 @app.get("/")
