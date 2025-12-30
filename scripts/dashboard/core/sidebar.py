@@ -143,70 +143,9 @@ def render_search() -> None:
             st.error(f"Search error: {e}")
 
 
-def render_navigation(user: Dict[str, Any] | None, visible_pages: Iterable[str], *, groups: Dict[str, List[str]]) -> str:
-    page = st.session_state.get("selected_page", "Overview")
-
-    filtered_discovery_pages = [p for p in groups.get("DISCOVERY_PAGES", []) if p in visible_pages]
-    filtered_analysis_pages = [p for p in groups.get("ANALYSIS_PAGES", []) if p in visible_pages]
-    filtered_eln_pages = [p for p in groups.get("ELN_PAGES", []) if p in visible_pages]
-    filtered_admin_pages = [p for p in groups.get("ADMIN_PAGES", []) if p in visible_pages]
-
-    if filtered_discovery_pages:
-        with st.expander("🔍 Discovery", expanded=True):
-            for p in filtered_discovery_pages:
-                if st.button(p, key=f"btn_{p}", use_container_width=True):
-                    page = p
-                    st.session_state["selected_page"] = p
-                    update_recent_pages(p)
-                    st.rerun()
-
-    if filtered_analysis_pages:
-        with st.expander("📊 Analysis", expanded=False):
-            for p in filtered_analysis_pages:
-                if st.button(p, key=f"btn_{p}", use_container_width=True):
-                    page = p
-                    st.session_state["selected_page"] = p
-                    update_recent_pages(p)
-                    st.rerun()
-
-    if filtered_eln_pages:
-        with st.expander("📋 ELN", expanded=False):
-            for p in filtered_eln_pages:
-                if st.button(p, key=f"btn_{p}", use_container_width=True):
-                    page = p
-                    st.session_state["selected_page"] = p
-                    update_recent_pages(p)
-                    st.rerun()
-
-    if user and user.get("role") == "admin" and filtered_admin_pages:
-        with st.expander("⚙️ Admin", expanded=False):
-            for p in filtered_admin_pages:
-                if st.button(p, key=f"btn_{p}", use_container_width=True):
-                    page = p
-                    st.session_state["selected_page"] = p
-                    update_recent_pages(p)
-                    st.rerun()
-
-    other_pages = [
-        p
-        for p in groups.get("ALL_PAGES", [])
-        if p
-        not in groups.get("DISCOVERY_PAGES", [])
-        + groups.get("ANALYSIS_PAGES", [])
-        + groups.get("ELN_PAGES", [])
-        + groups.get("ADMIN_PAGES", [])
-    ]
-    filtered_other_pages = [p for p in other_pages if p in visible_pages]
-    if filtered_other_pages:
-        with st.expander("📚 Other Pages", expanded=False):
-            for p in filtered_other_pages:
-                if st.button(p, key=f"btn_{p}", use_container_width=True):
-                    page = p
-                    st.session_state["selected_page"] = p
-                    update_recent_pages(p)
-                    st.rerun()
-
-    return page
+# DEPRECATED: render_navigation function removed
+# This legacy function has been replaced by render_grouped_sidebar
+# which uses the new PAGE_GROUPS structure for better organization
 
 
 def render_recent() -> None:
