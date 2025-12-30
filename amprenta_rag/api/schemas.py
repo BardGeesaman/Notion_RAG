@@ -2021,3 +2021,207 @@ class WellSummaryResponse(BaseModel):
     summary_metrics: Dict[str, Any] = Field(description="High-level well metrics")
     
     model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# Flow Cytometry schemas
+# ============================================================================
+
+class BaseFlowSchema(BaseSchema):
+    """Base schema with common configuration for flow cytometry."""
+    pass
+
+
+class FlowCytometryDatasetCreate(BaseFlowSchema):
+    """Schema for creating a flow cytometry dataset."""
+    
+    dataset_id: Optional[UUID] = None
+    sample_id: Optional[str] = None
+    sample_volume_ul: Optional[float] = Field(None, gt=0)
+    dilution_factor: Optional[float] = Field(None, gt=0)
+    staining_protocol: Optional[str] = None
+
+
+class FlowCytometryDatasetResponse(BaseFlowSchema):
+    """Schema for flow cytometry dataset response."""
+    
+    id: UUID
+    dataset_id: UUID
+    events_parquet_path: str
+    file_size_bytes: Optional[int] = None
+    n_events: Optional[int] = None
+    n_parameters: Optional[int] = None
+    
+    # Acquisition metadata
+    acquisition_date: Optional[datetime] = None
+    cytometer_model: Optional[str] = None
+    cytometer_serial: Optional[str] = None
+    acquisition_software: Optional[str] = None
+    acquisition_settings: Optional[Dict[str, Any]] = None
+    
+    # Sample information
+    sample_id: Optional[str] = None
+    sample_volume_ul: Optional[float] = None
+    dilution_factor: Optional[float] = None
+    staining_protocol: Optional[str] = None
+    
+    # Processing status
+    processing_status: str
+    processing_log: Optional[str] = None
+    
+    # Timestamps
+    ingested_at: datetime
+    processed_at: Optional[datetime] = None
+
+
+class FlowCytometryParameterResponse(BaseFlowSchema):
+    """Schema for flow cytometry parameter response."""
+    
+    id: UUID
+    flow_dataset_id: UUID
+    parameter_index: int
+    parameter_name: str
+    parameter_short_name: Optional[str] = None
+    
+    # Channel configuration
+    detector: Optional[str] = None
+    excitation_wavelength: Optional[int] = None
+    emission_wavelength: Optional[int] = None
+    fluorophore: Optional[str] = None
+    
+    # Data range and scaling
+    data_range: Optional[int] = None
+    amplifier_gain: Optional[float] = None
+    voltage: Optional[float] = None
+    
+    # Statistics
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+
+
+class GateCreate(BaseFlowSchema):
+    """Schema for creating a gate."""
+    
+    gate_name: str = Field(..., min_length=1, max_length=200)
+    gate_type: Literal["polygon", "rectangle", "quadrant"]
+    gate_definition: Dict[str, Any]
+    x_parameter_id: UUID
+    y_parameter_id: Optional[UUID] = None
+    parent_gate_id: Optional[UUID] = None
+    boolean_operator: Optional[Literal["AND", "OR", "NOT"]] = None
+    operand_gate_ids: Optional[List[UUID]] = None
+    
+    @field_validator('gate_definition')
+    @classmethod
+    def validate_gate_definition(cls, v: Dict[str, Any], info) -> Dict[str, Any]:
+        """Validate gate definition based on gate type."""
+        if 'gate_type' not in info.data:
+            return v
+            
+        gate_type = info.data['gate_type']
+        
+        if gate_type == "polygon":
+            if "vertices" not in v:
+                raise ValueError("Polygon gate requires 'vertices' in gate_definition")
+            vertices = v["vertices"]
+            if not isinstance(vertices, list) or len(vertices) < 3:
+                raise ValueError("Polygon gate requires at least 3 vertices")
+            for vertex in vertices:
+                if not isinstance(vertex, list) or len(vertex) != 2:
+                    raise ValueError("Each vertex must be [x, y] coordinate pair")
+                    
+        elif gate_type == "rectangle":
+            required_keys = {"x_min", "x_max", "y_min", "y_max"}
+            if not required_keys.issubset(v.keys()):
+                raise ValueError(f"Rectangle gate requires keys: {required_keys}")
+            if v["x_min"] >= v["x_max"] or v["y_min"] >= v["y_max"]:
+                raise ValueError("Rectangle bounds: min values must be less than max values")
+                
+        elif gate_type == "quadrant":
+            required_keys = {"x_threshold", "y_threshold"}
+            if not required_keys.issubset(v.keys()):
+                raise ValueError(f"Quadrant gate requires keys: {required_keys}")
+            if "quadrant" in v and v["quadrant"] not in ["Q1", "Q2", "Q3", "Q4"]:
+                raise ValueError("Quadrant must be one of: Q1, Q2, Q3, Q4")
+                
+        return v
+
+
+class GateUpdate(BaseFlowSchema):
+    """Schema for updating a gate (all fields optional)."""
+    
+    gate_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    gate_definition: Optional[Dict[str, Any]] = None
+    is_active: Optional[bool] = None
+    parent_gate_id: Optional[UUID] = None
+    boolean_operator: Optional[Literal["AND", "OR", "NOT"]] = None
+    operand_gate_ids: Optional[List[UUID]] = None
+
+
+class GateResponse(BaseFlowSchema):
+    """Schema for gate response."""
+    
+    id: UUID
+    flow_dataset_id: UUID
+    gate_name: str
+    gate_type: str
+    gate_definition: Dict[str, Any]
+    x_parameter_id: UUID
+    y_parameter_id: Optional[UUID] = None
+    parent_gate_id: Optional[UUID] = None
+    boolean_operator: Optional[str] = None
+    operand_gate_ids: Optional[List[UUID]] = None
+    is_active: bool
+    created_at: datetime
+
+
+class PopulationResponse(BaseFlowSchema):
+    """Schema for population statistics response."""
+    
+    id: UUID
+    flow_dataset_id: UUID
+    gate_id: UUID
+    event_count: int
+    parent_event_count: Optional[int] = None
+    percentage_of_parent: Optional[float] = None
+    percentage_of_total: Optional[float] = None
+    population_name: Optional[str] = None
+    cell_type: Optional[str] = None
+    phenotype: Optional[str] = None
+    parameter_statistics: Optional[Dict[str, Any]] = None
+    analysis_software: Optional[str] = None
+    analysis_version: Optional[str] = None
+    analyzed_at: datetime
+
+
+class EventsQueryParams(BaseModel):
+    """Schema for querying flow cytometry events."""
+    
+    offset: int = Field(0, ge=0, description="Number of events to skip")
+    limit: int = Field(10000, ge=1, le=100000, description="Maximum number of events to return")
+    parameters: Optional[List[str]] = Field(None, description="Parameter names to include (all if None)")
+    subsample: bool = Field(False, description="Apply random subsampling if dataset is large")
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EventsResponse(BaseFlowSchema):
+    """Schema for events data response."""
+    
+    events: List[List[float]]  # 2D array as list of lists
+    parameter_names: List[str]
+    total_events: int
+    offset: int
+    limit: int
+    subsampled: bool
+
+
+class UploadResponse(BaseFlowSchema):
+    """Schema for FCS file upload response."""
+    
+    flow_dataset_id: UUID
+    dataset_id: UUID
+    filename: str
+    file_size_bytes: int
+    processing_status: str
+    message: str
