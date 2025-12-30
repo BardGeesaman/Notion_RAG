@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 import httpx
 import pandas as pd
@@ -164,7 +164,7 @@ def render_active_jobs_tab() -> None:
             
             with col2:
                 if job["status"] in ["pending", "running"]:
-                    if st.button(f"❌ Cancel", key=f"cancel_{job['id']}"):
+                    if st.button("❌ Cancel", key=f"cancel_{job['id']}"):
                         try:
                             _api_post(f"/api/v1/jobs/{job['type']}/{job['id']}/cancel")
                             st.success("Job cancelled successfully!")
@@ -174,7 +174,7 @@ def render_active_jobs_tab() -> None:
             
             with col3:
                 if job["status"] == "failed":
-                    if st.button(f"🔄 Retry", key=f"retry_{job['id']}"):
+                    if st.button("🔄 Retry", key=f"retry_{job['id']}"):
                         try:
                             _api_post(f"/api/v1/jobs/{job['type']}/{job['id']}/retry")
                             st.success("Job resubmitted successfully!")
@@ -183,7 +183,7 @@ def render_active_jobs_tab() -> None:
                             st.error(f"Failed to retry job: {e}")
             
             with col4:
-                if st.button(f"📋 Details", key=f"details_{job['id']}"):
+                if st.button("📋 Details", key=f"details_{job['id']}"):
                     try:
                         job_details = _api_get(f"/api/v1/jobs/{job['type']}/{job['id']}")
                         st.json(job_details)
@@ -202,7 +202,7 @@ def render_job_history_tab() -> None:
     col1, col2, col3 = st.columns([2, 2, 2])
     
     with col1:
-        date_filter = st.selectbox(
+        st.selectbox(
             "Time Range",
             options=["Last 24 hours", "Last 7 days", "Last 30 days", "All time"],
             index=1,
