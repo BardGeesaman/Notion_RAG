@@ -75,6 +75,7 @@ ADMIN_PAGES = [
     "Workflows",
     "Feature Permissions",
     "Data Retention",
+    "Backup Admin",
     "Ontology Management",
     "Report History",
     "Cytoscape Demo",
@@ -291,6 +292,7 @@ PAGE_REGISTRY = {
     "Schedule": ("scripts.dashboard.pages.schedule", "render_schedule_page"),
     "Cost Tracking": ("scripts.dashboard.pages.cost_tracking", "render_cost_tracking_page"),
     "Data Retention": ("scripts.dashboard.pages.retention", "render_retention_page"),
+    "Backup Admin": ("scripts.dashboard.pages.backup_admin", "render_backup_admin_page"),
     "Ontology Management": ("scripts.dashboard.pages.ontology", "render_ontology_page"),
     "Report History": ("scripts.dashboard.pages.report_history", "render_report_history_page"),
     "Notebook Co-Pilot": ("scripts.dashboard.pages.notebook_copilot", "render_notebook_copilot_page"),
@@ -337,7 +339,7 @@ PAGE_GROUPS = {
     "Analysis": ["Analysis Tools", "Experiment Planner", "RAG Query", "Statistical Analysis", "Quality Checks", "Literature Analysis", "Compare", "Timeline", "Data Quality", "Coverage Map", "Feature Recurrence", "Evidence Report"],
     "Collaboration": ["Activity Feed", "Teams & Projects", "Share Links", "Variant Tracking"],
     "Reports": ["Executive Digests", "Spectral Matching", "Report History"],
-    "Admin": ["Company Settings", "Job Queue", "Audit Logs", "Audit Trail", "IP Portfolio", "Data Export", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion"],
+    "Admin": ["Company Settings", "Job Queue", "Audit Logs", "Audit Trail", "IP Portfolio", "Data Export", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Backup Admin", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion"],
     "Other": ["Lab Notebook", "Sample Inventory", "Chat", "Evaluation Wizard", "Emails", "RAG Chunks", "Protocols", "Q&A Tracker", "Relationships", "Generic Assays"],
 }
 
