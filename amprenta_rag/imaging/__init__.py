@@ -7,6 +7,9 @@ from .storage import ImageStorage
 from .tiling import TileManager
 from .cellpose_service import CellPoseService
 from .feature_extraction import FeatureExtractor
+from .hts_integration import HTSImagingIntegration
+from .aggregation import PlateAggregator
+from .qc_metrics import QCMetrics
 
 __all__ = [
     "MicroscopyImage",
@@ -16,4 +19,7 @@ __all__ = [
     "TileManager",
     "CellPoseService", 
     "FeatureExtractor",
+    "HTSImagingIntegration",
+    "PlateAggregator",
+    "QCMetrics",
 ]
