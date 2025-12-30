@@ -110,10 +110,13 @@ class TestGenerativeAPI:
     def test_sample_custom_count(self, client, mock_service):
         """Test sampling with custom molecule count."""
         # Configure mock for different count
-        mock_service.sample.return_value = [
-            {"smiles": f"C{'C' * i}O", "properties": {}, "score": None}
-            for i in range(5)
-        ]
+        mock_service.sample.return_value = {
+            "molecules": [
+                {"smiles": f"C{'C' * i}O", "properties": {}, "score": None}
+                for i in range(5)
+            ],
+            "count": 5
+        }
         
         response = client.post("/api/v1/generative/sample", json={
             "n_samples": 5,
