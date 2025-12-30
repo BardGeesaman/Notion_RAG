@@ -64,6 +64,7 @@ PAGE_REGISTRY = {
     "Chemistry": ("scripts.dashboard.pages.chemistry", "render_chemistry_page"),
     "Chemical Sketcher": ("scripts.dashboard.pages.chemical_sketcher", "render_chemical_sketcher_page"),
     "Generative Chemistry": ("scripts.dashboard.pages.generative_chemistry", "render_generative_chemistry_page"),
+    "Image Analysis": ("scripts.dashboard.pages.image_analysis", "render_image_analysis_page"),
     "Compound Portfolio": ("scripts.dashboard.pages.compound_portfolio", "render_compound_portfolio_page"),
     "HTS QC": ("scripts.dashboard.pages.hts_qc", "render_hts_qc_page"),
     "MOA Inference": ("scripts.dashboard.pages.moa_inference", "render_moa_inference_page"),
