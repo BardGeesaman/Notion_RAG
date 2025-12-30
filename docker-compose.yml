@@ -34,9 +34,68 @@ services:
       - postgres
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: amprenta-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  celery-worker:
+    image: amprenta-rag:latest
+    container_name: amprenta-celery-worker
+    command: celery -A amprenta_rag.jobs.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/amprenta
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  celery-beat:
+    image: amprenta-rag:latest
+    container_name: amprenta-celery-beat
+    command: celery -A amprenta_rag.jobs.celery_app beat --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/amprenta
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  flower:
+    image: amprenta-rag:latest
+    container_name: amprenta-flower
+    command: celery -A amprenta_rag.jobs.celery_app flower --port=5555
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
   pgadmin_data:
+    driver: local
+  redis_data:
     driver: local
 
