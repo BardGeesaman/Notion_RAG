@@ -149,6 +149,7 @@ def streamlit_server(fastapi_server):
     env["PYTHONPATH"] = project_root
     env["DISABLE_AUTH"] = "1"
     env["AMPRENTA_DEBUG_NAV"] = "1"
+    env["API_URL"] = fastapi_server
 
     log_path = Path("/tmp/streamlit_e2e.log")
     log_f = log_path.open("w", encoding="utf-8")

@@ -55,7 +55,7 @@ def render_grouped_sidebar(current_page: Optional[str] = None) -> Optional[str]:
                     page,
                     key=button_key,
                     use_container_width=True,
-                    type=button_type if page == current_page else None,
+                    type=button_type,
                 ):
                     selected_page = page
                     # Update expansion state

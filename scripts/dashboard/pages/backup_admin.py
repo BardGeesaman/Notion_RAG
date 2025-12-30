@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
@@ -11,12 +12,13 @@ import streamlit as st
 
 from scripts.dashboard.auth import require_admin
 
+# API Base URL from environment variable
+API_BASE = os.environ.get("API_URL", "http://localhost:8000")
+
 
 def render_backup_admin_page() -> None:
     """Render the Backup Administration page."""
     user = require_admin()
-    if not user:
-        return
 
     st.header("💾 Backup Administration")
     st.markdown("Manage database backups, scheduled tasks, and project exports.")
@@ -339,7 +341,7 @@ def _trigger_backup(backup_type: str) -> Optional[Dict]:
         
         with httpx.Client() as client:
             response = client.post(
-                "http://localhost:8000/api/v1/backup/database",
+                f"{API_BASE}/api/v1/backup/database",
                 json={"backup_type": backup_type},
                 headers=headers,
                 timeout=30.0
@@ -376,7 +378,7 @@ def _create_export(programs: List[str], experiments: List[str], compounds: List[
         
         with httpx.Client() as client:
             response = client.post(
-                "http://localhost:8000/api/v1/backup/export",
+                f"{API_BASE}/api/v1/backup/export",
                 json=export_data,
                 headers=headers,
                 timeout=60.0
@@ -401,7 +403,7 @@ def _display_backup_history(limit: int = 10) -> None:
         
         with httpx.Client() as client:
             response = client.get(
-                f"http://localhost:8000/api/v1/backup/history?per_page={limit}",
+                f"{API_BASE}/api/v1/backup/history?per_page={limit}",
                 headers=headers,
                 timeout=30.0
             )

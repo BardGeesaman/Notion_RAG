@@ -394,7 +394,6 @@ def render_job_queue_page() -> None:
     
     require_auth()
     
-    st.set_page_config(page_title="Job Queue", page_icon="📋", layout="wide")
     st.title("📋 Job Queue Management")
     st.caption("Monitor and manage background job processing with Celery")
     
