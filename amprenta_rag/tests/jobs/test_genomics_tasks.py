@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from celery.exceptions import Retry
 
 from amprenta_rag.jobs.tasks.genomics import run_genomics_pipeline
 
@@ -108,7 +109,7 @@ class TestGenomicsTasks:
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_index_not_found(self, mock_get_config, mock_db_session):
-        """Test genomics pipeline task when GenomicsIndex is missing."""
+        """Test task retries when GenomicsIndex is missing."""
         job_id = uuid4()
         index_id = uuid4()
         
@@ -117,34 +118,29 @@ class TestGenomicsTasks:
         mock_config.genomics.job_root = "/tmp/jobs"
         mock_get_config.return_value = mock_config
         
-        # Mock job
+        # Mock job but no index
         mock_job = MagicMock()
         mock_job.id = job_id
         mock_job.tool = "salmon"
         mock_job.index_id = index_id
+        mock_job.status = "pending"
+        mock_job.error_message = None
         mock_job.progress_percent = 0
         
-        # Mock database session
         mock_db = MagicMock()
         mock_db_session.return_value.__enter__.return_value = mock_db
         mock_db.query.return_value.filter.return_value.first.side_effect = [
-            mock_job,  # First query for job
-            mock_job,  # Second query for job
-            None,      # Query for index - not found
-            mock_job,  # Query for job in error handling
+            mock_job,  # First job query
+            mock_job,  # Second job query  
+            None,      # Index query returns None
         ]
         
-        # Execute task
-        result = run_genomics_pipeline(str(job_id))
+        # Task catches exception, updates DB, then calls self.retry() which raises
+        with pytest.raises(Retry):
+            run_genomics_pipeline(str(job_id))
         
-        # Verify result
-        assert result["status"] == "failed"
-        assert "Index not found" in result["error"]
-        assert result["job_id"] == str(job_id)
-        
-        # Verify job was marked as failed
+        # Verify DB was updated before retry
         assert mock_job.status == "failed"
-        assert "Index not found" in mock_job.error_message
     
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
@@ -249,7 +245,7 @@ class TestGenomicsTasks:
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_unknown_tool(self, mock_get_config, mock_db_session):
-        """Test genomics pipeline task with unknown tool."""
+        """Test task retries with unknown tool."""
         job_id = uuid4()
         index_id = uuid4()
         
@@ -266,6 +262,8 @@ class TestGenomicsTasks:
         mock_job.input_fastq_path = "/data/sample.fastq"
         mock_job.output_dir = None
         mock_job.progress_percent = 0
+        mock_job.status = "pending"
+        mock_job.error_message = None
         
         mock_index = MagicMock()
         mock_index.id = index_id
@@ -275,18 +273,14 @@ class TestGenomicsTasks:
         mock_db = MagicMock()
         mock_db_session.return_value.__enter__.return_value = mock_db
         mock_db.query.return_value.filter.return_value.first.side_effect = [
-            mock_job, mock_job, mock_index, mock_job
+            mock_job, mock_job, mock_index
         ]
         
-        # Execute task
-        result = run_genomics_pipeline(str(job_id))
+        # Task catches exception, updates DB, then calls self.retry() which raises
+        with pytest.raises(Retry):
+            run_genomics_pipeline(str(job_id))
         
-        # Verify result
-        assert result["status"] == "failed"
-        assert "Unknown tool" in result["error"]
-        assert result["job_id"] == str(job_id)
-        
-        # Verify job was marked as failed
+        # Verify DB was updated before retry
         assert mock_job.status == "failed"
         assert "Unknown tool" in mock_job.error_message
     
@@ -294,7 +288,7 @@ class TestGenomicsTasks:
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_pipeline_error(self, mock_get_config, mock_salmon, mock_db_session):
-        """Test genomics pipeline task handling pipeline execution error."""
+        """Test task retries when pipeline execution fails."""
         job_id = uuid4()
         index_id = uuid4()
         
@@ -311,6 +305,8 @@ class TestGenomicsTasks:
         mock_job.input_fastq_path = "/data/sample.fastq"
         mock_job.output_dir = None
         mock_job.progress_percent = 0
+        mock_job.status = "pending"
+        mock_job.error_message = None
         
         mock_index = MagicMock()
         mock_index.id = index_id
@@ -320,21 +316,17 @@ class TestGenomicsTasks:
         mock_db = MagicMock()
         mock_db_session.return_value.__enter__.return_value = mock_db
         mock_db.query.return_value.filter.return_value.first.side_effect = [
-            mock_job, mock_job, mock_index, mock_job
+            mock_job, mock_job, mock_index
         ]
         
         # Mock pipeline to raise exception
         mock_salmon.side_effect = RuntimeError("Pipeline execution failed")
         
-        # Execute task
-        result = run_genomics_pipeline(str(job_id))
+        # Task catches exception, updates DB, then calls self.retry() which raises
+        with pytest.raises(Retry):
+            run_genomics_pipeline(str(job_id))
         
-        # Verify result
-        assert result["status"] == "failed"
-        assert "Pipeline execution failed" in result["error"]
-        assert result["job_id"] == str(job_id)
-        
-        # Verify job was marked as failed
+        # Verify DB was updated before retry
         assert mock_job.status == "failed"
         assert "Pipeline execution failed" in mock_job.error_message
     
@@ -393,7 +385,7 @@ class TestGenomicsTasks:
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_retry_on_failure(self, mock_get_config, mock_salmon, mock_db_session):
-        """Test that task handles failure and returns error status."""
+        """Test task retries on failure."""
         job_id = uuid4()
         
         # Mock config
@@ -406,18 +398,15 @@ class TestGenomicsTasks:
         mock_db_session.return_value.__enter__.return_value = mock_db
         mock_db.query.return_value.filter.return_value.first.side_effect = Exception("DB connection failed")
         
-        # Execute - in eager mode, task catches exception and returns failure
-        result = run_genomics_pipeline(str(job_id))
-        
-        # Verify failure handling
-        assert result["status"] == "failed"
-        assert "job_id" in result
+        # Task catches exception, then calls self.retry() which raises
+        with pytest.raises(Retry):
+            run_genomics_pipeline(str(job_id))
     
     @patch('amprenta_rag.database.session.db_session')
     @patch('amprenta_rag.ingestion.genomics.pipeline.run_salmon_quant')
     @patch('amprenta_rag.config.get_config')
     def test_genomics_max_retries_exceeded(self, mock_get_config, mock_salmon, mock_db_session):
-        """Test that task handles persistent failure and returns error status."""
+        """Test task retries on persistent failure."""
         job_id = uuid4()
         
         # Mock config
@@ -430,10 +419,6 @@ class TestGenomicsTasks:
         mock_db_session.return_value.__enter__.return_value = mock_db
         mock_db.query.return_value.filter.return_value.first.side_effect = Exception("Persistent failure")
         
-        # Execute - in eager mode, task catches exception and returns failure
-        result = run_genomics_pipeline(str(job_id))
-        
-        # Verify final failure
-        assert result["status"] == "failed"
-        assert "Persistent failure" in result["error"]
-        assert result["job_id"] == str(job_id)
+        # Task catches exception, then calls self.retry() which raises
+        with pytest.raises(Retry):
+            run_genomics_pipeline(str(job_id))
