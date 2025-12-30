@@ -42,6 +42,12 @@ class GenerativeChemistryService:
             qsar_predictor: QSAR predictor instance
             alert_checker: Structural alert checker instance
         """
+        # Set default model path if not provided
+        if model_path is None:
+            default_path = Path("models/generative/demo_vae")
+            if default_path.exists():
+                model_path = str(default_path)
+        
         self.model_path = model_path
         self.admet_predictor = admet_predictor
         self.qsar_predictor = qsar_predictor

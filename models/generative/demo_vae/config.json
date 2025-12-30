@@ -1,0 +1,7 @@
+{
+  "vocab_size": 52,
+  "latent_dim": 64,
+  "hidden_size": 128,
+  "num_layers": 1,
+  "embedding_dim": 64
+}
