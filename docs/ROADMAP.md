@@ -270,7 +270,19 @@ Simple status legend:
   - Parquet-based event storage with PostgreSQL metadata
   - Background processing with threading
   - 71+ tests (21 gating + 23 transforms + 9 models + 3 API + 15 E2E)
-- ❌ Biophysical Assay Support (SPR, MST, DSC)
+- ✅ Biophysical Assay Support (SPR, MST, DSC) (2025-12-30)
+  - Database: 6 models (SPRExperiment, SPRSensorgram, MSTExperiment, MSTDoseResponse, DSCExperiment, DSCScan)
+  - File Parsers: Biacore CSV/TXT, NanoTemper XLSX/CSV, MicroCal/TA CSV/TXT formats
+  - Analysis Pipelines: Kinetic fitting (lmfit), Hill equation, thermal unfolding models
+  - 12 REST API endpoints for upload, retrieval, and refitting across all assay types
+  - 3-tab Streamlit dashboard (SPR, MST, DSC) with interactive Plotly visualizations
+  - Cross-assay compound profiling and comparison capabilities
+  - Background processing with threading and status tracking
+  - Entity linking (compounds, targets, users) with relationship management
+  - Quality metrics: χ², S/N ratio, R², cooperativity, reversibility assessment
+  - Comprehensive documentation with instrument support matrix
+  - Seed script for demo data generation across all assay types
+  - 105+ tests (12 models + 22 parsers + 28 analysis + 20 ingest + 3 API + 10 dashboard + 10 integration)
 
 **Visualization & UI/UX:**
 - ✅ Navigation & UI Organization (2025-12-30)
