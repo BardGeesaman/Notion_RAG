@@ -401,6 +401,8 @@ __all__ = [
     "PKStudy",
     "ToxicologyResult",
     "HTSCampaign",
+    "HTSPlate",
+    "HTSWell",
     "HTSResult",
     "BiochemicalResult",
     "TargetProductProfile",
