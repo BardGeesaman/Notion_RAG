@@ -1817,10 +1817,12 @@ from amprenta_rag.models.qa import (  # noqa: F401
 from amprenta_rag.models.misc import (  # noqa: F401
     ScheduledEvent,
     RetentionPolicy,
-    OntologyTerm,
-    ExperimentTemplate,  # noqa: F401
-    GeneticVariant,  # noqa: F401
-    CostEntry,  # noqa: F401
+)
+from amprenta_rag.database.models_flow_cytometry import (  # noqa: F401
+    FlowCytometryDataset,
+    FlowCytometryParameter,
+    FlowCytometryGate,
+    FlowCytometryPopulation,
 )
 from amprenta_rag.models.eln import (  # noqa: F401
     Protocol,
