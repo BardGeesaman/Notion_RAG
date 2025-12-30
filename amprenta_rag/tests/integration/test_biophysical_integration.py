@@ -28,7 +28,8 @@ from amprenta_rag.database.models_biophysical import (
     DSCScan,
     SPRExperimentType,
 )
-from amprenta_rag.models.chemistry import Compound, ProteinStructure
+from amprenta_rag.models.chemistry import Compound
+from amprenta_rag.database.models import ProteinStructure
 from amprenta_rag.biophysical.ingest_service import (
     ingest_spr_file,
     ingest_mst_file,
@@ -63,8 +64,8 @@ def test_compound():
     with db_session() as db:
         compound = Compound(
             id=uuid4(),
+            compound_id=f"TEST_COMPOUND_{uuid4().hex[:8]}",
             smiles="CC(=O)Nc1ccc(O)cc1",
-            name=f"Test Compound {uuid4().hex[:8]}",
             molecular_weight=151.16,
             created_at=datetime.now(timezone.utc)
         )
@@ -80,8 +81,7 @@ def test_target():
     with db_session() as db:
         target = ProteinStructure(
             id=uuid4(),
-            name=f"Test Target {uuid4().hex[:8]}",
-            sequence="MKWVTFISLLFLFSSAYSRGVFRRDAHKSEVAHRFKDLGEENFKALVLIAFAQYLQQCPFEDHVKLVNEVTEFAKTCVADESAENCDKSLHTLFGDKLCTVATLRETYGEMADCCAKQEPERNECFLQHKDDNPNLPRLVRPEVDVMCTAFHDNEETFLKKYLYEIARRHPYFYAPELLFFAKRYKAAFTECCQAADKAACLLPKLDELRDEGKASSAKQRLKCASLQKFGERAFKAWAVARLSQRFPKAEFAEVSKLVTDLTKVHTECCHGDLLECADDRADLAKYICENQDSISSKLKECCEKPLLEKSHCIAEVENDEMPADLPSLAADFVESKDVCKNYAEAKDVFLGMFLYEYARRHPDYSVVLLLRLAKTYETTLEKCCAAADPHECYAKVFDEFKPLVEEPQNLIKQNCELFEQLGEYKFQNALLVRYTKKVPQVSTPTLVEVSRNLGKVGSKCCKHPEAKRMPCAEDYLSVVLNQLCVLHEKTPVSDRVTKCCTESLVNRRPCFSALEVDETYVPKEFNAETFTFHADICTLSEKERQIKKQTALVELVKHKPKATKEQLKAVMDDFAAFVEKCCKADDKETCFAEEGKKLVAASQAALGL",
+            source="test",
             created_at=datetime.now(timezone.utc)
         )
         db.add(target)
@@ -265,9 +265,9 @@ def test_full_mst_workflow(test_user, test_compound, test_target, mock_mst_file)
         assert len(dose_points) > 0
         
         for point in dose_points:
-            assert point.concentration is not None
-            assert point.fnorm is not None
-            assert point.concentration > 0
+            assert point.ligand_concentration is not None
+            assert point.thermophoresis_response is not None
+            assert point.ligand_concentration > 0
     
     # Cleanup
     Path(mock_mst_file).unlink()
