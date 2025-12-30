@@ -39,3 +39,9 @@ task_queues = (
 
 # Testing mode
 task_always_eager = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'false').lower() == 'true'
+
+# Celery Beat schedule configuration
+from amprenta_rag.jobs.schedules import CELERYBEAT_SCHEDULE
+
+beat_schedule = CELERYBEAT_SCHEDULE
+beat_scheduler = 'celery.beat:PersistentScheduler'
