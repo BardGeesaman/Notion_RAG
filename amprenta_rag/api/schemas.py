@@ -2225,3 +2225,147 @@ class UploadResponse(BaseFlowSchema):
     file_size_bytes: int
     processing_status: str
     message: str
+
+
+# ============================================================================
+# Biophysical Assay Schemas
+# ============================================================================
+
+
+class BaseBiophysicalSchema(BaseSchema):
+    """Base schema for biophysical assay schemas."""
+    pass
+
+
+# Upload request schemas
+class SPRUploadRequest(BaseBiophysicalSchema):
+    """Schema for SPR file upload request."""
+    
+    experiment_id: Optional[UUID] = None
+    compound_id: Optional[UUID] = None
+    target_id: Optional[UUID] = None
+    target_name: Optional[str] = None
+
+
+class MSTUploadRequest(BaseBiophysicalSchema):
+    """Schema for MST file upload request."""
+    
+    experiment_id: Optional[UUID] = None
+    compound_id: Optional[UUID] = None
+    target_id: Optional[UUID] = None
+    target_name: Optional[str] = None
+
+
+class DSCUploadRequest(BaseBiophysicalSchema):
+    """Schema for DSC file upload request."""
+    
+    experiment_id: Optional[UUID] = None
+    compound_id: Optional[UUID] = None
+    protein_id: Optional[UUID] = None
+    protein_name: Optional[str] = None
+
+
+# Response schemas
+class SPRExperimentResponse(BaseBiophysicalSchema):
+    """Schema for SPR experiment response."""
+    
+    id: UUID
+    experiment_name: Optional[str]
+    compound_id: Optional[UUID]
+    target_id: Optional[UUID]
+    target_name: Optional[str]
+    instrument: Optional[str]
+    chip_type: Optional[str]
+    ka: Optional[float]
+    kd_rate: Optional[float]
+    kd_equilibrium: Optional[float]
+    rmax: Optional[float]
+    chi_squared: Optional[float]
+    processing_status: str
+    created_at: datetime
+
+
+class SPRSensorgamResponse(BaseBiophysicalSchema):
+    """Schema for SPR sensorgram response."""
+    
+    id: UUID
+    cycle_number: int
+    analyte_concentration: float
+    time_seconds: List[float]
+    response_values: List[float]
+
+
+class MSTExperimentResponse(BaseBiophysicalSchema):
+    """Schema for MST experiment response."""
+    
+    id: UUID
+    experiment_name: Optional[str]
+    compound_id: Optional[UUID]
+    target_id: Optional[UUID]
+    target_name: Optional[str]
+    kd_value: Optional[float]
+    kd_error: Optional[float]
+    hill_coefficient: Optional[float]
+    processing_status: str
+    created_at: datetime
+
+
+class MSTDoseResponsePointResponse(BaseBiophysicalSchema):
+    """Schema for MST dose response point response."""
+    
+    id: UUID
+    concentration: float
+    fnorm: float
+    fnorm_error: Optional[float]
+
+
+class DSCExperimentResponse(BaseBiophysicalSchema):
+    """Schema for DSC experiment response."""
+    
+    id: UUID
+    experiment_name: Optional[str]
+    compound_id: Optional[UUID]
+    protein_id: Optional[UUID]
+    protein_name: Optional[str]
+    tm_value: Optional[float]
+    tm_error: Optional[float]
+    delta_h: Optional[float]
+    processing_status: str
+    created_at: datetime
+
+
+class DSCScanResponse(BaseBiophysicalSchema):
+    """Schema for DSC scan response."""
+    
+    id: UUID
+    scan_number: int
+    temperature_celsius: List[float]
+    heat_capacity: List[float]
+
+
+# Fit request schemas
+class RefitRequest(BaseBiophysicalSchema):
+    """Schema for refitting experiment data."""
+    
+    model: Optional[str] = Field(None, description="Fitting model: '1:1_langmuir', 'two_state', 'hill', etc.")
+
+
+# Cross-assay comparison response
+class BiophysicalCompareResponse(BaseBiophysicalSchema):
+    """Schema for cross-assay biophysical comparison."""
+    
+    compound_id: UUID
+    spr_results: List[SPRExperimentResponse]
+    mst_results: List[MSTExperimentResponse]
+    dsc_results: List[DSCExperimentResponse]
+
+
+# Upload response schemas
+class BiophysicalUploadResponse(BaseBiophysicalSchema):
+    """Schema for biophysical file upload response."""
+    
+    experiment_id: UUID
+    filename: str
+    file_size_bytes: int
+    processing_status: str
+    message: str

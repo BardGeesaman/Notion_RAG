@@ -84,6 +84,7 @@ from amprenta_rag.api.routers import (
     papers,
     imaging,
     flow_cytometry,
+    biophysical,
 )
 from amprenta_rag.config import get_config
 
@@ -190,6 +191,7 @@ app.include_router(audit.router, prefix="/api/v1", tags=["Audit"])
 app.include_router(jobs.router, prefix="/api/v1", tags=["Jobs"])
 app.include_router(imaging.router, prefix="/api/v1", tags=["Imaging"])
 app.include_router(flow_cytometry.router, prefix="/api/v1/flow-cytometry", tags=["Flow Cytometry"])
+app.include_router(biophysical.router, prefix="/api/v1/biophysical", tags=["Biophysical"])
 
 
 @app.get("/")
