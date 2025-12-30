@@ -132,6 +132,14 @@ def schedule_harvest(schedule_id: str) -> None:
     Args:
         schedule_id: UUID of the harvest schedule
     """
+    import os
+    USE_CELERY = os.environ.get("USE_CELERY", "true").lower() == "true"
+    
+    if USE_CELERY:
+        # Celery Beat handles via beat_schedule or periodic checks - just log
+        logger.info("[HARVEST] Schedule %s managed by Celery Beat", schedule_id)
+        return
+    
     db_gen = get_db()
     db = next(db_gen)
     try:
@@ -196,6 +204,14 @@ def run_external_sync(source: str, sync_type: str = "incremental") -> None:
 
 def schedule_external_sync(source: str, interval_hours: int = 24) -> None:
     """Schedule periodic external sync for a given source."""
+    import os
+    USE_CELERY = os.environ.get("USE_CELERY", "true").lower() == "true"
+    
+    if USE_CELERY:
+        # Celery Beat handles via CELERYBEAT_SCHEDULE - just log
+        logger.info("[SYNC] External sync for %s managed by Celery Beat", source)
+        return
+    
     scheduler = get_scheduler()
     src = (source or "").strip().lower()
     if not src:

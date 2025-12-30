@@ -122,6 +122,14 @@ class DigestScheduler:
 
     def add_digest_schedule(self, schedule_id: UUID) -> None:
         """Add a schedule to APScheduler (or replace existing)."""
+        import os
+        USE_CELERY = os.environ.get("USE_CELERY", "true").lower() == "true"
+        
+        if USE_CELERY:
+            # Celery Beat handles digest schedules via periodic checks - just log
+            logger.info("[DIGEST] Schedule %s managed by Celery Beat", schedule_id)
+            return
+        
         if not APSCHEDULER_AVAILABLE:
             raise ImportError("APScheduler is not installed")
 
