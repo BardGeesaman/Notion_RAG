@@ -24,8 +24,8 @@ class TestDockingTasks:
         os.environ.pop("CELERY_TASK_ALWAYS_EAGER", None)
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
-    @patch('amprenta_rag.jobs.tasks.docking.DockingService')
+    @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
+    @patch('amprenta_rag.structural.docking_service.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_success(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
         """Test successful docking task execution."""
@@ -122,7 +122,7 @@ class TestDockingTasks:
         assert result["run_id"] == str(run_id)
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
+    @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
     def test_docking_receptor_prep_failure(self, mock_prepare_receptor, mock_db_session):
         """Test docking task when receptor preparation fails."""
         run_id = uuid4()
@@ -190,8 +190,8 @@ class TestDockingTasks:
         assert result["run_id"] == str(run_id)
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
-    @patch('amprenta_rag.jobs.tasks.docking.DockingService')
+    @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
+    @patch('amprenta_rag.structural.docking_service.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_compound_selection(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
         """Test docking task compound selection logic."""
@@ -267,8 +267,8 @@ class TestDockingTasks:
         mock_db.query.return_value.filter.assert_called_once()
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
-    @patch('amprenta_rag.jobs.tasks.docking.DockingService')
+    @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
+    @patch('amprenta_rag.structural.docking_service.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_compound_processing_error(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
         """Test docking task handling individual compound processing errors."""
@@ -339,8 +339,8 @@ class TestDockingTasks:
         # Note: The error_log update happens in the exception handler
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
-    @patch('amprenta_rag.jobs.tasks.docking.DockingService')
+    @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
+    @patch('amprenta_rag.structural.docking_service.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_error_log_aggregation(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
         """Test docking task error log aggregation."""
@@ -416,8 +416,8 @@ class TestDockingTasks:
         # (In the actual implementation, errors are appended to error_log)
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
-    @patch('amprenta_rag.jobs.tasks.docking.DockingService')
+    @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
+    @patch('amprenta_rag.structural.docking_service.DockingService')
     @patch('amprenta_rag.jobs.tasks.docking.ThreadPoolExecutor')
     def test_docking_status_transitions(self, mock_executor, mock_docking_service, mock_prepare_receptor, mock_db_session):
         """Test docking task status transitions."""
@@ -490,7 +490,7 @@ class TestDockingTasks:
         assert mock_run.status == "completed"
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
+    @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
     def test_docking_retry_on_failure(self, mock_prepare_receptor, mock_db_session):
         """Test docking task retry logic with exponential backoff."""
         run_id = uuid4()
@@ -528,7 +528,7 @@ class TestDockingTasks:
                 assert kwargs['countdown'] == 120 * (2 ** 1)  # 240 seconds for first retry
     
     @patch('amprenta_rag.database.session.db_session')
-    @patch('amprenta_rag.structural.vina_runner.prepare_receptor')
+    @patch('amprenta_rag.structural.receptor_prep.prepare_receptor')
     def test_docking_partial_success(self, mock_prepare_receptor, mock_db_session):
         """Test docking task when some compounds fail but run is marked failed due to errors."""
         run_id = uuid4()

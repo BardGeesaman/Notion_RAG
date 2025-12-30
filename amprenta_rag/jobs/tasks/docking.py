@@ -15,7 +15,7 @@ def run_docking(self, run_id: str) -> dict:
     from sqlalchemy import update
     from amprenta_rag.database.session import db_session
     from amprenta_rag.database.models import DockingRun, Compound
-    from amprenta_rag.structural.vina_runner import prepare_receptor
+    from amprenta_rag.structural.receptor_prep import prepare_receptor
     
     run_uuid = UUID(run_id)
     
