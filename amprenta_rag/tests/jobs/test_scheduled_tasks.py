@@ -113,7 +113,7 @@ class TestScheduledTaskQueueRouting:
 class TestScheduledTaskExecution:
     """Test scheduled task execution with mocking."""
 
-    @patch('amprenta_rag.jobs.tasks.scheduled._run_harvest')
+    @patch('amprenta_rag.ingestion.harvest_scheduler.run_harvest')
     def test_harvest_task_calls_underlying_function(self, mock_run_harvest):
         """Test that harvest task calls the underlying harvest function."""
         from amprenta_rag.jobs.tasks.scheduled import run_harvest
@@ -133,7 +133,7 @@ class TestScheduledTaskExecution:
         assert result['status'] == 'complete'
         assert result['schedule_id'] == schedule_id
 
-    @patch('amprenta_rag.jobs.tasks.scheduled._run_external_sync')
+    @patch('amprenta_rag.ingestion.harvest_scheduler.run_external_sync')
     def test_external_sync_task_calls_underlying_function(self, mock_run_sync):
         """Test that external sync task calls the underlying sync function."""
         from amprenta_rag.jobs.tasks.scheduled import run_external_sync

@@ -99,7 +99,7 @@ def check_digest_schedules() -> dict:
                     result = scheduler.run_digest(schedule.id)
                     if result.status == "complete":
                         processed_count += 1
-                except Exception as e:
+                except Exception:
                     # Log error but continue with other schedules
                     continue
         
@@ -142,7 +142,7 @@ def check_harvest_schedules() -> dict:
                     if schedule.next_run and schedule.next_run <= current_time:
                         _run_harvest(str(schedule.id))
                         processed_count += 1
-                except Exception as e:
+                except Exception:
                     # Log error but continue with other schedules
                     continue
         
