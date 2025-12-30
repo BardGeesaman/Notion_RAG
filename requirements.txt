@@ -122,6 +122,7 @@ interrogate>=1.7.0
 # No patched version is currently available on PyPI (latest is 1.11.0; PYSEC-2022-42969).
 py==1.11.0
 fastapi>=0.124.0
+fcsparser>=0.2.0
 uvicorn[standard]>=0.38.0
 
 # Security
@@ -160,6 +161,9 @@ meeko>=0.5.0
 # Connectivity Mapping (LINCS / CMap)
 cmapPy
 h5py
+
+# Flow Cytometry / FACS
+pyarrow>=14.0.0
 
 # Lipidomics Spectral Matching
 matchms
