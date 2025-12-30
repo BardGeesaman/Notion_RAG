@@ -185,10 +185,11 @@ def render_command_palette() -> None:
                 st.rerun()
         
         with col2:
-            # Debug toggle for development
-            if st.button("Debug", key="toggle_debug"):
-                st.session_state["debug_scores"] = not st.session_state.get("debug_scores", False)
-                st.rerun()
+            # Debug toggle for development (only in debug mode)
+            if os.environ.get("AMPRENTA_DEBUG"):
+                if st.button("Debug", key="toggle_debug"):
+                    st.session_state["debug_scores"] = not st.session_state.get("debug_scores", False)
+                    st.rerun()
         
         with col3:
             # Clear search

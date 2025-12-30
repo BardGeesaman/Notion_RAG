@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 from scripts.dashboard.core.config import PAGE_GROUPS, GROUP_ICONS
+from scripts.dashboard.components.sidebar_nav import get_page_group
 
 
 def get_breadcrumb_path(current_page: str) -> list[tuple[str, str, str | None]]:
@@ -96,20 +97,6 @@ def render_breadcrumbs(current_page: str) -> None:
             col_idx += 1
 
 
-def get_page_group(page_name: str) -> str | None:
-    """
-    Get the group name for a given page.
-    
-    Args:
-        page_name: Name of the page
-        
-    Returns:
-        Group name if found, None otherwise
-    """
-    for group, pages in PAGE_GROUPS.items():
-        if page_name in pages:
-            return group
-    return None
 
 
 def get_group_icon(group_name: str) -> str:
