@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy.orm import Session
 
 from amprenta_rag.database.models import (
     PipelineJob,
@@ -208,9 +207,10 @@ def cancel_job(job_type: str, job_id: UUID) -> Dict[str, Any]:
         
         # Try to revoke Celery task (best effort)
         try:
-            from amprenta_rag.jobs.celery_app import celery_app
             # Note: This is simplified - in practice you'd need to track Celery task IDs
+            # from amprenta_rag.jobs.celery_app import celery_app
             # celery_app.control.revoke(task_id, terminate=True)
+            pass
         except Exception:
             pass  # Celery revocation is best effort
         
@@ -253,7 +253,6 @@ def retry_job(job_type: str, job_id: UUID) -> Dict[str, Any]:
         
         # Resubmit to Celery
         try:
-            from amprenta_rag.jobs.celery_app import celery_app
             # Get the task function and submit
             task_parts = task_name.split(".")
             module_path = ".".join(task_parts[:-1])
