@@ -168,6 +168,7 @@ ALL_PAGES = [
     "Schedule",
     "Cost Tracking",
     "Data Retention",
+    "Backup Admin",
     "Ontology Management",
     "Report History",
     # Advanced visualization pages (admin tools)
