@@ -14,6 +14,7 @@ from amprenta_rag.database.base import Base
 
 if TYPE_CHECKING:
     from amprenta_rag.models.chemistry import HTSWell
+    from amprenta_rag.imaging.models_metadata import Objective, AcquisitionSettings
 
 
 def generate_uuid() -> uuid.UUID:
@@ -26,10 +27,14 @@ class MicroscopyImage(Base):
     __tablename__ = "microscopy_images"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
-    well_id = Column(UUID(as_uuid=True), ForeignKey("hts_wells.id"), nullable=False, index=True)
+    well_id = Column(UUID(as_uuid=True), ForeignKey("hts_wells.id"), nullable=True, index=True)  # P0 fix: nullable for standalone OME-TIFF
     channel = Column(String(50), nullable=False)  # e.g., "DAPI", "GFP", "RFP", "Brightfield"
     z_slice = Column(Integer, nullable=True, default=0)  # Z-stack slice index
     timepoint = Column(Integer, nullable=True, default=0)  # Time series index
+    
+    # Metadata relationships (new)
+    objective_id = Column(UUID(as_uuid=True), ForeignKey("objectives.id"), nullable=True, index=True)
+    acquisition_settings_id = Column(UUID(as_uuid=True), ForeignKey("acquisition_settings.id"), nullable=True, index=True)
     
     # Image dimensions and metadata
     width = Column(Integer, nullable=False)
@@ -43,6 +48,7 @@ class MicroscopyImage(Base):
     
     # Image metadata
     image_metadata = Column(JSON, nullable=True)  # Acquisition settings, exposure, etc.
+    ome_metadata = Column(JSON, nullable=True)  # P2 fix: OME metadata for queryability
     
     # Quality metrics
     focus_score = Column(Float, nullable=True)  # Image focus quality
@@ -54,7 +60,9 @@ class MicroscopyImage(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    well: Mapped["HTSWell"] = relationship()
+    well: Mapped[Optional["HTSWell"]] = relationship()  # Optional for standalone OME-TIFF
+    objective: Mapped[Optional["Objective"]] = relationship()
+    acquisition_settings: Mapped[Optional["AcquisitionSettings"]] = relationship(back_populates="microscopy_image")
     segmentations: Mapped[List["CellSegmentation"]] = relationship(
         back_populates="image", cascade="all, delete-orphan"
     )
