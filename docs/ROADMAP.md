@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-30 (Generative Chemistry, Navigation & UI Organization added)
+**Last Updated**: 2025-12-30 (Generative Chemistry, Navigation & UI Organization, Image Analysis Pipeline added)
 
 Simple status legend:
 - ✅ DONE
@@ -309,7 +309,14 @@ Simple status legend:
   - Demo model included (<1MB, trains <2s)
   - 56 tests (12 VAE + 11 optimization + 11 API + 10 E2E + 12 training) - 100% pass rate
   - Key capabilities: latent space traversal, property-guided generation, scaffold hopping, SMILES reconstruction
-- ❌ Image Analysis Pipeline (CellPose for HCS)
+- ✅ Image Analysis Pipeline (CellPose for HCS) (2025-12-30)
+  - Cell segmentation with CellPose (GPU + CPU fallback, tiling for large images)
+  - Feature extraction: morphology (area, perimeter, circularity), intensity (mean/std/integrated), texture (Haralick)
+  - HTS plate hierarchy: HTSPlate, HTSWell, MicroscopyImage, CellSegmentation, CellFeature models
+  - 7 API endpoints + Celery batch task for plate-wide segmentation
+  - Z' factor QC metrics and plate heatmaps
+  - 4-tab dashboard (Upload/Segment/Features/Plate View)
+  - 52 tests (10 schema + 14 CellPose + 10 API + 10 HTS integration + 8 E2E) - 100% pass rate
 - ❌ Power Analysis for Sample Size Estimation
 
 ---

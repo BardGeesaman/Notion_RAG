@@ -167,6 +167,18 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-30] – **Image Analysis Pipeline (CellPose for HCS) Complete**:
+  - **Plan**: .cursor/plans/image_analysis_pipeline_6c45d628.plan.md
+  - **Results**: 5 batches complete, 52 tests, 100% pass rate
+  - **Batch 1 - Schema**: HTS plate hierarchy + imaging models (10 tests)
+  - **Batch 2 - CellPose**: Segmentation service with GPU fallback, tiling (14 tests)
+  - **Batch 3 - API**: 7 endpoints + Celery batch task (10 tests)
+  - **Batch 4 - HTS Integration**: Aggregation, Z' factor QC metrics (10 tests)
+  - **Batch 5 - Dashboard**: 4-tab UI (Upload, Segment, Features, Plate View) (8 tests)
+  - **Key Features**: Cell segmentation, feature extraction, plate heatmaps, QC metrics
+  - **New Models**: HTSPlate, HTSWell, MicroscopyImage, CellSegmentation, CellFeature
+  - **Zero skipped tests** - No Bandaids policy enforced
+
 * [2025-12-30] – **Navigation & UI Organization Complete**:
   - **Plan**: .cursor/plans/navigation_ui_organization_a4f8e2d1.plan.md
   - **Results**: 5 batches complete, 46 tests, 100% pass rate
