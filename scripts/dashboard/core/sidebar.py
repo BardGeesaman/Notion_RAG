@@ -27,6 +27,170 @@ from scripts.dashboard.core.jupyter_auth import get_jupyterhub_url, get_voila_ur
 from scripts.dashboard.components.alerts_bell import render_alerts_bell
 
 
+def inject_responsive_js() -> None:
+    """Inject JavaScript for viewport detection and responsive behavior."""
+    js = """
+    <script>
+    function updateViewportInfo() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Store viewport info in session storage for Streamlit access
+        sessionStorage.setItem('viewport_width', width.toString());
+        sessionStorage.setItem('viewport_height', height.toString());
+        
+        // Auto-collapse sidebar on mobile/narrow screens
+        if (width < 768) {
+            const streamlitDoc = window.parent.document || document;
+            const sidebar = streamlitDoc.querySelector('[data-testid="stSidebar"]');
+            if (sidebar) {
+                // Add mobile class for styling
+                sidebar.classList.add('mobile-sidebar');
+                
+                // Auto-collapse sidebar on very narrow screens
+                if (width < 576) {
+                    const collapseButton = streamlitDoc.querySelector('[data-testid="collapsedControl"]');
+                    if (collapseButton && sidebar.getAttribute('aria-expanded') !== 'false') {
+                        // Don't auto-collapse if user has explicitly opened it
+                        const userExpanded = sessionStorage.getItem('sidebar_user_expanded');
+                        if (!userExpanded) {
+                            collapseButton.click();
+                        }
+                    }
+                }
+            }
+            
+            // Make buttons touch-friendly
+            const buttons = streamlitDoc.querySelectorAll('[data-testid="baseButton-secondary"], [data-testid="baseButton-primary"]');
+            buttons.forEach(button => {
+                if (button.offsetHeight < 44) {
+                    button.style.minHeight = '44px';
+                    button.style.padding = '12px 16px';
+                }
+            });
+        } else {
+            // Desktop - remove mobile classes
+            const streamlitDoc = window.parent.document || document;
+            const sidebar = streamlitDoc.querySelector('[data-testid="stSidebar"]');
+            if (sidebar) {
+                sidebar.classList.remove('mobile-sidebar');
+            }
+        }
+    }
+    
+    // Update on load and resize
+    window.addEventListener('load', updateViewportInfo);
+    window.addEventListener('resize', updateViewportInfo);
+    
+    // Track user sidebar interactions
+    window.addEventListener('load', function() {
+        const streamlitDoc = window.parent.document || document;
+        const collapseButton = streamlitDoc.querySelector('[data-testid="collapsedControl"]');
+        if (collapseButton) {
+            collapseButton.addEventListener('click', function() {
+                sessionStorage.setItem('sidebar_user_expanded', 'true');
+            });
+        }
+    });
+    </script>
+    """
+    st.components.v1.html(js, height=0)
+
+
+def get_screen_size() -> str:
+    """
+    Detect screen size category based on viewport width.
+    
+    Returns:
+        Screen size category: 'xs', 'sm', 'md', or 'lg'
+    """
+    # Try to get viewport width from session state or default to desktop
+    width = st.session_state.get("viewport_width", 1200)
+    
+    # Bootstrap-style breakpoints
+    if width < 576:
+        return "xs"  # Extra small (phone portrait)
+    elif width < 768:
+        return "sm"  # Small (tablet portrait)
+    elif width < 992:
+        return "md"  # Medium (tablet landscape)
+    else:
+        return "lg"  # Large (desktop)
+
+
+def is_mobile_device() -> bool:
+    """
+    Check if the current device is likely mobile.
+    
+    Returns:
+        True if mobile device detected
+    """
+    screen_size = get_screen_size()
+    return screen_size in ["xs", "sm"]
+
+
+def inject_mobile_css() -> None:
+    """Inject CSS for mobile-responsive navigation."""
+    css = """
+    <style>
+    /* Mobile-responsive navigation styles */
+    .mobile-sidebar {
+        --sidebar-width: 280px;
+    }
+    
+    @media (max-width: 767px) {
+        /* Touch-friendly button sizing */
+        .stButton > button {
+            min-height: 44px !important;
+            padding: 12px 16px !important;
+            font-size: 16px !important;
+        }
+        
+        /* Larger expander headers for touch */
+        .streamlit-expanderHeader {
+            min-height: 48px !important;
+            padding: 12px 16px !important;
+        }
+        
+        /* Better spacing for mobile */
+        .element-container {
+            margin-bottom: 0.5rem !important;
+        }
+        
+        /* Sidebar adjustments */
+        [data-testid="stSidebar"] {
+            width: 280px !important;
+        }
+        
+        /* Main content adjustment when sidebar is open */
+        [data-testid="stSidebar"][aria-expanded="true"] ~ [data-testid="stAppViewContainer"] {
+            margin-left: 280px;
+        }
+    }
+    
+    @media (max-width: 575px) {
+        /* Extra small screens - full width sidebar */
+        [data-testid="stSidebar"] {
+            width: 100vw !important;
+            max-width: 320px !important;
+        }
+        
+        /* Even larger touch targets */
+        .stButton > button {
+            min-height: 48px !important;
+            font-size: 18px !important;
+        }
+        
+        /* Compact text inputs */
+        .stTextInput > div > div > input {
+            font-size: 16px !important;
+        }
+    }
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+
 def render_user_info(user: Dict[str, Any] | None) -> None:
     if not user:
         return
@@ -181,6 +345,14 @@ def render_help(page: str):
 
 
 def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], groups: Any) -> str:
+    # Inject responsive JavaScript and CSS
+    inject_responsive_js()
+    inject_mobile_css()
+    
+    # Detect if mobile for responsive adjustments
+    is_mobile = is_mobile_device()
+    screen_size = get_screen_size()
+    
     with st.sidebar:
         st.title("Navigation")
 
@@ -282,12 +454,16 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
 
         render_command_palette()
 
-    # Use enhanced grouped navigation
+    # Use enhanced grouped navigation with responsive adjustments
     current_page = st.session_state.get("selected_page", "Overview")
     
     # Import here to avoid circular import
     from scripts.dashboard.components.sidebar_nav import render_grouped_sidebar
-    selected = render_grouped_sidebar(current_page=current_page)
+    selected = render_grouped_sidebar(
+        current_page=current_page,
+        touch_friendly=is_mobile,
+        compact_mode=screen_size == "xs"
+    )
     
     if selected:
         page = selected

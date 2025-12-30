@@ -13,12 +13,18 @@ import streamlit as st
 from scripts.dashboard.core.config import PAGE_GROUPS, GROUP_ORDER, GROUP_ICONS, PAGE_REGISTRY
 
 
-def render_grouped_sidebar(current_page: Optional[str] = None) -> Optional[str]:
+def render_grouped_sidebar(
+    current_page: Optional[str] = None,
+    touch_friendly: bool = False,
+    compact_mode: bool = False
+) -> Optional[str]:
     """
     Render grouped sidebar navigation with collapsible sections.
 
     Args:
         current_page: Currently active page name for highlighting
+        touch_friendly: If True, use larger buttons and spacing for mobile
+        compact_mode: If True, use more compact layout for very small screens
 
     Returns:
         Selected page name if navigation occurred, None otherwise
@@ -64,13 +70,15 @@ def render_grouped_sidebar(current_page: Optional[str] = None) -> Optional[str]:
             if expander:
                 st.session_state[expansion_key] = True
             
-            # Add pin/unpin button
-            col1, col2 = st.columns([3, 1])
-            with col2:
-                pin_label = "📌" if not is_pinned else "📍"
-                if st.button(pin_label, key=f"pin_{group}", help="Pin group"):
-                    st.session_state[pin_key] = not is_pinned
-                    st.rerun()
+            # Add pin/unpin button (hide in compact mode to save space)
+            if not compact_mode:
+                col1, col2 = st.columns([3, 1])
+                with col2:
+                    pin_label = "📌" if not is_pinned else "📍"
+                    pin_help = "Unpin group" if is_pinned else "Pin group"
+                    if st.button(pin_label, key=f"pin_{group}", help=pin_help):
+                        st.session_state[pin_key] = not is_pinned
+                        st.rerun()
             
             # Render pages in this group
             for page in valid_pages:
@@ -80,14 +88,21 @@ def render_grouped_sidebar(current_page: Optional[str] = None) -> Optional[str]:
                 # Add indicator for current page
                 page_label = f"→ {page}" if page == current_page else page
                 
-                # Navigation button
+                # Navigation button with responsive sizing
                 button_key = f"nav_button_{group}_{page}"
-                if st.button(
-                    page_label,
-                    key=button_key,
-                    use_container_width=True,
-                    type=button_type,
-                ):
+                
+                # Apply touch-friendly styling for mobile
+                button_kwargs = {
+                    "key": button_key,
+                    "use_container_width": True,
+                    "type": button_type,
+                }
+                
+                # Add help text for compact mode
+                if compact_mode:
+                    button_kwargs["help"] = f"Navigate to {page}"
+                
+                if st.button(page_label, **button_kwargs):
                     selected_page = page
                     # Keep this group expanded after navigation
                     st.session_state[expansion_key] = True
