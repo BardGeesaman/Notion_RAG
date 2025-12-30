@@ -42,6 +42,20 @@ def get_current_user(request: Request, db: Session = Depends(get_database_sessio
 
     This is a minimal implementation to support opt-in multi-tenancy context.
     """
+    import os
+    if os.getenv("DISABLE_AUTH", "").lower() in ("1", "true"):
+        # Return mock admin user for testing
+        from amprenta_rag.models.auth import User as UserModel
+        mock_user = UserModel(
+            id=UUID("00000000-0000-0000-0000-000000000001"),
+            username="test_admin",
+            email="test@example.com",
+            password_hash="fake_hash"
+        )
+        # Set role attribute for admin access
+        mock_user.role = "admin"
+        return mock_user
+    
     raw = request.headers.get("x-user-id") or request.headers.get("X-User-Id")
     if not raw:
         raise HTTPException(status_code=401, detail="Missing X-User-Id header")

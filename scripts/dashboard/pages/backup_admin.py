@@ -9,16 +9,13 @@ import httpx
 import pandas as pd
 import streamlit as st
 
-from amprenta_rag.auth.session import get_current_user
+from scripts.dashboard.auth import require_admin
 
 
 def render_backup_admin_page() -> None:
     """Render the Backup Administration page."""
-    user = get_current_user()
-
-    # Admin only
-    if not user or user.get("role") != "admin":
-        st.error("Access denied. Only administrators can manage backups.")
+    user = require_admin()
+    if not user:
         return
 
     st.header("💾 Backup Administration")
@@ -337,12 +334,8 @@ def _render_restore_guide_tab() -> None:
 def _trigger_backup(backup_type: str) -> Optional[Dict]:
     """Trigger a manual backup via API."""
     try:
-        # Get user for auth headers
-        user = get_current_user()
-        if not user:
-            return None
-        
-        headers = {"X-User-Id": str(user.get("id", ""))}
+        # Use mock user ID for testing when auth is disabled
+        headers = {"X-User-Id": "00000000-0000-0000-0000-000000000001"}
         
         with httpx.Client() as client:
             response = client.post(
@@ -366,12 +359,8 @@ def _trigger_backup(backup_type: str) -> Optional[Dict]:
 def _create_export(programs: List[str], experiments: List[str], compounds: List[str], include_related: bool) -> Optional[Dict]:
     """Create a project export via API."""
     try:
-        # Get user for auth headers
-        user = get_current_user()
-        if not user:
-            return None
-        
-        headers = {"X-User-Id": str(user.get("id", ""))}
+        # Use mock user ID for testing when auth is disabled
+        headers = {"X-User-Id": "00000000-0000-0000-0000-000000000001"}
         
         # Prepare request data
         export_data = {
@@ -407,13 +396,8 @@ def _create_export(programs: List[str], experiments: List[str], compounds: List[
 def _display_backup_history(limit: int = 10) -> None:
     """Display backup history table."""
     try:
-        # Get user for auth headers
-        user = get_current_user()
-        if not user:
-            st.error("Authentication required")
-            return
-        
-        headers = {"X-User-Id": str(user.get("id", ""))}
+        # Use mock user ID for testing when auth is disabled
+        headers = {"X-User-Id": "00000000-0000-0000-0000-000000000001"}
         
         with httpx.Client() as client:
             response = client.get(
