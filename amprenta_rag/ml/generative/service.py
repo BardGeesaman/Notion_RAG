@@ -173,7 +173,11 @@ class GenerativeChemistryService:
                 continue
         
         logger.info(f"Successfully generated {len(molecules)}/{n_samples} valid molecules")
-        return molecules
+        
+        return {
+            "molecules": molecules,
+            "count": len(molecules)
+        }
     
     def interpolate(
         self,
