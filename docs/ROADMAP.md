@@ -259,7 +259,17 @@ Simple status legend:
 
 **Integration & Data Sources:**
 - ❌ Imaging Data Support (Microscopy/HCS metadata)
-- ❌ Flow Cytometry / FACS Data Ingestion
+- ✅ Flow Cytometry / FACS Data Ingestion (2025-12-30)
+  - FCS 2.0/3.0/3.1 file parsing with metadata extraction
+  - Logicle and arcsinh transformations with auto-parameter detection
+  - Polygon, rectangle, quadrant, and boolean gating algorithms
+  - Population statistics calculation (counts, percentages, MFI, CV)
+  - Hierarchical gating with parent-child relationships
+  - 9 REST API endpoints for complete workflow
+  - 4-tab Streamlit dashboard (upload, visualization, gating, statistics)
+  - Parquet-based event storage with PostgreSQL metadata
+  - Background processing with threading
+  - 71+ tests (21 gating + 23 transforms + 9 models + 3 API + 15 E2E)
 - ❌ Biophysical Assay Support (SPR, MST, DSC)
 
 **Visualization & UI/UX:**
