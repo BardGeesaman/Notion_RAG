@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from amprenta_rag.api.main import app
 from amprenta_rag.api.dependencies import get_current_user
+from amprenta_rag.api.routers.generative import get_generative_service
 from amprenta_rag.ml.generative.service import GenerativeModelNotFoundError
 
 
@@ -70,13 +71,14 @@ class TestGenerativeAPI:
     def client(self, mock_user, mock_service):
         """Test client with mocked dependencies."""
         app.dependency_overrides[get_current_user] = lambda: mock_user
+        app.dependency_overrides[get_generative_service] = lambda: mock_service
         
-        with patch('amprenta_rag.api.routers.generative.get_generative_service', return_value=mock_service):
+        try:
             client = TestClient(app)
             yield client
-        
-        # Cleanup
-        app.dependency_overrides.clear()
+        finally:
+            # Cleanup
+            app.dependency_overrides.clear()
     
     def test_sample_default(self, client, mock_service):
         """Test default molecule sampling."""
