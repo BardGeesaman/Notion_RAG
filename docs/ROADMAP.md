@@ -326,12 +326,21 @@ Simple status legend:
 
 **Infrastructure & Operations:**
 - ✅ Job Queue System (Celery/Redis) (2025-12-30) - 127 tests covering all 6 task modules + API + config
-- ✅ Async API Endpoints (2025-12-30) - 21 tests
-  - Async utilities: `run_sync` decorator, `gather_with_limit` for concurrency control
-  - Scoring endpoints: `/relevance`, `/novelty`, `/batch` converted to async
-  - Ranking endpoints: `/rank`, `/rerank` LLM-based async endpoints
-  - Planner endpoints: `/plan`, `/critique`, `/refine`, `/execute` LLM-based async endpoints
-  - Pattern: `asyncio.to_thread()` for non-blocking LLM calls
+- ✅ Async API Endpoints - Phase 1 (2025-12-30) - 21 tests
+  - Async utilities: `run_sync` decorator, `gather_with_limit`
+  - LLM endpoints: scoring, ranking, planner converted to async
+  - Pattern: `asyncio.to_thread()` for non-blocking calls
+- ✅ Async API Endpoints - Phase 2 (External APIs) (2025-12-30) - 16 tests
+  - `structures.py`: PDB/AlphaFold fetch endpoints (2 endpoints)
+  - `papers.py`: PubMed/OpenAlex/S2 search/ingest/enrich (3 endpoints)
+  - `pathway_maps.py`: KEGG structure/search/enrich + thread-safe rate limiting (3 endpoints)
+- ❌ Async API Endpoints - Phase 3 (Compute-Intensive)
+  - `viz3d.py`: 3D conformer generation
+  - `admet.py`: ADMET prediction
+  - `biomarker.py`: Biomarker discovery
+- ❌ Async API Endpoints - Phase 4 (Database)
+  - Full SQLAlchemy async sessions
+  - Heavy query endpoints (explorer, graph, hts)
 - ❌ Automated Backup & Disaster Recovery
   - Daily full backups to S3
   - Point-in-Time Recovery (WAL archiving)
