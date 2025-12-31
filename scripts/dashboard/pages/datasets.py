@@ -11,6 +11,7 @@ from amprenta_rag.export.slide_generator import generate_dataset_slides
 from amprenta_rag.notebooks import generate_dataset_notebook
 from scripts.dashboard.db_session import db_session
 from scripts.dashboard.components.comment_widget import render_comments_widget
+from scripts.dashboard.components.annotation_panel import render_annotation_panel, render_annotation_indicator
 
 
 def get_qc_dict(ds):
@@ -132,6 +133,16 @@ def render_datasets_page() -> None:
 
             # Display datasets (access relationships while session is open)
             for dataset in datasets:
+                # Show annotation panel in sidebar if this dataset is selected
+                if st.session_state.get("annotation_context", {}).get("entity_id") == str(dataset.id):
+                    with st.sidebar:
+                        render_annotation_panel(
+                            entity_type="dataset",
+                            entity_id=dataset.id,
+                            position_type=st.session_state["annotation_context"].get("position_type"),
+                            position_data=st.session_state["annotation_context"].get("position_data"),
+                        )
+                
                 with st.expander(f"**{dataset.name}** ({dataset.omics_type})"):
                     col1, col2 = st.columns(2)
                     with col1:
@@ -157,8 +168,20 @@ def render_datasets_page() -> None:
 
                     if dataset.file_paths:
                         st.write("**File Paths:**")
-                        for fp in dataset.file_paths:
-                            st.code(fp, language=None)
+                        for i, fp in enumerate(dataset.file_paths):
+                            col_path, col_annotation = st.columns([10, 1])
+                            with col_path:
+                                st.code(fp, language=None)
+                            with col_annotation:
+                                # Add annotation indicator for this file path
+                                if render_annotation_indicator(
+                                    entity_type="dataset",
+                                    entity_id=dataset.id,
+                                    position_type="field",
+                                    position_data={"field": f"file_path_{i}"},
+                                    label="📝"
+                                ):
+                                    pass
 
                     if dataset.disease:
                         st.write(f"**Disease:** {', '.join(dataset.disease)}")
@@ -225,14 +248,28 @@ def render_datasets_page() -> None:
                             type_breakdown = ", ".join([f"{ftype}: {count}" for ftype, count in feature_types.items()])
                             st.caption(f"Feature types: {type_breakdown}")
 
-                        # Show sample features (first 10)
+                        # Show sample features (first 10) with annotation indicators
                         if len(dataset.features) > 0:
-                            sample_features = dataset.features[:10]
-                            feature_names = [f.name for f in sample_features]
-                            st.caption(
-                                f"Sample features: {', '.join(feature_names[:5])}"
-                                + (f" ... and {len(dataset.features) - 5} more" if len(dataset.features) > 5 else "")
-                            )
+                            st.write("**Sample Features:**")
+                            sample_features = dataset.features[:5]  # Show fewer to make room for annotation buttons
+                            
+                            for feature in sample_features:
+                                col_feature, col_annotation = st.columns([10, 1])
+                                with col_feature:
+                                    st.caption(f"• {feature.name} ({feature.feature_type})")
+                                with col_annotation:
+                                    # Add annotation indicator for this feature
+                                    if render_annotation_indicator(
+                                        entity_type="dataset",
+                                        entity_id=dataset.id,
+                                        position_type="column",
+                                        position_data={"column": feature.name},
+                                        label="📝"
+                                    ):
+                                        pass
+                            
+                            if len(dataset.features) > 5:
+                                st.caption(f"... and {len(dataset.features) - 5} more features")
 
                     with st.expander("View Raw Metadata", expanded=False):
                         st.json(

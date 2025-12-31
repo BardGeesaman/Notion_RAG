@@ -20,6 +20,7 @@ Program = db_models.Program
 Experiment = db_models.Experiment
 
 from scripts.dashboard.db_session import db_session
+from scripts.dashboard.components.annotation_panel import render_annotation_panel, render_annotation_indicator
 
 
 def render_lab_notebook_page() -> None:
@@ -246,7 +247,20 @@ def render_lab_notebook_page() -> None:
 
             if entries:
                 for entry in entries:
-                    with st.expander(f"**{entry.title}** - {entry.created_at.strftime('%Y-%m-%d %H:%M')}"):
+                    # Add annotation indicator to entry title
+                    entry_title_with_annotations = f"**{entry.title}** - {entry.created_at.strftime('%Y-%m-%d %H:%M')}"
+                    
+                    with st.expander(entry_title_with_annotations):
+                        # Show annotation panel in sidebar if this entry is selected
+                        if st.session_state.get("annotation_context", {}).get("entity_id") == str(entry.id):
+                            with st.sidebar:
+                                render_annotation_panel(
+                                    entity_type="notebook",
+                                    entity_id=entry.id,
+                                    position_type=st.session_state["annotation_context"].get("position_type"),
+                                    position_data=st.session_state["annotation_context"].get("position_data"),
+                                )
+                        
                         col1, col2 = st.columns([3, 1])
                         with col1:
                             st.write(f"**Type:** {entry.entry_type or 'N/A'}")
@@ -271,7 +285,27 @@ def render_lab_notebook_page() -> None:
                                         st.caption(f"📎 {att.get('filename', 'File')} (file not found)")
 
                             st.markdown("---")
-                            st.markdown(entry.content)
+                            
+                            # Split content into simulated "cells" for annotation purposes
+                            content_lines = entry.content.split('\n')
+                            for i, line in enumerate(content_lines):
+                                if line.strip():  # Only show non-empty lines
+                                    col_content, col_annotation = st.columns([10, 1])
+                                    
+                                    with col_content:
+                                        st.markdown(line)
+                                    
+                                    with col_annotation:
+                                        # Add annotation indicator for this "cell"
+                                        if render_annotation_indicator(
+                                            entity_type="notebook",
+                                            entity_id=entry.id,
+                                            position_type="cell",
+                                            position_data={"cell_index": i},
+                                            label="📝"
+                                        ):
+                                            # Button was clicked, annotation panel will be shown
+                                            pass
 
                             # Edit button
                             if st.button("✏️ Edit Entry", key=f"edit_{entry.id}"):
