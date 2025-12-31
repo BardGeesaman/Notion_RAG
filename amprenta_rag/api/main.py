@@ -48,6 +48,7 @@ from amprenta_rag.api.routers import (
     automl,
     ml,
     chemistry,
+    mappings,
     sphingolipid,
     phenotypes,
     generative,
@@ -138,6 +139,7 @@ app.include_router(moa.router, prefix="/api/v1", tags=["MOA"])
 app.include_router(chemistry.router, prefix="/api/v1", tags=["Chemistry"])
 app.include_router(catalog.router, prefix="/api/v1", tags=["Catalog"])
 app.include_router(subscriptions.router, prefix="/api/v1", tags=["Subscriptions"])
+app.include_router(mappings.router, prefix="/api/v1", tags=["Mappings"])
 # Note: `amprenta_rag.api.routers.alerts` contains TWO routers:
 # - `alerts.router` (legacy notification alerts) served at `/api/v1/alerts/*`
 # - `alerts.structural_router` (structural alert checking: PAINS/Brenk/Lilly) served at `/api/alerts/*`
