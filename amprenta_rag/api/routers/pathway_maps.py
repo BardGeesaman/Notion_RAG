@@ -6,6 +6,8 @@ for searching KEGG pathways and returning enriched pathways for a dataset.
 
 from __future__ import annotations
 
+import asyncio
+import threading
 import time
 from typing import Dict, List, Optional, Set
 from uuid import UUID
@@ -25,16 +27,72 @@ router = APIRouter(prefix="/pathway-maps", tags=["pathway-maps"])
 
 KEGG_BASE_URL = "https://rest.kegg.jp"
 KEGG_SEARCH_DELAY_SECONDS = 0.5
+_KEGG_LOCK = threading.Lock()
 _LAST_KEGG_SEARCH_TS: float = 0.0
 
 
 def _rate_limit_kegg_search() -> None:
+    """Thread-safe rate limiting for KEGG API calls."""
     global _LAST_KEGG_SEARCH_TS
-    now = time.monotonic()
-    wait = KEGG_SEARCH_DELAY_SECONDS - (now - _LAST_KEGG_SEARCH_TS)
-    if wait > 0:
-        time.sleep(wait)
-    _LAST_KEGG_SEARCH_TS = time.monotonic()
+    with _KEGG_LOCK:  # Thread-safe access to global state
+        now = time.monotonic()
+        wait = KEGG_SEARCH_DELAY_SECONDS - (now - _LAST_KEGG_SEARCH_TS)
+        if wait > 0:
+            time.sleep(wait)
+        _LAST_KEGG_SEARCH_TS = time.monotonic()
+
+
+# Sync helper functions for external API calls
+def _sync_get_pathway_structure(pathway_id: str):
+    """Sync helper for pathway structure fetch via KEGG API."""
+    return get_pathway_structure(pathway_id)
+
+
+def _sync_search_kegg_pathways(query: str):
+    """Sync helper for KEGG pathway search API."""
+    q = (query or "").strip()
+    if not q:
+        return []
+    
+    _rate_limit_kegg_search()
+    url = f"{KEGG_BASE_URL}/find/pathway/{q}"
+    
+    try:
+        resp = requests.get(url, timeout=15)
+        if resp.status_code != 200:
+            return []
+        
+        results = []
+        for line in resp.text.strip().split("\n"):
+            if not line:
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) < 2:
+                continue
+            pid_raw = parts[0].strip()
+            pid = pid_raw.split(":", 1)[1] if ":" in pid_raw else pid_raw
+            name = parts[1].strip()
+            results.append({
+                "pathway_id": pid,
+                "name": name,
+                "organism": _organism_from_pathway_id(pid),
+                "gene_count": 0,
+            })
+            if len(results) >= 50:
+                break
+        return results
+    except Exception:
+        return []
+
+
+def _sync_perform_pathway_enrichment(features: Set[str], types: Set[str]):
+    """Sync helper for pathway enrichment via KEGG API."""
+    return perform_pathway_enrichment(
+        input_features=features,
+        input_feature_types=types or {"gene"},
+        pathway_sources=["KEGG"],
+        p_value_threshold=0.05,
+    )
 
 
 def _organism_from_pathway_id(pathway_id: str) -> str:
@@ -71,8 +129,8 @@ def _load_dataset_features(dataset_id: UUID) -> tuple[Set[str], Set[str], List[F
 
 
 @router.get("/structure/{pathway_id}", response_model=schemas.PathwayStructureResponse)
-def get_structure(pathway_id: str) -> schemas.PathwayStructureResponse:
-    st = get_pathway_structure(pathway_id)
+async def get_structure(pathway_id: str) -> schemas.PathwayStructureResponse:
+    st = await asyncio.to_thread(_sync_get_pathway_structure, pathway_id)
     nodes = [
         schemas.PathwayNodeSchema(
             id=n.id,
@@ -130,52 +188,32 @@ def build_overlay(request: schemas.PathwayOverlayRequest) -> schemas.PathwayOver
 
 
 @router.get("/search", response_model=List[schemas.PathwaySearchResult])
-def search_pathways(query: str) -> List[schemas.PathwaySearchResult]:
-    q = (query or "").strip()
-    if not q:
-        return []
-    _rate_limit_kegg_search()
-    url = f"{KEGG_BASE_URL}/find/pathway/{q}"
-    try:
-        resp = requests.get(url, timeout=15)
-        if resp.status_code != 200:
-            return []
-        results: List[schemas.PathwaySearchResult] = []
-        for line in resp.text.strip().split("\n"):
-            if not line:
-                continue
-            parts = line.split("\t", 1)
-            if len(parts) < 2:
-                continue
-            pid_raw = parts[0].strip()
-            pid = pid_raw.split(":", 1)[1] if ":" in pid_raw else pid_raw
-            name = parts[1].strip()
-            results.append(
-                schemas.PathwaySearchResult(
-                    pathway_id=pid,
-                    name=name,
-                    organism=_organism_from_pathway_id(pid),
-                    gene_count=0,
-                )
-            )
-            if len(results) >= 50:
-                break
-        return results
-    except Exception:
-        return []
+async def search_pathways(query: str) -> List[schemas.PathwaySearchResult]:
+    # Search pathways using async thread pool
+    search_results = await asyncio.to_thread(_sync_search_kegg_pathways, query)
+    
+    # Convert to response objects
+    results = [
+        schemas.PathwaySearchResult(**result_data)
+        for result_data in search_results
+    ]
+    
+    return results
 
 
 @router.get("/enriched/{dataset_id}", response_model=List[schemas.PathwaySearchResult])
-def enriched_pathways(dataset_id: UUID) -> List[schemas.PathwaySearchResult]:
+async def enriched_pathways(dataset_id: UUID) -> List[schemas.PathwaySearchResult]:
     features, types, _ = _load_dataset_features(dataset_id)
     if not features:
         return []
-    results = perform_pathway_enrichment(
-        input_features=features,
-        input_feature_types=types or {"gene"},
-        pathway_sources=["KEGG"],
-        p_value_threshold=0.05,
+    
+    # Perform pathway enrichment using async thread pool
+    results = await asyncio.to_thread(
+        _sync_perform_pathway_enrichment,
+        features,
+        types
     )
+    
     out: List[schemas.PathwaySearchResult] = []
     for r in results[:20]:
         pid = r.pathway.pathway_id
