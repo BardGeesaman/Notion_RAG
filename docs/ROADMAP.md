@@ -334,10 +334,10 @@ Simple status legend:
   - `structures.py`: PDB/AlphaFold fetch endpoints (2 endpoints)
   - `papers.py`: PubMed/OpenAlex/S2 search/ingest/enrich (3 endpoints)
   - `pathway_maps.py`: KEGG structure/search/enrich + thread-safe rate limiting (3 endpoints)
-- ❌ Async API Endpoints - Phase 3 (Compute-Intensive)
-  - `viz3d.py`: 3D conformer generation
-  - `admet.py`: ADMET prediction
-  - `biomarker.py`: Biomarker discovery
+- ✅ Async API Endpoints - Phase 3 (Compute-Intensive) (2025-12-30) - 9 tests
+  - `viz3d.py`: RDKit conformers, overlay, protein PDB (3 endpoints)
+  - `admet.py`: ADMET predict, explain with SHAP (2 endpoints)
+  - `biomarker.py`: Biomarker discovery (1 endpoint)
 - ❌ Async API Endpoints - Phase 4 (Database)
   - Full SQLAlchemy async sessions
   - Heavy query endpoints (explorer, graph, hts)
