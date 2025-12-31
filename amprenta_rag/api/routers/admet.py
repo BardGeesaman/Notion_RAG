@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends
@@ -61,11 +62,9 @@ def _model_info(endpoints: List[str]) -> Dict[str, Any]:
     return info
 
 
-@router.post("/predict", response_model=ADMETPredictResponse)
-def predict_admet(
-    request: ADMETPredictRequest,
-    db: Session = Depends(get_db),  # noqa: ARG001
-) -> ADMETPredictResponse:
+# Sync helper functions for ML model inference
+def _sync_predict_admet(request: ADMETPredictRequest, db: Session) -> ADMETPredictResponse:
+    """Sync helper for ADMET ML model inference."""
     predictor = get_admet_predictor()
     endpoints = request.endpoints or list(ADMET_MODELS.keys())
 
@@ -110,11 +109,8 @@ def predict_admet(
     return ADMETPredictResponse(results=results2, model_info=_model_info(endpoints))
 
 
-@router.post("/explain", response_model=ADMETExplainResponse)
-def explain_admet_prediction(
-    request: ADMETExplainRequest,
-    db: Session = Depends(get_db),  # noqa: ARG001
-) -> ADMETExplainResponse:
+def _sync_explain_admet(request: ADMETExplainRequest, db: Session) -> ADMETExplainResponse:
+    """Sync helper for ADMET prediction with SHAP analysis."""
     predictor = get_admet_predictor()
     endpoint = str(request.endpoint or "herg")
 
@@ -150,6 +146,24 @@ def explain_admet_prediction(
         shap=shap,
         error=err,
     )
+
+
+@router.post("/predict", response_model=ADMETPredictResponse)
+async def predict_admet(
+    request: ADMETPredictRequest,
+    db: Session = Depends(get_db),
+) -> ADMETPredictResponse:
+    """Predict ADMET properties using async thread pool for ML inference."""
+    return await asyncio.to_thread(_sync_predict_admet, request, db)
+
+
+@router.post("/explain", response_model=ADMETExplainResponse)
+async def explain_admet_prediction(
+    request: ADMETExplainRequest,
+    db: Session = Depends(get_db),
+) -> ADMETExplainResponse:
+    """Explain ADMET prediction using async thread pool for ML + SHAP analysis."""
+    return await asyncio.to_thread(_sync_explain_admet, request, db)
 
 
 __all__ = ["router"]
