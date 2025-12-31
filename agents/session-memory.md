@@ -167,6 +167,18 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 *A reverse-chronological log of what has been done recently.*
 
+* [2025-12-30] – **Async LLM Endpoints Complete**:
+  - **Plan**: .cursor/plans/async_llm_endpoints_c4d8f1b9.plan.md
+  - **Results**: 3 batches complete, 21 tests, 100% pass rate
+  - **Batch 1 - Async Utilities**: `run_sync` decorator, `gather_with_limit` concurrency control (9 tests)
+  - **Batch 2a - Scoring Endpoints**: `/relevance`, `/novelty`, `/batch` converted to async (4 tests)
+  - **Batch 2b - Ranking Endpoints**: `/rank`, `/rerank` LLM-based async endpoints (4 tests)
+  - **Batch 2c - Planner Endpoints**: `/plan`, `/critique`, `/refine`, `/execute` LLM-based async endpoints (4 tests)
+  - **Batch 3 - Documentation**: ROADMAP.md and session-memory.md updates
+  - **Key Pattern**: `asyncio.to_thread()` for non-blocking LLM calls
+  - **Total**: 21 tests, 100% pass rate
+  - **Zero skipped tests** - No Bandaids policy enforced
+
 * [2025-12-30] – **Job Queue Test Suite Complete**:
   - **Plan**: .cursor/plans/job_queue_test_coverage_e5f7a8b3.plan.md
   - **Results**: 5 batches complete, 127 tests, 100% pass rate
@@ -966,9 +978,9 @@ It should be updated at natural breakpoints in work sessions to support continui
 
 ### Summary
 
-The system has reached **production maturity** with **57+ features**, **1742+ unit/integration tests**, **~91% test coverage**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Code quality optimization complete** (2025-12-21): 0 lint errors, 63 type ignores, 70% coverage with CI enforcement, pre-commit hooks, security scanning.
+The system has reached **production maturity** with **58+ features**, **1763+ unit/integration tests**, **~91% test coverage**, **fully unified Postgres architecture** (SQLite removed, Notion removed), and **cloud-ready AWS infrastructure** with Terraform IaC and CI/CD pipelines. **Code quality optimization complete** (2025-12-21): 0 lint errors, 63 type ignores, 70% coverage with CI enforcement, pre-commit hooks, security scanning.
 
-**Session 2025-12-30 Summary:** 26+ git commits, 608 new tests added (100% pass rate), 7 major features completed, zero skipped tests, zero technical debt. Features: (1) Job Queue Test Suite (127 tests), (2) Imaging Metadata & HCS Support (118 tests), (3) Biophysical Assay Support (SPR/MST/DSC) (105 tests), (4) Flow Cytometry / FACS Data Ingestion (80 tests), (5) Generative Chemistry (De Novo Design) (56 tests), (6) Navigation & UI Organization (46 tests), (7) Image Analysis Pipeline (CellPose for HCS) (52 tests), (8) Context Memory Policy Update (all 7 agent files). **Policy Update:** Context Memory Management - changed threshold from 75% to 50%, agents now alert Chairman when context drops below 50%.
+**Session 2025-12-30 Summary:** 29+ git commits, 629 new tests added (100% pass rate), 8 major features completed, zero skipped tests, zero technical debt. Features: (1) Async LLM Endpoints (21 tests), (2) Job Queue Test Suite (127 tests), (3) Imaging Metadata & HCS Support (118 tests), (4) Biophysical Assay Support (SPR/MST/DSC) (105 tests), (5) Flow Cytometry / FACS Data Ingestion (80 tests), (6) Generative Chemistry (De Novo Design) (56 tests), (7) Navigation & UI Organization (46 tests), (8) Image Analysis Pipeline (CellPose for HCS) (52 tests), (9) Context Memory Policy Update (all 7 agent files). **Policy Update:** Context Memory Management - changed threshold from 75% to 50%, agents now alert Chairman when context drops below 50%.
 
 **Session 2025-12-29 Summary:** 52 git commits, 439 new tests added (100% pass rate), 11 dashboard pages created, 10 major features completed, zero skipped tests, zero technical debt. Features: (1) Test Coverage Remediation (153 tests), (2) UI Development (4 pages, 40 tests), (3) Technical Debt Cleanup (32 fixes), (4) Semantic Scholar Integration (29 tests), (5) Publication Data Extraction (48 tests), (6) High-Dimensional Projector (25 tests), (7) Chemical Sketcher (17 tests), (8) Scientist's Cockpit Dashboard (13 tests), (9) Job Queue System (45 tests), (10) Automated Backup & Disaster Recovery (57 tests). **JupyterHub integration is COMPLETE** - all 5 phases delivered (2025-12-15). SAR/Voila test coverage complete (2025-12-17, 27 tests). All 7 Innovator-approved features implemented and deployed (2025-12-17).
 
@@ -977,7 +989,7 @@ The system has reached **production maturity** with **57+ features**, **1742+ un
 *   **System Status**: Production-Ready with Cloud Deployment Capability. Code quality at 10/10 (Phase 1 & 2 complete).
 *   **Architecture**: Unified Postgres (no SQLite, no Notion), FastAPI, Streamlit (64+ pages), JupyterHub operational, AWS Terraform infrastructure.
 *   **Dashboard Pages**: 64+ pages including Imaging Browser (5D), Biophysical Assays (SPR/MST/DSC), Flow Cytometry, Image Analysis (CellPose), Generative Chemistry, Data Export Wizard, Experiment Planner, Compound Portfolio Dashboard, Scientist's Cockpit, Chemical Sketcher, High-Dimensional Projector, Publication Upload, and Analysis Pages. All major API routers now have UI coverage.
-*   **Test Coverage**: 1742+ tests (796 baseline + ~946 session 2025-12-29/30), ~91% coverage, E2E ~72%, API ~99%
+*   **Test Coverage**: 1763+ tests (796 baseline + ~967 session 2025-12-29/30), ~91% coverage, E2E ~72%, API ~99%
 *   **Compound Portfolio Dashboard**: COMPLETE (4 batches, 17 tests)
     - Batch 1: portfolio_service.py (6 tests)
     - Batch 2: portfolio.py router (6 tests)
@@ -1008,10 +1020,10 @@ The system has reached **production maturity** with **57+ features**, **1742+ un
 *   **AWS Infrastructure**: Terraform IaC (Lightsail + RDS), GitHub Actions CI/CD pipelines operational.
 *   **Data Seeding**: Comprehensive test data seeding suite with documentation for all omics domains.
 *   **Code Quality**: Optimization complete (0 lint errors, 63 type ignores [-69%], 80% coverage, pre-commit hooks, security scanning).
-*   **Session 2025-12-30 Totals**: 26+ commits, 608 new tests, 7 features, zero skipped tests, zero technical debt
+*   **Session 2025-12-30 Totals**: 29+ commits, 629 new tests, 8 features, zero skipped tests, zero technical debt
 *   **Session 2025-12-29 Totals**: 52 commits, 439 new tests, 11 pages, 10 features, zero skipped tests, zero technical debt
 *   **Current Policies**: No Deferral policy (complete all P2/P3 work, no defer for later), 50% Context Alert (alert Chairman at 50% context usage - updated 2025-12-30)
-*   **Recent Additions (2025-12-30)**: Job Queue Test Suite (127 tests), Imaging Metadata & HCS (118 tests), Biophysical Assay Support (SPR/MST/DSC, 105 tests), Flow Cytometry / FACS (80 tests), Generative Chemistry VAE (56 tests), Navigation & UI Organization (46 tests), Image Analysis Pipeline CellPose (52 tests)
+*   **Recent Additions (2025-12-30)**: Async LLM Endpoints (21 tests), Job Queue Test Suite (127 tests), Imaging Metadata & HCS (118 tests), Biophysical Assay Support (SPR/MST/DSC, 105 tests), Flow Cytometry / FACS (80 tests), Generative Chemistry VAE (56 tests), Navigation & UI Organization (46 tests), Image Analysis Pipeline CellPose (52 tests)
 *   **Recent Additions (2025-12-29)**: Automated Backup & Disaster Recovery (S3/RDS/Celery, 57 tests), Job Queue System (Celery/Redis, 45 tests), Scientist's Cockpit Dashboard (unified scientist portal, 13 tests), Chemical Sketcher (Ketcher, 17 tests), High-Dimensional Projector (UMAP/t-SNE/PCA, 25 tests), Publication Data Extraction (PDF + supplementary, 48 tests), Semantic Scholar/OpenAlex (citation graphs, 29 tests)
 *   **Next Focus**: Continue with remaining ROADMAP items
 
@@ -1088,6 +1100,15 @@ The system has reached **production maturity** with **57+ features**, **1742+ un
 ### Session 2025-12-30 Summary
 
 **Completed:**
+- Async LLM Endpoints (3 batches complete)
+  - Batch 1: Async utilities (`run_sync` decorator, `gather_with_limit`) (9 tests)
+  - Batch 2a: Scoring endpoints async conversion (4 tests)
+  - Batch 2b: Ranking LLM endpoints (4 tests)
+  - Batch 2c: Planner LLM endpoints (4 tests)
+  - Batch 3: Documentation updates
+  - Total: 21 tests, 100% pass rate
+  - Pattern: `asyncio.to_thread()` for non-blocking LLM calls
+
 - Job Queue Test Suite (5 batches complete)
   - Batch 1: Genomics + Docking task module tests (20 tests)
   - Batch 2: Extraction + Sync task module tests (16 tests)
@@ -1158,9 +1179,9 @@ The system has reached **production maturity** with **57+ features**, **1742+ un
   - Agents now alert Chairman when context drops below 50%
 
 **Metrics:**
-- 26+ git commits (5 job queue + 7 imaging + 8 biophysical + 6 flow cytometry + 5 generative + 5 navigation + 5 image analysis + 7 agent updates)
-- 608 new tests (100% pass rate)
-- 7 major features + 1 policy update
+- 29+ git commits (3 async + 5 job queue + 7 imaging + 8 biophysical + 6 flow cytometry + 5 generative + 5 navigation + 5 image analysis + 7 agent updates)
+- 629 new tests (100% pass rate)
+- 8 major features + 1 policy update
 - Zero skipped tests
 - Zero technical debt
 
@@ -1195,8 +1216,8 @@ The system has reached **production maturity** with **57+ features**, **1742+ un
    ```
 
 **Quick context for next session:**
-- 1742+ tests, ~91% coverage, 26+ commits (session 2025-12-30), 608 tests added
-- Session 2025-12-30: 7 features (Job Queue Test Suite, Imaging Metadata & HCS, Biophysical Assays, Flow Cytometry, Generative Chemistry, Navigation UI, Image Analysis) + Context Policy Update
+- 1763+ tests, ~91% coverage, 29+ commits (session 2025-12-30), 629 tests added
+- Session 2025-12-30: 8 features (Async LLM Endpoints, Job Queue Test Suite, Imaging Metadata & HCS, Biophysical Assays, Flow Cytometry, Generative Chemistry, Navigation UI, Image Analysis) + Context Policy Update
 - Session 2025-12-29: 10 features (Test Coverage, UI Dev, Tech Debt, Semantic Scholar, Publication Extraction, Projector, Chemical Sketcher, Scientist's Cockpit, Job Queue System, Backup & Disaster Recovery)
 - 100% pass rate, zero skipped tests, zero technical debt
 - Current Policies: No Deferral (complete all work), 50% Context Alert (alert Chairman at 50% - updated 2025-12-30)
