@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from pathlib import Path
 from typing import List, Optional
@@ -21,6 +22,26 @@ from amprenta_rag.structural.storage import save_structure_file
 
 
 router = APIRouter(prefix="/structures", tags=["Structures"])
+
+
+# Sync helper functions for external API calls
+def _sync_fetch_structure(source: str, pdb_id: Optional[str], uniprot_id: Optional[str]) -> bytes:
+    """Sync helper for fetching structure from external sources."""
+    if source == "pdb":
+        if not pdb_id:
+            raise ValueError("pdb_id required for PDB source")
+        return fetch_from_pdb(pdb_id)
+    elif source == "alphafold":
+        if not uniprot_id:
+            raise ValueError("uniprot_id required for AlphaFold source")
+        return fetch_from_alphafold(uniprot_id)
+    else:
+        raise ValueError(f"Unknown source: {source}")
+
+
+def _sync_prepare_structure(in_path: str, out_path: str, chain_id: Optional[str]) -> None:
+    """Sync helper for structure preparation."""
+    prepare_structure(in_path, out_path, chain_id=chain_id)
 
 HAS_MULTIPART = False
 try:
@@ -107,23 +128,32 @@ def get_structure(structure_id: UUID) -> ProteinStructureResponse:
 
 
 @router.post("/fetch", response_model=ProteinStructureResponse)
-def fetch_structure(payload: FetchStructureRequest) -> ProteinStructureResponse:
+async def fetch_structure(payload: FetchStructureRequest) -> ProteinStructureResponse:
     src = (payload.source or "").lower().strip()
     if src not in ("pdb", "alphafold"):
         raise HTTPException(status_code=400, detail="source must be 'pdb' or 'alphafold'")
 
-    if src == "pdb":
-        if not payload.pdb_id:
-            raise HTTPException(status_code=400, detail="pdb_id required for source=pdb")
-        content = fetch_from_pdb(payload.pdb_id)
-        pdb_id = payload.pdb_id.strip()
-        af_id = None
-    else:
-        if not payload.uniprot_id:
-            raise HTTPException(status_code=400, detail="uniprot_id required for source=alphafold")
-        content = fetch_from_alphafold(payload.uniprot_id)
-        pdb_id = None
-        af_id = payload.uniprot_id.strip()
+    try:
+        # Fetch structure using async thread pool
+        content = await asyncio.to_thread(
+            _sync_fetch_structure,
+            src,
+            payload.pdb_id,
+            payload.uniprot_id
+        )
+        
+        if src == "pdb":
+            pdb_id = payload.pdb_id.strip() if payload.pdb_id else None
+            af_id = None
+        else:
+            pdb_id = None
+            af_id = payload.uniprot_id.strip() if payload.uniprot_id else None
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to fetch structure from {src}: {str(e)}"
+        )
 
     meta = parse_pdb_metadata(content)
     sequences = meta.get("sequences") if isinstance(meta, dict) else {}
@@ -282,7 +312,7 @@ else:
 
 
 @router.post("/{structure_id}/prepare", response_model=ProteinStructureResponse)
-def prepare_structure_endpoint(structure_id: UUID, payload: PrepareRequest) -> ProteinStructureResponse:
+async def prepare_structure_endpoint(structure_id: UUID, payload: PrepareRequest) -> ProteinStructureResponse:
     with db_session() as db:
         s = db.query(ProteinStructure).filter(ProteinStructure.id == structure_id).first()
         if not s:
@@ -295,7 +325,13 @@ def prepare_structure_endpoint(structure_id: UUID, payload: PrepareRequest) -> P
         in_path = raw.file_path
         out_path = str(Path(in_path).with_name("prepared.pdb"))
         try:
-            prepare_structure(in_path, out_path, chain_id=payload.chain_id)
+            # Prepare structure using async thread pool
+            await asyncio.to_thread(
+                _sync_prepare_structure,
+                in_path,
+                out_path,
+                payload.chain_id
+            )
             s.prep_status = "prepared"
             s.prep_log = "prepared ok"
         except Exception as e:  # noqa: BLE001
