@@ -176,7 +176,10 @@ def compute_cell_diff(old_cells: List[Dict], new_cells: List[Dict]) -> Dict[str,
                 result["unchanged"].append(cell_info)
             else:
                 result["modified"].append({
-                    **cell_info,
+                    "index": new_idx,
+                    "cell_type": new_cell.get('cell_type', 'unknown'),
+                    "old_source_preview": _get_source_preview(old_cell.get('source', '')),
+                    "new_source_preview": _get_source_preview(new_cell.get('source', '')),
                     "old_index": best_match_idx,
                     "similarity": best_match_score
                 })
