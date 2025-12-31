@@ -128,6 +128,15 @@ def submit_for_review(
             )
         except Exception as e:
             logger.error(f"Failed to log REVIEW_SUBMITTED activity: {e}")
+        
+        # Auto-apply SLA
+        try:
+            from amprenta_rag.services.review_sla import get_default_sla, apply_sla
+            sla = get_default_sla(review.entity_type, db or db_session())
+            if sla:
+                apply_sla(review, sla, db or db_session())
+        except Exception as e:
+            logger.warning(f"Failed to apply SLA to review {review.id}: {e}")
     
     return review
 
