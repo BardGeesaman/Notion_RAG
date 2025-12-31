@@ -1,0 +1,32 @@
+{
+  "name": "yjs-websocket-server",
+  "version": "1.0.0",
+  "description": "Y.js WebSocket server with PostgreSQL persistence for collaborative editing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "yjs": "^13.6.10",
+    "y-websocket": "^1.5.0",
+    "y-protocols": "^1.0.6",
+    "ws": "^8.14.2",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "yjs",
+    "websocket",
+    "collaborative",
+    "crdt",
+    "postgresql"
+  ],
+  "author": "Amprenta Platform",
+  "license": "MIT"
+}

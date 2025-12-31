@@ -498,7 +498,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Admin-only restore with confirm flag and audit logging
   - Supports datasets and experiments (extensible)
   - Dashboard UI deferred to future session
-- ❌ GEO Incremental Harvester + Metadata Normalization
+- ✅ GEO Incremental Harvester + Metadata Normalization (2025-12-31) - 19 tests
+  - GEOSyncAdapter composing with GEORepository for NCBI-compliant rate limiting
+  - MDAT filter for true incremental sync (modification date, not just publication)
+  - Inline organism normalization (Homo sapiens → human, etc.)
+  - SHA256 checksum-based change detection
+  - Batch size 50 (optimized for heavy GEO metadata)
+  - Registered in sync manager, accessible via POST /sync/run source=geo
 - ✅ ChEMBL/PubChem Bioactivity Sync (2025-12-24) - covered by External Sync Orchestrator MVP
 
 ### Tier 2 - Strategic

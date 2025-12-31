@@ -15,6 +15,8 @@ from amprenta_rag.database.session import db_session
 from amprenta_rag.sync.manager import SyncManager
 from amprenta_rag.sync.adapters.chembl import ChEMBLAdapter
 from amprenta_rag.sync.adapters.pubchem import PubChemAdapter
+from amprenta_rag.sync.adapters.geo import GEOSyncAdapter
+from amprenta_rag.ingestion.repositories.geo import GEORepository
 
 
 router = APIRouter(prefix="/sync", tags=["Sync"])
@@ -30,9 +32,19 @@ class ResolveConflictRequest(BaseModel):
 
 
 def _make_manager() -> SyncManager:
+    import os
+    
     mgr = SyncManager(db_session)
     mgr.register_adapter(ChEMBLAdapter())
     mgr.register_adapter(PubChemAdapter(db_session))
+    
+    # GEO adapter with NCBI-compliant rate limiting
+    geo_repo = GEORepository(
+        api_key=os.getenv("GEO_API_KEY"),
+        email=os.getenv("NCBI_EMAIL", "admin@example.com"),
+    )
+    mgr.register_adapter(GEOSyncAdapter(geo_repo))
+    
     return mgr
 
 
