@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, HTTPException
@@ -15,13 +16,9 @@ router = APIRouter(prefix="/biomarker", tags=["biomarker"])
 AVAILABLE_METHODS = ["statistical", "stability", "importance"]
 
 
-@router.get("/methods", response_model=List[str])
-def list_methods() -> List[str]:
-    return list(AVAILABLE_METHODS)
-
-
-@router.post("/discover", response_model=BiomarkerDiscoverResponse)
-def discover_biomarkers(request: BiomarkerDiscoverRequest) -> BiomarkerDiscoverResponse:
+# Sync helper function for statistical analysis and ML computations
+def _sync_discover_biomarkers(request: BiomarkerDiscoverRequest) -> BiomarkerDiscoverResponse:
+    """Sync helper for biomarker discovery statistical analysis and ML."""
     methods = [str(m).lower() for m in (request.methods or [])]
     if not methods:
         raise HTTPException(status_code=400, detail="At least one method is required")
@@ -76,6 +73,17 @@ def discover_biomarkers(request: BiomarkerDiscoverRequest) -> BiomarkerDiscoverR
             consensus.append(BiomarkerFeature.model_validate(r))
 
     return BiomarkerDiscoverResponse(consensus_ranking=consensus, method_results=method_results or {})
+
+
+@router.get("/methods", response_model=List[str])
+def list_methods() -> List[str]:
+    return list(AVAILABLE_METHODS)
+
+
+@router.post("/discover", response_model=BiomarkerDiscoverResponse)
+async def discover_biomarkers(request: BiomarkerDiscoverRequest) -> BiomarkerDiscoverResponse:
+    """Discover biomarkers using async thread pool for statistical analysis and ML computations."""
+    return await asyncio.to_thread(_sync_discover_biomarkers, request)
 
 
 __all__ = ["router"]
