@@ -152,6 +152,7 @@ def rollback_to_version(
     db: Session,
     version_id: UUID,
     user_id: Optional[UUID] = None,
+    reason: Optional[str] = None,
 ) -> EntityVersion:
     """Create a new version by rolling back to a previous version's data."""
     source_version = get_version(db, version_id)
@@ -159,13 +160,17 @@ def rollback_to_version(
         raise ValueError(f"Version {version_id} not found")
     
     # Create new version with the old data
+    change_summary = f"Rolled back to version {source_version.version_number}"
+    if reason:
+        change_summary += f": {reason}"
+    
     new_version = create_version(
         db=db,
         entity_type=source_version.entity_type,
         entity_id=source_version.entity_id,
         data=source_version.data_snapshot,
         user_id=user_id,
-        change_summary=f"Rolled back to version {source_version.version_number}",
+        change_summary=change_summary,
     )
     
     logger.info(

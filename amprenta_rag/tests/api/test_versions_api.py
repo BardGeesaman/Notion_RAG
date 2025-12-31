@@ -297,6 +297,7 @@ class TestVersionsAPI:
         # Mock the new version created by rollback
         mock_new_version = MagicMock()
         mock_new_version.version_number = 4
+        mock_new_version.change_summary = "Rolled back to version 2: Rolling back problematic changes"
         
         request_data = {
             "confirm": True,
@@ -389,6 +390,7 @@ class TestVersionsAPI:
         
         mock_new_version = MagicMock()
         mock_new_version.version_number = 3
+        mock_new_version.change_summary = "Rolled back to version 1: Emergency rollback"
         
         request_data = {
             "confirm": True,
@@ -431,6 +433,7 @@ class TestVersionsAPI:
         
         mock_new_version = MagicMock()
         mock_new_version.version_number = 2
+        mock_new_version.change_summary = "Rolled back to version 1: Data corruption detected in current version"
         
         request_data = {
             "confirm": True,
@@ -450,7 +453,7 @@ class TestVersionsAPI:
             data = response.json()
             
             # Verify reason is included in message
-            assert "Restored from version 1" in data["message"]
+            assert "Rolled back to version 1" in data["message"]
             assert "Data corruption detected in current version" in data["message"]
             
             # Verify rollback was called with reason

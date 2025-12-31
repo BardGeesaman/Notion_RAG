@@ -110,16 +110,10 @@ def restore_version(
         )
     
     # Create new version from old snapshot using rollback_to_version
-    change_summary = f"Restored from version {version.version_number}"
-    if request.reason:
-        change_summary += f": {request.reason}"
-    
     try:
         new_version = rollback_to_version(
             db=db,
-            entity_type=version.entity_type,
-            entity_id=version.entity_id,
-            target_version_number=version.version_number,
+            version_id=version_id,
             user_id=current_user.id,
             reason=request.reason,
         )
@@ -151,7 +145,7 @@ def restore_version(
             new_version_number=new_version.version_number,
             entity_type=version.entity_type,
             entity_id=version.entity_id,
-            message=change_summary,
+            message=new_version.change_summary,
         )
         
     except Exception as e:

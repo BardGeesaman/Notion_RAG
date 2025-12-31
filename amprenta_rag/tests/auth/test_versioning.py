@@ -376,6 +376,77 @@ class TestVersioning:
         
         assert result == new_version
     
+    def test_rollback_to_version_with_reason(self):
+        """Test rollback with reason appended to change_summary."""
+        mock_db = MagicMock()
+        version_id = uuid4()
+        user_id = uuid4()
+        reason = "Reverting problematic changes"
+        
+        # Mock source version
+        source_version = MagicMock()
+        source_version.entity_type = "dataset"
+        source_version.entity_id = uuid4()
+        source_version.version_number = 2
+        source_version.data_snapshot = {"id": "123", "name": "old_data"}
+        
+        # Mock new version
+        new_version = MagicMock()
+        new_version.version_number = 4
+        
+        # Track the change_summary passed to create_version
+        create_version_calls = []
+        
+        def mock_create_version(**kwargs):
+            create_version_calls.append(kwargs)
+            return new_version
+        
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr("amprenta_rag.auth.versioning.get_version", lambda db, vid: source_version)
+            mp.setattr("amprenta_rag.auth.versioning.create_version", mock_create_version)
+            
+            result = rollback_to_version(mock_db, version_id, user_id, reason)
+        
+        assert result == new_version
+        assert len(create_version_calls) == 1
+        expected_summary = f"Rolled back to version {source_version.version_number}: {reason}"
+        assert create_version_calls[0]["change_summary"] == expected_summary
+    
+    def test_rollback_to_version_without_reason(self):
+        """Test rollback without reason maintains default behavior."""
+        mock_db = MagicMock()
+        version_id = uuid4()
+        user_id = uuid4()
+        
+        # Mock source version
+        source_version = MagicMock()
+        source_version.entity_type = "dataset"
+        source_version.entity_id = uuid4()
+        source_version.version_number = 2
+        source_version.data_snapshot = {"id": "123", "name": "old_data"}
+        
+        # Mock new version
+        new_version = MagicMock()
+        new_version.version_number = 4
+        
+        # Track the change_summary passed to create_version
+        create_version_calls = []
+        
+        def mock_create_version(**kwargs):
+            create_version_calls.append(kwargs)
+            return new_version
+        
+        with pytest.MonkeyPatch().context() as mp:
+            mp.setattr("amprenta_rag.auth.versioning.get_version", lambda db, vid: source_version)
+            mp.setattr("amprenta_rag.auth.versioning.create_version", mock_create_version)
+            
+            result = rollback_to_version(mock_db, version_id, user_id)
+        
+        assert result == new_version
+        assert len(create_version_calls) == 1
+        expected_summary = f"Rolled back to version {source_version.version_number}"
+        assert create_version_calls[0]["change_summary"] == expected_summary
+    
     def test_rollback_version_not_found(self):
         """Test rollback with non-existent version."""
         mock_db = MagicMock()
