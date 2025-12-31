@@ -7,6 +7,14 @@ Provides mapping functions to convert feature identifiers to pathway database ID
 - Metabolites → KEGG Compound IDs
 
 Uses external services: UniProt REST API, KEGG API, Reactome API, MyGene.info
+
+KEGG API Rate Limits (Important):
+- No official rate limit published by KEGG
+- Recommended: Maximum 3 requests/second
+- Current implementation: 0.1s sleep between requests (line 413)
+- Bulk downloads require paid KEGG license ($2,000+/year)
+- Academic use only without subscription
+- This implementation uses on-demand caching to comply with terms
 """
 
 from __future__ import annotations
@@ -21,7 +29,6 @@ from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.services.id_mapping_service import (
     get_mapping,
     save_mapping,
-    ID_MAPPING_FALLBACK_ENABLED,
 )
 
 logger = get_logger(__name__)

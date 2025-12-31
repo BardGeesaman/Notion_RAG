@@ -58,7 +58,8 @@ def render_status_tab(user: dict) -> None:
     st.subheader("📊 Mapping Status")
     
     try:
-        status = _api_get("/api/v1/mappings/status")
+        with st.spinner("Loading mapping status..."):
+            status = _api_get("/api/v1/mappings/status")
         
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -83,7 +84,8 @@ def render_status_tab(user: dict) -> None:
             
             if st.button("🔄 Refresh UniProt Mappings", key="refresh_uniprot", type="primary"):
                 try:
-                    result = _api_post("/api/v1/mappings/refresh", {"source": "uniprot"})
+                    with st.spinner("Queueing refresh job..."):
+                        result = _api_post("/api/v1/mappings/refresh", {"source": "uniprot"})
                     st.success(f"✅ Refresh queued successfully! Job ID: {result.get('job_id')}")
                     st.info("The refresh job is now running in the background. Check the Jobs tab for updates.")
                 except Exception as e:
@@ -124,7 +126,8 @@ def render_statistics_tab() -> None:
     st.subheader("📈 Detailed Statistics")
     
     try:
-        stats = _api_get("/api/v1/mappings/stats")
+        with st.spinner("Loading statistics..."):
+            stats = _api_get("/api/v1/mappings/stats")
         
         # Overview metrics
         col1, col2, col3 = st.columns(3)
@@ -247,7 +250,7 @@ def render_lookup_tab() -> None:
             st.error("❌ Please enter at least one ID.")
         else:
             try:
-                with st.spinner(f"Looking up {len(ids)} IDs..."):
+                with st.spinner(f"Processing {len(ids)} IDs..."):
                     result = _api_post("/api/v1/mappings/batch", {
                         "ids": ids,
                         "source_type": batch_source_type,
@@ -340,7 +343,8 @@ def render_jobs_tab(user: dict) -> None:
         with col1:
             if st.button("🔄 Trigger UniProt Refresh", key="jobs_refresh", type="primary"):
                 try:
-                    result = _api_post("/api/v1/mappings/refresh", {"source": "uniprot"})
+                    with st.spinner("Queueing refresh job..."):
+                        result = _api_post("/api/v1/mappings/refresh", {"source": "uniprot"})
                     st.success(f"✅ UniProt refresh job queued! Job ID: {result.get('job_id')}")
                 except Exception as e:
                     st.warning(f"⚠️ API unavailable: {e}")
