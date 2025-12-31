@@ -10,6 +10,8 @@ import streamlit as st
 
 from scripts.dashboard.components.notebook_card import render_notebook_card
 from scripts.dashboard.components.review_card import render_review_badge
+from scripts.dashboard.components.thread_view import render_thread_view
+from scripts.dashboard.components.notebook_diff import render_notebook_diff
 
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
@@ -86,32 +88,45 @@ def render_review_queue_page() -> None:
                 preview_image=None,
             )
 
-            comments = st.text_area("Comments", key=f"c_{rid}", height=100)
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                if st.button("Approve", type="primary", key=f"a_{rid}"):
-                    try:
-                        out = _api_put(f"/api/reviews/{rid}", {"status": "approved", "comments": comments})
-                        st.success(f"Approved. Signature: {out.get('signature')}")
-                        st.rerun()
-                    except Exception as e:  # noqa: BLE001
-                        st.error(f"Approve failed: {e}")
-            with c2:
-                if st.button("Reject", key=f"r_{rid}"):
-                    try:
-                        _api_put(f"/api/reviews/{rid}", {"status": "rejected", "comments": comments})
-                        st.success("Rejected.")
-                        st.rerun()
-                    except Exception as e:  # noqa: BLE001
-                        st.error(f"Reject failed: {e}")
-            with c3:
-                if st.button("Request changes", key=f"ch_{rid}"):
-                    try:
-                        _api_put(f"/api/reviews/{rid}", {"status": "changes_requested", "comments": comments})
-                        st.success("Changes requested.")
-                        st.rerun()
-                    except Exception as e:  # noqa: BLE001
-                        st.error(f"Request changes failed: {e}")
+            # Tabbed interface for review, discussion, and diff
+            tab1, tab2, tab3 = st.tabs(["📝 Review", "💬 Discussion", "📋 Diff"])
+            
+            with tab1:
+                # Original review interface
+                comments = st.text_area("Comments", key=f"c_{rid}", height=100)
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    if st.button("Approve", type="primary", key=f"a_{rid}"):
+                        try:
+                            out = _api_put(f"/api/reviews/{rid}", {"status": "approved", "comments": comments})
+                            st.success(f"Approved. Signature: {out.get('signature')}")
+                            st.rerun()
+                        except Exception as e:  # noqa: BLE001
+                            st.error(f"Approve failed: {e}")
+                with c2:
+                    if st.button("Reject", key=f"r_{rid}"):
+                        try:
+                            _api_put(f"/api/reviews/{rid}", {"status": "rejected", "comments": comments})
+                            st.success("Rejected.")
+                            st.rerun()
+                        except Exception as e:  # noqa: BLE001
+                            st.error(f"Reject failed: {e}")
+                with c3:
+                    if st.button("Request changes", key=f"ch_{rid}"):
+                        try:
+                            _api_put(f"/api/reviews/{rid}", {"status": "changes_requested", "comments": comments})
+                            st.success("Changes requested.")
+                            st.rerun()
+                        except Exception as e:  # noqa: BLE001
+                            st.error(f"Request changes failed: {e}")
+            
+            with tab2:
+                # Discussion threads
+                render_thread_view(rid, API_BASE)
+            
+            with tab3:
+                # Notebook diff viewer
+                render_notebook_diff(rid, API_BASE)
 
 
 __all__ = ["render_review_queue_page"]
