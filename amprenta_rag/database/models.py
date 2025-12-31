@@ -1070,8 +1070,67 @@ class NotebookReview(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     reviewer: Mapped[Optional["User"]] = relationship("User", foreign_keys=[reviewer_id])
+    threads: Mapped[list["ReviewThread"]] = relationship("ReviewThread", back_populates="review", cascade="all, delete-orphan")
+    snapshot: Mapped[Optional["NotebookSnapshot"]] = relationship("NotebookSnapshot", back_populates="review", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (Index("ix_notebook_reviews_notebook_status", "notebook_path", "status"),)
+
+
+class ReviewThread(Base):
+    """Discussion thread anchored to a notebook review, optionally to a specific cell."""
+
+    __tablename__ = "review_threads"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    review_id = Column(UUID(as_uuid=True), ForeignKey("notebook_reviews.id", ondelete="CASCADE"), nullable=False)
+    cell_index = Column(Integer, nullable=True)  # null = general, int = cell-specific
+    title = Column(String(255), nullable=False)
+    status = Column(String(20), nullable=False, default="open")  # open/resolved/wontfix
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # Relationships
+    review: Mapped["NotebookReview"] = relationship("NotebookReview", back_populates="threads")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+    comments: Mapped[list["ReviewComment"]] = relationship("ReviewComment", back_populates="thread", cascade="all, delete-orphan")
+
+    __table_args__ = (Index("ix_review_threads_review_status", "review_id", "status"),)
+
+
+class ReviewComment(Base):
+    """Individual comment in a review thread with support for nested replies."""
+
+    __tablename__ = "review_comments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    thread_id = Column(UUID(as_uuid=True), ForeignKey("review_threads.id", ondelete="CASCADE"), nullable=False)
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("review_comments.id", ondelete="SET NULL"), nullable=True)
+    content = Column(Text, nullable=False)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # Relationships
+    thread: Mapped["ReviewThread"] = relationship("ReviewThread", back_populates="comments")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+    replies: Mapped[list["ReviewComment"]] = relationship("ReviewComment", back_populates="parent", cascade="all, delete-orphan")
+    parent: Mapped[Optional["ReviewComment"]] = relationship("ReviewComment", back_populates="replies", remote_side=[id])
+
+
+class NotebookSnapshot(Base):
+    """Stores notebook content at review time for diff computation."""
+
+    __tablename__ = "notebook_snapshots"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    review_id = Column(UUID(as_uuid=True), ForeignKey("notebook_reviews.id", ondelete="CASCADE"), nullable=False, unique=True)
+    content_json = Column(JSON, nullable=False)  # Full notebook content
+    cell_count = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # Relationships
+    review: Mapped["NotebookReview"] = relationship("NotebookReview", back_populates="snapshot")
 
 
 class RepositorySubscription(Base):
