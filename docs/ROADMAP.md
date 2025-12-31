@@ -255,6 +255,12 @@ Simple status legend:
 - ❌ Split requirements.txt - move pdbfixer/openmm to requirements-structural.txt (pdbfixer requires conda-forge, not pip-installable)
 - ❌ OOP Refactoring Review (code structure improvements)
 
+### ID Mapping Enhancements (P2 - Future)
+- ❌ Add MappingRefreshLog model to track last successful sync timestamps
+- ❌ Document KEGG API rate limits in code comments
+- ❌ Add loading spinners to Mapping Refresh dashboard during API calls
+- ❌ Integration test for UniProt HTTP download with mocked response
+
 ### Future Backlog (Migrated from NEXT_STEPS.md 2025-12-28)
 
 **Integration & Data Sources:**

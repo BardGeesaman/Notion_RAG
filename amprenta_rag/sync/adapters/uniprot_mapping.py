@@ -27,7 +27,7 @@ class UniProtMappingAdapter(BaseSyncAdapter):
     source = "uniprot_mapping"
     
     # UniProt ID mapping file for human
-    MAPPING_URL = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping_selected.tab.gz"
+    MAPPING_URL = "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping_selected.tab.gz"
     
     # Column mappings for the tab file
     # Columns: UniProt-AC, UniProt-ID, GeneID (Entrez), RefSeq, GI, PDB, GO, UniRef100, UniRef90, UniRef50, UniParc, PIR, NCBI-taxon, MIM, UniGene, PubMed, EMBL, EMBL-CDS, Ensembl, Ensembl_TRS, Ensembl_PRO, Additional PubMed

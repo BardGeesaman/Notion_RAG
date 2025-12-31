@@ -151,7 +151,7 @@ class TestMappingRefreshE2E:
         expect(jobs_tab.get_by_text("🔄 Refresh Jobs")).to_be_visible()
         
         # Check for job history info
-        expect(jobs_tab.get_by_text("Demo mode - job management will be available")).to_be_visible()
+        expect(jobs_tab.get_by_text("Job history tracking coming soon")).to_be_visible()
         
         # Check for current status section
         expect(jobs_tab.get_by_text("Current Status")).to_be_visible()

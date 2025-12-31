@@ -1,8 +1,6 @@
 """ID Mapping API endpoints for lookup and management."""
 
-from datetime import datetime
 from typing import Dict, List, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -40,7 +38,6 @@ class MappingRefreshResponse(BaseModel):
 
 
 class MappingStatusResponse(BaseModel):
-    uniprot_last_refresh: Optional[datetime]
     total_mappings: int
     mappings_by_type: Dict[str, int]
     expired_count: int
@@ -116,7 +113,6 @@ def get_status(
     stats = get_mapping_stats()
     
     return MappingStatusResponse(
-        uniprot_last_refresh=None,  # TODO: Track last refresh times
         total_mappings=stats.get("total_mappings", 0),
         mappings_by_type=stats.get("by_source_type", {}),
         expired_count=stats.get("expired_mappings", 0)
