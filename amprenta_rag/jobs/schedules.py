@@ -47,6 +47,12 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(hour=6, minute=0),  # 6:00 AM daily
         'options': {'queue': 'scheduled'},
     },
+    # Hourly cleanup of expired project exports
+    'hourly-export-cleanup': {
+        'task': 'amprenta_rag.jobs.tasks.backup.cleanup_expired_exports',
+        'schedule': crontab(minute=0),  # Every hour at the top of the hour
+        'options': {'queue': 'scheduled'},
+    },
 }
 
 # Note: Dynamic harvest schedules are managed by database-driven periodic checks

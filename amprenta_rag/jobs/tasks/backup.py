@@ -6,7 +6,7 @@ from typing import Dict, Optional
 
 from amprenta_rag.backup.backup_engine import BackupEngine, BackupEngineError
 from amprenta_rag.config import get_config
-from amprenta_rag.database.models import BackupRecord
+from amprenta_rag.database.models import BackupRecord, ProjectExport
 from amprenta_rag.database.session import db_session
 from amprenta_rag.jobs.celery_app import celery_app
 
@@ -249,5 +249,63 @@ def backup_health_check() -> Dict[str, str]:
         logger.exception(f"Backup health check failed: {exc}")
         return {
             "status": "error",
+            "error": str(exc),
+        }
+
+
+@celery_app.task(queue='scheduled')
+def cleanup_expired_exports() -> Dict[str, str]:
+    """Clean up expired project exports."""
+    try:
+        logger.info("Starting cleanup of expired project exports")
+        
+        current_time = datetime.now(timezone.utc)
+        deleted_count = 0
+        error_count = 0
+        
+        with db_session() as db:
+            # Find expired exports
+            expired_exports = db.query(ProjectExport).filter(
+                ProjectExport.expires_at < current_time
+            ).all()
+            
+            logger.info(f"Found {len(expired_exports)} expired exports to clean up")
+            
+            # Initialize backup engine for file deletion
+            engine = BackupEngine()
+            
+            for export in expired_exports:
+                try:
+                    # Delete export file from storage if it exists
+                    if export.file_path:
+                        try:
+                            engine.backup_client.delete_backup(export.file_path)
+                            logger.debug(f"Deleted export file: {export.file_path}")
+                        except Exception as e:
+                            logger.warning(f"Failed to delete export file {export.file_path}: {e}")
+                            error_count += 1
+                    
+                    # Delete database record
+                    db.delete(export)
+                    deleted_count += 1
+                    
+                except Exception as e:
+                    logger.error(f"Failed to delete export record {export.id}: {e}")
+                    error_count += 1
+            
+            db.commit()
+        
+        logger.info(f"Export cleanup completed: {deleted_count} exports deleted, {error_count} errors")
+        
+        return {
+            "status": "completed",
+            "deleted_count": str(deleted_count),
+            "error_count": str(error_count),
+        }
+        
+    except Exception as exc:
+        logger.exception(f"Export cleanup failed: {exc}")
+        return {
+            "status": "failed",
             "error": str(exc),
         }

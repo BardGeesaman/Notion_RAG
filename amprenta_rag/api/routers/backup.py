@@ -1,10 +1,10 @@
 """Backup and disaster recovery API endpoints."""
 
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from amprenta_rag.api.dependencies import get_current_user, get_database_session
 from amprenta_rag.backup.backup_engine import BackupEngine
 from amprenta_rag.backup.project_export import export_project
-from amprenta_rag.database.models import BackupRecord
+from amprenta_rag.database.models import BackupRecord, ProjectExport
 from amprenta_rag.models.auth import User
 from amprenta_rag.jobs.tasks.backup import run_database_backup
 
@@ -54,6 +54,15 @@ class BackupHistoryResponse(BaseModel):
     total: int
     page: int
     per_page: int
+
+
+class ProjectExportResponse(BaseModel):
+    """Project export creation response."""
+    export_id: UUID
+    message: str
+    export_size_bytes: int
+    entities_summary: str
+    expires_at: datetime
 
 
 @router.post("/database", status_code=status.HTTP_202_ACCEPTED)
@@ -269,12 +278,12 @@ async def download_backup(
             temp_path.unlink()
 
 
-@router.post("/export", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/export", status_code=status.HTTP_201_CREATED)
 async def create_project_export(
     request: ProjectExportRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_database_session),
-) -> Dict[str, str]:
+) -> ProjectExportResponse:
     """Create a project export ZIP file.
     
     Args:
@@ -283,7 +292,7 @@ async def create_project_export(
         db: Database session
         
     Returns:
-        Dict with export information
+        Export information with download ID
         
     Raises:
         HTTPException: If no entities specified for export
@@ -305,19 +314,53 @@ async def create_project_export(
             include_related=request.include_related,
         )
         
-        # For now, return the export data size
-        # In a production system, you might store this temporarily and provide a download link
         export_size = len(export_data)
-        
         entities_summary = f"programs: {len(request.program_ids or [])}, experiments: {len(request.experiment_ids or [])}, compounds: {len(request.compound_ids or [])}"
         
-        return {
-            "message": "Project export created successfully",
-            "export_size_bytes": str(export_size),
-            "entities": entities_summary,
-        }
+        # Store export using backup client
+        engine = BackupEngine()
+        export_id = uuid4()
+        file_path = f"exports/{export_id}.zip"
+        
+        # Create temporary file and upload to storage
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(export_data)
+            temp_path = Path(temp_file.name)
+        
+        try:
+            # Upload to storage
+            engine.backup_client.upload_file(str(temp_path), file_path)
+            
+            # Create ProjectExport record with 24-hour expiration
+            expires_at = datetime.utcnow() + timedelta(hours=24)
+            
+            project_export = ProjectExport(
+                id=export_id,
+                file_path=file_path,
+                file_size_bytes=export_size,
+                entities_summary=entities_summary,
+                created_by=current_user.id,
+                expires_at=expires_at,
+            )
+            
+            db.add(project_export)
+            db.commit()
+            
+            return ProjectExportResponse(
+                export_id=export_id,
+                message="Project export created successfully",
+                export_size_bytes=export_size,
+                entities_summary=entities_summary,
+                expires_at=expires_at,
+            )
+            
+        finally:
+            # Clean up temp file
+            if temp_path.exists():
+                temp_path.unlink()
         
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Export failed: {str(e)}"
@@ -341,11 +384,65 @@ async def download_project_export(
         Streaming response with export ZIP
         
     Raises:
-        HTTPException: If export not found
+        HTTPException: If export not found or expired
     """
-    # TODO: Implement export storage and retrieval
-    # For now, return a placeholder response
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Export download not yet implemented - use POST /backup/export for immediate export"
-    )
+    # Lookup ProjectExport by ID
+    project_export = db.query(ProjectExport).filter(ProjectExport.id == export_id).first()
+    
+    if not project_export:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Export {export_id} not found"
+        )
+    
+    # Check expiration (return 410 GONE if expired)
+    if datetime.utcnow() > project_export.expires_at:
+        # Clean up expired record
+        db.delete(project_export)
+        db.commit()
+        
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail=f"Export {export_id} has expired and is no longer available"
+        )
+    
+    # Download from storage and stream response
+    engine = BackupEngine()
+    
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_path = Path(temp_file.name)
+    
+    try:
+        # Download from storage
+        engine.backup_client.download_file(project_export.file_path, str(temp_path))
+        
+        # Create streaming response
+        def file_generator():
+            with open(temp_path, 'rb') as f:
+                while chunk := f.read(8192):
+                    yield chunk
+        
+        # Generate filename
+        timestamp = project_export.created_at.strftime("%Y%m%d_%H%M%S")
+        filename = f"project_export_{timestamp}.zip"
+        
+        # Delete record after successful download (one-time use)
+        db.delete(project_export)
+        db.commit()
+        
+        return StreamingResponse(
+            file_generator(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to download export: {str(e)}"
+        )
+        
+    finally:
+        # Clean up temp file
+        if temp_path.exists():
+            temp_path.unlink()

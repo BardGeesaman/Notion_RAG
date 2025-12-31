@@ -1879,3 +1879,26 @@ class BackupRecord(Base):
         Index("ix_backup_records_status_created", "status", "created_at"),
         Index("ix_backup_records_type_status", "backup_type", "status"),
     )
+
+
+class ProjectExport(Base):
+    """Temporary project export storage for download."""
+    
+    __tablename__ = "project_exports"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    file_path = Column(String, nullable=False)  # S3 key or local path
+    file_size_bytes = Column(BigInteger, nullable=True)
+    checksum_sha256 = Column(String(64), nullable=True)
+    entities_summary = Column(String, nullable=True)  # JSON summary
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False, index=True)
+    
+    # Relationship to user
+    creator = relationship("User", backref="project_exports")
+    
+    # Index for cleanup queries
+    __table_args__ = (
+        Index("ix_project_exports_expires_at", "expires_at"),
+    )

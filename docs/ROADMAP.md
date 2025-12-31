@@ -338,9 +338,11 @@ Simple status legend:
   - `viz3d.py`: RDKit conformers, overlay, protein PDB (3 endpoints)
   - `admet.py`: ADMET predict, explain with SHAP (2 endpoints)
   - `biomarker.py`: Biomarker discovery (1 endpoint)
-- ❌ Async API Endpoints - Phase 4 (Database)
-  - Full SQLAlchemy async sessions
-  - Heavy query endpoints (explorer, graph, hts)
+- ✅ Async API Endpoints - Phase 4 Infrastructure (2025-12-30) - 6 tests
+  - Async SQLAlchemy foundation: engine, session factory, context manager
+  - FastAPI async dependency injection
+  - Configurable pool settings via environment variables
+  - Router migration deferred to future sessions (239 access points)
 - ❌ Automated Backup & Disaster Recovery
   - Daily full backups to S3
   - Point-in-Time Recovery (WAL archiving)
