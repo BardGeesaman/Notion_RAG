@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, JSON, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, JSON, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, backref, relationship
 
@@ -147,6 +147,45 @@ class Comment(Base):
     created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
 
+class InlineAnnotation(Base):
+    """Position-anchored annotation on entity content."""
+    
+    __tablename__ = "inline_annotations"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    entity_type = Column(String(50), nullable=False, index=True)  # "notebook", "dataset", "experiment"
+    entity_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    
+    # Position anchoring
+    position_type = Column(String(30), nullable=False)  # "cell", "column", "row", "line", "range"
+    position_data = Column(JSON, nullable=False)  # {"cell_index": 5} or {"column": "gene_name", "row": 10}
+    
+    # Content
+    content = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="open")  # "open", "resolved"
+    
+    # Threading
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("inline_annotations.id"), nullable=True)
+    
+    # Metadata
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    resolved_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc))
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    replies: Mapped[List["InlineAnnotation"]] = relationship("InlineAnnotation", backref=backref("parent", remote_side=[id]))
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+    resolved_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[resolved_by_id])
+    
+    __table_args__ = (
+        Index("ix_inline_annotations_entity", "entity_type", "entity_id"),
+        Index("ix_inline_annotations_status", "status"),
+        Index("ix_inline_annotations_position_type", "position_type"),
+    )
+
+
 __all__ = [
     "Feedback",
     "UserFavorite",
@@ -156,5 +195,6 @@ __all__ = [
     "Note",
     "SavedFilter",
     "Comment",
+    "InlineAnnotation",
 ]
 
