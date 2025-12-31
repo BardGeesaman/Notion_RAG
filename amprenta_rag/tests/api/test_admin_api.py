@@ -204,3 +204,118 @@ class TestAdminAPI:
         
         # Ensure mock was never called due to authorization failures
         mock_clear_cache.assert_not_called()
+    
+    @patch("amprenta_rag.api.routers.admin.get_extended_system_info")
+    def test_system_health_endpoint(self, mock_get_system_info):
+        """Test the system health endpoint."""
+        admin_user = self._create_mock_user(role="admin")
+        self._override_auth(admin_user)
+        
+        mock_system_info = {
+            "cpu": {
+                "cpu_percent": 25.5,
+                "cpu_count": 8,
+                "cpu_count_logical": 16
+            },
+            "memory": {
+                "total_gb": 16.0,
+                "available_gb": 8.5,
+                "used_gb": 7.5,
+                "percent": 46.9
+            },
+            "disk": {
+                "total_gb": 500.0,
+                "free_gb": 250.0,
+                "used_gb": 250.0,
+                "percent": 50.0
+            },
+            "timestamp": 1640995200.0
+        }
+        mock_get_system_info.return_value = mock_system_info
+        
+        response = self.client.get("/api/v1/admin/health/system")
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert "cpu" in data
+        assert "memory" in data
+        assert "disk" in data
+        assert data["cpu"]["cpu_percent"] == 25.5
+        assert data["memory"]["total_gb"] == 16.0
+        assert data["disk"]["percent"] == 50.0
+        
+        mock_get_system_info.assert_called_once()
+    
+    @patch("amprenta_rag.api.routers.admin.get_celery_queue_stats")
+    def test_queue_health_endpoint(self, mock_get_queue_stats):
+        """Test the queue health endpoint."""
+        admin_user = self._create_mock_user(role="admin")
+        self._override_auth(admin_user)
+        
+        mock_queue_stats = {
+            "active": 5,
+            "reserved": 2,
+            "scheduled": 10,
+            "workers": ["worker1@host", "worker2@host"],
+            "worker_count": 2,
+            "status": "available"
+        }
+        mock_get_queue_stats.return_value = mock_queue_stats
+        
+        response = self.client.get("/api/v1/admin/health/queues")
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert data["active"] == 5
+        assert data["reserved"] == 2
+        assert data["scheduled"] == 10
+        assert data["worker_count"] == 2
+        assert data["status"] == "available"
+        
+        mock_get_queue_stats.assert_called_once()
+    
+    @patch("amprenta_rag.api.routers.admin.get_connection_status")
+    def test_connection_health_endpoint(self, mock_get_connection_status):
+        """Test the connection health endpoint."""
+        admin_user = self._create_mock_user(role="admin")
+        self._override_auth(admin_user)
+        
+        mock_connection_status = {
+            "postgresql": {
+                "status": "connected",
+                "type": "PostgreSQL"
+            },
+            "redis": {
+                "status": "connected",
+                "type": "Redis",
+                "broker_url": "localhost:6379"
+            }
+        }
+        mock_get_connection_status.return_value = mock_connection_status
+        
+        response = self.client.get("/api/v1/admin/health/connections")
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert "postgresql" in data
+        assert "redis" in data
+        assert data["postgresql"]["status"] == "connected"
+        assert data["redis"]["status"] == "connected"
+        
+        mock_get_connection_status.assert_called_once()
+    
+    def test_health_endpoints_admin_only(self):
+        """Test that all health endpoints require admin access."""
+        researcher_user = self._create_mock_user(role="researcher")
+        self._override_auth(researcher_user)
+        
+        health_endpoints = [
+            "/api/v1/admin/health/system",
+            "/api/v1/admin/health/queues",
+            "/api/v1/admin/health/connections",
+        ]
+        
+        for endpoint in health_endpoints:
+            response = self.client.get(endpoint)
+            assert response.status_code == 403, f"Health endpoint {endpoint} should require admin"
+            assert "Admin access required" in response.json()["detail"]

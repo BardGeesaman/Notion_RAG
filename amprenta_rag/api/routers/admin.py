@@ -5,6 +5,7 @@ from typing import Dict, Any
 
 from amprenta_rag.api.dependencies import get_current_user
 from amprenta_rag.admin.cache_manager import get_cache_stats, clear_cache, clear_all_caches, get_cache_summary
+from amprenta_rag.utils.health import get_extended_system_info, get_celery_queue_stats, get_connection_status
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -77,3 +78,30 @@ def clear_all(current_user=Depends(get_current_user)) -> Dict[str, Any]:
             "failed": failed
         }
     }
+
+
+@router.get("/health/system")
+def get_system_health(current_user=Depends(get_current_user)) -> Dict[str, Any]:
+    """Get extended system health metrics (admin only)."""
+    _require_admin(current_user)
+    
+    logger.info("Admin user %s requested system health metrics", current_user.id)
+    return get_extended_system_info()
+
+
+@router.get("/health/queues")
+def get_queue_health(current_user=Depends(get_current_user)) -> Dict[str, Any]:
+    """Get Celery queue statistics (admin only)."""
+    _require_admin(current_user)
+    
+    logger.info("Admin user %s requested queue health metrics", current_user.id)
+    return get_celery_queue_stats()
+
+
+@router.get("/health/connections")
+def get_connection_health(current_user=Depends(get_current_user)) -> Dict[str, Any]:
+    """Get database/Redis connection status (admin only)."""
+    _require_admin(current_user)
+    
+    logger.info("Admin user %s requested connection health metrics", current_user.id)
+    return get_connection_status()
