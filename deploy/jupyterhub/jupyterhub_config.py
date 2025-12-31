@@ -37,6 +37,8 @@ c.DockerSpawner.volumes = {
 c.DockerSpawner.environment = {
     "API_URL": os.environ.get("API_URL", "http://host.docker.internal:8000"),
     "JUPYTERHUB_SINGLEUSER_APP": "jupyter_server.serverapp.ServerApp",
+    # Y.js WebSocket server URL for real-time collaborative editing
+    "JUPYTER_COLLABORATION_YJS_URL": os.environ.get("YJS_SERVER_URL", "ws://yjs-server:1234"),
 }
 c.DockerSpawner.cmd = None
 
