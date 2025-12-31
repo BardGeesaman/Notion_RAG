@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, relationship
 from amprenta_rag.database.base import Base
 
 if TYPE_CHECKING:
-    from amprenta_rag.database.models import Experiment
+    from amprenta_rag.database.models import Experiment, ReviewSLA, ReviewCycle
 
 
 def generate_uuid() -> uuid.UUID:
@@ -174,8 +174,19 @@ class EntityReview(Base):
     status = Column(String(20), nullable=False)  # pending, approved, rejected, changes_requested
     comments = Column(Text, nullable=True)
     reviewed_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # SLA tracking fields
+    due_at = Column(DateTime(timezone=True), nullable=True)
+    sla_id = Column(UUID(as_uuid=True), ForeignKey("review_slas.id", ondelete="SET NULL"), nullable=True)
+    cycle_id = Column(UUID(as_uuid=True), ForeignKey("review_cycles.id", ondelete="SET NULL"), nullable=True)
+    reminder_sent_at = Column(DateTime(timezone=True), nullable=True)
+    escalated_at = Column(DateTime(timezone=True), nullable=True)
+    escalation_level = Column(Integer, default=0, nullable=False)
 
+    # Relationships
     reviewer: Mapped["User"] = relationship("User", backref="entity_reviews")
+    sla: Mapped[Optional["ReviewSLA"]] = relationship("ReviewSLA")
+    cycle: Mapped[Optional["ReviewCycle"]] = relationship("ReviewCycle")
 
     __table_args__ = (
         Index("ix_entity_reviews_entity", "entity_type", "entity_id"),

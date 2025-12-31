@@ -2025,3 +2025,50 @@ class EntityVersion(Base):
         UniqueConstraint("entity_type", "entity_id", "version_number", name="uq_entity_version"),
         Index("ix_entity_versions_lookup", "entity_type", "entity_id"),
     )
+
+
+class ReviewCycle(Base):
+    """Defines recurring review schedules for entities."""
+    
+    __tablename__ = "review_cycles"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(100), nullable=False)
+    entity_type = Column(String(50), nullable=False)  # dataset/experiment/compound/signature
+    frequency = Column(String(20), nullable=False)  # weekly/monthly/quarterly/yearly
+    day_of_week = Column(Integer, nullable=True)  # 0=Mon, 6=Sun (for weekly)
+    day_of_month = Column(Integer, nullable=True)  # 1-28 (for monthly/quarterly)
+    next_run_at = Column(DateTime(timezone=True), nullable=True)
+    reviewer_pool = Column(JSON, nullable=True)  # List of reviewer UUIDs
+    is_active = Column(Boolean, default=True, nullable=False)
+    program_id = Column(UUID(as_uuid=True), ForeignKey("programs.id", ondelete="SET NULL"), nullable=True)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    
+    program: Mapped[Optional["Program"]] = relationship("Program")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+    
+    __table_args__ = (
+        Index("ix_review_cycles_entity_type", "entity_type"),
+        Index("ix_review_cycles_next_run", "next_run_at"),
+    )
+
+
+class ReviewSLA(Base):
+    """Defines SLA rules for reviews with escalation chains."""
+    
+    __tablename__ = "review_slas"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(100), nullable=False)
+    entity_type = Column(String(50), nullable=True)  # null = applies to all
+    max_review_hours = Column(Integer, nullable=False, default=120)  # 5 days default
+    warning_threshold_pct = Column(Integer, nullable=False, default=75)
+    escalation_chain = Column(JSON, nullable=True)  # List of user UUIDs
+    is_default = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    
+    __table_args__ = (
+        Index("ix_review_slas_entity_type", "entity_type"),
+    )
