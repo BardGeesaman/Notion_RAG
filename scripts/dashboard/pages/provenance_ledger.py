@@ -94,29 +94,33 @@ def render_version_history_tab() -> None:
     versions = st.session_state.get("version_history")
     
     if versions:
-        if versions:
-            # Create dataframe with key columns
-            df_data = []
-            for version in versions:
-                df_data.append({
-                    "ID": version["id"],
-                    "Version": version["version_number"],
-                    "Checksum": version["checksum_sha256"][:16] + "...",
-                    "Created": version["created_at"],
-                    "Summary": version["change_summary"],
-                })
-            
-            df = pd.DataFrame(df_data)
-            st.dataframe(df, use_container_width=True, hide_index=True)
-            st.caption(f"Total versions: {len(versions)}")
-            
-            # Expandable version details
-            st.markdown("### Version Details")
-            for version in versions:
-                with st.expander(f"Version {version['version_number']} - {version['change_summary']}"):
-                    st.json(version["data_snapshot"])
-        else:
-            st.info("No versions found for this entity")
+        # Create dataframe with key columns
+        df_data = []
+        for version in versions:
+            df_data.append({
+                "ID": version["id"],
+                "Version": version["version_number"],
+                "Checksum": version["checksum_sha256"][:16] + "...",
+                "Created": version["created_at"],
+                "Summary": version["change_summary"],
+            })
+        
+        df = pd.DataFrame(df_data)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.caption(f"Total versions: {len(versions)}")
+        
+        # Expandable version details
+        st.markdown("### Version Details")
+        for version in versions:
+            with st.expander(f"Version {version['version_number']} - {version['change_summary']}"):
+                # Fetch full version detail on expand
+                try:
+                    detail = _api_get(f"/api/v1/versions/{version['id']}")
+                    st.json(detail.get("data_snapshot", {}))
+                except Exception as e:
+                    st.error(f"Failed to load version detail: {e}")
+    else:
+        st.info("No versions found for this entity")
 
 
 def render_compare_versions_tab() -> None:
@@ -185,24 +189,22 @@ def render_compare_versions_tab() -> None:
     comparison = st.session_state.get("version_comparison")
     
     if comparison:
-        diff = comparison.get("diff", {})
-        
         # Added fields
-        added = diff.get("added", {})
+        added = comparison.get("added", {})
         if added:
             st.markdown("### ✅ Added Fields")
             for key, value in added.items():
                 st.success(f"**{key}**: `{value}`")
         
         # Removed fields
-        removed = diff.get("removed", {})
+        removed = comparison.get("removed", {})
         if removed:
             st.markdown("### ❌ Removed Fields")
             for key, value in removed.items():
                 st.error(f"**{key}**: `{value}`")
         
         # Changed fields
-        changed = diff.get("changed", {})
+        changed = comparison.get("changed", {})
         if changed:
             st.markdown("### 🔄 Changed Fields")
             for key, changes in changed.items():
