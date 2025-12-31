@@ -492,7 +492,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Dashboard: Sync Monitor (jobs, conflicts, stats)
   - APScheduler integration for scheduled syncs
   - Phase 2: UniProt, KEGG, GEO incremental, auto-conflict resolution
-- ❌ Provenance Ledger + Checksums (audit trail, diffs)
+- ✅ Provenance Ledger + Checksums (2025-12-31) - 42 tests
+  - EntityVersion model with JSONB snapshots and SHA256 checksums
+  - 10 service functions (create, list, compare, rollback, etc.)
+  - 5 API endpoints: list, get, create, compare, restore
+  - Admin-only restore with confirm flag and audit logging
+  - Supports datasets and experiments (extensible)
+  - Dashboard UI deferred to future session
 - ❌ GEO Incremental Harvester + Metadata Normalization
 - ✅ ChEMBL/PubChem Bioactivity Sync (2025-12-24) - covered by External Sync Orchestrator MVP
 
