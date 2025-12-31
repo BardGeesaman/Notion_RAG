@@ -18,6 +18,11 @@ from typing import Dict, Optional, Set, Tuple
 import requests
 
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.services.id_mapping_service import (
+    get_mapping,
+    save_mapping,
+    ID_MAPPING_FALLBACK_ENABLED,
+)
 
 logger = get_logger(__name__)
 
@@ -40,16 +45,24 @@ def map_protein_to_uniprot(protein_id: str) -> Optional[str]:
     Returns:
         UniProt ID or None if mapping fails
     """
+    # 1. Check in-memory cache first (fast path)
     cache_key = ("uniprot", protein_id, "")
     if cache_key in _id_mapping_cache:
         return _id_mapping_cache[cache_key]
 
-    # Check if already a UniProt ID (format: [OPQ][0-9][A-Z0-9]{3}[0-9])
+    # 2. Check database
+    db_result = get_mapping("protein", protein_id, "uniprot")
+    if db_result:
+        _id_mapping_cache[cache_key] = db_result
+        return db_result
+
+    # 3. Check if already a UniProt ID (format: [OPQ][0-9][A-Z0-9]{3}[0-9])
     uniprot_pattern = r"^[OPQ][0-9][A-Z0-9]{3}[0-9]$|^[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$"
     if re.match(uniprot_pattern, protein_id):
         _id_mapping_cache[cache_key] = protein_id
         return protein_id
 
+    # 4. Fall back to API (existing logic)
     try:
         # Try UniProt mapping service
         # https://www.uniprot.org/help/id_mapping
@@ -87,6 +100,8 @@ def map_protein_to_uniprot(protein_id: str) -> Optional[str]:
                                             uniprot_id,
                                         )
                                         _id_mapping_cache[cache_key] = uniprot_id
+                                        # 5. Cache successful API result in database
+                                        save_mapping("protein", protein_id, "uniprot", uniprot_id, ttl_days=90)
                                         return uniprot_id
                                 break
 
@@ -128,10 +143,19 @@ def map_gene_to_kegg(gene_symbol: str, organism: str = "hsa") -> Optional[str]:
     Returns:
         KEGG gene ID (e.g., "hsa:7157") or None if mapping fails
     """
+    # 1. Check in-memory cache first (fast path)
     cache_key = ("kegg_gene", gene_symbol, organism)
     if cache_key in _id_mapping_cache:
         return _id_mapping_cache[cache_key]
 
+    # 2. Check database
+    organism_key = "human" if organism == "hsa" else organism
+    db_result = get_mapping("gene", gene_symbol, "kegg_gene", organism_key)
+    if db_result:
+        _id_mapping_cache[cache_key] = db_result
+        return db_result
+
+    # 3. Fall back to API (existing logic)
     try:
         # Use KEGG find API to search by gene symbol
         # https://www.kegg.jp/kegg/rest/keggapi.html
@@ -151,6 +175,8 @@ def map_gene_to_kegg(gene_symbol: str, organism: str = "hsa") -> Optional[str]:
                     kegg_id,
                 )
                 _id_mapping_cache[cache_key] = kegg_id
+                # Cache successful API result in database
+                save_mapping("gene", gene_symbol, "kegg_gene", kegg_id, organism_key, ttl_days=90)
                 return kegg_id
 
         logger.debug(
@@ -185,10 +211,19 @@ def map_protein_to_kegg(protein_id: str, organism: str = "hsa") -> Optional[str]
     Returns:
         KEGG gene ID or None if mapping fails
     """
+    # 1. Check in-memory cache first (fast path)
     cache_key = ("kegg_protein", protein_id, organism)
     if cache_key in _id_mapping_cache:
         return _id_mapping_cache[cache_key]
 
+    # 2. Check database
+    organism_key = "human" if organism == "hsa" else organism
+    db_result = get_mapping("protein", protein_id, "kegg_gene", organism_key)
+    if db_result:
+        _id_mapping_cache[cache_key] = db_result
+        return db_result
+
+    # 3. Fall back to API (existing logic)
     try:
         # First get UniProt ID
         uniprot_id = map_protein_to_uniprot(protein_id)
@@ -217,6 +252,8 @@ def map_protein_to_kegg(protein_id: str, organism: str = "hsa") -> Optional[str]
                         uniprot_id,
                     )
                     _id_mapping_cache[cache_key] = kegg_id
+                    # Cache successful API result in database
+                    save_mapping("protein", protein_id, "kegg_gene", kegg_id, organism_key, ttl_days=90)
                     return kegg_id
 
         logger.debug(
@@ -246,10 +283,18 @@ def map_metabolite_to_kegg(metabolite_name: str) -> Optional[str]:
     Returns:
         KEGG Compound ID (e.g., "cpd:C00031") or None if mapping fails
     """
+    # 1. Check in-memory cache first (fast path)
     cache_key = ("kegg_metabolite", metabolite_name, "")
     if cache_key in _id_mapping_cache:
         return _id_mapping_cache[cache_key]
 
+    # 2. Check database
+    db_result = get_mapping("metabolite", metabolite_name, "kegg_compound")
+    if db_result:
+        _id_mapping_cache[cache_key] = db_result
+        return db_result
+
+    # 3. Fall back to API (existing logic)
     try:
         # Use KEGG find API to search compound database
         url = f"https://rest.kegg.jp/find/compound/{metabolite_name}"
@@ -275,6 +320,8 @@ def map_metabolite_to_kegg(metabolite_name: str) -> Optional[str]:
                             compound_id,
                         )
                         _id_mapping_cache[cache_key] = compound_id
+                        # Cache successful API result in database
+                        save_mapping("metabolite", metabolite_name, "kegg_compound", compound_id, ttl_days=90)
                         return compound_id
 
             # If no exact match, return first result
@@ -287,6 +334,8 @@ def map_metabolite_to_kegg(metabolite_name: str) -> Optional[str]:
                     compound_id,
                 )
                 _id_mapping_cache[cache_key] = compound_id
+                # Cache successful API result in database
+                save_mapping("metabolite", metabolite_name, "kegg_compound", compound_id, ttl_days=90)
                 return compound_id
 
         logger.debug(

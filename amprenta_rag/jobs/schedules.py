@@ -53,6 +53,18 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute=0),  # Every hour at the top of the hour
         'options': {'queue': 'scheduled'},
     },
+    # Weekly UniProt ID mappings refresh (Sunday 2am)
+    'refresh-uniprot-mappings-weekly': {
+        'task': 'amprenta_rag.jobs.tasks.mapping_refresh.refresh_uniprot_mappings_task',
+        'schedule': crontab(hour=2, minute=0, day_of_week=0),  # Sunday 2:00 AM
+        'options': {'queue': 'scheduled'},
+    },
+    # Daily cleanup of expired ID mappings (3am)
+    'cleanup-expired-mappings-daily': {
+        'task': 'amprenta_rag.jobs.tasks.mapping_refresh.cleanup_expired_mappings_task',
+        'schedule': crontab(hour=3, minute=0),  # Daily 3:00 AM
+        'options': {'queue': 'scheduled'},
+    },
 }
 
 # Note: Dynamic harvest schedules are managed by database-driven periodic checks
