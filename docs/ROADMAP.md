@@ -370,7 +370,6 @@ Simple status legend:
   - Z' factor QC metrics and plate heatmaps
   - 4-tab dashboard (Upload/Segment/Features/Plate View)
   - 52 tests (10 schema + 14 CellPose + 10 API + 10 HTS integration + 8 E2E) - 100% pass rate
-- ❌ Power Analysis for Sample Size Estimation
 
 ---
 
@@ -652,7 +651,10 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Well detail panel with compound info
   - CSV export for selected wells
   - Auto-detect 96/384/1536-well formats
-- ❌ Program/Experiment Voila Dashboards
+- ✅ Program/Experiment Voila Dashboards (2025-12-25)
+  - experiment_dashboard.ipynb Voila template
+  - Pinned dashboards feature for Programs
+  - Pin-to-Program modal in program detail view
 
 ### Libraries
 - Networks: Cytoscape.js
