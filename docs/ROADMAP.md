@@ -256,10 +256,10 @@ Simple status legend:
 - ❌ OOP Refactoring Review (code structure improvements)
 
 ### ID Mapping Enhancements (P2 - Future)
-- ❌ Add MappingRefreshLog model to track last successful sync timestamps
-- ❌ Document KEGG API rate limits in code comments
-- ❌ Add loading spinners to Mapping Refresh dashboard during API calls
-- ❌ Integration test for UniProt HTTP download with mocked response
+- ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
+- ✅ KEGG API rate limit documentation in id_mapping.py (2025-01-01)
+- ✅ Loading spinners on Mapping Refresh dashboard (2025-01-01)
+- ✅ UniProt integration test with mocked HTTP (2025-01-01)
 
 ### Future Backlog (Migrated from NEXT_STEPS.md 2025-12-28)
 

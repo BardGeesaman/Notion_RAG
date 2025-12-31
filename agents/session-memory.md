@@ -2,6 +2,14 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **ID Mapping P2 Enhancements Complete**:
+  - **MappingRefreshLog model**: Track sync timestamps with status, records, errors
+  - **KEGG documentation**: Rate limits, licensing, compliance in code comments
+  - **Dashboard spinners**: Loading indicators on all API calls
+  - **UniProt test**: Integration test with mocked HTTP response
+  - **Tests**: 10 new (5 service + 2 E2E + 3 integration)
+  - **Commits**: 25a19ea, 25eeeca, d796511
+
 * [2025-01-01] – **UniProt/KEGG Mapping Refresh Complete**:
   - **IDMapping Model**: Database-backed caching with TTL support
   - **UniProt Adapter**: Bulk HTTPS sync for permanent mappings
