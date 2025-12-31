@@ -55,6 +55,8 @@ class TestProvenanceLedgerE2E:
         
         # Fill in entity ID to enable button
         entity_id_input.fill("123e4567-e89b-12d3-a456-426614174000")
+        page.keyboard.press("Tab")  # Trigger Streamlit rerun
+        page.wait_for_timeout(1000)  # Wait for rerun to complete
         expect(load_button).to_be_enabled()
     
     def test_version_detail_expands(self, page: Page):
@@ -68,6 +70,8 @@ class TestProvenanceLedgerE2E:
         # Fill form
         entity_id_input = version_history_tab.get_by_placeholder("UUID")
         entity_id_input.fill("123e4567-e89b-12d3-a456-426614174000")
+        page.keyboard.press("Tab")  # Trigger Streamlit rerun
+        page.wait_for_timeout(1000)  # Wait for rerun to complete
         
         # Click Load Versions button
         load_button = page.get_by_role("button", name="Load Versions")
@@ -113,6 +117,8 @@ class TestProvenanceLedgerE2E:
         
         # Fill in entity ID to enable button
         entity_id_input.fill("123e4567-e89b-12d3-a456-426614174000")
+        page.keyboard.press("Tab")  # Trigger Streamlit rerun
+        page.wait_for_timeout(1000)  # Wait for rerun to complete
         expect(compare_button).to_be_enabled()
     
     def test_restore_requires_confirmation(self, page: Page):
@@ -130,7 +136,7 @@ class TestProvenanceLedgerE2E:
             # If form is shown (user is admin), test form behavior
             version_id_input = page.get_by_placeholder("UUID of version to restore")
             reason_input = page.get_by_placeholder("Why are you restoring this version?")
-            confirm_checkbox = page.locator("input[type='checkbox']")
+            confirm_checkbox = page.locator("input[aria-label='I confirm this restore action']")
             restore_button = page.get_by_role("button", name="Restore")
             
             expect(version_id_input).to_be_visible()
@@ -140,12 +146,20 @@ class TestProvenanceLedgerE2E:
             
             # Fill form but don't check confirmation
             version_id_input.fill("123e4567-e89b-12d3-a456-426614174000")
+            page.keyboard.press("Tab")  # Trigger Streamlit rerun
+            page.wait_for_timeout(1000)  # Wait for rerun to complete
+            
             reason_input.fill("Test restore")
+            page.keyboard.press("Tab")  # Trigger Streamlit rerun
+            page.wait_for_timeout(1000)  # Wait for rerun to complete
+            
             expect(restore_button).to_be_disabled()  # Still disabled without checkbox
             
-            # Check confirmation using the actual checkbox input
-            if confirm_checkbox.count() > 0:
-                confirm_checkbox.check()
+            # Check confirmation - click on the label which triggers the checkbox
+            confirm_label = page.get_by_text("I confirm this restore action")
+            if confirm_label.count() > 0:
+                confirm_label.click()
+                page.wait_for_timeout(1000)  # Wait for state update
                 expect(restore_button).to_be_enabled()  # Now enabled
     
     def test_restore_requires_admin(self, page: Page):
