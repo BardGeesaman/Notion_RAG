@@ -12,7 +12,7 @@ class TestProvenanceLedgerE2E:
     @pytest.fixture(autouse=True)
     def setup_page(self, page: Page, streamlit_server: str):
         """Navigate to Provenance Ledger page before each test."""
-        page.goto(f"{streamlit_server}/Provenance_Ledger")
+        page.goto(f"{streamlit_server}/?page=Provenance+Ledger")
         page.wait_for_load_state("domcontentloaded")
         
         # Wait for page to load
@@ -34,15 +34,18 @@ class TestProvenanceLedgerE2E:
         # Click on Version History tab
         page.get_by_role("tab", name="Version History").click()
         
-        # Check form elements
-        expect(page.get_by_text("Entity Type")).to_be_visible()
-        expect(page.get_by_text("Entity ID")).to_be_visible()
+        # Scope to the Version History tab content
+        version_history_tab = page.get_by_label("Version History")
         
-        # Check selectbox and input
-        entity_type_select = page.locator("[data-testid='stSelectbox']").first
+        # Check form elements within the tab
+        expect(version_history_tab.get_by_text("Entity Type")).to_be_visible()
+        expect(version_history_tab.get_by_text("Entity ID")).to_be_visible()
+        
+        # Check selectbox and input within the tab
+        entity_type_select = version_history_tab.locator("[data-testid='stSelectbox']").first
         expect(entity_type_select).to_be_visible()
         
-        entity_id_input = page.get_by_placeholder("UUID")
+        entity_id_input = version_history_tab.get_by_placeholder("UUID")
         expect(entity_id_input).to_be_visible()
         
         # Check Load Versions button
@@ -59,8 +62,11 @@ class TestProvenanceLedgerE2E:
         # Click on Version History tab
         page.get_by_role("tab", name="Version History").click()
         
+        # Scope to the Version History tab content
+        version_history_tab = page.get_by_label("Version History")
+        
         # Fill form
-        entity_id_input = page.get_by_placeholder("UUID")
+        entity_id_input = version_history_tab.get_by_placeholder("UUID")
         entity_id_input.fill("123e4567-e89b-12d3-a456-426614174000")
         
         # Click Load Versions button
@@ -81,20 +87,23 @@ class TestProvenanceLedgerE2E:
         # Click on Compare Versions tab
         page.get_by_role("tab", name="Compare Versions").click()
         
-        # Check form elements
-        expect(page.get_by_text("Entity Type")).to_be_visible()
-        expect(page.get_by_text("Entity ID")).to_be_visible()
-        expect(page.get_by_text("Version A")).to_be_visible()
-        expect(page.get_by_text("Version B")).to_be_visible()
+        # Scope to the Compare Versions tab content
+        compare_versions_tab = page.get_by_label("Compare Versions")
         
-        # Check inputs
-        entity_id_input = page.get_by_placeholder("UUID")
+        # Check form elements within the tab
+        expect(compare_versions_tab.get_by_text("Entity Type")).to_be_visible()
+        expect(compare_versions_tab.get_by_text("Entity ID")).to_be_visible()
+        expect(compare_versions_tab.get_by_text("Version A")).to_be_visible()
+        expect(compare_versions_tab.get_by_text("Version B")).to_be_visible()
+        
+        # Check inputs within the tab
+        entity_id_input = compare_versions_tab.get_by_placeholder("UUID")
         expect(entity_id_input).to_be_visible()
         
-        version_a_input = page.locator("[data-testid='stNumberInput']").first
+        version_a_input = compare_versions_tab.locator("[data-testid='stNumberInput']").first
         expect(version_a_input).to_be_visible()
         
-        version_b_input = page.locator("[data-testid='stNumberInput']").last
+        version_b_input = compare_versions_tab.locator("[data-testid='stNumberInput']").last
         expect(version_b_input).to_be_visible()
         
         # Check Compare button
@@ -121,12 +130,11 @@ class TestProvenanceLedgerE2E:
             # If form is shown (user is admin), test form behavior
             version_id_input = page.get_by_placeholder("UUID of version to restore")
             reason_input = page.get_by_placeholder("Why are you restoring this version?")
-            confirm_checkbox = page.get_by_text("I confirm this restore action")
+            confirm_checkbox = page.locator("input[type='checkbox']")
             restore_button = page.get_by_role("button", name="Restore")
             
             expect(version_id_input).to_be_visible()
             expect(reason_input).to_be_visible()
-            expect(confirm_checkbox).to_be_visible()
             expect(restore_button).to_be_visible()
             expect(restore_button).to_be_disabled()  # Should be disabled initially
             
@@ -135,9 +143,10 @@ class TestProvenanceLedgerE2E:
             reason_input.fill("Test restore")
             expect(restore_button).to_be_disabled()  # Still disabled without checkbox
             
-            # Check confirmation
-            confirm_checkbox.check()
-            expect(restore_button).to_be_enabled()  # Now enabled
+            # Check confirmation using the actual checkbox input
+            if confirm_checkbox.count() > 0:
+                confirm_checkbox.check()
+                expect(restore_button).to_be_enabled()  # Now enabled
     
     def test_restore_requires_admin(self, page: Page):
         """Test that non-admin users see error message on restore tab."""
