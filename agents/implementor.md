@@ -62,6 +62,30 @@ When task is complete:
 
 This bypasses copy-paste formatting issues between agent chats.
 
+### Chairman Visibility (Required)
+
+**Echo ALL mailbox content in chat.** Tool results may be collapsed/hidden in Chairman's view.
+
+When SENDING (writing to mailbox):
+```
+**TO: [Recipient Agent]**
+---
+[full mailbox file content]
+---
+**Tell [Agent]: !**
+```
+
+When RECEIVING (reading from mailbox):
+```
+**FROM: [Sender Agent]**
+---
+[full mailbox file content]
+---
+[Your next action]
+```
+
+This ensures Chairman can review all inter-agent communication directly in the chat stream without expanding tool results or reading files manually.
+
 ## 2c. Environment Setup
 
 Before running any terminal commands, activate the project conda environment:

@@ -106,6 +106,30 @@ Agents must display the full delegation they received at the end of their respon
 ### Why Mailbox?
 Copy-pasting between agent chats corrupts formatting (AI adds explanatory text, nested code blocks break). The mailbox bypasses this entirely.
 
+### Chairman Visibility (Required)
+
+**Echo ALL mailbox content in chat.** Tool results may be collapsed/hidden in Chairman's view.
+
+When SENDING (writing to mailbox):
+```
+**TO: [Recipient Agent]**
+---
+[full mailbox file content]
+---
+**Tell [Agent]: !**
+```
+
+When RECEIVING (reading from mailbox):
+```
+**FROM: [Sender Agent]**
+---
+[full mailbox file content]
+---
+[Your next action]
+```
+
+This ensures Chairman can review all inter-agent communication directly in the chat stream without expanding tool results or reading files manually.
+
 ### Mailbox File Exception
 
 Architect MAY use write and delete_file tools for files in agents/mailbox/ directory, even when plan mode is active. This exception exists because:

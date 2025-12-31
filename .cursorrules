@@ -782,5 +782,29 @@ agents/mailbox/
 
 **Why Mailbox?** Copy-pasting between chats corrupts formatting (AI wraps code blocks in explanatory text). Mailbox bypasses this entirely.
 
+**Chairman Visibility (Required):**
+
+Echo ALL mailbox content in chat. Tool results may be collapsed/hidden in Chairman's view.
+
+When SENDING (writing to mailbox):
+```
+**TO: [Recipient Agent]**
+---
+[full mailbox file content]
+---
+**Tell [Agent]: !**
+```
+
+When RECEIVING (reading from mailbox):
+```
+**FROM: [Sender Agent]**
+---
+[full mailbox file content]
+---
+[Your next action]
+```
+
+This ensures Chairman can review all inter-agent communication directly in the chat stream without expanding tool results or reading files manually.
+
 **Session End:** Update `agents/session-memory.md` with features completed, decisions made, test metrics, and commit hashes.
 
