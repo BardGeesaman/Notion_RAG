@@ -2505,3 +2505,52 @@ class BiophysicalUploadResponse(BaseBiophysicalSchema):
     file_size_bytes: int
     processing_status: str
     message: str
+
+
+# ============================================================================
+# Inline Annotation schemas
+# ============================================================================
+
+
+class InlineAnnotationCreate(BaseSchema):
+    """Schema for creating an inline annotation."""
+    
+    entity_type: str = Field(..., description="Type of entity being annotated")
+    entity_id: UUID = Field(..., description="ID of the entity being annotated")
+    position_type: str = Field(..., description="Type of position (cell, column, row, field, range)")
+    position_data: Dict[str, Any] = Field(..., description="Position-specific data")
+    content: str = Field(..., description="Annotation content")
+    parent_id: Optional[UUID] = Field(None, description="Parent annotation ID for replies")
+
+
+class InlineAnnotationResponse(BaseSchema):
+    """Schema for inline annotation response."""
+    
+    id: UUID
+    entity_type: str
+    entity_id: UUID
+    position_type: str
+    position_data: Dict[str, Any]
+    content: str
+    status: str
+    parent_id: Optional[UUID]
+    created_by_id: Optional[UUID]
+    resolved_by_id: Optional[UUID]
+    created_at: datetime
+    updated_at: Optional[datetime]
+    resolved_at: Optional[datetime]
+
+
+class InlineAnnotationReplyCreate(BaseSchema):
+    """Schema for creating a reply to an annotation."""
+    
+    content: str = Field(..., description="Reply content")
+
+
+class InlineAnnotationListResponse(BaseSchema):
+    """Schema for inline annotation list response."""
+    
+    annotations: List[InlineAnnotationResponse]
+    total: int
+    open_count: int
+    resolved_count: int
