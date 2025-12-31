@@ -26,6 +26,7 @@ from sqlalchemy import (
     Table,
     Text,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, relationship
@@ -1901,4 +1902,27 @@ class ProjectExport(Base):
     # Index for cleanup queries
     __table_args__ = (
         Index("ix_project_exports_expires_at", "expires_at"),
+    )
+
+
+class EntityVersion(Base):
+    """Version snapshot for entity provenance tracking."""
+    
+    __tablename__ = "entity_versions"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    entity_type = Column(String(50), nullable=False, index=True)
+    entity_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    version_number = Column(Integer, nullable=False)
+    data_snapshot = Column(JSONB, nullable=False)
+    checksum_sha256 = Column(String(64), nullable=False)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    change_summary = Column(String(500), nullable=True)
+    
+    creator = relationship("User", foreign_keys=[created_by])
+    
+    __table_args__ = (
+        UniqueConstraint("entity_type", "entity_id", "version_number", name="uq_entity_version"),
+        Index("ix_entity_versions_lookup", "entity_type", "entity_id"),
     )
