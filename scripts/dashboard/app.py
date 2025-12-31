@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-import scripts.dashboard.core as core
+from . import core
 
 
 def main() -> None:
