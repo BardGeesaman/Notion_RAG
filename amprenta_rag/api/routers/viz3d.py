@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any, Dict
 from uuid import UUID
@@ -24,8 +25,9 @@ from amprenta_rag.database.session import db_session
 router = APIRouter(prefix="/viz3d", tags=["viz3d"])
 
 
-@router.post("/conformers", response_model=ConformerResponse)
-def get_conformers(payload: ConformerRequest) -> ConformerResponse:
+# Sync helper functions for compute-intensive operations
+def _sync_get_conformers(payload: ConformerRequest) -> ConformerResponse:
+    """Sync helper for RDKit conformer generation."""
     if not RDKIT_AVAILABLE:
         raise HTTPException(status_code=400, detail="RDKit not installed; 3D conformers unavailable")
 
@@ -45,8 +47,8 @@ def get_conformers(payload: ConformerRequest) -> ConformerResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/overlay", response_model=OverlayResponse)
-def overlay(payload: OverlayRequest) -> OverlayResponse:
+def _sync_overlay(payload: OverlayRequest) -> OverlayResponse:
+    """Sync helper for RDKit molecular overlay alignment."""
     if not RDKIT_AVAILABLE:
         raise HTTPException(status_code=400, detail="RDKit not installed; 3D overlays unavailable")
     if not payload.smiles_list:
@@ -71,9 +73,8 @@ def overlay(payload: OverlayRequest) -> OverlayResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/protein/{structure_id}")
-def get_protein_pdb(structure_id: UUID, file_type: str = "pdb") -> Dict[str, Any]:
-    """Return the PDB string for a ProteinStructure (best-effort file selection)."""
+def _sync_get_protein_pdb(structure_id: UUID, file_type: str = "pdb") -> Dict[str, Any]:
+    """Sync helper for protein PDB file I/O operations."""
     ft = str(file_type or "pdb").lower()
     with db_session() as db:
         stc = db.query(ProteinStructure).filter(ProteinStructure.id == structure_id).first()
@@ -113,6 +114,24 @@ def get_protein_pdb(structure_id: UUID, file_type: str = "pdb") -> Dict[str, Any
             "file_size_bytes": sf.file_size_bytes,
         }
         return {"pdb_string": pdb_str, "metadata": meta}
+
+
+@router.post("/conformers", response_model=ConformerResponse)
+async def get_conformers(payload: ConformerRequest) -> ConformerResponse:
+    """Generate 3D conformers using async thread pool for RDKit computations."""
+    return await asyncio.to_thread(_sync_get_conformers, payload)
+
+
+@router.post("/overlay", response_model=OverlayResponse)
+async def overlay(payload: OverlayRequest) -> OverlayResponse:
+    """Perform molecular overlay alignment using async thread pool for RDKit computations."""
+    return await asyncio.to_thread(_sync_overlay, payload)
+
+
+@router.get("/protein/{structure_id}")
+async def get_protein_pdb(structure_id: UUID, file_type: str = "pdb") -> Dict[str, Any]:
+    """Return the PDB string for a ProteinStructure using async thread pool for file I/O."""
+    return await asyncio.to_thread(_sync_get_protein_pdb, structure_id, file_type)
 
 
 __all__ = ["router"]
