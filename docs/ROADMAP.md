@@ -686,7 +686,15 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - 5 API endpoints at /api/v1/share-links/* (including PUBLIC /validate)
   - Share Links UI page with Create/Manage tabs
   - 22 tests (4 model + 7 service + 6 API + 5 E2E) - 100% pass rate
-- ❌ Collaborative Notebook Editing (RTC)
+- ✅ Collaborative Notebook Editing (RTC) (2025-12-31)
+  - Y.js WebSocket server for real-time document synchronization
+  - CRDT-based conflict-free collaborative editing
+  - JupyterHub integration with jupyter-collaboration extension
+  - Session management API with user invitations
+  - PostgreSQL persistence for document state
+  - Docker Compose deployment with container networking
+  - Comprehensive API: 3 endpoints (sessions, details, invites)
+  - 15 tests covering authentication, authorization, and functionality
 - ❌ Notebook Review Threads + Diffs
 - ❌ Scheduled Review Cycles & SLAs
 
