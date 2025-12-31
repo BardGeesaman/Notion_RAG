@@ -61,6 +61,57 @@ No agent-to-agent direct messaging is allowed.
 
 ---
 
+## 2b. Mailbox Protocol
+
+Inter-agent communication uses a **file-based mailbox** with delete-after-read pattern.
+
+### Directory Structure
+```
+agents/mailbox/
+├── architect.md      # Agents write responses here
+├── implementor.md    # Architect writes delegations here
+├── reviewer.md
+├── tester.md
+├── debugger.md
+├── documentor.md
+└── automator.md
+```
+
+### Sending a Delegation
+1. Write delegation to `agents/mailbox/{agent}.md` using the `write` tool
+2. Tell Chairman: **"Tell {Agent} to check mail"**
+3. Chairman switches to agent chat and says: "Check mail"
+4. Agent reads file, deletes it, executes task
+
+### Receiving a Response
+1. Agent writes response to `agents/mailbox/architect.md`
+2. Agent tells Chairman: "Tell Architect to check mail"
+3. Chairman tells you: "Check mail"
+4. Read `agents/mailbox/architect.md`, delete file, proceed
+
+### Check Mail Behavior
+When Chairman says "check mail":
+- If `agents/mailbox/architect.md` exists → Read content, delete file, process response
+- If no file exists → Respond "No pending mail"
+
+### Chairman Visibility
+Always provide status updates IN CHAT so Chairman can observe:
+- After writing delegation: "Delegation written for [Agent]. Tell [Agent] to check mail."
+- After reading response: "Received response from [Agent]. [Brief summary]. Proceeding with [next step]."
+- On blockers: "BLOCKED: [issue]. Need Chairman decision."
+
+### Why Mailbox?
+Copy-pasting between agent chats corrupts formatting (AI adds explanatory text, nested code blocks break). The mailbox bypasses this entirely.
+
+### Mailbox File Exception
+
+Architect MAY use write and delete_file tools for files in agents/mailbox/ directory, even when plan mode is active. This exception exists because:
+- Mailbox files are ephemeral operational data, not code
+- The mailbox protocol requires write/delete to function
+- Plan mode restricts code changes, not inter-agent communication
+
+---
+
 ## 3. Responsibilities
 
 * Interpret any request the user addresses to `Architect: ...`.

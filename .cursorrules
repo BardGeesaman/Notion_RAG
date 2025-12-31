@@ -729,6 +729,8 @@ The Architect is a **planning-only coordinator who NEVER modifies files**.
 - `run_terminal_cmd` - NO command execution
 - `edit_notebook` - NO notebook changes
 
+**Exception:** Architect MAY use `write` and `delete_file` for `agents/mailbox/*.md` files only (inter-agent communication).
+
 ### Communication Protocol
 
 1. **Chairman** (user) initiates requests to Architect
@@ -740,6 +742,45 @@ The Architect is a **planning-only coordinator who NEVER modifies files**.
 - All agent communication flows through Architect
 - No agent-to-agent direct messaging
 - Chairman may override any agent decision
+
+### Mailbox Protocol
+
+Inter-agent communication uses file-based mailbox with **delete-after-read** pattern:
+
+```
+agents/mailbox/
+├── architect.md      # Agents write responses here
+├── implementor.md    # Architect writes delegations here
+├── reviewer.md
+├── tester.md
+├── debugger.md
+├── documentor.md
+└── automator.md
+```
+
+**Sending Delegation (Architect → Agent):**
+1. Architect writes to `agents/mailbox/{agent}.md`
+2. Architect says: "Tell {Agent} to check mail"
+3. Chairman switches chat, says: "Check mail"
+4. Agent reads file, deletes it, executes task
+
+**Sending Response (Agent → Architect):**
+1. Agent writes to `agents/mailbox/architect.md`
+2. Agent says: "Tell Architect to check mail"
+3. Chairman switches chat, says: "Check mail"
+4. Architect reads file, deletes it, proceeds
+
+**Check Mail Behavior:**
+- File exists → Read, delete, process
+- No file → "No pending mail"
+
+**Chairman Visibility:** Agents must provide status updates IN CHAT so Chairman can observe progress:
+- On receiving mail: "Received delegation for [task]. Executing..."
+- On completion: "Task complete. Response written to mailbox. Tell Architect to check mail."
+- On blockers: "BLOCKED: [issue]. Need Chairman decision before proceeding."
+- On errors: Report the error in chat AND in the mailbox response
+
+**Why Mailbox?** Copy-pasting between chats corrupts formatting (AI wraps code blocks in explanatory text). Mailbox bypasses this entirely.
 
 **Session End:** Update `agents/session-memory.md` with features completed, decisions made, test metrics, and commit hashes.
 

@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 
 from sqlalchemy import func, text
 
-from amprenta_rag.database.models import IDMapping
+from amprenta_rag.database.models import IDMapping, MappingRefreshLog
 from amprenta_rag.database.session import db_session
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.sync.adapters.uniprot_mapping import sync_uniprot_mappings
@@ -373,3 +373,99 @@ def cleanup_expired_mappings() -> int:
     except Exception as e:
         logger.error(f"Error cleaning up expired mappings: {e}")
         return 0
+
+
+def log_refresh_start(source: str) -> MappingRefreshLog:
+    """
+    Log the start of a mapping refresh operation.
+    
+    Args:
+        source: The source being refreshed (e.g., "uniprot", "kegg")
+    
+    Returns:
+        The created MappingRefreshLog instance
+    """
+    try:
+        with db_session() as db:
+            log_entry = MappingRefreshLog(
+                source=source,
+                status="started",
+                started_at=datetime.now(timezone.utc)
+            )
+            db.add(log_entry)
+            db.commit()
+            db.refresh(log_entry)
+            
+            # Detach from session for return
+            db.expunge(log_entry)
+            
+            logger.info(f"Started refresh log for source: {source}, log_id: {log_entry.id}")
+            return log_entry
+            
+    except Exception as e:
+        logger.error(f"Error logging refresh start for {source}: {e}")
+        raise
+
+
+def log_refresh_complete(log_id: str, records: int, error: Optional[str] = None) -> None:
+    """
+    Log the completion of a mapping refresh operation.
+    
+    Args:
+        log_id: The ID of the refresh log to update
+        records: Number of records processed
+        error: Optional error message if the refresh failed
+    """
+    try:
+        with db_session() as db:
+            log_entry = db.query(MappingRefreshLog).filter(
+                MappingRefreshLog.id == log_id
+            ).first()
+            
+            if not log_entry:
+                logger.error(f"Refresh log not found: {log_id}")
+                return
+                
+            log_entry.completed_at = datetime.now(timezone.utc)
+            log_entry.records_processed = records
+            
+            if error:
+                log_entry.status = "failed"
+                log_entry.error_message = error
+                logger.error(f"Refresh failed for log {log_id}: {error}")
+            else:
+                log_entry.status = "success"
+                logger.info(f"Refresh completed successfully for log {log_id}: {records} records")
+                
+            db.commit()
+            
+    except Exception as e:
+        logger.error(f"Error logging refresh completion for {log_id}: {e}")
+
+
+def get_last_successful_refresh(source: str) -> Optional[datetime]:
+    """
+    Get the timestamp of the last successful refresh for a source.
+    
+    Args:
+        source: The source to check (e.g., "uniprot", "kegg")
+    
+    Returns:
+        The datetime of the last successful refresh, or None if no successful refresh found
+    """
+    try:
+        with db_session() as db:
+            last_refresh = db.query(MappingRefreshLog).filter(
+                MappingRefreshLog.source == source,
+                MappingRefreshLog.status == "success"
+            ).order_by(MappingRefreshLog.completed_at.desc()).first()
+            
+            if last_refresh:
+                return last_refresh.completed_at
+            else:
+                logger.debug(f"No successful refresh found for source: {source}")
+                return None
+                
+    except Exception as e:
+        logger.error(f"Error getting last successful refresh for {source}: {e}")
+        return None

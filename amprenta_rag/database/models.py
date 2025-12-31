@@ -1765,6 +1765,24 @@ class IDMapping(Base):
     )
 
 
+class MappingRefreshLog(Base):
+    """Log of ID mapping refresh operations for tracking sync timestamps."""
+    
+    __tablename__ = "mapping_refresh_logs"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    source = Column(String(50), nullable=False)  # uniprot, kegg
+    status = Column(String(20), nullable=False)  # success, failed
+    records_processed = Column(Integer, default=0)
+    started_at = Column(DateTime(timezone=True), nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    error_message = Column(Text, nullable=True)
+    
+    __table_args__ = (
+        Index("ix_mapping_refresh_logs_source_status", "source", "status"),
+    )
+
+
 gene_protein_map = Table(
     "gene_protein_map",
     Base.metadata,

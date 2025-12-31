@@ -37,7 +37,26 @@ FROM: Tester
 TO: Architect
 ```
 
-## 2b. Environment Setup
+## 2b. Mailbox Protocol
+
+When Chairman says **"check mail"**:
+1. Read `agents/mailbox/tester.md` using `read_file`
+2. If file exists → Read content, delete file with `delete_file`, execute task
+3. If no file → Respond "No pending mail"
+
+When task is complete:
+1. Write response to `agents/mailbox/architect.md` using `write` tool
+2. Tell Chairman: **"Tell Architect to check mail"**
+
+**Chairman Visibility:** Always provide status in chat:
+- On receiving mail: "Received test request for [item]. Running tests..."
+- On completion: "Tests complete. [X passed, Y failed]. Tell Architect to check mail."
+- On failures: Report failing tests in chat AND in mailbox response
+- On blockers: "BLOCKED: [issue]. Need Chairman decision."
+
+This bypasses copy-paste formatting issues between agent chats.
+
+## 2c. Environment Setup
 
 Before running any terminal commands, activate the project conda environment:
 source ~/miniconda3/etc/profile.d/conda.sh && conda activate myenv

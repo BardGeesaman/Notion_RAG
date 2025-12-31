@@ -10,6 +10,9 @@ from amprenta_rag.services.id_mapping_service import (
     get_mapping_stats,
     migrate_gene_protein_map,
     cleanup_expired_mappings,
+    log_refresh_start,
+    log_refresh_complete,
+    get_last_successful_refresh,
 )
 
 
@@ -278,6 +281,139 @@ class TestIDMappingService:
             assert mock_db.add.call_count == 6
             mock_db.commit.assert_called_once()
             assert result == 6
+    
+    @patch("amprenta_rag.services.id_mapping_service.db_session")
+    def test_log_refresh_start(self, mock_session):
+        """Test logging the start of a refresh operation."""
+        from amprenta_rag.database.models import MappingRefreshLog
+        
+        mock_db = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db
+        
+        # Mock the created log entry
+        mock_log = MappingRefreshLog()
+        mock_log.id = "test-log-id"
+        mock_log.source = "uniprot"
+        mock_log.status = "started"
+        mock_log.started_at = datetime.now(timezone.utc)
+        
+        mock_db.refresh = MagicMock()
+        mock_db.expunge = MagicMock()
+        
+        # Mock add/commit/refresh sequence
+        def mock_add(log_entry):
+            log_entry.id = "test-log-id"
+        
+        mock_db.add.side_effect = mock_add
+        
+        result = log_refresh_start("uniprot")
+        
+        # Verify database operations
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
+        mock_db.refresh.assert_called_once()
+        mock_db.expunge.assert_called_once()
+        
+        # Verify the log entry was created with correct values
+        added_log = mock_db.add.call_args[0][0]
+        assert added_log.source == "uniprot"
+        assert added_log.status == "started"
+        assert added_log.started_at is not None
+    
+    @patch("amprenta_rag.services.id_mapping_service.db_session")
+    def test_log_refresh_complete_success(self, mock_session):
+        """Test logging successful completion of a refresh operation."""
+        from amprenta_rag.database.models import MappingRefreshLog
+        
+        mock_db = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db
+        
+        # Mock existing log entry
+        mock_log = MappingRefreshLog()
+        mock_log.id = "test-log-id"
+        mock_log.source = "uniprot"
+        mock_log.status = "started"
+        
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_log
+        
+        log_refresh_complete("test-log-id", 1000)
+        
+        # Verify the log was updated correctly
+        assert mock_log.status == "success"
+        assert mock_log.records_processed == 1000
+        assert mock_log.completed_at is not None
+        assert mock_log.error_message is None
+        
+        mock_db.commit.assert_called_once()
+    
+    @patch("amprenta_rag.services.id_mapping_service.db_session")
+    def test_log_refresh_complete_failure(self, mock_session):
+        """Test logging failed completion of a refresh operation."""
+        from amprenta_rag.database.models import MappingRefreshLog
+        
+        mock_db = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db
+        
+        # Mock existing log entry
+        mock_log = MappingRefreshLog()
+        mock_log.id = "test-log-id"
+        mock_log.source = "uniprot"
+        mock_log.status = "started"
+        
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_log
+        
+        error_msg = "Connection timeout"
+        log_refresh_complete("test-log-id", 500, error_msg)
+        
+        # Verify the log was updated correctly
+        assert mock_log.status == "failed"
+        assert mock_log.records_processed == 500
+        assert mock_log.completed_at is not None
+        assert mock_log.error_message == error_msg
+        
+        mock_db.commit.assert_called_once()
+    
+    @patch("amprenta_rag.services.id_mapping_service.db_session")
+    def test_get_last_successful_refresh(self, mock_session):
+        """Test getting the last successful refresh timestamp."""
+        from amprenta_rag.database.models import MappingRefreshLog
+        
+        mock_db = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db
+        
+        # Mock successful refresh log
+        last_refresh_time = datetime.now(timezone.utc) - timedelta(days=1)
+        mock_log = MappingRefreshLog()
+        mock_log.completed_at = last_refresh_time
+        
+        mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = mock_log
+        
+        result = get_last_successful_refresh("uniprot")
+        
+        assert result == last_refresh_time
+        
+        # Verify query was built correctly
+        mock_db.query.assert_called_once()
+        filter_call = mock_db.query.return_value.filter
+        order_by_call = filter_call.return_value.order_by
+        first_call = order_by_call.return_value.first
+        
+        filter_call.assert_called_once()
+        order_by_call.assert_called_once()
+        first_call.assert_called_once()
+    
+    @patch("amprenta_rag.services.id_mapping_service.db_session")
+    def test_get_last_successful_refresh_none_found(self, mock_session):
+        """Test getting last successful refresh when none exists."""
+        mock_db = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db
+        
+        # Mock no refresh log found
+        mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = None
+        
+        result = get_last_successful_refresh("uniprot")
+        
+        assert result is None
 
 
 # Additional test for cleanup functionality

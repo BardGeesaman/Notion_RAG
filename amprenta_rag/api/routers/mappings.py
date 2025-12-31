@@ -1,5 +1,6 @@
 """ID Mapping API endpoints for lookup and management."""
 
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,6 +13,7 @@ from amprenta_rag.services.id_mapping_service import (
     get_mapping,
     get_mappings_batch,
     get_mapping_stats,
+    get_last_successful_refresh,
 )
 from amprenta_rag.jobs.tasks.mapping_refresh import refresh_uniprot_mappings_task
 from amprenta_rag.logging_utils import get_logger
@@ -38,6 +40,7 @@ class MappingRefreshResponse(BaseModel):
 
 
 class MappingStatusResponse(BaseModel):
+    uniprot_last_refresh: Optional[datetime]
     total_mappings: int
     mappings_by_type: Dict[str, int]
     expired_count: int
@@ -111,8 +114,10 @@ def get_status(
     logger.info(f"User {current_user.id} requested mapping status")
     
     stats = get_mapping_stats()
+    uniprot_last_refresh = get_last_successful_refresh("uniprot")
     
     return MappingStatusResponse(
+        uniprot_last_refresh=uniprot_last_refresh,
         total_mappings=stats.get("total_mappings", 0),
         mappings_by_type=stats.get("by_source_type", {}),
         expired_count=stats.get("expired_mappings", 0)

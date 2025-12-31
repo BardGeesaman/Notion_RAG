@@ -79,3 +79,7 @@ quants/
 # md_archive/  # REMOVED - now tracked
 
 deploy/aws/terraform/.terraform/
+
+# Agent mailbox (ephemeral inter-agent communication)
+agents/mailbox/*.md
+!agents/mailbox/README.md
