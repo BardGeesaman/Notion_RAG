@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs added)
 
 Simple status legend:
 - ✅ DONE
@@ -719,7 +719,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Docker Compose deployment with container networking
   - Comprehensive API: 3 endpoints (sessions, details, invites)
   - 15 tests covering authentication, authorization, and functionality
-- ❌ Notebook Review Threads + Diffs
+- ✅ Notebook Review Threads + Diffs (2025-01-01)
+  - ReviewThread, ReviewComment, NotebookSnapshot models
+  - Thread management service with nested comment support
+  - Notebook diff computation with cell-level comparison
+  - 5 REST API endpoints for threads and diff
+  - Dashboard UI: tabbed review queue with Discussion and Diff tabs
+  - 34 tests (6 model + 10 service + 12 API + 6 E2E)
 - ❌ Scheduled Review Cycles & SLAs
 
 ### Approved Features (2025-12-13) - ✅ Completed

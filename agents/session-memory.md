@@ -2,6 +2,16 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **Notebook Review Threads + Diffs Complete**:
+  - **ReviewThread, ReviewComment, NotebookSnapshot models**: Database schema for review workflows
+  - **Thread management service**: Nested comment support with parent-child relationships
+  - **Notebook diff computation**: Cell-level comparison with added/deleted/modified detection
+  - **REST API**: 5 endpoints for thread management and diff computation
+  - **Dashboard UI**: Tabbed review queue with Discussion and Diff tabs
+  - **Tests**: 34 tests (6 model + 10 service + 12 API + 6 E2E), 100% pass rate
+  - **P1 Fix**: Diff schema mismatch resolved during testing
+  - **Commits**: 0e0bbf3, f47f9bf, 6bc46e5, f27085a, f127562
+
 * [2025-01-01] – **ID Mapping P2 Enhancements Complete**:
   - **MappingRefreshLog model**: Track sync timestamps with status, records, errors
   - **KEGG documentation**: Rate limits, licensing, compliance in code comments
