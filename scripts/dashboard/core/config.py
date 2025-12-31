@@ -138,6 +138,7 @@ PAGE_REGISTRY = {
     "Job Queue": ("scripts.dashboard.pages.job_queue", "render_job_queue_page"),
     "Provenance Ledger": ("scripts.dashboard.pages.provenance_ledger", "render_provenance_ledger_page"),
     "System Admin": ("scripts.dashboard.pages.system_admin", "render_system_admin_page"),
+    "Mapping Refresh": ("scripts.dashboard.pages.mapping_refresh", "render_mapping_refresh_page"),
 }
 
 # Navigation groups for organized sidebar
@@ -155,7 +156,7 @@ PAGE_GROUPS = {
     "Analysis": ["Analysis Tools", "Experiment Planner", "RAG Query", "Statistical Analysis", "Quality Checks", "Literature Analysis", "Compare", "Timeline", "Data Quality", "Coverage Map", "Feature Recurrence", "Evidence Report", "Image Analysis", "Flow Cytometry", "Biophysical Assays", "Imaging Browser"],
     "Collaboration": ["Activity Feed", "Teams & Projects", "Share Links", "Variant Tracking"],
     "Reports": ["Executive Digests", "Spectral Matching", "Report History"],
-    "Admin": ["Company Settings", "Job Queue", "Audit Logs", "Audit Trail", "Provenance Ledger", "System Admin", "IP Portfolio", "Data Export", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Backup Admin", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion"],
+    "Admin": ["Company Settings", "Job Queue", "Audit Logs", "Audit Trail", "Provenance Ledger", "System Admin", "Mapping Refresh", "IP Portfolio", "Data Export", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Backup Admin", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion"],
     "Other": ["Lab Notebook", "Sample Inventory", "Chat", "Evaluation Wizard", "Emails", "RAG Chunks", "Protocols", "Q&A Tracker", "Relationships", "Generic Assays"],
 }
 

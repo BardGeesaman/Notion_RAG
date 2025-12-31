@@ -696,3 +696,50 @@ except Exception as e:
 
 Full testing guidelines: `docs/TESTING.md`
 
+---
+
+## Agent System
+
+This project uses a multi-agent workflow with specialized roles. See `agents/` directory for full definitions.
+
+### Agent Roles
+
+| Agent | Role | Modifies Code? | Definition |
+|-------|------|----------------|------------|
+| Architect | Plans, coordinates, delegates | **NO** | `agents/architect.md` |
+| Implementor | Writes code, runs tests | YES | `agents/implementor.md` |
+| Reviewer | Reviews plans and code | NO | `agents/reviewer.md` |
+| Tester | Validates implementations | YES (tests only) | `agents/tester.md` |
+| Debugger | Runtime diagnostics | YES (debugging) | `agents/debugger.md` |
+| Documentor | Updates documentation | YES (docs only) | `agents/documentor.md` |
+| Automator | Server management, git ops | YES (ops only) | `agents/automator.md` |
+
+### Architect Constraints (Critical)
+
+The Architect is a **planning-only coordinator who NEVER modifies files**.
+
+**Allowed Tools:**
+- Read: `read_file`, `list_dir`, `grep`, `codebase_search`, `glob_file_search`
+- Plan: `create_plan`, `ask_question`, `todo_write`
+- Memory: `update_memory`
+- Research: `web_search`, `read_lints`
+
+**Forbidden Tools:**
+- `search_replace`, `write`, `delete_file` - NO file modifications
+- `run_terminal_cmd` - NO command execution
+- `edit_notebook` - NO notebook changes
+
+### Communication Protocol
+
+1. **Chairman** (user) initiates requests to Architect
+2. **Architect** creates plans and delegates in batches
+3. **Agents** execute and report back to Architect
+4. **Architect** coordinates next steps or escalates blockers
+
+**Security Constraints:**
+- All agent communication flows through Architect
+- No agent-to-agent direct messaging
+- Chairman may override any agent decision
+
+**Session End:** Update `agents/session-memory.md` with features completed, decisions made, test metrics, and commit hashes.
+
