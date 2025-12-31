@@ -9,6 +9,7 @@ from amprenta_rag.config import get_config
 from amprenta_rag.database.models import BackupRecord, ProjectExport
 from amprenta_rag.database.session import db_session
 from amprenta_rag.jobs.celery_app import celery_app
+from amprenta_rag.notifications.service import create_admin_notification
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,13 @@ def run_database_backup(self, backup_type: str = "full") -> Dict[str, str]:
         if self.request.retries < self.max_retries:
             logger.info(f"Retrying backup (attempt {self.request.retries + 1}/{self.max_retries})")
             raise self.retry(exc=exc, countdown=300 * (2 ** self.request.retries))
+        
+        # Send notification to admin users after all retries exhausted
+        create_admin_notification(
+            title="Database Backup Failed",
+            message=f"Database backup failed after {self.max_retries} retries: {str(exc)}",
+            notification_type="critical",
+        )
         
         return {
             "status": "failed",
@@ -173,6 +181,14 @@ def verify_latest_backup() -> Dict[str, str]:
             }
         else:
             logger.error(f"Backup {backup_id} verification failed")
+            
+            # Send notification to admin users
+            create_admin_notification(
+                title="Backup Verification Failed",
+                message=f"Backup verification failed for backup {backup_id} created on {latest_backup.created_at.isoformat()}",
+                notification_type="critical",
+            )
+            
             return {
                 "status": "failed",
                 "backup_id": str(backup_id),
@@ -181,6 +197,14 @@ def verify_latest_backup() -> Dict[str, str]:
             
     except Exception as exc:
         logger.exception(f"Backup verification failed: {exc}")
+        
+        # Send notification to admin users
+        create_admin_notification(
+            title="Backup Verification Error",
+            message=f"Backup verification encountered an error: {str(exc)}",
+            notification_type="critical",
+        )
+        
         return {
             "status": "failed",
             "error": str(exc),
@@ -243,6 +267,22 @@ def backup_health_check() -> Dict[str, str]:
             health_info["checks"].append(f"Backup engine error: {e}")
         
         logger.info(f"Backup health check completed: {health_info['status']}")
+        
+        # Send notifications for warnings and errors
+        if health_info["status"] == "warning":
+            create_admin_notification(
+                title="Backup System Warning",
+                message=f"Backup system warning detected: {', '.join(health_info['checks'])}",
+                notification_type="warning",
+            )
+        
+        if health_info["status"] == "error":
+            create_admin_notification(
+                title="Backup System Error",
+                message=f"Backup system error: {health_info.get('error', 'Unknown error')}",
+                notification_type="critical",
+            )
+        
         return health_info
         
     except Exception as exc:

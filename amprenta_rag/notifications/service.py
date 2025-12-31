@@ -5,7 +5,8 @@ from typing import List, Optional, Any, cast
 
 from amprenta_rag.utils.uuid_utils import ensure_uuid
 
-from amprenta_rag.database.models import Notification
+from amprenta_rag.database.models import Notification, User
+from amprenta_rag.database.session import db_session
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -135,3 +136,57 @@ def mark_all_read(user_id: str, db) -> None:
 
     db.commit()
     logger.info("[NOTIFICATION] Marked %d notifications as read for user %s", updated, user_id)
+
+
+def create_admin_notification(
+    title: str,
+    message: Optional[str] = None,
+    notification_type: str = "warning",
+) -> List[Notification]:
+    """
+    Create notifications for all admin users.
+
+    Args:
+        title: Notification title
+        message: Optional notification message
+        notification_type: Type of notification (warning, critical, info)
+
+    Returns:
+        List of created Notification objects
+    """
+    notifications = []
+    
+    with db_session() as db:
+        # Get all admin users
+        admin_users = db.query(User).filter(User.role == "admin", User.is_active.is_(True)).all()
+        
+        if not admin_users:
+            logger.warning("[NOTIFICATION] No admin users found for system notification")
+            return notifications
+        
+        # Create notification for each admin
+        for admin in admin_users:
+            notification = Notification(
+                user_id=admin.id,
+                title=title,
+                message=message,
+                notification_type=notification_type,
+                is_read=False,
+            )
+            
+            db.add(notification)
+            notifications.append(notification)
+        
+        db.commit()
+        
+        # Refresh all notifications to get IDs
+        for notification in notifications:
+            db.refresh(notification)
+        
+        logger.info(
+            "[NOTIFICATION] Created %d admin notifications: %s",
+            len(notifications),
+            title
+        )
+    
+    return notifications
