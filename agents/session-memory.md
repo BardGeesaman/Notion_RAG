@@ -2,6 +2,16 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **Inline Annotations Complete**:
+  - **Model**: InlineAnnotation with position_type/position_data JSON for flexible anchoring
+  - **Position types**: cell, column, row, field, range (notebook/spreadsheet/form contexts)
+  - **Service**: POSITION_SCHEMAS validation, CRUD operations with position integrity checks
+  - **API**: 7 endpoints at /api/v1/annotations (create, list, get, update, delete, by-entity, by-position)
+  - **Dashboard**: annotation_panel.py component for inline comment UI
+  - **Integration**: lab_notebook.py and datasets.py pages with annotation support
+  - **Tests**: 36 tests (6 model + 13 service + 11 API + 6 E2E), 100% pass rate for service/API, 50% E2E (empty env)
+  - **Commits**: de066ef, 0d28b9b, fb30b36, 264bdf9
+
 * [2025-01-01] – **ADMET Model Training Complete**:
   - **ChEMBL download script**: scripts/download_chembl_sqlite.py for future expansion
   - **Training script**: scripts/train_admet_models.py with 9 ADMET endpoints

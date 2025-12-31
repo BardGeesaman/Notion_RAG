@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations added)
 
 Simple status legend:
 - ✅ DONE
@@ -83,7 +83,7 @@ Simple status legend:
   - Activity Feed page with filters and timeline
   - Integration: model training, experiments, notebook reviews
   - Phase 2: compound_added, hit_confirmed, status_changed integration
-- ✅ Comments + @Mentions (2025-12-27) - Inline Annotations deferred to Phase 2
+- ✅ Comments + @Mentions (2025-12-27)
   - Contextual commenting on entities (datasets, experiments, compounds, signatures)
   - @mention parsing and notification system
   - Edit and delete functionality (author-only)
@@ -92,6 +92,14 @@ Simple status legend:
   - Page integration (experiments, datasets, compounds)
   - API: 4 endpoints (create, list, update, delete)
   - 20 tests (8 service + 8 API + 4 E2E) - all passing
+- ✅ Inline Annotations (2025-01-01)
+  - InlineAnnotation model with position-anchored comments
+  - Position types: cell, column, row, field, range
+  - POSITION_SCHEMAS validation for data integrity
+  - 7 REST API endpoints at /api/v1/annotations
+  - Dashboard annotation panel component
+  - Lab notebook and datasets page integration
+  - 36 tests (6 model + 13 service + 11 API + 6 E2E)
 
 ### Visualization & UI/UX
 - ✅ Compound Portfolio Dashboard (2025-12-29)
