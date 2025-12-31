@@ -32,6 +32,9 @@ RUN chmod -R a+rX /opt/amprenta
 
 ENV PYTHONPATH="/opt/amprenta:${PYTHONPATH}"
 
+# Configure Y.js WebSocket server URL for collaborative editing
+ENV JUPYTER_COLLABORATION_YJS_URL=ws://yjs-server:1234
+
 # Install JupyterLab/Notebook via conda/mamba to keep Python packages and served static assets aligned.
 # Mixing pip-installed JupyterLab/Notebook on top of the base image can leave stale CORE_OUTPUT assets
 # in place and trigger federated-extension shared-module version conflicts in the browser.
@@ -61,7 +64,9 @@ RUN pip install --no-cache-dir \
     # yields reliable ipywidgets rendering for our dashboards (SAR Delta Explorer, HTS, etc.).
     "voila==0.4.6" \
     "nbclient==0.7.4" \
-    ipywidgets
+    ipywidgets \
+    # Jupyter collaboration for real-time collaborative editing
+    jupyter-collaboration
 
 # Enable voila as a Jupyter Server extension so /voila/render works under JupyterHub.
 RUN mkdir -p /etc/jupyter/jupyter_server_config.d && \
@@ -83,6 +88,22 @@ RUN mkdir -p /etc/jupyter/jupyter_server_config.d && \
       '  }' \
       '}' \
     > /etc/jupyter/jupyter_server_config.d/voila.json
+
+# Enable jupyter-collaboration extension for real-time collaborative editing
+RUN printf '%s\n' \
+      '{' \
+      '  "ServerApp": {' \
+      '    "jpserver_extensions": {' \
+      '      "jupyter_collaboration": true' \
+      '    }' \
+      '  },' \
+      '  "CollaborationApp": {' \
+      '    "yjs_url": "ws://yjs-server:1234",' \
+      '    "document_cleanup_delay": 60,' \
+      '    "file_poll_interval": 1' \
+      '  }' \
+      '}' \
+    > /etc/jupyter/jupyter_server_config.d/collaboration.json
 
 WORKDIR /home/jovyan
 
