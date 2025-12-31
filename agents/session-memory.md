@@ -1,5 +1,17 @@
 # Session Memory
 
+## January 1, 2025 - Deferred Dashboard UIs Complete
+
+* [2025-01-01] – **Deferred Dashboard UIs Complete**:
+  - **Provenance Ledger Dashboard**: 3-tab version history browser with diff comparison and admin restore
+  - **System Admin Dashboard**: 4-tab system monitoring (health, caches, queues, connections)
+  - **Backend Fix**: rollback_to_version signature mismatch resolved
+  - **Tests**: 14 tests (2 unit + 12 E2E), 100% pass rate
+  - **Commits**: ~8 commits
+  - **Plan**: /Users/bard/.cursor/plans/deferred_dashboard_uis_ac2a435b.plan.md
+
+---
+
 ## December 29, 2025 - Epic Implementation Sprint (FINAL)
 
 **Combined Session Metrics:**

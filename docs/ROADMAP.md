@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-12-30 (Generative Chemistry, Navigation & UI Organization, Image Analysis Pipeline added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard added)
 
 Simple status legend:
 - ✅ DONE
@@ -352,7 +352,15 @@ Simple status legend:
   - Cache management API: list stats, clear specific, clear all (4 endpoints)
   - Health monitoring API: system metrics, queue stats, connections (3 endpoints)
   - Admin-only access with audit logging
-  - Dashboard UI deferred to future session
+- ✅ Provenance Ledger Dashboard (2025-01-01) - 6 E2E tests
+  - 3 tabs: Version History, Compare Versions, Restore Version
+  - Entity version browsing with diff comparison
+  - Admin-only restore functionality with audit logging
+- ✅ System Administration Dashboard (2025-01-01) - 6 E2E tests
+  - 4 tabs: System Health, Cache Management, Queue Health, Connections
+  - CPU/Memory/Disk monitoring with threshold warnings
+  - Cache clearing with confirmation
+  - Celery queue and Redis/PostgreSQL connection status
 
 **Future ML/AI Innovations:**
 - ✅ Generative Chemistry (De Novo Design) (2025-12-30)
@@ -497,7 +505,10 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - 5 API endpoints: list, get, create, compare, restore
   - Admin-only restore with confirm flag and audit logging
   - Supports datasets and experiments (extensible)
-  - Dashboard UI deferred to future session
+- ✅ Provenance Ledger Dashboard (2025-01-01) - 6 E2E tests
+  - 3 tabs: Version History, Compare Versions, Restore Version
+  - Entity version browsing with diff comparison
+  - Admin-only restore functionality with audit logging
 - ✅ GEO Incremental Harvester + Metadata Normalization (2025-12-31) - 19 tests
   - GEOSyncAdapter composing with GEORepository for NCBI-compliant rate limiting
   - MDAT filter for true incremental sync (modification date, not just publication)
