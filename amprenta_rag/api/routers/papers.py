@@ -7,6 +7,7 @@ deduplication, and retrieving paper content.
 
 from __future__ import annotations
 
+import asyncio
 from typing import List, Optional
 from uuid import UUID
 
@@ -29,6 +30,92 @@ from amprenta_rag.logging_utils import get_logger
 logger = get_logger(__name__)
 
 router = APIRouter()
+
+
+# Sync helper functions for external API calls
+def _sync_search_papers(query: str, source: str, limit: int, offset: int):
+    """Sync helper for paper search via external APIs."""
+    if source.lower() == "pubmed":
+        repo = PubMedRepository()
+        pmids = repo.search_papers(query, max_results=limit + offset)
+        paginated_pmids = pmids[offset : offset + limit]
+        
+        results = []
+        for pmid in paginated_pmids:
+            metadata = repo.fetch_metadata(pmid)
+            if metadata:
+                results.append({
+                    "paper_id": metadata.paper_id,
+                    "title": metadata.title,
+                    "abstract": metadata.abstract,
+                    "authors": metadata.authors,
+                    "journal": metadata.journal,
+                    "year": metadata.year,
+                    "doi": metadata.doi,
+                    "pmid": metadata.pmid,
+                    "url": metadata.url,
+                })
+        
+        return {"results": results, "total": len(pmids)}
+    else:
+        raise ValueError(f"Unsupported source: {source}")
+
+
+def _sync_fetch_paper_metadata(pmid: str = None, doi: str = None):
+    """Sync helper for fetching paper metadata from PubMed."""
+    repo = PubMedRepository()
+    
+    if pmid:
+        return repo.fetch_metadata(pmid)
+    elif doi:
+        # Search by DOI to get PMID, then fetch
+        pmids = repo.search_papers(f'"{doi}"[DOI]', max_results=1)
+        if not pmids:
+            return None
+        return repo.fetch_metadata(pmids[0])
+    else:
+        return None
+
+
+def _sync_enrich_with_semantic_scholar(paper_id: str, fetch_citations: bool, fetch_references: bool):
+    """Sync helper for Semantic Scholar enrichment."""
+    s2_repo = SemanticScholarRepository()
+    
+    result = {
+        "metadata": None,
+        "citations": [],
+        "references": []
+    }
+    
+    try:
+        # Fetch metadata
+        metadata = s2_repo.fetch_metadata(paper_id)
+        result["metadata"] = metadata
+        
+        # Fetch citations if requested
+        if fetch_citations:
+            citations = s2_repo.get_citations(paper_id, limit=100)
+            result["citations"] = citations
+        
+        # Fetch references if requested  
+        if fetch_references:
+            references = s2_repo.get_references(paper_id, limit=100)
+            result["references"] = references
+            
+    except Exception as e:
+        logger.warning("Semantic Scholar API call failed: %r", e)
+        
+    return result
+
+
+def _sync_enrich_with_openalex(work_id: str):
+    """Sync helper for OpenAlex enrichment."""
+    try:
+        oa_repo = OpenAlexRepository()
+        return oa_repo.get_work(work_id)
+    except Exception as e:
+        logger.warning("OpenAlex API call failed: %r", e)
+        return None
 
 
 # Pydantic schemas
@@ -208,34 +295,24 @@ async def search_papers(
         )
 
     try:
-        repo = PubMedRepository()
-        pmids = repo.search_papers(request.query, max_results=request.limit + request.offset)
-
-        # Apply pagination
-        paginated_pmids = pmids[request.offset : request.offset + request.limit]
-
-        # Fetch metadata for each result
-        results = []
-        for pmid in paginated_pmids:
-            metadata = repo.fetch_metadata(pmid)
-            if metadata:
-                results.append(
-                    PaperSearchResult(
-                        paper_id=metadata.paper_id,
-                        title=metadata.title,
-                        abstract=metadata.abstract,
-                        authors=metadata.authors,
-                        journal=metadata.journal,
-                        year=metadata.year,
-                        doi=metadata.doi,
-                        pmid=metadata.pmid,
-                        url=metadata.url,
-                    )
-                )
+        # Search papers using async thread pool
+        search_result = await asyncio.to_thread(
+            _sync_search_papers,
+            request.query,
+            request.source,
+            request.limit,
+            request.offset
+        )
+        
+        # Convert to response objects
+        results = [
+            PaperSearchResult(**result_data) 
+            for result_data in search_result["results"]
+        ]
 
         return PaperSearchResponse(
             results=results,
-            total=len(pmids),
+            total=search_result["total"],
             offset=request.offset,
             limit=request.limit,
         )
@@ -283,21 +360,13 @@ async def ingest_paper(
             chunks_created=0,
         )
 
-    # Fetch metadata from PubMed
+    # Fetch metadata from PubMed using async thread pool
     try:
-        repo = PubMedRepository()
-
-        # Search by PMID if provided, otherwise try DOI
-        if request.pmid:
-            metadata = repo.fetch_metadata(request.pmid)
-        elif request.doi:
-            # Search by DOI to get PMID, then fetch
-            pmids = repo.search_papers(f'"{request.doi}"[DOI]', max_results=1)
-            if not pmids:
-                raise HTTPException(status_code=404, detail="Paper not found")
-            metadata = repo.fetch_metadata(pmids[0])
-        else:
-            raise HTTPException(status_code=400, detail="PMID or DOI required")
+        metadata = await asyncio.to_thread(
+            _sync_fetch_paper_metadata,
+            request.pmid,
+            request.doi
+        )
 
         if not metadata:
             raise HTTPException(status_code=404, detail="Paper not found")
@@ -495,8 +564,7 @@ async def enrich_paper(
     citations_added = 0
     references_added = 0
     
-    # Try Semantic Scholar enrichment
-    s2_repo = SemanticScholarRepository()
+    # Try Semantic Scholar enrichment using async thread pool
     s2_paper_id = None
     
     try:
@@ -507,81 +575,79 @@ async def enrich_paper(
             s2_paper_id = f"PMID:{literature.pmid}"
         
         if s2_paper_id:
-            s2_metadata = s2_repo.fetch_metadata(s2_paper_id)
-            if s2_metadata:
-                literature.semantic_scholar_id = s2_metadata.paper_id
-                # Update citation counts if available in S2 metadata
-                logger.info("[PAPERS_API] Enriched with Semantic Scholar: %s", s2_metadata.paper_id)
-        
-        # Fetch citations if requested (papers that CITE our paper)
-        if request.fetch_citations and s2_paper_id:
-            try:
-                citations = s2_repo.get_citations(s2_paper_id, limit=100)
-                for cite in citations:
-                    citing_paper_s2_id = cite.get("paperId")
-                    if citing_paper_s2_id:
-                        cite_title = cite.get("title", "")
-                        # Check if we already have this citation (avoid duplicates by title)
-                        existing = db.query(PaperCitation).filter(
-                            PaperCitation.cited_paper_id == paper_id,
-                            PaperCitation.cited_title == cite_title,
-                        ).first()
-                        
-                        if not existing and cite_title:
-                            # External paper cites our paper
-                            external_ids = cite.get("externalIds", {}) or {}
-                            citation = PaperCitation(
-                                citing_paper_id=None,  # External paper not in system yet
-                                cited_paper_id=paper_id,  # Our paper being cited
-                                cited_doi=external_ids.get("DOI"),
-                                cited_title=cite_title,
-                                citation_context="",  # S2 citations API doesn't include context
-                                is_influential=cite.get("isInfluential", False),
-                            )
-                            db.add(citation)
-                            citations_added += 1
-            except Exception as e:
-                logger.warning("[PAPERS_API] Failed to fetch S2 citations: %r", e)
-        
-        # Fetch references if requested (papers that our paper CITES)
-        if request.fetch_references and s2_paper_id:
-            try:
-                references = s2_repo.get_references(s2_paper_id, limit=100)
-                for ref in references:
-                    cited_paper_s2_id = ref.get("paperId")
-                    if cited_paper_s2_id:
-                        ref_title = ref.get("title", "")
-                        # Check if we already have this reference (avoid duplicates by title)
-                        existing = db.query(PaperCitation).filter(
-                            PaperCitation.citing_paper_id == paper_id,
-                            PaperCitation.cited_title == ref_title,
-                        ).first()
-                        
-                        if not existing and ref_title:
-                            # Our paper cites an external paper
-                            external_ids = ref.get("externalIds", {}) or {}
-                            reference = PaperCitation(
-                                citing_paper_id=paper_id,  # Our paper doing the citing
-                                cited_paper_id=None,  # External paper not in system yet
-                                cited_doi=external_ids.get("DOI"),
-                                cited_title=ref_title,
-                                citation_context=None,  # References don't have context
-                                is_influential=ref.get("isInfluential", False),
-                            )
-                            db.add(reference)
-                            references_added += 1
-            except Exception as e:
-                logger.warning("[PAPERS_API] Failed to fetch S2 references: %r", e)
+            s2_result = await asyncio.to_thread(
+                _sync_enrich_with_semantic_scholar,
+                s2_paper_id,
+                request.fetch_citations,
+                request.fetch_references
+            )
+            
+            # Process metadata
+            if s2_result["metadata"]:
+                literature.semantic_scholar_id = s2_result["metadata"].paper_id
+                logger.info("[PAPERS_API] Enriched with Semantic Scholar: %s", s2_result["metadata"].paper_id)
+            
+            # Process citations (papers that CITE our paper)
+            for cite in s2_result["citations"]:
+                citing_paper_s2_id = cite.get("paperId")
+                if citing_paper_s2_id:
+                    cite_title = cite.get("title", "")
+                    # Check if we already have this citation (avoid duplicates by title)
+                    existing = db.query(PaperCitation).filter(
+                        PaperCitation.cited_paper_id == paper_id,
+                        PaperCitation.cited_title == cite_title,
+                    ).first()
+                    
+                    if not existing and cite_title:
+                        # External paper cites our paper
+                        external_ids = cite.get("externalIds", {}) or {}
+                        citation = PaperCitation(
+                            citing_paper_id=None,  # External paper not in system yet
+                            cited_paper_id=paper_id,  # Our paper being cited
+                            cited_doi=external_ids.get("DOI"),
+                            cited_title=cite_title,
+                            citation_context="",  # S2 citations API doesn't include context
+                            is_influential=cite.get("isInfluential", False),
+                        )
+                        db.add(citation)
+                        citations_added += 1
+            
+            # Process references (papers that our paper CITES)
+            for ref in s2_result["references"]:
+                cited_paper_s2_id = ref.get("paperId")
+                if cited_paper_s2_id:
+                    ref_title = ref.get("title", "")
+                    # Check if we already have this reference (avoid duplicates by title)
+                    existing = db.query(PaperCitation).filter(
+                        PaperCitation.citing_paper_id == paper_id,
+                        PaperCitation.cited_title == ref_title,
+                    ).first()
+                    
+                    if not existing and ref_title:
+                        # Our paper cites an external paper
+                        external_ids = ref.get("externalIds", {}) or {}
+                        reference = PaperCitation(
+                            citing_paper_id=paper_id,  # Our paper doing the citing
+                            cited_paper_id=None,  # External paper not in system yet
+                            cited_doi=external_ids.get("DOI"),
+                            cited_title=ref_title,
+                            citation_context=None,  # References don't have context
+                            is_influential=ref.get("isInfluential", False),
+                        )
+                        db.add(reference)
+                        references_added += 1
     
     except Exception as e:
         logger.warning("[PAPERS_API] Semantic Scholar enrichment failed: %r", e)
     
-    # Try OpenAlex enrichment
+    # Try OpenAlex enrichment using async thread pool
     try:
-        oa_repo = OpenAlexRepository()
         if literature.doi:
             oa_work_id = f"https://doi.org/{literature.doi}"
-            oa_metadata = oa_repo.get_work(oa_work_id)
+            oa_metadata = await asyncio.to_thread(
+                _sync_enrich_with_openalex,
+                oa_work_id
+            )
             if oa_metadata:
                 literature.openalex_id = oa_metadata.paper_id
                 logger.info("[PAPERS_API] Enriched with OpenAlex: %s", oa_metadata.paper_id)
