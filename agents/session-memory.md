@@ -2,6 +2,18 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **Scheduled Review Cycles & SLAs Complete**:
+  - **ReviewCycle and ReviewSLA models**: Database schema for periodic review workflows and SLA tracking
+  - **SLA enforcement**: Warning thresholds and escalation chains for overdue reviews
+  - **Review cycle scheduling**: Weekly/monthly/quarterly/yearly recurring cycles
+  - **Celery tasks**: Hourly SLA checks, daily cycle processing with automatic review creation
+  - **REST API**: 13 endpoints for cycle and SLA management
+  - **Dashboard UI**: 4-tab SLA Dashboard (Overview, Reviews, Cycles, Settings)
+  - **Multi-tenancy**: Program-scoped cycles for proper data isolation
+  - **Tests**: 33 tests (6 model + 11 service + 10 API + 6 E2E), 100% pass rate
+  - **P1 Fix**: program_id scope on ReviewCycle (applied during planning)
+  - **Commits**: 6473541, e384ce1, 7ac1b97, c5d5199
+
 * [2025-01-01] – **Notebook Review Threads + Diffs Complete**:
   - **ReviewThread, ReviewComment, NotebookSnapshot models**: Database schema for review workflows
   - **Thread management service**: Nested comment support with parent-child relationships

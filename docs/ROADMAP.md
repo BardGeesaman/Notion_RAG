@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs added)
 
 Simple status legend:
 - ✅ DONE
@@ -726,7 +726,15 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - 5 REST API endpoints for threads and diff
   - Dashboard UI: tabbed review queue with Discussion and Diff tabs
   - 34 tests (6 model + 10 service + 12 API + 6 E2E)
-- ❌ Scheduled Review Cycles & SLAs
+- ✅ Scheduled Review Cycles & SLAs (2025-01-01)
+  - ReviewCycle and ReviewSLA database models
+  - SLA enforcement with warning thresholds and escalation chains
+  - Review cycle scheduling (weekly/monthly/quarterly/yearly)
+  - Celery tasks: hourly SLA checks, daily cycle processing
+  - 13 REST API endpoints for management
+  - 4-tab SLA Dashboard (Overview, Reviews, Cycles, Settings)
+  - Program-scoped cycles for multi-tenancy
+  - 33 tests (6 model + 11 service + 10 API + 6 E2E)
 
 ### Approved Features (2025-12-13) - ✅ Completed
 - ✅ HTS QC & Triage Assistant (3-5 days)
