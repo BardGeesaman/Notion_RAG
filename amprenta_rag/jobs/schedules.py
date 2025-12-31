@@ -65,6 +65,18 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(hour=3, minute=0),  # Daily 3:00 AM
         'options': {'queue': 'scheduled'},
     },
+    # Hourly SLA check (every hour at :30)
+    'hourly-sla-check': {
+        'task': 'amprenta_rag.jobs.tasks.review_sla.check_overdue_reviews_task',
+        'schedule': crontab(minute=30),
+        'options': {'queue': 'scheduled'},
+    },
+    # Daily cycle processing (9 AM UTC)
+    'daily-cycle-processing': {
+        'task': 'amprenta_rag.jobs.tasks.review_sla.process_due_cycles_task',
+        'schedule': crontab(hour=9, minute=0),
+        'options': {'queue': 'scheduled'},
+    },
 }
 
 # Note: Dynamic harvest schedules are managed by database-driven periodic checks
