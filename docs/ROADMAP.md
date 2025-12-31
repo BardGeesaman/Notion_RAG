@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh added)
 
 Simple status legend:
 - ✅ DONE
@@ -525,7 +525,14 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
 - ✅ ChEMBL/PubChem Bioactivity Sync (2025-12-24) - covered by External Sync Orchestrator MVP
 
 ### Tier 2 - Strategic
-- ❌ UniProt/KEGG Mapping Refresh
+- ✅ UniProt/KEGG Mapping Refresh (2025-01-01)
+  - IDMapping database model with TTL-based caching
+  - UniProt bulk sync adapter (HTTPS download)
+  - KEGG on-demand caching (90-day TTL, licensing compliant)
+  - Celery tasks: weekly UniProt refresh, daily expired cleanup
+  - REST API: 5 endpoints (status, stats, lookup, batch, refresh)
+  - Dashboard: 4-tab UI (Status, Statistics, Lookup, Jobs)
+  - 39 tests (13 service + 9 task + 10 API + 7 E2E)
 - ✅ Repository Subscriptions & Alerts (saved queries) - 2024-12-18
 - ✅ External Data Catalog Page (health, freshness dashboard) - 2024-12-18
 

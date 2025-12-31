@@ -1,6 +1,16 @@
 # Session Memory
 
-## January 1, 2025 - Deferred Dashboard UIs Complete
+## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
+
+* [2025-01-01] – **UniProt/KEGG Mapping Refresh Complete**:
+  - **IDMapping Model**: Database-backed caching with TTL support
+  - **UniProt Adapter**: Bulk HTTPS sync for permanent mappings
+  - **KEGG Strategy**: On-demand caching (90-day TTL) per licensing requirements
+  - **Celery Tasks**: Weekly UniProt refresh (Sun 2am), daily cleanup (3am)
+  - **API Endpoints**: 5 REST endpoints for mapping management
+  - **Dashboard**: Mapping Refresh page with 4 tabs
+  - **Tests**: 39 tests (100% pass rate)
+  - **Commits**: 4cd8223, 123c13f, 27c95f2, ca0493b, 624cbe3
 
 * [2025-01-01] – **Deferred Dashboard UIs Complete**:
   - **Provenance Ledger Dashboard**: 3-tab version history browser with diff comparison and admin restore
