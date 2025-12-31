@@ -115,6 +115,22 @@ def _user_to_collaboration_user(user: User, is_online: bool = True) -> Collabora
     )
 
 
+# ============================================================================
+# Mock Functions - TODO: Replace with Real Y.js Server Integration
+# ============================================================================
+# 
+# TODO: Replace mock functions with real Y.js server integration
+# These functions simulate session state until Y.js server HTTP API is implemented
+# See: https://github.com/yjs/y-websocket for server-side state access patterns
+#
+# Real implementation would:
+# 1. Query Y.js server for active document sessions via HTTP API
+# 2. Retrieve participant lists and session metadata from Y.js room state
+# 3. Send invitations through Y.js server notification system
+# 4. Integrate with PostgreSQL for persistent session and invitation records
+# ============================================================================
+
+
 def _mock_get_active_sessions(user_id: UUID) -> List[SessionSummary]:
     """Mock function to get active collaboration sessions for a user.
     

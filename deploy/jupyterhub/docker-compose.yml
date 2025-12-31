@@ -24,6 +24,9 @@ services:
     restart: unless-stopped
 
   # Y.js WebSocket server for collaborative editing
+  # NOTE: Requires postgres service from main docker-compose.yml
+  # Run main compose first: docker-compose -f docker-compose.yml up -d postgres
+  # The yjs-server connects to postgres on the jupyterhub-network
   yjs-server:
     build:
       context: ./yjs-server
