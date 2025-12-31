@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training added)
 
 Simple status legend:
 - ✅ DONE
@@ -610,7 +610,13 @@ JSON: `{entityType, entityId, campaignId?, plateId?, version, ts}`
   - Applicability domain checker (Tanimoto)
   - API endpoint POST /api/admet/predict
   - ADMET Predictor dashboard (3 tabs)
-  - Phase 2: Train models with ChEMBL data (deferred)
+- ✅ ADMET Model Training (2025-01-01)
+  - 9 ADMET endpoints (hERG, LogS, LogP, CYP3A4, CYP2D6, CYP2C9, BBB, Caco-2, Clearance)
+  - ChEMBL download script for future expansion
+  - TDC datasets for training
+  - BootstrapEnsemble + CalibrationWrapper + ApplicabilityChecker
+  - Dashboard: Categorized endpoint selector (Toxicity/Physicochemical/ADME)
+  - 8 tests (100% pass rate)
 - ✅ Signature→MOA Bayesian Evidence Fusion (Beta regression)
 
 ### Tier 2 - Strategic (Completed 2025-12-28)

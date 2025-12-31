@@ -2,6 +2,17 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **ADMET Model Training Complete**:
+  - **ChEMBL download script**: scripts/download_chembl_sqlite.py for future expansion
+  - **Training script**: scripts/train_admet_models.py with 9 ADMET endpoints
+  - **ADMET endpoints**: hERG, LogS, LogP, CYP3A4, CYP2D6, CYP2C9, BBB, Caco-2, Clearance
+  - **TDC datasets**: Therapeutic Data Commons integration for training data
+  - **Model components**: BootstrapEnsemble + CalibrationWrapper + ApplicabilityChecker
+  - **Predictor updates**: ADMET_MODELS expanded, CLASSIFICATION_ENDPOINTS added
+  - **Dashboard**: Categorized endpoint selector (Toxicity/Physicochemical/ADME)
+  - **Tests**: 8 tests, 100% pass rate
+  - **Commits**: (awaiting Automator report)
+
 * [2025-01-01] – **Scheduled Review Cycles & SLAs Complete**:
   - **ReviewCycle and ReviewSLA models**: Database schema for periodic review workflows and SLA tracking
   - **SLA enforcement**: Warning thresholds and escalation chains for overdue reviews

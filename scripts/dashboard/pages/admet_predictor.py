@@ -132,9 +132,46 @@ def render_admet_predictor_page() -> None:
         smiles_text = st.text_area("SMILES (one per line, max 100)", height=140)
         show_uncertainty = st.checkbox("Show uncertainty", value=True)
 
-        # Endpoint selection defaults
-        endpoints_all = ["herg", "logs", "logp"]
-        endpoints = st.multiselect("Endpoints", options=endpoints_all, default=endpoints_all)
+        # Endpoint selection with categories
+        st.write("**Select ADMET Endpoints:**")
+        
+        # Group endpoints by category for better UX
+        toxicity_endpoints = ["herg"]
+        metabolism_endpoints = ["cyp3a4", "cyp2d6", "cyp2c9"]
+        solubility_endpoints = ["logs"]
+        lipophilicity_endpoints = ["logp"]
+        permeability_endpoints = ["bbb", "caco2"]
+        clearance_endpoints = ["clearance"]
+        
+        endpoints_all = (
+            toxicity_endpoints + metabolism_endpoints + solubility_endpoints + 
+            lipophilicity_endpoints + permeability_endpoints + clearance_endpoints
+        )
+        
+        # Create categorized display options
+        endpoint_labels = {
+            "herg": "hERG (Cardiotoxicity)",
+            "cyp3a4": "CYP3A4 (Metabolism)", 
+            "cyp2d6": "CYP2D6 (Metabolism)",
+            "cyp2c9": "CYP2C9 (Metabolism)",
+            "logs": "LogS (Solubility)",
+            "logp": "LogP (Lipophilicity)", 
+            "bbb": "BBB (Blood-Brain Barrier)",
+            "caco2": "Caco-2 (Permeability)",
+            "clearance": "Hepatic Clearance"
+        }
+        
+        # Multi-select with descriptive labels
+        endpoint_options = [f"{ep}: {endpoint_labels[ep]}" for ep in endpoints_all]
+        selected_labels = st.multiselect(
+            "Choose endpoints to predict",
+            options=endpoint_options,
+            default=endpoint_options[:3],  # Default to first 3 (herg, cyp3a4, cyp2d6)
+            help="Select one or more ADMET properties to predict"
+        )
+        
+        # Extract endpoint codes from selections
+        endpoints = [label.split(":")[0] for label in selected_labels]
 
         if st.button("Predict", type="primary"):
             smiles = _parse_smiles(smiles_text, max_n=100)

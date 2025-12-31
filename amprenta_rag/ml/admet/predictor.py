@@ -16,6 +16,12 @@ ADMET_MODELS = {
     "herg": "admet_herg_ensemble",
     "logs": "admet_logs_ensemble",
     "logp": "admet_logp_ensemble",
+    "cyp3a4": "admet_cyp3a4_ensemble",
+    "cyp2d6": "admet_cyp2d6_ensemble",
+    "cyp2c9": "admet_cyp2c9_ensemble",
+    "bbb": "admet_bbb_ensemble",
+    "caco2": "admet_caco2_ensemble",
+    "clearance": "admet_clearance_ensemble",
 }
 
 # Backward-compatible legacy names (pre-ensemble)
@@ -23,7 +29,11 @@ _LEGACY_ADMET_MODELS = {
     "herg": "admet_herg_xgb",
     "logs": "admet_logs_xgb",
     "logp": "admet_logp_xgb",
+    # New endpoints don't have legacy names
 }
+
+# Classification endpoints (for task type inference)
+CLASSIFICATION_ENDPOINTS = {"herg", "cyp3a4", "cyp2d6", "cyp2c9", "bbb"}
 
 
 def _require_rdkit():
@@ -230,7 +240,7 @@ class ADMETPredictor:
 
                 ens_art = artifact.get("ensemble") or {}
                 models = ens_art.get("models") or []
-                task = ens_art.get("task") or ("classification" if endpoint == "herg" else "regression")
+                task = ens_art.get("task") or ("classification" if endpoint in CLASSIFICATION_ENDPOINTS else "regression")
 
                 # Mean/std across ensemble members
                 try:
