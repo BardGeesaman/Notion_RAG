@@ -759,15 +759,15 @@ agents/mailbox/
 ```
 
 **Sending Delegation (Architect → Agent):**
-1. Architect writes to `agents/mailbox/{agent}.md`
-2. Architect says: "Tell {Agent} to check mail"
-3. Chairman switches chat, says: "Check mail"
+1. Architect writes to `agents/mailbox/{agent}_MAIL.md`
+2. Architect says: "Tell {Agent}: !"
+3. Chairman switches chat, types: "!"
 4. Agent reads file, deletes it, executes task
 
 **Sending Response (Agent → Architect):**
-1. Agent writes to `agents/mailbox/architect.md`
-2. Agent says: "Tell Architect to check mail"
-3. Chairman switches chat, says: "Check mail"
+1. Agent writes to `agents/mailbox/architect_MAIL.md`
+2. Agent says: "Tell Architect: !"
+3. Chairman switches chat, types: "!"
 4. Architect reads file, deletes it, proceeds
 
 **Check Mail Behavior:**

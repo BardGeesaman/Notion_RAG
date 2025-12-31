@@ -68,37 +68,40 @@ Inter-agent communication uses a **file-based mailbox** with delete-after-read p
 ### Directory Structure
 ```
 agents/mailbox/
-├── architect.md      # Agents write responses here
-├── implementor.md    # Architect writes delegations here
-├── reviewer.md
-├── tester.md
-├── debugger.md
-├── documentor.md
-└── automator.md
+├── architect_MAIL.md      # Agents write responses here
+├── implementor_MAIL.md    # Architect writes delegations here
+├── reviewer_MAIL.md
+├── tester_MAIL.md
+├── debugger_MAIL.md
+├── documentor_MAIL.md
+└── automator_MAIL.md
 ```
 
 ### Sending a Delegation
-1. Write delegation to `agents/mailbox/{agent}.md` using the `write` tool
-2. Tell Chairman: **"Tell {Agent} to check mail"**
-3. Chairman switches to agent chat and says: "Check mail"
+0. **(BEFORE writing)** Check if `agents/mailbox/{agent}_MAIL.md` exists. If yes, STOP and tell Chairman: **"BLOCKED: Previous delegation not received. Tell {Agent}: ! first."**
+1. Write delegation to `agents/mailbox/{agent}_MAIL.md` using the `write` tool
+2. Tell Chairman: **"Tell {Agent}: !"**
+3. Chairman switches to agent chat and types: "!"
 4. Agent reads file, deletes it, executes task
 
 ### Receiving a Response
-1. Agent writes response to `agents/mailbox/architect.md`
-2. Agent tells Chairman: "Tell Architect to check mail"
-3. Chairman tells you: "Check mail"
-4. Read `agents/mailbox/architect.md`, delete file, proceed
+1. Agent writes response to `agents/mailbox/architect_MAIL.md`
+2. Agent tells Chairman: "Tell Architect: !"
+3. Chairman tells you: "!"
+4. Read `agents/mailbox/architect_MAIL.md`, delete file, proceed
 
 ### Check Mail Behavior
-When Chairman says "check mail":
-- If `agents/mailbox/architect.md` exists → Read content, delete file, process response
+When Chairman types "!":
+- If `agents/mailbox/architect_MAIL.md` exists → Read content, delete file, process response
 - If no file exists → Respond "No pending mail"
 
 ### Chairman Visibility
 Always provide status updates IN CHAT so Chairman can observe:
-- After writing delegation: "Delegation written for [Agent]. Tell [Agent] to check mail."
+- After writing delegation: "Delegation written for [Agent]. Tell [Agent]: !"
 - After reading response: "Received response from [Agent]. [Brief summary]. Proceeding with [next step]."
 - On blockers: "BLOCKED: [issue]. Need Chairman decision."
+
+Agents must display the full delegation they received at the end of their response, so Chairman can see instructions and modify if needed.
 
 ### Why Mailbox?
 Copy-pasting between agent chats corrupts formatting (AI adds explanatory text, nested code blocks break). The mailbox bypasses this entirely.
@@ -109,6 +112,24 @@ Architect MAY use write and delete_file tools for files in agents/mailbox/ direc
 - Mailbox files are ephemeral operational data, not code
 - The mailbox protocol requires write/delete to function
 - Plan mode restricts code changes, not inter-agent communication
+
+### Safety Guards
+
+**1. One Recipient at a Time**
+- Each agent ONLY reads their own mailbox file: `{agent}_MAIL.md`
+- If an agent is asked to check mail but finds a file for a DIFFERENT agent, respond: "ROUTING ERROR: Found {other}_MAIL.md but I am {self}. Chairman should redirect."
+- Do NOT read or process messages intended for other agents
+
+**2. No Overwriting**
+- Architect MUST check if `{agent}_MAIL.md` exists before writing (see step 0 in "Sending a Delegation")
+- If file already exists: "BLOCKED: {agent}_MAIL.md already exists. Previous delegation not yet received. Tell {Agent}: ! first."
+- Do NOT overwrite existing delegation files
+- This prevents lost messages
+
+**3. Error Responses**
+When encountering these errors, respond clearly:
+- Routing error: "ROUTING ERROR: [details]"
+- Overwrite blocked: "BLOCKED: [details]"
 
 ---
 
