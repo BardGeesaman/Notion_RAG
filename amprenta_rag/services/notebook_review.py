@@ -22,6 +22,13 @@ from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
+# Import notebook_diff service for snapshot capture
+try:
+    from amprenta_rag.services.notebook_diff import capture_snapshot
+except ImportError:
+    # Handle case where notebook_diff service is not available
+    capture_snapshot = None
+
 
 VALID_STATUSES = {"pending", "approved", "rejected", "changes_requested"}
 
@@ -80,6 +87,18 @@ class NotebookReviewService:
         self.db.add(r)
         self.db.commit()
         self.db.refresh(r)
+        
+        # Capture notebook snapshot for diff computation
+        if capture_snapshot:
+            try:
+                capture_snapshot(self.db, r.id, notebook_path)
+                logger.info(f"Captured snapshot for review {r.id}")
+            except Exception as e:
+                # Don't fail the review request if snapshot capture fails
+                logger.warning(f"Failed to capture snapshot for review {r.id}: {e}")
+        else:
+            logger.debug("Snapshot capture not available")
+        
         return UUID(str(r.id))
 
     def submit_review(self, review_id: UUID, reviewer_id: UUID, status: str, comments: str = "") -> str:
