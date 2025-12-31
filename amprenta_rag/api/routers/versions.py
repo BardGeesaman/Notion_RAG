@@ -13,6 +13,7 @@ from amprenta_rag.auth.versioning import (
     get_versions,
     get_version,
     compare_versions,
+    rollback_to_version,
     VERSIONABLE_ENTITIES,
 )
 from amprenta_rag.logging_utils import get_logger
@@ -55,7 +56,112 @@ class VersionDiffResponse(BaseModel):
     changed: Dict[str, Any]
 
 
+class RestoreVersionRequest(BaseModel):
+    confirm: bool  # P2: Must be True to proceed
+    reason: Optional[str] = None  # Optional restore reason
+
+
+class RestoreVersionResponse(BaseModel):
+    success: bool
+    restored_from_version: int
+    new_version_number: int
+    entity_type: str
+    entity_id: UUID
+    message: str
+
+
 # Endpoints
+# Note: More specific routes must come before generic ones
+@router.post("/restore/{version_id}", response_model=RestoreVersionResponse)
+def restore_version(
+    version_id: UUID,
+    request: RestoreVersionRequest,
+    db: Session = Depends(get_database_session),
+    current_user = Depends(get_current_user),
+) -> RestoreVersionResponse:
+    """
+    Restore entity to a previous version.
+    
+    P2 Safeguards:
+    - Requires confirm=True in request body
+    - Admin role required
+    - Creates audit log entry
+    """
+    # P2: Require confirmation
+    if not request.confirm:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Restore operation requires confirm=True"
+        )
+    
+    # P2: Admin-only access
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required for version restore"
+        )
+    
+    # Get version to restore
+    version = get_version(db, version_id)
+    if not version:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Version {version_id} not found"
+        )
+    
+    # Create new version from old snapshot using rollback_to_version
+    change_summary = f"Restored from version {version.version_number}"
+    if request.reason:
+        change_summary += f": {request.reason}"
+    
+    try:
+        new_version = rollback_to_version(
+            db=db,
+            entity_type=version.entity_type,
+            entity_id=version.entity_id,
+            target_version_number=version.version_number,
+            user_id=current_user.id,
+            reason=request.reason,
+        )
+        
+        # P2: Log audit entry
+        from amprenta_rag.auth.audit import log_action
+        log_action(
+            action="restore_version",
+            user_id=str(current_user.id),
+            username=getattr(current_user, 'username', 'unknown'),
+            entity_type=version.entity_type,
+            entity_id=str(version.entity_id),
+            details={
+                "restored_from_version": version.version_number,
+                "new_version_number": new_version.version_number,
+                "reason": request.reason,
+            }
+        )
+        
+        logger.info(
+            f"User {getattr(current_user, 'username', current_user.id)} restored "
+            f"{version.entity_type}/{version.entity_id} "
+            f"from v{version.version_number} to v{new_version.version_number}"
+        )
+        
+        return RestoreVersionResponse(
+            success=True,
+            restored_from_version=version.version_number,
+            new_version_number=new_version.version_number,
+            entity_type=version.entity_type,
+            entity_id=version.entity_id,
+            message=change_summary,
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to restore version {version_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to restore version: {str(e)}"
+        )
+
+
 @router.get("/{entity_type}/{entity_id}", response_model=List[VersionResponse])
 def list_versions(
     entity_type: str,

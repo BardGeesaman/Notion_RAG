@@ -279,3 +279,208 @@ class TestVersionsAPI:
         
         assert response.status_code == 400
         assert "not versionable" in response.json()["detail"]
+
+    def test_restore_version_success(self, client, mock_user):
+        """Test successful version restore by admin with confirmation."""
+        version_id = uuid4()
+        mock_user.role = "admin"  # Make user admin
+        mock_user.username = "admin_user"
+        
+        # Mock the version to restore
+        mock_version = MagicMock()
+        mock_version.id = version_id
+        mock_version.entity_type = "dataset"
+        mock_version.entity_id = uuid4()
+        mock_version.version_number = 2
+        mock_version.data_snapshot = {"name": "Previous Dataset", "size": 100}
+        
+        # Mock the new version created by rollback
+        mock_new_version = MagicMock()
+        mock_new_version.version_number = 4
+        
+        request_data = {
+            "confirm": True,
+            "reason": "Rolling back problematic changes"
+        }
+        
+        with patch("amprenta_rag.api.routers.versions.get_version") as mock_get_version, \
+             patch("amprenta_rag.api.routers.versions.rollback_to_version") as mock_rollback, \
+             patch("amprenta_rag.auth.audit.log_action") as mock_log_action:
+            
+            mock_get_version.return_value = mock_version
+            mock_rollback.return_value = mock_new_version
+            
+            response = client.post(f"/api/v1/versions/restore/{version_id}", json=request_data)
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert data["success"] is True
+            assert data["restored_from_version"] == 2
+            assert data["new_version_number"] == 4
+            assert "Rolling back problematic changes" in data["message"]
+            
+            # Verify audit logging was called
+            mock_log_action.assert_called_once()
+            audit_call = mock_log_action.call_args[1]
+            assert audit_call["action"] == "restore_version"
+            assert audit_call["details"]["restored_from_version"] == 2
+            assert audit_call["details"]["new_version_number"] == 4
+            assert audit_call["details"]["reason"] == "Rolling back problematic changes"
+
+    def test_restore_version_no_confirm(self, client, mock_user):
+        """Test restore fails without confirm=True."""
+        version_id = uuid4()
+        mock_user.role = "admin"
+        
+        request_data = {
+            "confirm": False,  # Missing confirmation
+            "reason": "Test restore"
+        }
+        
+        response = client.post(f"/api/v1/versions/restore/{version_id}", json=request_data)
+        
+        assert response.status_code == 400
+        assert "confirm=True" in response.json()["detail"]
+
+    def test_restore_version_non_admin(self, client, mock_user):
+        """Test restore fails for non-admin user."""
+        version_id = uuid4()
+        mock_user.role = "researcher"  # Non-admin role
+        
+        request_data = {
+            "confirm": True,
+            "reason": "Test restore"
+        }
+        
+        response = client.post(f"/api/v1/versions/restore/{version_id}", json=request_data)
+        
+        assert response.status_code == 403
+        assert "Admin access required" in response.json()["detail"]
+
+    def test_restore_version_not_found(self, client, mock_user):
+        """Test restore fails when version doesn't exist."""
+        version_id = uuid4()
+        mock_user.role = "admin"
+        
+        request_data = {
+            "confirm": True,
+            "reason": "Test restore"
+        }
+        
+        with patch("amprenta_rag.api.routers.versions.get_version") as mock_get_version:
+            mock_get_version.return_value = None
+            
+            response = client.post(f"/api/v1/versions/restore/{version_id}", json=request_data)
+            
+            assert response.status_code == 404
+            assert "not found" in response.json()["detail"]
+
+    def test_restore_version_creates_audit(self, client, mock_user):
+        """Test that restore operation creates proper audit log entry."""
+        version_id = uuid4()
+        mock_user.role = "admin"
+        mock_user.username = "test_admin"
+        
+        mock_version = MagicMock()
+        mock_version.id = version_id
+        mock_version.entity_type = "experiment"
+        mock_version.entity_id = uuid4()
+        mock_version.version_number = 1
+        
+        mock_new_version = MagicMock()
+        mock_new_version.version_number = 3
+        
+        request_data = {
+            "confirm": True,
+            "reason": "Emergency rollback"
+        }
+        
+        with patch("amprenta_rag.api.routers.versions.get_version") as mock_get_version, \
+             patch("amprenta_rag.api.routers.versions.rollback_to_version") as mock_rollback, \
+             patch("amprenta_rag.auth.audit.log_action") as mock_log_action:
+            
+            mock_get_version.return_value = mock_version
+            mock_rollback.return_value = mock_new_version
+            
+            response = client.post(f"/api/v1/versions/restore/{version_id}", json=request_data)
+            
+            assert response.status_code == 200
+            
+            # Verify audit log was called with correct parameters
+            mock_log_action.assert_called_once()
+            audit_call = mock_log_action.call_args
+            
+            # Check positional and keyword arguments
+            assert "restore_version" in str(audit_call)
+            assert str(mock_user.id) in str(audit_call)
+            assert "test_admin" in str(audit_call)
+            assert "experiment" in str(audit_call)
+            assert str(mock_version.entity_id) in str(audit_call)
+
+    def test_restore_version_with_reason(self, client, mock_user):
+        """Test restore includes reason in change summary and response."""
+        version_id = uuid4()
+        mock_user.role = "admin"
+        mock_user.username = "admin_user"
+        
+        mock_version = MagicMock()
+        mock_version.id = version_id
+        mock_version.entity_type = "dataset"
+        mock_version.entity_id = uuid4()
+        mock_version.version_number = 1
+        
+        mock_new_version = MagicMock()
+        mock_new_version.version_number = 2
+        
+        request_data = {
+            "confirm": True,
+            "reason": "Data corruption detected in current version"
+        }
+        
+        with patch("amprenta_rag.api.routers.versions.get_version") as mock_get_version, \
+             patch("amprenta_rag.api.routers.versions.rollback_to_version") as mock_rollback, \
+             patch("amprenta_rag.auth.audit.log_action") as mock_log_action:
+            
+            mock_get_version.return_value = mock_version
+            mock_rollback.return_value = mock_new_version
+            
+            response = client.post(f"/api/v1/versions/restore/{version_id}", json=request_data)
+            
+            assert response.status_code == 200
+            data = response.json()
+            
+            # Verify reason is included in message
+            assert "Restored from version 1" in data["message"]
+            assert "Data corruption detected in current version" in data["message"]
+            
+            # Verify rollback was called with reason
+            mock_rollback.assert_called_once()
+            rollback_call = mock_rollback.call_args[1]
+            assert rollback_call["reason"] == "Data corruption detected in current version"
+
+    def test_restore_version_service_error(self, client, mock_user):
+        """Test restore handles service errors gracefully."""
+        version_id = uuid4()
+        mock_user.role = "admin"
+        
+        mock_version = MagicMock()
+        mock_version.id = version_id
+        mock_version.entity_type = "dataset"
+        mock_version.entity_id = uuid4()
+        mock_version.version_number = 1
+        
+        request_data = {
+            "confirm": True,
+            "reason": "Test restore"
+        }
+        
+        with patch("amprenta_rag.api.routers.versions.get_version") as mock_get_version, \
+             patch("amprenta_rag.api.routers.versions.rollback_to_version") as mock_rollback:
+            
+            mock_get_version.return_value = mock_version
+            mock_rollback.side_effect = Exception("Database error")
+            
+            response = client.post(f"/api/v1/versions/restore/{version_id}", json=request_data)
+            
+            assert response.status_code == 500
+            assert "Failed to restore version" in response.json()["detail"]
