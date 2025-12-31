@@ -1743,6 +1743,28 @@ class PoseInteraction(Base):
     __table_args__ = (Index("ix_pose_interactions_pose_type", "pose_id", "interaction_type"),)
 
 
+class IDMapping(Base):
+    """Cached ID mappings from external sources (UniProt, KEGG, etc.)."""
+    
+    __tablename__ = "id_mappings"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    source_type = Column(String(50), nullable=False)  # gene, protein, metabolite
+    source_id = Column(String(200), nullable=False)
+    target_type = Column(String(50), nullable=False)  # uniprot, kegg_gene, kegg_compound
+    target_id = Column(String(200), nullable=False)
+    organism = Column(String(50), default="human")
+    confidence = Column(Float, nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)  # For TTL-based caching
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    __table_args__ = (
+        UniqueConstraint("source_type", "source_id", "target_type", "organism", name="uq_id_mapping_source_target"),
+        Index("ix_id_mappings_lookup", "source_type", "source_id", "target_type"),
+    )
+
+
 gene_protein_map = Table(
     "gene_protein_map",
     Base.metadata,
