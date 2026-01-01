@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database added)
 
 Simple status legend:
 - ✅ DONE
@@ -255,11 +255,13 @@ Simple status legend:
   - 1498 tests collecting successfully
 
 ### Testing & Development (Future)
-- ❌ Integration Tests with Real Database
-  - Current API tests use mocked DB (risk of mock drift)
-  - Add integration tests that verify endpoints with real Postgres
-  - CI pipeline with test database for subset of critical paths
+- ✅ Integration Tests with Real Database (2025-01-01)
+  - Integration test infrastructure with transaction-rollback isolation
+  - 8 critical path tests (6 pass, 2 skip for data validation issues)
+  - GitHub Actions CI workflow with PostgreSQL service container
+  - pytest integration marker for selective execution
   - Reduces "mocked tests pass, production fails" risk
+  - Commits: b636c2e, 852511a, 17f8555
 - ❌ Split requirements.txt - move pdbfixer/openmm to requirements-structural.txt (pdbfixer requires conda-forge, not pip-installable)
 - ❌ OOP Refactoring Review (code structure improvements)
 

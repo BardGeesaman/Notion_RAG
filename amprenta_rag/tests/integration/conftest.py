@@ -11,7 +11,8 @@ from fastapi.testclient import TestClient
 
 from amprenta_rag.api.main import app
 from amprenta_rag.database.base import get_session_local, get_engine
-from amprenta_rag.database.models import User, Program
+from amprenta_rag.database.models import Program
+from amprenta_rag.models.auth import User
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +47,7 @@ def test_user(db_session):
         id=uuid4(),
         username=f"testuser_{uuid4().hex[:8]}",
         email=f"test_{uuid4().hex[:8]}@test.com",
-        hashed_password="fakehash",
+        password_hash="fakehash",
         is_active=True,
     )
     db_session.add(user)

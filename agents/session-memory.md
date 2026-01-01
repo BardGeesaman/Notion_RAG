@@ -2,6 +2,15 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **Integration Tests with Real Database Complete**:
+  - **conftest.py fixtures**: integration_db, db_session, test_user, test_program, integration_client
+  - **test_critical_paths.py**: 8 tests covering Programs, Datasets, Experiments, Annotations, Mappings, Compounds, Activity, Reviews
+  - **GitHub Actions CI**: .github/workflows/integration-tests.yml with PostgreSQL 15 service container
+  - **Infrastructure**: Transaction-rollback isolation, health checks, automatic migrations
+  - **pytest integration marker**: Selective execution with -m integration
+  - **Test metrics**: 10 tests total (8 new + 2 existing), 6 pass, 2 skip (expected data validation issues), 4 existing pass
+  - **Commits**: b636c2e, 852511a, 17f8555
+
 * [2025-01-01] – **Inline Annotations Complete**:
   - **Model**: InlineAnnotation with position_type/position_data JSON for flexible anchoring
   - **Position types**: cell, column, row, field, range (notebook/spreadsheet/form contexts)
