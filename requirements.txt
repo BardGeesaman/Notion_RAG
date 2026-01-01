@@ -53,7 +53,7 @@ pandas>=2.0.0
 parso
 pathspec==0.12.1
 patsy==1.0.2
-pdfminer.six==20251107
+pdfminer.six>=20251230
 pdfplumber==0.11.8
 pexpect
 pillow

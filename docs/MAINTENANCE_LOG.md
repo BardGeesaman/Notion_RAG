@@ -117,3 +117,15 @@ From `reports/dead_code_summary.md`:
 - Codebase significantly cleaner (68% reduction in vulture findings)
 - Tests: PASS
 
+### Security Dependency Audit (2025-01-01)
+
+**Resolved:**
+- pdfminer.six: GHSA-f83h-ghpp-7wcc → Updated to 20251230
+
+**Monitoring (No Patch Available):**
+- biopython 1.86: CVE-2025-68463 - Latest version, awaiting upstream fix
+- nbconvert 7.16.6: CVE-2025-53000 - Latest version, awaiting upstream fix  
+- py 1.11.0: PYSEC-2022-42969 - Deprecated package, transitive dep from older pytest plugins
+
+**Risk Assessment:** Low - these are development/extraction dependencies with no known active exploits.
+

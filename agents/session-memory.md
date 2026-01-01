@@ -69,6 +69,17 @@
   - Categories: Data/Ingestion (12), Imaging (13), ML/Analysis (4), Papers/RAG (2), System (2)
   - Reviewer approved
 
+* [2025-01-01] – **Security Dependency Updates (Batch A)**:
+  - Addressed 4 CVEs identified by pip-audit
+  - **Resolved**: pdfminer.six GHSA-f83h-ghpp-7wcc (updated 20251107 → 20251230)
+  - **Monitoring (no patches available)**:
+    - biopython 1.86: CVE-2025-68463 (XXE via Bio.Entrez)
+    - nbconvert 7.16.6: CVE-2025-53000 (Windows search path)
+    - py 1.11.0: PYSEC-2022-42969 (deprecated transitive dep)
+  - Risk assessment: LOW - dev/extraction dependencies, no active exploits
+  - Documentation added to MAINTENANCE_LOG.md
+  - Reviewer approved
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners
