@@ -12,6 +12,15 @@ from scripts.dashboard.core.api import _api_post
 from scripts.dashboard.core.state import require_auth
 
 
+@st.cache_data(ttl=3600)  # 1 hour cache
+def _cached_normalize(entity_type: str, name: str) -> dict | None:
+    """Cache normalization results to reduce API calls."""
+    return _api_post("/extraction/normalize", {
+        "entity_type": entity_type,
+        "name": name
+    })
+
+
 def render_ai_extraction_page():
     """Main entry point for AI Extraction Tools page."""
     require_auth()
@@ -153,10 +162,7 @@ def _render_normalizer_tab():
     
     if entity_name and st.button("🔍 Lookup", key="normalize_lookup", type="primary"):
         with st.spinner("Looking up..."):
-            result = _api_post("/extraction/normalize", {
-                "entity_type": entity_type,
-                "name": entity_name
-            })
+            result = _cached_normalize(entity_type, entity_name)
             
             if result and result.get("success"):
                 st.success(f"✅ Found match for '{entity_name}'")

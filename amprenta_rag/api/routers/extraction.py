@@ -8,6 +8,8 @@ Provides REST API for:
 
 from __future__ import annotations
 
+import ipaddress
+import socket
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -28,6 +30,67 @@ ALLOWED_CONTENT_TYPES = [
     "image/tiff",
     "image/gif",
 ]
+
+# SSRF Prevention
+BLOCKED_SCHEMES = {"file", "ftp", "gopher"}
+PRIVATE_IP_RANGES = [
+    # IPv4
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("169.254.0.0/16"),  # Link-local
+    ipaddress.ip_network("0.0.0.0/8"),       # "This" network
+    # IPv6
+    ipaddress.ip_network("::1/128"),         # Loopback
+    ipaddress.ip_network("fe80::/10"),       # Link-local
+    ipaddress.ip_network("fc00::/7"),        # Unique local
+]
+
+# OCR Language validation (must match installed tessdata)
+SUPPORTED_OCR_LANGUAGES = {
+    "eng", "fra", "deu", "spa", "ita", "por", "nld", "rus",
+    "chi_sim", "chi_tra", "jpn", "kor", "ara", "hin", "tha",
+    "pol", "ces", "dan", "fin", "hun", "nor", "swe", "tur",
+}
+
+
+def _is_safe_url(url: str) -> tuple[bool, str]:
+    """Validate URL is not internal/private (SSRF prevention)."""
+    from urllib.parse import urlparse
+    
+    parsed = urlparse(url)
+    
+    # Block dangerous schemes
+    if parsed.scheme.lower() in BLOCKED_SCHEMES:
+        return False, f"Blocked scheme: {parsed.scheme}"
+    
+    # Must have hostname
+    hostname = parsed.hostname
+    if not hostname:
+        return False, "Invalid URL: no hostname"
+    
+    # Block localhost variants
+    if hostname.lower() in ("localhost", "0.0.0.0"):
+        return False, "Blocked: localhost"
+    
+    # Check if hostname is already an IP address
+    try:
+        ip = ipaddress.ip_address(hostname)
+        for network in PRIVATE_IP_RANGES:
+            if ip in network:
+                return False, "Blocked: private IP range"
+    except ValueError:
+        # Not an IP address, try to resolve hostname
+        try:
+            ip = ipaddress.ip_address(socket.gethostbyname(hostname))
+            for network in PRIVATE_IP_RANGES:
+                if ip in network:
+                    return False, "Blocked: private IP range"
+        except (socket.gaierror, ValueError):
+            pass  # Let WebScraper handle DNS errors
+    
+    return True, ""
 
 
 # --- Schemas ---
@@ -106,6 +169,13 @@ async def extract_ocr(
     - File size limit: 10MB
     - Allowed types: PDF, PNG, JPEG, TIFF, GIF
     """
+    # Validate language code
+    if language not in SUPPORTED_OCR_LANGUAGES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported language: {language}. Supported: {sorted(SUPPORTED_OCR_LANGUAGES)}",
+        )
+    
     # P1: Validate content type
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
@@ -168,6 +238,14 @@ def scrape_url(
     
     Rate limiting: Inherits WebScraper's 0.5s per-domain limit.
     """
+    # SSRF Prevention
+    is_safe, error = _is_safe_url(request.url)
+    if not is_safe:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"URL blocked for security: {error}",
+        )
+    
     try:
         from amprenta_rag.extraction.web_scraper import WebScraper
         

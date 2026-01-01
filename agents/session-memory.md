@@ -233,6 +233,22 @@
   - **Total Tests**: 16 new tests (11 E2E + 5 API), all passing
   - P2 observations added to ROADMAP: SSRF prevention, OCR language validation, normalize caching
 
+* [2025-01-01] – **AI Extraction Security (P2)**:
+  - **SSRF Prevention** (`amprenta_rag/api/routers/extraction.py`):
+    - `_is_safe_url()` validates URLs before scraping
+    - Blocked schemes: file://, ftp://, gopher://
+    - IPv4 ranges: 10.x, 172.16.x, 192.168.x, 127.x, 169.254.x, 0.0.0.0/8
+    - IPv6 ranges: ::1/128, fe80::/10, fc00::/7
+    - Blocks localhost variants (localhost, 0.0.0.0)
+  - **OCR Language Validation**:
+    - 23 Tesseract language codes whitelisted
+    - Prevents command injection via language parameter
+  - **Dashboard Caching** (`scripts/dashboard/pages/ai_extraction.py`):
+    - `@st.cache_data(ttl=3600)` for normalize lookups
+    - Reduces API calls, improves response time
+  - **Security Tests**: 5 tests (4 SSRF + 1 OCR), all passing
+  - Addresses OWASP Top 10: SSRF (A10), Injection (A03)
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

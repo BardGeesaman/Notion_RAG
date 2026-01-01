@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish, Data Lifecycle Management P1, UI Feature Gaps Comprehensive Fix added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish, Data Lifecycle Management P1, UI Feature Gaps Comprehensive Fix, AI Extraction Security added)
 
 Simple status legend:
 - ✅ DONE
@@ -426,10 +426,10 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [x] KEGG Refresh Adapter: KEGG Cache tab added to Mapping Refresh dashboard
 - [x] Entity Normalizer: Lookup UI in AI Extraction Tools dashboard
 
-### AI Extraction Security (P2 - Future)
-- [ ] Scraper URL validation: Block internal IP ranges (SSRF prevention)
-- [ ] OCR language validation: Validate against Tesseract's supported language list
-- [ ] Normalize caching: Dashboard-side caching for repeated entity lookups
+### AI Extraction Security (P2) - ✅ COMPLETE (2026-01-01)
+- [x] Scraper URL validation: SSRF prevention (IPv4/IPv6 private ranges, localhost, file://)
+- [x] OCR language validation: 23 Tesseract language codes whitelisted
+- [x] Normalize caching: 1hr TTL with @st.cache_data
 
 ---
 

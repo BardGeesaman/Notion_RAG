@@ -97,3 +97,56 @@ class TestNormalizeEndpoint:
         })
         assert response.status_code == 400
         assert "Invalid entity_type" in response.json()["detail"]
+
+
+class TestSSRFPrevention:
+    """SSRF prevention tests for /scrape endpoint."""
+
+    def test_scrape_rejects_private_ip(self, client):
+        """Private IPv4 should be blocked."""
+        response = client.post(
+            "/api/extraction/scrape",
+            json={"url": "http://10.0.0.1/"},
+        )
+        assert response.status_code == 400
+        assert "blocked" in response.json()["detail"].lower()
+
+    def test_scrape_rejects_localhost(self, client):
+        """Localhost should be blocked."""
+        response = client.post(
+            "/api/extraction/scrape",
+            json={"url": "http://localhost/"},
+        )
+        assert response.status_code == 400
+        assert "blocked" in response.json()["detail"].lower()
+
+    def test_scrape_rejects_file_scheme(self, client):
+        """file:// scheme should be blocked."""
+        response = client.post(
+            "/api/extraction/scrape",
+            json={"url": "file:///etc/passwd"},
+        )
+        assert response.status_code == 400
+        assert "blocked" in response.json()["detail"].lower()
+
+    def test_scrape_rejects_ipv6_loopback(self, client):
+        """IPv6 loopback should be blocked."""
+        response = client.post(
+            "/api/extraction/scrape",
+            json={"url": "http://[::1]/"},
+        )
+        assert response.status_code == 400
+        assert "blocked" in response.json()["detail"].lower()
+
+
+class TestOCRLanguageValidation:
+    """OCR language validation tests."""
+
+    def test_ocr_rejects_invalid_language(self, client):
+        """Invalid language code should be rejected."""
+        response = client.post(
+            "/api/extraction/ocr?language=xyz",
+            files={"file": ("test.png", b"fake", "image/png")},
+        )
+        assert response.status_code == 400
+        assert "unsupported language" in response.json()["detail"].lower()
