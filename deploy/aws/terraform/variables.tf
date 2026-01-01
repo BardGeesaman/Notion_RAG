@@ -63,11 +63,9 @@ variable "db_username" {
   sensitive   = true
 }
 
-variable "db_password" {
-  description = "RDS master password"
-  type        = string
-  sensitive   = true
-}
+# NOTE: db_password variable removed - database passwords are now managed 
+# via AWS Secrets Manager for enhanced security. Populate the password
+# directly in the 'database' secret after running terraform apply.
 
 variable "db_instance_class" {
   description = "RDS instance class"

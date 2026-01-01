@@ -575,6 +575,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
+| **P2** | **Python Module Compilation** | Compile CPU-bound modules (fingerprinting, similarity, batch processing) via Cython/Numba/mypyc. Profile first, compile hotspots. | 1-2 weeks | Profiling |
 | **P2** | **Multi-Region Deployment** | AWS cross-region replication, global CDN, DR failover. *Note: GDPR compliance required for EU regions.* | 3-4 weeks | Cloud budget |
 | **P3** | **Kubernetes Migration** | Container orchestration, auto-scaling, self-healing | 4-6 weeks | DevOps |
 | **P3** | **Data Lake Integration** | S3/Parquet analytics layer, Athena/Spark queries | 2-3 weeks | Data Catalog |

@@ -11,4 +11,18 @@ repos:
       - id: mypy
         additional_dependencies: [types-requests, types-PyYAML, types-redis]
         args: [--config-file=mypy.ini]
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)^(
+            \.env\.example|
+            .*test.*\.py|
+            docs/.*\.md|
+            agents/.*\.md|
+            \.github/workflows/.*\.yml|
+            alembic/.*\.py
+          )$
 

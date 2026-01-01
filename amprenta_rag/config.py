@@ -15,6 +15,15 @@ import os
 from dataclasses import dataclass, field
 from typing import List
 
+# Import secrets management utilities
+from amprenta_rag.utils.secrets import (
+    get_api_key,
+    get_auth_credential,
+    get_integration_id,
+    get_backup_config,
+    get_database_url
+)
+
 # Load .env file if python-dotenv is installed (optional dependency)
 try:
     from dotenv import load_dotenv
@@ -34,76 +43,69 @@ except ImportError:
 #     (validated lazily at get_config() time)
 # ---------------------------------------------------------
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+# ---------------------------------------------------------
+#  🔐 SECRETS: API Keys and Credentials (from AWS Secrets Manager or .env)
+# ---------------------------------------------------------
+
+OPENAI_API_KEY = get_api_key("openai") or ""
+ZOTERO_API_KEY = get_api_key("zotero") or ""
+NOTION_API_KEY = get_api_key("notion") or ""
+GEO_API_KEY = get_api_key("geo") or ""
+NCBI_EMAIL = get_auth_credential("ncbi_email") or ""
+
+# ---------------------------------------------------------
+#  ⚙️ NON-SENSITIVE CONFIG: Feature flags and settings
+# ---------------------------------------------------------
+
 # Pinecone deprecated - using pgvector
 VECTOR_BACKEND = os.getenv("VECTOR_BACKEND", "pgvector")
 
 # Notion API key - OPTIONAL (only required if ENABLE_NOTION_SYNC=true)
 ENABLE_NOTION_SYNC_ENV = os.getenv("ENABLE_NOTION_SYNC", "false").lower() == "true"
-NOTION_API_KEY = os.getenv("NOTION_API_KEY", "")
-
-# Zotero API key (required)
-ZOTERO_API_KEY = os.getenv("ZOTERO_API_KEY", "")
-
-# Optional API keys for public repositories
-GEO_API_KEY = os.getenv("GEO_API_KEY", "")  # Optional, for higher NCBI rate limits
-NCBI_EMAIL = os.getenv("NCBI_EMAIL", "")  # Required by NCBI for API access
 
 # API server configuration
 def _parse_cors_origins() -> List[str]:
     raw = os.getenv("CORS_ORIGINS", "http://localhost:8501")
     return [o.strip() for o in raw.split(",") if o.strip()]
 
-# Postgres Database Configuration (optional - for TIER 3 architecture evolution)
-POSTGRES_URL = os.getenv("POSTGRES_URL", "")  # Full connection string (optional)
+# ---------------------------------------------------------
+#  🗄️ DATABASE CONFIG: Postgres connection (secrets + config)
+# ---------------------------------------------------------
+
+# Database URL (constructed securely from secrets)
+POSTGRES_URL = get_database_url()
+
+# Individual connection parameters (for non-URL usage)
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-# Standard workstation defaults (override via .env as needed)
 POSTGRES_DB = os.getenv("POSTGRES_DB", "amprenta")
 POSTGRES_USER = os.getenv("POSTGRES_USER", "bard")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
 POSTGRES_ECHO = os.getenv("POSTGRES_ECHO", "false").lower() == "true"
 
-# Database IDs (no dashes)
+# Note: POSTGRES_PASSWORD is handled by secrets.py - not exposed here
+
+# ---------------------------------------------------------
+#  🔗 INTEGRATION IDs: Notion workspace identifiers (from secrets)
+# ---------------------------------------------------------
+
+# Static database IDs (hardcoded for stability)
 NOTION_EMAIL_DB_ID = "2b7adf6142ab80878ccce09b0067db60"  # Email & Notes Inbox
 NOTION_RAG_DB_ID = "2bbadf6142ab8076a5fbed30f2cfcbfb"  # RAG Engine
-NOTION_EXP_DATA_DB_ID = os.getenv(
-    "NOTION_EXP_DATA_DB_ID", ""
-)  # Experimental Data Assets
-NOTION_METABOLITE_FEATURES_DB_ID = os.getenv(
-    "NOTION_METABOLITE_FEATURES_DB_ID", ""
-)  # Metabolite Features
-NOTION_PROTEIN_FEATURES_DB_ID = os.getenv(
-    "NOTION_PROTEIN_FEATURES_DB_ID", ""
-)  # Protein Features
-NOTION_GENE_FEATURES_DB_ID = os.getenv(
-    "NOTION_GENE_FEATURES_DB_ID", ""
-)  # Gene Features
-NOTION_SIGNATURE_DB_ID = os.getenv("NOTION_SIGNATURE_DB_ID", "")  # Lipid Signatures
-NOTION_SIGNATURE_COMPONENT_DB_ID = os.getenv(
-    "NOTION_SIGNATURE_COMPONENT_DB_ID", ""
-)  # Lipid Signature Components
-NOTION_LIPID_SPECIES_DB_ID = os.getenv(
-    "NOTION_LIPID_SPECIES_DB_ID", ""
-)  # Lipid Species
-NOTION_PROGRAMS_DB_ID = os.getenv(
-    "NOTION_PROGRAMS_DB_ID", ""
-)  # Programs
-NOTION_EXPERIMENTS_DB_ID = os.getenv(
-    "NOTION_EXPERIMENTS_DB_ID", ""
-)  # Experiments
-NOTION_COMPOUND_FEATURES_DB_ID = os.getenv(
-    "NOTION_COMPOUND_FEATURES_DB_ID", ""
-)  # Compound Features
-NOTION_HTS_CAMPAIGNS_DB_ID = os.getenv(
-    "NOTION_HTS_CAMPAIGNS_DB_ID", ""
-)  # HTS Campaigns
-NOTION_BIOCHEMICAL_HITS_DB_ID = os.getenv(
-    "NOTION_BIOCHEMICAL_HITS_DB_ID", ""
-)  # Biochemical Hits
-NOTION_PATHWAYS_DB_ID = os.getenv(
-    "NOTION_PATHWAYS_DB_ID", ""
-)  # Pathways
+
+# Dynamic database IDs (from secrets for environment-specific workspaces)
+NOTION_EXP_DATA_DB_ID = get_integration_id("exp_data") or ""
+NOTION_METABOLITE_FEATURES_DB_ID = get_integration_id("metabolite_features") or ""
+NOTION_PROTEIN_FEATURES_DB_ID = get_integration_id("protein_features") or ""
+NOTION_GENE_FEATURES_DB_ID = get_integration_id("gene_features") or ""
+NOTION_SIGNATURE_DB_ID = get_integration_id("signatures") or ""
+NOTION_SIGNATURE_COMPONENT_DB_ID = get_integration_id("signature_components") or ""
+NOTION_LIPID_SPECIES_DB_ID = get_integration_id("lipid_species") or ""
+NOTION_PROGRAMS_DB_ID = get_integration_id("programs") or ""
+NOTION_EXPERIMENTS_DB_ID = get_integration_id("experiments") or ""
+NOTION_COMPOUND_FEATURES_DB_ID = get_integration_id("compound_features") or ""
+NOTION_HTS_CAMPAIGNS_DB_ID = get_integration_id("hts_campaigns") or ""
+NOTION_BIOCHEMICAL_HITS_DB_ID = get_integration_id("biochemical_hits") or ""
+NOTION_PATHWAYS_DB_ID = get_integration_id("pathways") or ""
 
 # Pipeline directories
 SIGNATURES_DIR = os.getenv("SIGNATURES_DIR", "")
@@ -269,16 +271,22 @@ class PostgresConfig:
     port: int = POSTGRES_PORT
     db: str = POSTGRES_DB
     user: str = POSTGRES_USER
-    password: str = POSTGRES_PASSWORD
     echo: bool = POSTGRES_ECHO
+    # Note: password is handled securely via secrets.py and included in url
 
 
-# Backup configuration environment variables
+# ---------------------------------------------------------
+#  💾 BACKUP CONFIG: Backup and encryption settings
+# ---------------------------------------------------------
+
+# Non-sensitive backup configuration
 BACKUP_S3_ENABLED = os.getenv("BACKUP_S3_ENABLED", "false").lower() == "true"
 BACKUP_S3_BUCKET = os.getenv("BACKUP_S3_BUCKET", "")
-BACKUP_KMS_KEY_ID = os.getenv("BACKUP_KMS_KEY_ID", "")
 BACKUP_LOCAL_DIR = os.getenv("BACKUP_LOCAL_DIR", "./backups")
 BACKUP_RETENTION_DAYS = int(os.getenv("BACKUP_RETENTION_DAYS", "365"))
+
+# Sensitive backup configuration (from secrets)
+BACKUP_KMS_KEY_ID = get_backup_config("kms_key_id") or ""
 
 
 @dataclass(frozen=True)

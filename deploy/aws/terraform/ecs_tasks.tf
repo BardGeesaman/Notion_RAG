@@ -18,9 +18,36 @@ resource "aws_ecs_task_definition" "api" {
         { name = "ENVIRONMENT", value = var.environment }
       ]
       secrets = [
-        { name = "DATABASE_URL", valueFrom = aws_secretsmanager_secret.db_url.arn },
+        # Database credentials
+        { name = "POSTGRES_URL", valueFrom = "${aws_secretsmanager_secret.database.arn}:POSTGRES_URL::" },
+        { name = "POSTGRES_PASSWORD", valueFrom = "${aws_secretsmanager_secret.database.arn}:POSTGRES_PASSWORD::" },
+
+        # API keys for external services
         { name = "OPENAI_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:OPENAI_API_KEY::" },
-        { name = "PINECONE_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:PINECONE_API_KEY::" }
+        { name = "ZOTERO_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:ZOTERO_API_KEY::" },
+        { name = "NOTION_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:NOTION_API_KEY::" },
+        { name = "GEO_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:GEO_API_KEY::" },
+
+        # Authentication credentials
+        { name = "NCBI_EMAIL", valueFrom = "${aws_secretsmanager_secret.auth.arn}:NCBI_EMAIL::" },
+
+        # Integration identifiers (Notion database IDs)
+        { name = "NOTION_EXP_DATA_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_EXP_DATA_DB_ID::" },
+        { name = "NOTION_METABOLITE_FEATURES_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_METABOLITE_FEATURES_DB_ID::" },
+        { name = "NOTION_PROTEIN_FEATURES_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_PROTEIN_FEATURES_DB_ID::" },
+        { name = "NOTION_GENE_FEATURES_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_GENE_FEATURES_DB_ID::" },
+        { name = "NOTION_SIGNATURE_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_SIGNATURE_DB_ID::" },
+        { name = "NOTION_SIGNATURE_COMPONENT_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_SIGNATURE_COMPONENT_DB_ID::" },
+        { name = "NOTION_LIPID_SPECIES_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_LIPID_SPECIES_DB_ID::" },
+        { name = "NOTION_PROGRAMS_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_PROGRAMS_DB_ID::" },
+        { name = "NOTION_EXPERIMENTS_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_EXPERIMENTS_DB_ID::" },
+        { name = "NOTION_COMPOUND_FEATURES_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_COMPOUND_FEATURES_DB_ID::" },
+        { name = "NOTION_HTS_CAMPAIGNS_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_HTS_CAMPAIGNS_DB_ID::" },
+        { name = "NOTION_BIOCHEMICAL_HITS_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_BIOCHEMICAL_HITS_DB_ID::" },
+        { name = "NOTION_PATHWAYS_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_PATHWAYS_DB_ID::" },
+
+        # Backup configuration
+        { name = "BACKUP_KMS_KEY_ID", valueFrom = "${aws_secretsmanager_secret.backup.arn}:BACKUP_KMS_KEY_ID::" }
       ]
       portMappings = [
         {
@@ -71,6 +98,15 @@ resource "aws_ecs_task_definition" "dashboard" {
       environment = [
         { name = "ENVIRONMENT", value = var.environment },
         { name = "API_URL", value = "http://${aws_lb.main.dns_name}" }
+      ]
+      secrets = [
+        # Dashboard may need database access for direct queries
+        { name = "POSTGRES_URL", valueFrom = "${aws_secretsmanager_secret.database.arn}:POSTGRES_URL::" },
+        { name = "POSTGRES_PASSWORD", valueFrom = "${aws_secretsmanager_secret.database.arn}:POSTGRES_PASSWORD::" },
+
+        # API keys that dashboard might need
+        { name = "OPENAI_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:OPENAI_API_KEY::" },
+        { name = "NOTION_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:NOTION_API_KEY::" }
       ]
       portMappings = [
         {

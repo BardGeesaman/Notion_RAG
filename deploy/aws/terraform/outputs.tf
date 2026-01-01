@@ -43,11 +43,9 @@ output "alb_arn" {
   description = "ALB ARN"
 }
 
-output "connection_string" {
-  value       = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/${var.db_name}"
-  description = "Connection string for convenience"
-  sensitive   = true
-}
+# NOTE: Connection string output removed - database password is now managed
+# via AWS Secrets Manager. The connection string will be constructed by the
+# application using the password from the 'database' secret group.
 
 output "environment" {
   value       = var.environment

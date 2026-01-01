@@ -32,6 +32,16 @@ htmlcov/
 .env
 .env.local
 .envrc.local
+# Allow .env.example to be tracked
+!.env.example
+
+# Terraform (secrets in tfvars)
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+.terraform/
+*.tfstate
+*.tfstate.*
 
 # OS
 .DS_Store

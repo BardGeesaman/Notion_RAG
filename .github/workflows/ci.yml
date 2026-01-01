@@ -55,17 +55,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comprehensive secret scanning
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
           cache-dependency-path: "requirements.txt"
-      - name: Install bandit
+      - name: Install security tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install bandit
-      - name: Run bandit
+          python -m pip install bandit detect-secrets
+      - name: Run bandit (code security)
         run: bandit -r amprenta_rag --skip B101,B104
+      - name: Check for secrets
+        run: |
+          detect-secrets scan --baseline .secrets.baseline
+      - name: Audit secrets baseline (if updated)
+        run: |
+          if [ -f .secrets.baseline ]; then
+            echo "Secrets baseline exists, checking for new secrets..."
+            detect-secrets scan --baseline .secrets.baseline --fail-on-unaudited-potential-secret
+          fi
 
   dependency-audit:
     runs-on: ubuntu-latest

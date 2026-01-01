@@ -27,9 +27,9 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Policy for Secrets Manager access
-resource "aws_iam_role_policy" "ecs_secrets" {
-  name = "${var.project_name}-ecs-secrets"
+# Policy for Secrets Manager access (execution role)
+resource "aws_iam_role_policy" "ecs_secrets_execution" {
+  name = "${var.project_name}-ecs-secrets-execution"
   role = aws_iam_role.ecs_task_execution.id
 
   policy = jsonencode({
@@ -37,11 +37,39 @@ resource "aws_iam_role_policy" "ecs_secrets" {
     Statement = [{
       Effect = "Allow"
       Action = [
-        "secretsmanager:GetSecretValue"
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
       ]
       Resource = [
-        aws_secretsmanager_secret.db_url.arn,
-        aws_secretsmanager_secret.api_keys.arn
+        aws_secretsmanager_secret.database.arn,
+        aws_secretsmanager_secret.api_keys.arn,
+        aws_secretsmanager_secret.auth.arn,
+        aws_secretsmanager_secret.integrations.arn,
+        aws_secretsmanager_secret.backup.arn
+      ]
+    }]
+  })
+}
+
+# Policy for Secrets Manager access (task role)
+resource "aws_iam_role_policy" "ecs_secrets_task" {
+  name = "${var.project_name}-ecs-secrets-task"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+      ]
+      Resource = [
+        aws_secretsmanager_secret.database.arn,
+        aws_secretsmanager_secret.api_keys.arn,
+        aws_secretsmanager_secret.auth.arn,
+        aws_secretsmanager_secret.integrations.arn,
+        aws_secretsmanager_secret.backup.arn
       ]
     }]
   })

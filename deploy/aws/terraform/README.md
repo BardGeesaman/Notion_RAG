@@ -50,7 +50,7 @@ cp terraform.tfvars.example terraform.tfvars
 **Required variables** (must be set):
 - `db_name` - Database name
 - `db_username` - Database master username
-- `db_password` - Database master password (use strong password)
+- **Note**: `db_password` is managed by AWS Secrets Manager (not set in variables)
 - `vpc_cidr` - VPC CIDR block (e.g., `10.0.0.0/16`)
 
 Example `terraform.tfvars`:
@@ -66,7 +66,7 @@ vpc_cidr         = "10.0.0.0/16"
 # Database Configuration
 db_name          = "amprenta"
 db_username      = "amprenta_user"
-db_password      = "your-secure-password-here"
+# db_password is managed by AWS Secrets Manager - populate after terraform apply
 db_instance_class = "db.t3.micro"
 
 # ECS Service Configuration
@@ -165,7 +165,7 @@ Access your application:
 | `vpc_cidr` | string | **Yes** | - | VPC CIDR block (e.g., `10.0.0.0/16`) |
 | `db_name` | string | **Yes** | - | PostgreSQL database name |
 | `db_username` | string | **Yes** | - | RDS master username (sensitive) |
-| `db_password` | string | **Yes** | - | RDS master password (sensitive) |
+| ~~`db_password`~~ | ~~string~~ | **Removed** | - | **Now managed by AWS Secrets Manager** |
 | `db_instance_class` | string | No | `db.t3.micro` | RDS instance type |
 | `desired_count` | number | No | `1` | Number of ECS tasks to run per service |
 | `api_cpu` | number | No | `512` | CPU units for API container (1024 = 1 vCPU) |

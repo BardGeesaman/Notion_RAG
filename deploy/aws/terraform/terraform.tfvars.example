@@ -9,9 +9,11 @@ environment         = "dev"
 vpc_cidr            = "10.0.0.0/16"
 
 # Database Configuration
+# NOTE: db_password is NOT set here - populate directly in AWS Secrets Manager
+# after running 'terraform apply'. The password will be stored in the 
+# 'database' secret group for enhanced security.
 db_name             = "amprenta"
 db_username         = "amprenta_user"
-db_password         = "example-password-change-me"
 db_instance_class   = "db.t3.micro"
 
 # ECS Service Configuration

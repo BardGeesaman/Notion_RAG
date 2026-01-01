@@ -27,23 +27,23 @@ resource "aws_security_group" "rds_sg" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier             = "${var.project_name}-postgres"
-  allocated_storage      = 20
-  engine                 = "postgres"
-  engine_version         = "15"
-  instance_class         = var.db_instance_class
-  username               = var.db_username
-  password               = var.db_password
-  db_name                = var.db_name
-  publicly_accessible    = false
-  skip_final_snapshot    = var.environment != "prod"
-  deletion_protection    = var.environment == "prod"
-  vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  db_subnet_group_name   = aws_db_subnet_group.rds.name
+  identifier                  = "${var.project_name}-postgres"
+  allocated_storage           = 20
+  engine                      = "postgres"
+  engine_version              = "15"
+  instance_class              = var.db_instance_class
+  username                    = var.db_username
+  manage_master_user_password = true # AWS manages password in Secrets Manager
+  db_name                     = var.db_name
+  publicly_accessible         = false
+  skip_final_snapshot         = var.environment != "prod"
+  deletion_protection         = var.environment == "prod"
+  vpc_security_group_ids      = [aws_security_group.rds_sg.id]
+  db_subnet_group_name        = aws_db_subnet_group.rds.name
 
   # Automated backups for Point-in-Time Recovery (PITR)
   backup_retention_period = var.backup_retention_period
-  backup_window           = "03:00-04:00"  # UTC, must not overlap maintenance window
+  backup_window           = "03:00-04:00" # UTC, must not overlap maintenance window
 
   tags = {
     Name        = "${var.project_name}-postgres"
