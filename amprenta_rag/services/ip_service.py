@@ -19,6 +19,8 @@ from amprenta_rag.models.ip import (
     PatentApplication,
     PatentClaim,
 )
+from amprenta_rag.database.models import ActivityEventType
+from amprenta_rag.services.activity import log_activity
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -122,8 +124,29 @@ def update_disclosure_status(
             f"Allowed: {allowed_transitions}"
         )
     
+    # Store old status for activity logging
+    old_status = disclosure.status
     disclosure.status = new_status
     db.commit()
+    
+    # Log STATUS_CHANGED activity event
+    try:
+        log_activity(
+            event_type=ActivityEventType.STATUS_CHANGED,
+            target_type="invention_disclosure",
+            target_id=disclosure.id,
+            target_name=disclosure.title,
+            actor_id=user_id,
+            program_id=None,
+            metadata={
+                "old_status": old_status,
+                "new_status": new_status,
+                "disclosure_type": getattr(disclosure, 'disclosure_type', None),
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Failed to log STATUS_CHANGED activity: {e}")
+    
     db.refresh(disclosure)
     
     logger.info("[IP] Updated disclosure %s status: %s -> %s", disclosure_id, current_status, new_status)

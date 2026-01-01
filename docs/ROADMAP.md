@@ -326,10 +326,11 @@ Items identified during feature development but deferred for future sessions.
   - Effort: 1-2 weeks (spread across sprints)
 
 ### Activity & Notifications
-- ⏳ **Activity Feed Phase 2** - Additional event type integrations
+- ✅ **Activity Feed Phase 2** - Additional event type integrations (2025-01-01)
   - `compound_added` events when compounds registered
   - `hit_confirmed` events when HTS hits confirmed
   - `status_changed` events for workflow transitions
+  - 3 integration points, non-blocking logging, 3 unit tests
   - Effort: 1-2 days
 
 ### External Data Integration

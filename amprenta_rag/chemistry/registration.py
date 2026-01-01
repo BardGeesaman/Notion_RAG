@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import Optional, Any, cast
 
 from amprenta_rag.database.base import get_db
-from amprenta_rag.database.models import Compound
+from amprenta_rag.database.models import Compound, ActivityEventType
 from amprenta_rag.chemistry.normalization import normalize_smiles, compute_molecular_descriptors
+from amprenta_rag.services.activity import log_activity
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -102,6 +103,26 @@ def register_compound(
         db.commit()
         db.refresh(compound)
         logger.info("[CHEMISTRY][REG] Registered %s", corporate_id)
+
+        # Log activity event for compound registration
+        try:
+            log_activity(
+                event_type=ActivityEventType.COMPOUND_ADDED,
+                target_type="compound",
+                target_id=compound.id,
+                target_name=corporate_id,
+                actor_id=None,  # System action
+                program_id=None,
+                metadata={
+                    "corporate_id": corporate_id,
+                    "smiles": compound.smiles,
+                    "molecular_weight": descriptors.get("molecular_weight"),
+                    "inchi_key": inchi_key,
+                    "canonical_smiles": canonical,
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log COMPOUND_ADDED activity: {e}")
 
         # Fire workflow trigger
         from amprenta_rag.automation.engine import fire_trigger

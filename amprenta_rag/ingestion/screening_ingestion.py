@@ -17,7 +17,8 @@ from amprenta_rag.chemistry.normalization import (
     generate_compound_id,
     normalize_smiles,
 )
-from amprenta_rag.database.models import Compound, HTSCampaign, HTSResult, BiochemicalResult
+from amprenta_rag.database.models import Compound, HTSCampaign, HTSResult, BiochemicalResult, ActivityEventType
+from amprenta_rag.services.activity import log_activity
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.utils.uuid_utils import ensure_uuid
 from amprenta_rag.ingestion.screening_ingestion_helpers import (
@@ -228,6 +229,28 @@ def ingest_hts_hit_list(
 
     # Batch insert results
     insert_hts_results_pg(results)
+
+    # Log activity events for confirmed hits
+    hits = [r for r in results if r.hit_flag]
+    for hit in hits:
+        try:
+            log_activity(
+                event_type=ActivityEventType.HIT_CONFIRMED,
+                target_type="hts_result",
+                target_id=hit.id,
+                target_name=hit.result_id,
+                actor_id=None,  # System action during ingestion
+                program_id=None,
+                metadata={
+                    "campaign_id": str(campaign_id),
+                    "compound_id": str(hit.compound_id),
+                    "hit_category": hit.hit_category,
+                    "normalized_value": hit.normalized_value,
+                    "activity_type": getattr(hit, 'activity_type', None),
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log HIT_CONFIRMED activity: {e}")
 
     logger.info(
         "[INGEST][SCREENING] Ingested %d compounds and %d results for campaign %s",

@@ -466,3 +466,111 @@ class TestActivityService:
             mock_db.add.assert_called_once()
             mock_db.flush.assert_called_once()
             mock_db.commit.assert_called_once()
+
+    @patch('amprenta_rag.services.activity.db_session')
+    def test_log_hit_confirmed_event(self, mock_db_session):
+        """Test HIT_CONFIRMED event logging."""
+        # Setup mock
+        mock_db = Mock()
+        mock_db_session.return_value.__enter__.return_value = mock_db
+        mock_db_session.return_value.__exit__.return_value = None
+        
+        # Mock the database operations
+        mock_db.add.return_value = None
+        mock_db.flush.return_value = None
+        mock_db.commit.return_value = None
+        
+        # Mock route_notifications to return empty list
+        with patch('amprenta_rag.services.activity.route_notifications') as mock_route:
+            mock_route.return_value = []
+            
+            # Call the function
+            log_activity(
+                event_type=ActivityEventType.HIT_CONFIRMED,
+                target_type="hts_result",
+                target_id=uuid4(),
+                target_name="CAMPAIGN_001_COMPOUND_1",
+                metadata={
+                    "campaign_id": "CAMPAIGN_001",
+                    "hit_category": "hit",
+                    "compound_id": str(uuid4()),
+                    "normalized_value": 0.85,
+                }
+            )
+            
+            # Verify the function was called
+            mock_db.add.assert_called_once()
+            mock_db.flush.assert_called_once()
+            mock_db.commit.assert_called_once()
+
+    @patch('amprenta_rag.services.activity.db_session')
+    def test_log_status_changed_event(self, mock_db_session):
+        """Test STATUS_CHANGED event logging."""
+        # Setup mock
+        mock_db = Mock()
+        mock_db_session.return_value.__enter__.return_value = mock_db
+        mock_db_session.return_value.__exit__.return_value = None
+        
+        # Mock the database operations
+        mock_db.add.return_value = None
+        mock_db.flush.return_value = None
+        mock_db.commit.return_value = None
+        
+        # Mock route_notifications to return empty list
+        with patch('amprenta_rag.services.activity.route_notifications') as mock_route:
+            mock_route.return_value = []
+            
+            # Call the function
+            log_activity(
+                event_type=ActivityEventType.STATUS_CHANGED,
+                target_type="entity_review",
+                target_id=uuid4(),
+                target_name="dataset:uuid",
+                actor_id=uuid4(),
+                metadata={
+                    "old_status": "submitted",
+                    "new_status": "approved",
+                    "entity_type": "dataset",
+                }
+            )
+            
+            # Verify the function was called
+            mock_db.add.assert_called_once()
+            mock_db.flush.assert_called_once()
+            mock_db.commit.assert_called_once()
+
+    @patch('amprenta_rag.services.activity.db_session')
+    def test_log_status_changed_disclosure_event(self, mock_db_session):
+        """Test STATUS_CHANGED event for invention disclosure."""
+        # Setup mock
+        mock_db = Mock()
+        mock_db_session.return_value.__enter__.return_value = mock_db
+        mock_db_session.return_value.__exit__.return_value = None
+        
+        # Mock the database operations
+        mock_db.add.return_value = None
+        mock_db.flush.return_value = None
+        mock_db.commit.return_value = None
+        
+        # Mock route_notifications to return empty list
+        with patch('amprenta_rag.services.activity.route_notifications') as mock_route:
+            mock_route.return_value = []
+            
+            # Call the function
+            log_activity(
+                event_type=ActivityEventType.STATUS_CHANGED,
+                target_type="invention_disclosure",
+                target_id=uuid4(),
+                target_name="Novel Drug Discovery Method",
+                actor_id=uuid4(),
+                metadata={
+                    "old_status": "draft",
+                    "new_status": "submitted",
+                    "disclosure_type": "method",
+                }
+            )
+            
+            # Verify the function was called
+            mock_db.add.assert_called_once()
+            mock_db.flush.assert_called_once()
+            mock_db.commit.assert_called_once()

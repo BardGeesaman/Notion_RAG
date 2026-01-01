@@ -473,6 +473,26 @@ def _transition_review(
             review.comments = comment
             
             session.commit()
+            
+            # Log STATUS_CHANGED activity event
+            try:
+                log_activity(
+                    event_type=ActivityEventType.STATUS_CHANGED,
+                    target_type="entity_review",
+                    target_id=review.id,
+                    target_name=f"{review.entity_type}:{review.entity_id}",
+                    actor_id=review.reviewer_id,  # The user making the status change
+                    program_id=None,
+                    metadata={
+                        "old_status": old_status,
+                        "new_status": new_status,
+                        "entity_type": review.entity_type,
+                        "comment": comment,
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log STATUS_CHANGED activity: {e}")
+            
             session.expunge(review)
             
             logger.info(

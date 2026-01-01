@@ -45,6 +45,15 @@
   - Developer Experience: 80% reduction in onboarding time (60 min → 5-10 min)
   - Reviewer approved with no P1 issues
 
+* [2025-01-01] – **Activity Feed Phase 2 - Event Integration**:
+  - Integrated 3 new event types: COMPOUND_ADDED, HIT_CONFIRMED, STATUS_CHANGED
+  - **COMPOUND_ADDED**: `chemistry/registration.py` - logs compound registration with metadata
+  - **HIT_CONFIRMED**: `ingestion/screening_ingestion.py` - logs HTS hit confirmation
+  - **STATUS_CHANGED**: `services/entity_reviews.py` + `services/ip_service.py` - workflow transitions
+  - All logging non-blocking (try-catch with warning on failure)
+  - 3 new unit tests added to `test_activity_service.py`
+  - Reviewer approved with P2 observation (add COMPOUND_ADDED test for completeness)
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners
