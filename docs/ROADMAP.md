@@ -303,6 +303,28 @@ Items identified during feature development but deferred for future sessions.
   - Remaining files use mock-heavy patterns awaiting conversion
   - Effort: 3-4 weeks for comprehensive coverage
 
+- ⏳ **TODO/FIXME Cleanup** (45 comments across 24 files)
+  - Audit each comment: resolve, convert to backlog item, or remove if stale
+  - Priority files: imaging.py (13), entity_reviews.py (6), collaboration.py (2)
+  - Effort: 2-3 days
+
+- ⏳ **Dead Code Final Triage** (7 uncertain candidates)
+  - Manual review of 7 deferred items from vulture scan
+  - Determine: keep (document why) or remove
+  - Effort: 1 day
+
+- ⏳ **Dependency Updates** (33 outdated packages)
+  - Batch A: Security-fix upgrades (when CVE patches available)
+  - Batch B: Major version upgrades (numpy 1.26→2.x requires testing)
+  - Batch C: Minor/patch updates (lower risk)
+  - Run full test suite after each batch
+  - Effort: 1-2 weeks (spread across sprints)
+
+- ⏳ **Type Coverage Improvement** (46% → 60% target)
+  - Add type hints to untyped functions in services layer
+  - Enable stricter mypy rules incrementally
+  - Effort: 1-2 weeks (spread across sprints)
+
 ### Activity & Notifications
 - ⏳ **Activity Feed Phase 2** - Additional event type integrations
   - `compound_added` events when compounds registered
@@ -523,6 +545,22 @@ Items originally scoped out or identified as major future initiatives. These rep
 |----------|------|-------------|--------|--------------|
 | **P1** | **Data Catalog** | Entity dictionary, column-level metadata, data lineage graphs, glossary integration | 3-4 weeks | None |
 | **P2** | **Data Quality Engine** | Validation rule builder, completeness scoring, anomaly detection, data health dashboard | 2-3 weeks | Data Catalog |
+
+### Data Lifecycle Management
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **Data Quarantine & Invalidation** | Mark entities as "quarantined" (hidden but recoverable), "invalid" (flagged but visible), "archived" (soft delete). Unified status field across all entities. | 1-2 weeks | None |
+| **P1** | **Bulk Deletion API** | `DELETE /entities/bulk` with list of IDs, dry-run mode, cascade preview, confirmation workflow | 1 week | Quarantine |
+| **P1** | **Cascade Impact Preview** | `GET /entities/{id}/deletion-impact` showing all related entities (features, signatures, embeddings) that would be affected | 1 week | None |
+| **P2** | **Deletion Audit Trail** | Log all deletions to AuditLog with who/when/what/reason, integrate with Provenance Ledger | 3-5 days | Audit Trail |
+| **P2** | **Orphan Cleanup Job** | Scheduled Celery task to find and remove orphaned features, embeddings, vector entries | 1 week | None |
+| **P2** | **Retention Policies** | Auto-archive data older than configurable threshold, per-entity-type rules, exemption flags | 1-2 weeks | Quarantine |
+| **P3** | **Soft Delete Migration** | Migrate all hard deletes to soft delete with `deleted_at` timestamp, add undelete capability | 1 week | Quarantine |
+| **P3** | **Data Recovery Dashboard** | UI to browse quarantined/archived/deleted data, restore with audit trail, permanent purge option | 1 week | Soft Delete |
+| **P3** | **Data Export for Deletion** | GDPR "right to be forgotten" compliance - export user's data package before deletion, portable format (JSON/CSV), audit trail | 1-2 days | Bulk Deletion |
+
+*Note: Addresses data lifecycle from ingestion → validation → quarantine → archive → deletion, with full audit trail and recovery capabilities. GDPR-compliant data export included.*
 
 ### Visualization & UX
 

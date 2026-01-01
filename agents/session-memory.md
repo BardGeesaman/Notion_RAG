@@ -3,7 +3,7 @@
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
 * [2025-01-01] – **Strategic Backlog Created**:
-  - New ROADMAP section "Strategic Backlog (Long-Term Vision)" with **44 items across 11 categories**
+  - New ROADMAP section "Strategic Backlog (Long-Term Vision)" with **53 items across 12 categories**
   - **Clinical & Regulatory** (3): Clinical trials (phased 10-12w), patient data, 21 CFR Part 11
   - **Lab Operations** (3): LIMS, real-time streaming, instrument APIs
   - **Genomics & NGS** (3): ENA ingestion, IGV.js, GWAS
@@ -17,6 +17,21 @@
   - **Security & Hardening** (11): Secrets management (P0), OWASP audit, rate limiting, CVE monitoring, penetration testing
   - Items migrated from "Out of Scope": Clinical trials, patient data, real-time streaming, wet lab integration
   - Reviewer-approved with 2 rounds of feedback (effort estimates adjusted, gaps filled)
+
+* [2025-01-01] – **Data Lifecycle Management Added to Backlog**:
+  - New Strategic Backlog category with 9 items for data deletion/archival workflow
+  - P1: Data Quarantine & Invalidation, Bulk Deletion API, Cascade Impact Preview
+  - P2: Deletion Audit Trail, Orphan Cleanup Job, Retention Policies
+  - P3: Soft Delete Migration, Data Recovery Dashboard, Data Export for Deletion (GDPR)
+  - Addresses gap: No way to safely remove/invalidate ingested data
+  - Reviewer-approved
+
+* [2025-01-01] – **Technical Debt Items Added to Deferred**:
+  - TODO/FIXME Cleanup: 45 comments across 24 files
+  - Dead Code Final Triage: 7 uncertain vulture candidates
+  - Dependency Updates: 33 outdated packages (batched approach)
+  - Type Coverage Improvement: 46% → 60% target
+  - Approach: Incremental paydown during regular development
 
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
