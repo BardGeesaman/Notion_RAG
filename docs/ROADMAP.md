@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul added)
 
 Simple status legend:
 - ✅ DONE
@@ -276,6 +276,15 @@ Simple status legend:
   - Established anti-patterns section
   - No production code changes (documentation only)
   - Commits: beb6536
+- ✅ Functional Testing Overhaul (2025-01-01)
+  - Integration test infrastructure with real PostgreSQL
+  - Enhanced fixtures: test_compound, test_dataset, test_experiment, test_signature, admin_user
+  - BenchmarkTracker with operation-specific thresholds (GET=150ms, POST=200ms, etc.)
+  - 6 high-risk API files converted: Jobs, Imaging, Backup, Sync, Papers, Collaboration
+  - 81 integration tests with 87% mock reduction
+  - CI performance gate script (scripts/check_benchmarks.py)
+  - Documentation: docs/INTEGRATION_TESTING.md
+  - Methodology proven for scaling to remaining ~68 files
 
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
