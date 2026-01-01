@@ -10,6 +10,12 @@ import streamlit as st
 
 from scripts.dashboard.components.mol3d_viewer import render_conformers_3d, render_molecule_3d
 from scripts.dashboard.components.comment_widget import render_comments_widget
+from scripts.dashboard.utils.cache import fetch_compounds, clear_all_caches
+from scripts.dashboard.utils.accessibility import (
+    render_skip_link,
+    add_heading_structure,
+    ensure_minimum_contrast
+)
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 

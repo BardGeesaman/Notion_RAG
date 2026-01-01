@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.orm import selectinload, joinedload
 
 from amprenta_rag.database.models import BindingSite, Compound, DockingPose, DockingRun, ProteinStructure
 from amprenta_rag.database.session import db_session
@@ -155,7 +156,10 @@ def list_runs(
     limit: int = Query(100, ge=1, le=1000),
 ) -> List[DockingRunResponse]:
     with db_session() as db:
-        q = db.query(DockingRun).order_by(DockingRun.started_at.desc().nullslast())
+        q = db.query(DockingRun).options(
+            joinedload(DockingRun.structure),
+            joinedload(DockingRun.binding_site)
+        ).order_by(DockingRun.started_at.desc().nullslast())
         if status:
             q = q.filter(DockingRun.status == status)
         rows = q.limit(limit).all()
@@ -183,7 +187,10 @@ def list_runs(
 @router.get("/runs/{run_id}", response_model=DockingRunResponse)
 def get_run(run_id: UUID) -> DockingRunResponse:
     with db_session() as db:
-        r = db.query(DockingRun).filter_by(id=run_id).first()
+        r = db.query(DockingRun).options(
+            joinedload(DockingRun.structure),
+            joinedload(DockingRun.binding_site)
+        ).filter_by(id=run_id).first()
         if not r:
             raise HTTPException(status_code=404, detail="Run not found")
         return DockingRunResponse(
@@ -209,6 +216,10 @@ def list_run_poses(run_id: UUID) -> List[DockingPoseResponse]:
     with db_session() as db:
         rows = (
             db.query(DockingPose)
+            .options(
+                joinedload(DockingPose.compound),
+                joinedload(DockingPose.docking_run)
+            )
             .filter(DockingPose.docking_run_id == run_id)
             .order_by(DockingPose.binding_affinity.asc().nullslast())
             .all()

@@ -9,6 +9,7 @@ import streamlit as st
 
 from scripts.dashboard.core.auth import check_authentication
 from scripts.dashboard.core.config import AUTH_DISABLED
+from scripts.dashboard.components.loading import get_loading_message
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 
@@ -101,7 +102,7 @@ def render_overview_tab():
     st.subheader("📊 SLA Status Overview")
     
     try:
-        with st.spinner("Loading SLA status..."):
+        with st.spinner(get_loading_message("loading", "SLA status")):
             status = _api_get("/api/v1/sla/status")
         
         # Metrics cards
@@ -180,7 +181,7 @@ def render_reviews_tab():
         )
     
     try:
-        with st.spinner("Loading reviews..."):
+        with st.spinner(get_loading_message("loading", "reviews")):
             reviews = _api_get("/api/v1/sla/overdue?limit=100")
         
         if not reviews:
@@ -301,7 +302,7 @@ def render_cycles_tab(user):
                         cycle_data["day_of_month"] = day_of_month
                     
                     try:
-                        with st.spinner("Creating cycle..."):
+                        with st.spinner(get_loading_message("creating", "review cycle")):
                             _api_post("/api/v1/sla/review-cycles", cycle_data)
                         st.success("✅ Cycle created successfully!")
                         st.rerun()
@@ -316,7 +317,7 @@ def render_cycles_tab(user):
     st.divider()
     
     try:
-        with st.spinner("Loading cycles..."):
+        with st.spinner(get_loading_message("loading", "review cycles")):
             cycles = _api_get("/api/v1/sla/review-cycles")
         
         if not cycles:
@@ -354,7 +355,7 @@ def render_cycles_tab(user):
                     with col_run:
                         if st.button("▶️ Run Now", key=f"run_{cycle['id']}"):
                             try:
-                                with st.spinner("Running cycle..."):
+                                with st.spinner(get_loading_message("processing", "review cycle")):
                                     result = _api_post(f"/api/v1/sla/review-cycles/{cycle['id']}/run-now", {})
                                 st.success(f"✅ {result.get('message', 'Cycle executed')}")
                             except Exception as e:
@@ -367,7 +368,7 @@ def render_cycles_tab(user):
                     with col_delete:
                         if st.button("🗑️ Delete", key=f"delete_{cycle['id']}"):
                             try:
-                                with st.spinner("Deleting cycle..."):
+                                with st.spinner(get_loading_message("deleting", "review cycle")):
                                     _api_delete(f"/api/v1/sla/review-cycles/{cycle['id']}")
                                 st.success("✅ Cycle deleted!")
                                 st.rerun()
@@ -431,7 +432,7 @@ def render_settings_tab(user):
                     }
                     
                     try:
-                        with st.spinner("Creating SLA rule..."):
+                        with st.spinner(get_loading_message("creating", "SLA rule")):
                             _api_post("/api/v1/sla/rules", sla_data)
                         st.success("✅ SLA rule created successfully!")
                         st.rerun()
@@ -446,7 +447,7 @@ def render_settings_tab(user):
     st.divider()
     
     try:
-        with st.spinner("Loading SLA rules..."):
+        with st.spinner(get_loading_message("loading", "SLA rules")):
             sla_rules = _api_get("/api/v1/sla/rules")
         
         if not sla_rules:
@@ -485,7 +486,7 @@ def render_settings_tab(user):
                     with col_delete:
                         if st.button("🗑️ Delete", key=f"delete_sla_{sla['id']}"):
                             try:
-                                with st.spinner("Deleting SLA rule..."):
+                                with st.spinner(get_loading_message("deleting", "SLA rule")):
                                     _api_delete(f"/api/v1/sla/rules/{sla['id']}")
                                 st.success("✅ SLA rule deleted!")
                                 st.rerun()

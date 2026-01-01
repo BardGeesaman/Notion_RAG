@@ -7,6 +7,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from scripts.dashboard.components.loading import get_loading_message
 from amprenta_rag.database.models import Experiment, Program
 from amprenta_rag.domain.omics import OmicsDatasetIngestRequest
 from amprenta_rag.ingestion.local_documents import ingest_local_document
@@ -240,7 +241,7 @@ def render_ingestion_page() -> None:
                 if not uploaded_sig:
                     st.error("Please upload a signature file first.")
                 else:
-                    with st.spinner("Ingesting signature... This may take a few minutes."):
+                    with st.spinner(get_loading_message("ingesting", "signature")):
                         try:
                             from amprenta_rag.ingestion.signature_ingestion import ingest_signature_from_file
 
@@ -307,7 +308,7 @@ def render_ingestion_page() -> None:
             if not study_id:
                 st.error("Please enter a study ID.")
             else:
-                with st.spinner(f"Harvesting {repository} study {study_id}... This may take a few minutes."):
+                with st.spinner(get_loading_message("harvesting", f"{repository} study {study_id}")):
                     try:
                         from scripts.harvest_repository_study import harvest_study
 
@@ -370,7 +371,7 @@ def render_ingestion_page() -> None:
 
                 if collection_id:
                     if st.button("📚 Ingest Zotero Collection", type="primary"):
-                        with st.spinner("Ingesting Zotero collection... This may take a few minutes."):
+                        with st.spinner(get_loading_message("ingesting", "Zotero collection")):
                             try:
 
                                 # Note: This would need to be adapted for UI use
@@ -438,7 +439,7 @@ def render_ingestion_page() -> None:
                         )
 
                     if st.button("🚀 Ingest HTS Campaign", type="primary"):
-                        with st.spinner("Ingesting HTS campaign... This may take a few minutes."):
+                        with st.spinner(get_loading_message("ingesting", "HTS campaign")):
                             try:
                                 from pathlib import Path
 
@@ -551,7 +552,7 @@ def render_ingestion_page() -> None:
                     st.text_input("Kd Column", value="Kd", key="bio_kd")
 
                 if st.button("🚀 Ingest Biochemical Results", type="primary"):
-                    with st.spinner("Ingesting biochemical results... This may take a few minutes."):
+                    with st.spinner(get_loading_message("ingesting", "biochemical results")):
                         try:
                             from pathlib import Path
 
@@ -630,7 +631,7 @@ def render_ingestion_page() -> None:
                     )
 
                 if st.button("🚀 Ingest Compounds", type="primary"):
-                    with st.spinner("Ingesting compounds... This may take a few minutes."):
+                    with st.spinner(get_loading_message("ingesting", "compounds")):
                         try:
                             import pandas as pd
 

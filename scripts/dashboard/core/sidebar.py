@@ -6,6 +6,14 @@ import os
 import streamlit as st
 from typing import Iterable, Any, Dict, List, Optional
 
+from scripts.dashboard.utils.accessibility import (
+    add_navigation_landmark,
+    accessible_button,
+    accessible_text_input,
+    ensure_minimum_contrast,
+    render_skip_link
+)
+
 from amprenta_rag.database.session import db_session
 from amprenta_rag.auth.audit import log_logout
 from amprenta_rag.notifications.service import get_unread_count, get_unread_notifications, mark_as_read, mark_all_read
@@ -196,8 +204,23 @@ def render_user_info(user: Dict[str, Any] | None) -> None:
         return
     username = str(user.get("username", ""))
     role = str(user.get("role", ""))
-    st.markdown(f"**👤 {username}** ({role})")
-    if st.button("Logout", key="logout_btn"):
+    
+    # Add user info section with proper ARIA label
+    st.markdown(
+        f"""
+        <div role="banner" aria-label="User information">
+            <p><strong>👤 {username}</strong> ({role})</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    if accessible_button(
+        "Logout", 
+        key="logout_btn",
+        aria_label=f"Logout user {username}",
+        help="Sign out of your account"
+    ):
         log_logout(str(user.get("id") or ""), username)
         from amprenta_rag.auth.session import clear_session
 
@@ -266,7 +289,22 @@ def render_theme_selector() -> None:
 
 
 def render_search() -> None:
-    search_query = st.text_input("🔍 Search...", key="global_search", placeholder="Search experiments, compounds, datasets...")
+    # Add search landmark
+    st.markdown(
+        """
+        <div role="search" aria-label="Global search">
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    search_query = accessible_text_input(
+        "🔍 Search...", 
+        key="global_search",
+        placeholder="Search experiments, compounds, datasets...",
+        aria_label="Search experiments, compounds, datasets, and signatures",
+        help="Search across all platform content"
+    )
     if not search_query:
         return
     with st.expander("🔍 Search Results", expanded=True):
@@ -349,12 +387,29 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
     inject_responsive_js()
     inject_mobile_css()
     
+    # Add accessibility features
+    ensure_minimum_contrast()
+    
     # Detect if mobile for responsive adjustments
     is_mobile = is_mobile_device()
     screen_size = get_screen_size()
     
     with st.sidebar:
-        st.title("Navigation")
+        # Add navigation landmark
+        add_navigation_landmark("navigation", "Main navigation menu")
+        
+        # Add skip link for keyboard users
+        render_skip_link("main-navigation")
+        
+        # Accessible title with proper heading structure
+        st.markdown(
+            """
+            <h1 id="navigation-title" tabindex="-1" style="margin-top: 0;">
+                📊 Navigation
+            </h1>
+            """,
+            unsafe_allow_html=True
+        )
 
         render_user_info(user)
         render_alerts_bell()
@@ -456,6 +511,16 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
 
     # Use enhanced grouped navigation with responsive adjustments
     current_page = st.session_state.get("selected_page", "Overview")
+    
+    # Add main navigation landmark
+    st.markdown(
+        f"""
+        <div id="main-navigation" role="navigation" aria-label="Main page navigation" aria-current="page">
+            <p class="sr-only">Current page: {current_page}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     
     # Import here to avoid circular import
     from scripts.dashboard.components.sidebar_nav import render_grouped_sidebar

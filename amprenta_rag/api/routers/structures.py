@@ -11,6 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy.orm import selectinload
 
 from amprenta_rag.database.models import ProteinStructure, StructureFile
 from amprenta_rag.database.session import db_session
@@ -105,25 +106,25 @@ def list_structures(
     limit: int = Query(100, ge=1, le=1000),
 ) -> List[ProteinStructureResponse]:
     with db_session() as db:
-        q = db.query(ProteinStructure).order_by(ProteinStructure.created_at.desc())
+        q = db.query(ProteinStructure).options(
+            selectinload(ProteinStructure.files)
+        ).order_by(ProteinStructure.created_at.desc())
         if source:
             q = q.filter(ProteinStructure.source == source)
         if prep_status:
             q = q.filter(ProteinStructure.prep_status == prep_status)
         rows = q.limit(limit).all()
-        # eager-load files
-        for r in rows:
-            _ = list(r.files or [])
         return [ProteinStructureResponse.model_validate(r) for r in rows]
 
 
 @router.get("/{structure_id}", response_model=ProteinStructureResponse)
 def get_structure(structure_id: UUID) -> ProteinStructureResponse:
     with db_session() as db:
-        s = db.query(ProteinStructure).filter(ProteinStructure.id == structure_id).first()
+        s = db.query(ProteinStructure).options(
+            selectinload(ProteinStructure.files)
+        ).filter(ProteinStructure.id == structure_id).first()
         if not s:
             raise HTTPException(status_code=404, detail="Structure not found")
-        _ = list(s.files or [])
         return ProteinStructureResponse.model_validate(s)
 
 
@@ -213,7 +214,10 @@ async def fetch_structure(payload: FetchStructureRequest) -> ProteinStructureRes
 
         db.commit()
         db.refresh(s)
-        _ = list(s.files or [])
+        # Re-query with eager loading to get files
+        s = db.query(ProteinStructure).options(
+            selectinload(ProteinStructure.files)
+        ).filter(ProteinStructure.id == s.id).first()
         return ProteinStructureResponse.model_validate(s)
 
 
@@ -298,7 +302,10 @@ if HAS_MULTIPART:
 
             db.commit()
             db.refresh(s)
-            _ = list(s.files or [])
+            # Re-query with eager loading to get files
+            s = db.query(ProteinStructure).options(
+                selectinload(ProteinStructure.files)
+            ).filter(ProteinStructure.id == s.id).first()
             return ProteinStructureResponse.model_validate(s)
 
 else:
@@ -314,7 +321,9 @@ else:
 @router.post("/{structure_id}/prepare", response_model=ProteinStructureResponse)
 async def prepare_structure_endpoint(structure_id: UUID, payload: PrepareRequest) -> ProteinStructureResponse:
     with db_session() as db:
-        s = db.query(ProteinStructure).filter(ProteinStructure.id == structure_id).first()
+        s = db.query(ProteinStructure).options(
+            selectinload(ProteinStructure.files)
+        ).filter(ProteinStructure.id == structure_id).first()
         if not s:
             raise HTTPException(status_code=404, detail="Structure not found")
 
@@ -351,7 +360,10 @@ async def prepare_structure_endpoint(structure_id: UUID, payload: PrepareRequest
         db.add(f)
         db.commit()
         db.refresh(s)
-        _ = list(s.files or [])
+        # Re-query with eager loading to get files
+        s = db.query(ProteinStructure).options(
+            selectinload(ProteinStructure.files)
+        ).filter(ProteinStructure.id == s.id).first()
         return ProteinStructureResponse.model_validate(s)
 
 
@@ -359,7 +371,9 @@ async def prepare_structure_endpoint(structure_id: UUID, payload: PrepareRequest
 def download_structure(structure_id: UUID, file_type: str = Query("prepared")):
     ft = (file_type or "").strip().lower()
     with db_session() as db:
-        s = db.query(ProteinStructure).filter(ProteinStructure.id == structure_id).first()
+        s = db.query(ProteinStructure).options(
+            selectinload(ProteinStructure.files)
+        ).filter(ProteinStructure.id == structure_id).first()
         if not s:
             raise HTTPException(status_code=404, detail="Structure not found")
         f = next((x for x in (s.files or []) if x.file_type.lower() == ft), None)

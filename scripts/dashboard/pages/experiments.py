@@ -24,6 +24,12 @@ from amprenta_rag.export.slide_generator import generate_experiment_slides
 from amprenta_rag.utils.optimistic_lock import update_with_lock, ConflictError
 from scripts.dashboard.db_session import db_session
 from scripts.dashboard.components.comment_widget import render_comments_widget
+from scripts.dashboard.utils.cache import fetch_experiments, clear_all_caches
+from scripts.dashboard.utils.accessibility import (
+    render_skip_link,
+    add_heading_structure,
+    ensure_minimum_contrast
+)
 
 
 def _handle_reload(exp_id: int, actual_version: int) -> None:
@@ -80,29 +86,48 @@ def _render_browse_tab() -> None:
                             st.success("Filter deleted!")
                             st.rerun()
 
-        search_term = st.text_input("Search experiments by name", "", key="exp_search")
+        # Add cache refresh button
+        col_search, col_refresh = st.columns([10, 1])
+        with col_search:
+            search_term = st.text_input("Search experiments by name", "", key="exp_search")
+        with col_refresh:
+            if st.button("🔄", help="Refresh data", key="refresh_experiments"):
+                clear_all_caches()
+                st.rerun()
 
-        query = db.query(Experiment)
+        # Use cached data
+        experiments_data = fetch_experiments()
+        
+        # Filter experiments by search term (client-side filtering)
         if search_term:
-            query = query.filter(Experiment.name.ilike(f"%{search_term}%"))
+            filtered_experiments = [
+                e for e in experiments_data 
+                if search_term.lower() in e.get("name", "").lower()
+            ]
+        else:
+            filtered_experiments = experiments_data
 
-        experiments: List[Experiment] = query.order_by(Experiment.created_at.desc()).all()
+        st.metric("Total Experiments", len(filtered_experiments))
 
-        st.metric("Total Experiments", len(experiments))
-
-        if experiments:
-            # Summary table
+        if filtered_experiments:
+            # Summary table from cached data
             experiment_data: List[Dict[str, Any]] = []
-            for exp in experiments:
+            for exp_data in filtered_experiments:
+                disease = exp_data.get("disease", [])
+                disease_str = ", ".join(disease) if isinstance(disease, list) else str(disease) if disease else ""
+                
+                matrix = exp_data.get("matrix", [])
+                matrix_str = ", ".join(matrix) if isinstance(matrix, list) else str(matrix) if matrix else ""
+                
                 experiment_data.append(
                     {
-                        "Name": exp.name,
-                        "Type": exp.type or "",
-                        "Design": exp.design_type or "",
-                        "Disease": ", ".join(exp.disease) if exp.disease else "",
-                        "Matrix": ", ".join(exp.matrix) if exp.matrix else "",
-                        "Created": exp.created_at.strftime("%Y-%m-%d"),
-                        "Datasets": len(exp.datasets),
+                        "Name": exp_data.get("name", ""),
+                        "Type": exp_data.get("type", ""),
+                        "Design": exp_data.get("design_type", ""),
+                        "Disease": disease_str,
+                        "Matrix": matrix_str,
+                        "Created": exp_data.get("created_at", ""),
+                        "Datasets": exp_data.get("dataset_count", 0),
                     }
                 )
             df_experiments = pd.DataFrame(experiment_data)

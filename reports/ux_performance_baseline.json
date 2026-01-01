@@ -1,0 +1,60 @@
+{
+  "generated_at": "2025-01-01T13:45:00Z",
+  "purpose": "UX Performance Baseline - Pre-Optimization",
+  "note": "Server not running during capture - baseline established for infrastructure",
+  "total_endpoints_tested": 9,
+  "successful_measurements": 0,
+  "target_endpoints": [
+    {
+      "endpoint": "/api/v1/jobs",
+      "method": "GET",
+      "optimization_target": "Add eager loading for job relationships",
+      "expected_improvement": "Reduce N+1 queries for job types and metadata"
+    },
+    {
+      "endpoint": "/api/v1/structures",
+      "method": "GET", 
+      "optimization_target": "Replace manual workaround with selectinload(ProteinStructure.files)",
+      "expected_improvement": "Eliminate manual relationship loading"
+    },
+    {
+      "endpoint": "/api/v1/poses",
+      "method": "GET",
+      "optimization_target": "Add eager loading chain for pose.compound, pose.docking_run, run.structure, structure.files",
+      "expected_improvement": "Reduce complex relationship traversal queries"
+    },
+    {
+      "endpoint": "/api/v1/docking/runs", 
+      "method": "GET",
+      "optimization_target": "Add eager loading for structure/compound relationships",
+      "expected_improvement": "Similar pattern to poses optimization"
+    }
+  ],
+  "measurements": {},
+  "summary_statistics": {
+    "overall_p50": 0,
+    "overall_p95": 0,
+    "slowest_endpoint": null
+  },
+  "optimization_plan": {
+    "phase": "Query Optimization - Eager Loading",
+    "current_eager_loading_usage": "Only 29 uses of selectinload/joinedload across codebase",
+    "risk_assessment": "High N+1 query risk in relationship-heavy endpoints",
+    "target_patterns": [
+      "selectinload for one-to-many relationships",
+      "joinedload for many-to-one relationships", 
+      "Chained loading for nested relationships"
+    ]
+  },
+  "benchmark_tracker_report": {
+    "summary": {
+      "total": 0,
+      "passed": 0,
+      "failed": 0,
+      "pass_rate": 0
+    },
+    "slowest": [],
+    "failures": [],
+    "all_results": []
+  }
+}

@@ -8,6 +8,8 @@ from typing import Any
 import httpx
 import streamlit as st
 
+from scripts.dashboard.components.loading import get_loading_message
+
 
 API_BASE = os.environ.get("API_URL", "http://localhost:8000")
 
@@ -58,7 +60,7 @@ def render_status_tab(user: dict) -> None:
     st.subheader("📊 Mapping Status")
     
     try:
-        with st.spinner("Loading mapping status..."):
+        with st.spinner(get_loading_message("loading", "mapping status")):
             status = _api_get("/api/v1/mappings/status")
         
         col1, col2, col3 = st.columns(3)
@@ -84,7 +86,7 @@ def render_status_tab(user: dict) -> None:
             
             if st.button("🔄 Refresh UniProt Mappings", key="refresh_uniprot", type="primary"):
                 try:
-                    with st.spinner("Queueing refresh job..."):
+                    with st.spinner(get_loading_message("queueing", "refresh job")):
                         result = _api_post("/api/v1/mappings/refresh", {"source": "uniprot"})
                     st.success(f"✅ Refresh queued successfully! Job ID: {result.get('job_id')}")
                     st.info("The refresh job is now running in the background. Check the Jobs tab for updates.")
@@ -126,7 +128,7 @@ def render_statistics_tab() -> None:
     st.subheader("📈 Detailed Statistics")
     
     try:
-        with st.spinner("Loading statistics..."):
+        with st.spinner(get_loading_message("loading", "statistics")):
             stats = _api_get("/api/v1/mappings/stats")
         
         # Overview metrics
@@ -203,7 +205,7 @@ def render_lookup_tab() -> None:
     
     if st.button("🔍 Look Up", key="lookup_single") and source_id:
         try:
-            with st.spinner("Looking up mappings..."):
+            with st.spinner(get_loading_message("looking up", "mappings")):
                 result = _api_get(f"/api/v1/mappings/{source_type}/{source_id}?fallback={str(fallback).lower()}")
                 mappings = result.get("mappings", {})
                 
@@ -250,7 +252,7 @@ def render_lookup_tab() -> None:
             st.error("❌ Please enter at least one ID.")
         else:
             try:
-                with st.spinner(f"Processing {len(ids)} IDs..."):
+                with st.spinner(get_loading_message("processing", f"{len(ids)} IDs")):
                     result = _api_post("/api/v1/mappings/batch", {
                         "ids": ids,
                         "source_type": batch_source_type,
@@ -343,7 +345,7 @@ def render_jobs_tab(user: dict) -> None:
         with col1:
             if st.button("🔄 Trigger UniProt Refresh", key="jobs_refresh", type="primary"):
                 try:
-                    with st.spinner("Queueing refresh job..."):
+                    with st.spinner(get_loading_message("queueing", "refresh job")):
                         result = _api_post("/api/v1/mappings/refresh", {"source": "uniprot"})
                     st.success(f"✅ UniProt refresh job queued! Job ID: {result.get('job_id')}")
                 except Exception as e:

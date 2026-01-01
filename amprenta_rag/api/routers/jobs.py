@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
+from sqlalchemy.orm import selectinload, joinedload
 
 from amprenta_rag.database.models import (
     PipelineJob,
@@ -129,6 +130,23 @@ def list_jobs(
             status_field = config["status_field"]
             
             query = db.query(model)
+            
+            # Add eager loading based on job type
+            if job_type == "genomics":
+                query = query.options(joinedload(PipelineJob.index))
+            elif job_type == "docking":
+                query = query.options(
+                    joinedload(DockingRun.structure),
+                    joinedload(DockingRun.binding_site),
+                    selectinload(DockingRun.poses)
+                )
+            elif job_type == "extraction":
+                query = query.options(selectinload(ExtractionJob.documents))
+            elif job_type == "sync":
+                query = query.options(selectinload(SyncJob.records))
+            elif job_type == "single_cell":
+                query = query.options(joinedload(SingleCellDataset.dataset))
+            
             if status:
                 query = query.filter(getattr(model, status_field) == status)
             
@@ -142,6 +160,23 @@ def list_jobs(
                 status_field = config["status_field"]
                 
                 query = db.query(model)
+                
+                # Add eager loading based on job type
+                if jt == "genomics":
+                    query = query.options(joinedload(PipelineJob.index))
+                elif jt == "docking":
+                    query = query.options(
+                        joinedload(DockingRun.structure),
+                        joinedload(DockingRun.binding_site),
+                        selectinload(DockingRun.poses)
+                    )
+                elif jt == "extraction":
+                    query = query.options(selectinload(ExtractionJob.documents))
+                elif jt == "sync":
+                    query = query.options(selectinload(SyncJob.records))
+                elif jt == "single_cell":
+                    query = query.options(joinedload(SingleCellDataset.dataset))
+                
                 if status:
                     query = query.filter(getattr(model, status_field) == status)
                 
@@ -168,7 +203,25 @@ def get_job(job_type: str, job_id: UUID) -> Dict[str, Any]:
     model = config["model"]
     
     with db_session() as db:
-        job = db.query(model).filter(getattr(model, "id") == job_id).first()
+        query = db.query(model).filter(getattr(model, "id") == job_id)
+        
+        # Add eager loading based on job type
+        if job_type == "genomics":
+            query = query.options(joinedload(PipelineJob.index))
+        elif job_type == "docking":
+            query = query.options(
+                joinedload(DockingRun.structure),
+                joinedload(DockingRun.binding_site),
+                selectinload(DockingRun.poses)
+            )
+        elif job_type == "extraction":
+            query = query.options(selectinload(ExtractionJob.documents))
+        elif job_type == "sync":
+            query = query.options(selectinload(SyncJob.records))
+        elif job_type == "single_cell":
+            query = query.options(joinedload(SingleCellDataset.dataset))
+        
+        job = query.first()
         if not job:
             raise HTTPException(
                 status_code=404,

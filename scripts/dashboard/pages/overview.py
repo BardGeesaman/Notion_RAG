@@ -6,6 +6,13 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import func
 
+from scripts.dashboard.utils.accessibility import (
+    render_skip_link,
+    add_heading_structure,
+    ensure_minimum_contrast,
+    render_status_with_icon
+)
+
 from amprenta_rag.database.models import (
     Compound,
     Dataset,
@@ -31,6 +38,13 @@ from amprenta_rag.utils.widgets import (
     get_discovery_count,
 )
 from scripts.dashboard.db_session import db_session
+from scripts.dashboard.utils.cache import (
+    fetch_programs, 
+    fetch_datasets, 
+    fetch_experiments, 
+    fetch_compounds,
+    clear_all_caches
+)
 
 
 def render_overview_page() -> None:
@@ -38,25 +52,55 @@ def render_overview_page() -> None:
     Render the Overview page with statistics and recent datasets.
 
     Displays:
-    - Overall statistics (datasets, programs, experiments, features, signatures)
+    - Overall statistics (datasets, programs, experiments, features, signatures) - CACHED
     - Datasets by omics type distribution
     - Recent datasets list
+    - Cache refresh button
     """
-    st.header("📊 Overview")
+    # Add accessibility features
+    render_skip_link("main-overview-content")
+    ensure_minimum_contrast()
+    
+    # Add main content landmark and heading
+    st.markdown(
+        """
+        <main id="main-overview-content" role="main" aria-label="Platform overview dashboard">
+        </main>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    add_heading_structure("📊 Platform Overview", level=1, id="overview-title")
+    # Add cache refresh button
+    col_header, col_refresh = st.columns([10, 1])
+    with col_header:
+        st.header("📊 Overview")
+    with col_refresh:
+        if st.button("🔄", help="Refresh data", key="refresh_overview"):
+            clear_all_caches()
+            st.rerun()
+
+    # Use cached data for metrics
+    programs_data = fetch_programs()
+    datasets_data = fetch_datasets(limit=1000)  # Higher limit for overview
+    experiments_data = fetch_experiments(limit=1000)
+    compounds_data = fetch_compounds(limit=1000)
 
     with db_session() as db:
-        # Metrics row at top
+        # Metrics row at top (using cached data where possible)
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            exp_count = get_experiment_count(db)
+            exp_count = len(experiments_data)  # Use cached count
             st.metric("Experiments", exp_count, delta=None)
         with col2:
-            comp_count = get_compound_count(db)
+            comp_count = len(compounds_data)  # Use cached count
             st.metric("Compounds", comp_count, delta=None)
         with col3:
+            # Sample count still needs database query (not in cached data)
             sample_count = get_sample_count(db)
             st.metric("Samples", sample_count, delta=None)
         with col4:
+            # Discovery count still needs database query (time-based)
             disc_count = get_discovery_count(days=7, db=db)
             st.metric("Discoveries (7d)", disc_count, delta=None)
 
@@ -131,22 +175,24 @@ def render_overview_page() -> None:
         col1, col2, col3, col4, col5 = st.columns(5)
 
         with col1:
-            dataset_count = db.query(func.count(Dataset.id)).scalar()
+            dataset_count = len(datasets_data)  # Use cached count
             st.metric("Datasets", dataset_count)
 
         with col2:
-            program_count = db.query(func.count(Program.id)).scalar()
+            program_count = len(programs_data)  # Use cached count
             st.metric("Programs", program_count)
 
         with col3:
-            experiment_count = db.query(func.count(Experiment.id)).scalar()
+            experiment_count = len(experiments_data)  # Use cached count
             st.metric("Experiments", experiment_count)
 
         with col4:
+            # Features still need database query (not in cached data)
             feature_count = db.query(func.count(Feature.id)).scalar()
             st.metric("Features", feature_count)
 
         with col5:
+            # Signatures still need database query (not in cached data)
             signature_count = db.query(func.count(Signature.id)).scalar()
             st.metric("Signatures", signature_count)
 
@@ -168,16 +214,23 @@ def render_overview_page() -> None:
             st.metric("RAG Chunks", chunk_count)
 
         with col4:
-            compound_count = db.query(func.count(Compound.id)).scalar()
+            compound_count = len(compounds_data)  # Use cached count
             st.metric("Compounds", compound_count)
 
         with col5:
             campaign_count = db.query(func.count(HTSCampaign.id)).scalar()
             st.metric("HTS Campaigns", campaign_count)
 
-        # Datasets by Omics Type
+        # Datasets by Omics Type (using cached data)
         st.subheader("📈 Datasets by Omics Type")
-        omics_counts = db.query(Dataset.omics_type, func.count(Dataset.id)).group_by(Dataset.omics_type).all()
+        
+        # Calculate omics type distribution from cached data
+        omics_count_dict = {}
+        for dataset in datasets_data:
+            omics_type = dataset.get("omics_type", "Unknown")
+            omics_count_dict[omics_type] = omics_count_dict.get(omics_type, 0) + 1
+        
+        omics_counts = list(omics_count_dict.items())
 
         # Dataset creation over time
         dataset_timeline = (

@@ -7,8 +7,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy.orm import selectinload, joinedload
 
-from amprenta_rag.database.models import DockingPose, PoseInteraction, PoseQuality, ProteinStructure
+from amprenta_rag.database.models import DockingPose, DockingRun, PoseInteraction, PoseQuality, ProteinStructure
 from amprenta_rag.database.session import db_session
 from amprenta_rag.structural.pose_qc import analyze_pose
 
@@ -53,16 +54,17 @@ def _get_receptor_pdb_path(structure: ProteinStructure) -> Optional[str]:
 @router.post("/{pose_id}/analyze", response_model=PoseQualityResponse)
 def analyze(pose_id: UUID) -> PoseQualityResponse:
     with db_session() as db:
-        pose = db.query(DockingPose).filter(DockingPose.id == pose_id).first()
+        pose = db.query(DockingPose).options(
+            joinedload(DockingPose.compound),
+            joinedload(DockingPose.docking_run).joinedload(DockingRun.structure).selectinload(ProteinStructure.files)
+        ).filter(DockingPose.id == pose_id).first()
         if not pose:
             raise HTTPException(status_code=404, detail="Pose not found")
-        # eager-load compound, run, structure, files
-        _ = pose.compound
+        
         run = pose.docking_run
         if not run or not run.structure:
             raise HTTPException(status_code=400, detail="Pose missing docking run/structure")
         structure = run.structure
-        _ = list(structure.files or [])
 
         receptor_pdb = _get_receptor_pdb_path(structure)
         if not receptor_pdb:

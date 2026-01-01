@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+from scripts.dashboard.components.loading import get_loading_message
+
 from amprenta_rag.api.schemas import DatasetUpdate, ExperimentUpdate, ProgramUpdate
 from amprenta_rag.api.services.datasets import update_dataset
 from amprenta_rag.api.services.experiments import update_experiment
@@ -65,7 +67,7 @@ def render_management_page() -> None:
                             st.warning("Please select at least one program to link.")
                         else:
                             try:
-                                with st.spinner("Linking dataset to programs..."):
+                                with st.spinner(get_loading_message("linking", "dataset to programs")):
                                     with db_session() as link_db:
                                         program_uuids = [p[0] for p in selected_programs]
                                         result = link_dataset_to_programs_and_experiments_in_postgres(
@@ -113,7 +115,7 @@ def render_management_page() -> None:
                             st.warning("Please select at least one experiment to link.")
                         else:
                             try:
-                                with st.spinner("Linking dataset to experiments..."):
+                                with st.spinner(get_loading_message("linking", "dataset to experiments")):
                                     with db_session() as link_db:
                                         experiment_uuids = [e[0] for e in selected_experiments]
                                         result = link_dataset_to_programs_and_experiments_in_postgres(
@@ -165,7 +167,7 @@ def render_management_page() -> None:
                             st.warning("Please select at least one dataset to link.")
                         else:
                             try:
-                                with st.spinner("Linking feature to datasets..."):
+                                with st.spinner(get_loading_message("linking", "feature to datasets")):
                                     feature = db.query(Feature).filter(Feature.id == selected_feature[0]).first()
                                     if feature:
                                         feature_name = feature.name
@@ -223,7 +225,7 @@ def render_management_page() -> None:
                             st.warning("Please select at least one dataset to link.")
                         else:
                             try:
-                                with st.spinner("Linking signature to datasets..."):
+                                with st.spinner(get_loading_message("linking", "signature to datasets")):
                                     linked_count = 0
                                     with db_session() as link_db:
                                         for dataset_tuple in selected_datasets:
@@ -369,7 +371,7 @@ def render_management_page() -> None:
                                 st.info("No changes detected.")
                             else:
                                 try:
-                                    with st.spinner("Saving changes..."):
+                                    with st.spinner(get_loading_message("saving", "changes")):
                                         with db_session() as update_db:
                                             updated = update_dataset(
                                                 db=update_db,
@@ -441,7 +443,7 @@ def render_management_page() -> None:
                                 st.info("No changes detected.")
                             else:
                                 try:
-                                    with st.spinner("Saving changes..."):
+                                    with st.spinner(get_loading_message("saving", "changes")):
                                         with db_session() as update_db:
                                             update_data = ProgramUpdate(
                                                 name=new_name if new_name != program.name else None,
@@ -503,7 +505,7 @@ def render_management_page() -> None:
                                 st.info("No changes detected.")
                             else:
                                 try:
-                                    with st.spinner("Saving changes..."):
+                                    with st.spinner(get_loading_message("saving", "changes")):
                                         with db_session() as update_db:
                                             update_data = ExperimentUpdate(
                                                 name=new_name if new_name != experiment.name else None,
@@ -571,7 +573,7 @@ def render_management_page() -> None:
                             st.warning("Please select a program to link to.")
                         else:
                             try:
-                                with st.spinner(f"Linking {len(selected_datasets)} dataset(s) to program..."):
+                                with st.spinner(get_loading_message("linking", f"{len(selected_datasets)} dataset(s) to program")):
                                     program_id = selected_program[0]
                                     linked_count = 0
                                     errors = []

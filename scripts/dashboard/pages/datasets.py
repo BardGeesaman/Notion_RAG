@@ -12,6 +12,12 @@ from amprenta_rag.notebooks import generate_dataset_notebook
 from scripts.dashboard.db_session import db_session
 from scripts.dashboard.components.comment_widget import render_comments_widget
 from scripts.dashboard.components.annotation_panel import render_annotation_panel, render_annotation_indicator
+from scripts.dashboard.utils.cache import fetch_datasets, clear_all_caches
+from scripts.dashboard.utils.accessibility import (
+    render_skip_link,
+    add_heading_structure,
+    ensure_minimum_contrast
+)
 
 
 def get_qc_dict(ds):
@@ -23,70 +29,91 @@ def render_datasets_page() -> None:
     Render the Datasets page with filtering, search, and detailed views.
 
     Features:
-    - Filter by omics type
+    - Filter by omics type (cached data)
     - Search by name
     - Summary and detailed dataset views
     - Export functionality (CSV)
+    - Cache refresh button
     """
-    st.header("📁 Datasets")
+    # Add accessibility features
+    render_skip_link("main-datasets-content")
+    ensure_minimum_contrast()
+    
+    # Add main content landmark and heading
+    st.markdown(
+        """
+        <main id="main-datasets-content" role="main" aria-label="Dataset catalog and management">
+        </main>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    add_heading_structure("📊 Datasets", level=1, id="datasets-title")
+    
+    # Add cache refresh button
+    col_header, col_refresh = st.columns([10, 1])
+    with col_header:
+        st.markdown("")  # Spacing since we added our own heading
+    with col_refresh:
+        if st.button("🔄", help="Refresh data", key="refresh_datasets"):
+            clear_all_caches()
+            st.rerun()
 
-    with db_session() as db:
-        # Filters
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            # Get distinct omics types
-            omics_types = [
-                row[0]
-                for row in db.query(Dataset.omics_type).distinct().limit(200).all()
-                if row[0]
-            ]
-            omics_filter = st.selectbox(
-                "Filter by Omics Type",
-                ["All"] + omics_types,
-            )
-        with col2:
-            # Use ingestion_status instead of qc_status (which doesn't exist)
-            status_opts = [
-                x[0]
-                for x in db.query(Dataset.ingestion_status).distinct().limit(200).all()
-                if x[0]
-            ]
-            qc_filter = st.selectbox("Ingestion Status", ["All"] + status_opts)
-        with col3:
-            search_term = st.text_input("Search by name", "")
+    # Use cached data
+    datasets_data = fetch_datasets(limit=200)
+    
+    # Extract distinct values for filters from cached data
+    omics_types = list(set(d.get("omics_type") for d in datasets_data if d.get("omics_type")))
+    omics_types.sort()
+    
+    status_opts = list(set(d.get("ingestion_status") for d in datasets_data if d.get("ingestion_status")))
+    status_opts.sort()
 
-        # Query datasets
-        query = db.query(Dataset)
+    # Filters
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        omics_filter = st.selectbox(
+            "Filter by Omics Type",
+            ["All"] + omics_types,
+        )
+    with col2:
+        qc_filter = st.selectbox("Ingestion Status", ["All"] + status_opts)
+    with col3:
+        search_term = st.text_input("Search by name", "")
 
-        if omics_filter != "All":
-            query = query.filter(Dataset.omics_type == omics_filter)
+    # Filter datasets (client-side filtering on cached data)
+    filtered_datasets = datasets_data
+    
+    if omics_filter != "All":
+        filtered_datasets = [d for d in filtered_datasets if d.get("omics_type") == omics_filter]
+    
+    if qc_filter != "All":
+        filtered_datasets = [d for d in filtered_datasets if d.get("ingestion_status") == qc_filter]
+    
+    if search_term:
+        filtered_datasets = [
+            d for d in filtered_datasets 
+            if search_term.lower() in d.get("name", "").lower()
+        ]
 
-        if qc_filter != "All":
-            query = query.filter(Dataset.ingestion_status == qc_filter)
+    st.metric("Total Datasets", len(filtered_datasets))
 
-        if search_term:
-            query = query.filter(Dataset.name.ilike(f"%{search_term}%"))
-
-        datasets = query.order_by(Dataset.created_at.desc()).limit(200).all()
-
-        st.metric("Total Datasets", len(datasets))
-
-        if datasets:
-            # Summary table
+    if filtered_datasets:
+            # Summary table from cached data
             summary_data = []
-            for ds in datasets:
-                qc = get_qc_dict(ds)
+            for ds_data in filtered_datasets:
+                qc = ds_data.get("qc_metrics", {}) if isinstance(ds_data.get("qc_metrics"), dict) else {}
                 summary_data.append(
                     {
-                        "Name": ds.name,
-                        "Omics Type": ds.omics_type,
-                        "Ingestion Status": getattr(ds, "ingestion_status", "unknown"),
+                        "Name": ds_data.get("name", ""),
+                        "Omics Type": ds_data.get("omics_type", ""),
+                        "Ingestion Status": ds_data.get("ingestion_status", "unknown"),
                         "Features": qc.get("num_features", ""),
                         "Missing Rate": (
                             f"{qc.get('missing_rate', ''):.3f}" if qc.get("missing_rate") is not None else ""
                         ),
-                        "Source": getattr(ds, "external_ids", "") or getattr(ds, "file_paths", None) or "",
-                        "Created": ds.created_at.strftime("%Y-%m-%d"),
+                        "Source": ds_data.get("external_ids", "") or ds_data.get("file_paths", "") or "",
+                        "Created": ds_data.get("created_at", ""),
                     }
                 )
             df_summary = pd.DataFrame(summary_data)
@@ -103,20 +130,32 @@ def render_datasets_page() -> None:
                     mime="text/csv",
                 )
             with col2:
-                # Full dataset export
+                # Full dataset export from cached data
                 full_data = []
-                for ds in datasets:
+                for ds_data in filtered_datasets:
+                    file_paths = ds_data.get("file_paths", [])
+                    if isinstance(file_paths, list):
+                        file_paths_str = "; ".join(file_paths)
+                    else:
+                        file_paths_str = str(file_paths) if file_paths else ""
+                    
+                    disease = ds_data.get("disease", [])
+                    if isinstance(disease, list):
+                        disease_str = ", ".join(disease)
+                    else:
+                        disease_str = str(disease) if disease else ""
+                    
                     full_data.append(
                         {
-                            "ID": str(ds.id),
-                            "Name": ds.name,
-                            "Omics Type": ds.omics_type,
-                            "Description": ds.description or "",
-                            "Created": ds.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                            "Updated": ds.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-                            "File Paths": "; ".join(ds.file_paths) if ds.file_paths else "",
-                            "Disease": ", ".join(ds.disease) if ds.disease else "",
-                            "Notion ID": ds.notion_page_id or "",
+                            "ID": str(ds_data.get("id", "")),
+                            "Name": ds_data.get("name", ""),
+                            "Omics Type": ds_data.get("omics_type", ""),
+                            "Description": ds_data.get("description", ""),
+                            "Created": ds_data.get("created_at", ""),
+                            "Updated": ds_data.get("updated_at", ""),
+                            "File Paths": file_paths_str,
+                            "Disease": disease_str,
+                            "Notion ID": ds_data.get("notion_page_id", ""),
                         }
                     )
                 df_full = pd.DataFrame(full_data)
@@ -131,8 +170,14 @@ def render_datasets_page() -> None:
             st.markdown("---")
             st.subheader("Dataset Details")
 
-            # Display datasets (access relationships while session is open)
-            for dataset in datasets:
+            # Display datasets (use cached data for basic info, database for relationships)
+            for ds_data in filtered_datasets:
+                dataset_id = ds_data.get("id")
+                # For complex operations like relationships, we still need database access
+                with db_session() as db:
+                    dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+                    if not dataset:
+                        continue
                 # Show annotation panel in sidebar if this dataset is selected
                 if st.session_state.get("annotation_context", {}).get("entity_id") == str(dataset.id):
                     with st.sidebar:
@@ -143,15 +188,15 @@ def render_datasets_page() -> None:
                             position_data=st.session_state["annotation_context"].get("position_data"),
                         )
                 
-                with st.expander(f"**{dataset.name}** ({dataset.omics_type})"):
+                with st.expander(f"**{ds_data.get('name', 'Unknown')}** ({ds_data.get('omics_type', 'Unknown')})"):
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.write(f"**ID:** `{dataset.id}`")
-                        st.write(f"**Omics Type:** {dataset.omics_type}")
-                        if dataset.description:
-                            st.write(f"**Description:** {dataset.description}")
-                        qc = get_qc_dict(dataset)
-                        ingestion_status = getattr(dataset, "ingestion_status", None)
+                        st.write(f"**ID:** `{ds_data.get('id')}`")
+                        st.write(f"**Omics Type:** {ds_data.get('omics_type')}")
+                        if ds_data.get("description"):
+                            st.write(f"**Description:** {ds_data['description']}")
+                        qc = ds_data.get("qc_metrics", {}) if isinstance(ds_data.get("qc_metrics"), dict) else {}
+                        ingestion_status = ds_data.get("ingestion_status")
                         if ingestion_status:  # --- Inline status badge ---
                             status_color = {"complete": "green", "in_progress": "orange", "failed": "red", "pending": "gray"}.get(ingestion_status, "gray")
                             st.markdown(
@@ -159,19 +204,23 @@ def render_datasets_page() -> None:
                                 unsafe_allow_html=True,
                             )
                         if qc:
+                            missing_rate = qc.get('missing_rate')
+                            missing_rate_str = f"{missing_rate:.1%}" if missing_rate is not None else "?"
                             st.caption(
-                                f"Data Summary: {qc.get('num_features', '?')} features, {qc.get('missing_rate', '?'):.1%} missing rate"
+                                f"Data Summary: {qc.get('num_features', '?')} features, {missing_rate_str} missing rate"
                             )
                     with col2:
-                        st.write(f"**Created:** {dataset.created_at.strftime('%Y-%m-%d %H:%M')}")
-                        st.write(f"**Updated:** {dataset.updated_at.strftime('%Y-%m-%d %H:%M')}")
+                        st.write(f"**Created:** {ds_data.get('created_at', '')}")
+                        st.write(f"**Updated:** {ds_data.get('updated_at', '')}")
 
-                    if dataset.file_paths:
+                    file_paths = ds_data.get("file_paths", [])
+                    if file_paths:
                         st.write("**File Paths:**")
-                        for i, fp in enumerate(dataset.file_paths):
-                            col_path, col_annotation = st.columns([10, 1])
-                            with col_path:
-                                st.code(fp, language=None)
+                        if isinstance(file_paths, list):
+                            for i, fp in enumerate(file_paths):
+                                col_path, col_annotation = st.columns([10, 1])
+                                with col_path:
+                                    st.code(fp, language=None)
                             with col_annotation:
                                 # Add annotation indicator for this file path
                                 if render_annotation_indicator(
@@ -300,5 +349,5 @@ def render_datasets_page() -> None:
                     # Comments section
                     st.markdown("---")
                     render_comments_widget("dataset", dataset.id)
-        else:
-            st.info("No datasets found matching your filters.")
+    else:
+        st.info("No datasets found matching your filters.")

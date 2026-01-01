@@ -8,6 +8,8 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 
+from scripts.dashboard.components.loading import get_loading_message
+
 from amprenta_rag.analysis.pathway.enrichment import perform_pathway_enrichment
 from amprenta_rag.analysis.program_maps.reporting import generate_program_map_report, generate_program_signature_map
 from amprenta_rag.analysis.power_analysis import (
@@ -94,7 +96,7 @@ def render_analysis_page() -> None:
                             )
 
                         if st.button("🔬 Run Enrichment Analysis", type="primary"):
-                            with st.spinner("Running pathway enrichment analysis... This may take a few minutes."):
+                            with st.spinner(get_loading_message("running", "pathway enrichment analysis")):
                                 try:
                                     results = perform_pathway_enrichment(
                                         input_features=feature_names,
@@ -201,7 +203,7 @@ def render_analysis_page() -> None:
                             )
 
                         if st.button("🔬 Run Enrichment Analysis", type="primary", key="sig_btn"):
-                            with st.spinner("Running pathway enrichment analysis... This may take a few minutes."):
+                            with st.spinner(get_loading_message("running", "pathway enrichment analysis")):
                                 try:
                                     results = perform_pathway_enrichment(
                                         input_features=feature_names,
@@ -398,7 +400,7 @@ def render_analysis_page() -> None:
                     )
 
                 if st.button("🗺️ Generate Program Map", type="primary"):
-                    with st.spinner("Generating program signature map... This may take a few minutes."):
+                    with st.spinner(get_loading_message("generating", "program signature map")):
                         try:
                             # Generate map
                             program_map = generate_program_signature_map(
@@ -456,7 +458,7 @@ def render_analysis_page() -> None:
                     dataset_id = UUID(dataset_options[selected_dataset])
 
                 if st.button("📊 Score Signature", type="primary"):
-                    with st.spinner("Scoring signature against dataset..."):
+                    with st.spinner(get_loading_message("scoring", "signature against dataset")):
                         try:
                             from amprenta_rag.database.models import Dataset as DatasetModel
                             from amprenta_rag.ingestion.postgres_signature_matching import (
@@ -695,7 +697,7 @@ def render_analysis_page() -> None:
 
                     with col2:
                         if st.button("Find Patterns", type="primary"):
-                            with st.spinner("Analyzing patterns across datasets..."):
+                            with st.spinner(get_loading_message("analyzing", "patterns across datasets")):
                                 try:
                                     # Find recurring features
                                     recurring = find_recurring_features(
@@ -783,7 +785,7 @@ def render_analysis_page() -> None:
                 )
 
                 if st.button("Detect Confounders", type="primary"):
-                    with st.spinner("Analyzing potential confounders..."):
+                    with st.spinner(get_loading_message("analyzing", "potential confounders")):
                         try:
                             # Detect confounders
                             results = detect_confounders(metadata_df, group_column)
@@ -870,7 +872,7 @@ def render_analysis_page() -> None:
             if not research_question:
                 st.error("Please enter a research question")
             else:
-                with st.spinner("Analyzing research question and generating recommendations..."):
+                with st.spinner(get_loading_message("analyzing", "research question and generating recommendations")):
                     try:
                         # Parse variables
                         variables = [v.strip() for v in variables_input.split(",")] if variables_input else []

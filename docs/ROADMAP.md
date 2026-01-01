@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish added)
 
 Simple status legend:
 - ✅ DONE
@@ -285,6 +285,12 @@ Simple status legend:
   - CI performance gate script (scripts/check_benchmarks.py)
   - Documentation: docs/INTEGRATION_TESTING.md
   - Methodology proven for scaling to remaining ~68 files
+- ✅ User Experience Polish (2025-01-01)
+  - Performance: 55 eager loading statements, 7 cached functions, query timing
+  - UI: Loading component library, error handling utilities, 41 standardized spinners
+  - Accessibility: WCAG 2.1 AA on critical paths (login, navigation, top 5 pages)
+  - New files: cache.py, loading.py, accessibility.py, query_timing.py
+  - Documentation: docs/ACCESSIBILITY.md
 
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
