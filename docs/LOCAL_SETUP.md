@@ -138,6 +138,38 @@ pip install -r requirements.txt
 pip install streamlit plotly pandas
 ```
 
+### Optional: Structural Biology Dependencies
+
+**Note**: Structural biology features (protein structure preparation, molecular docking) are optional and require additional dependencies that may be challenging to install via pip on some platforms.
+
+#### Recommended Installation (conda-forge)
+
+```bash
+# Install via conda-forge (most reliable)
+conda install -c conda-forge pdbfixer openmm
+```
+
+#### Alternative Installation (pip)
+
+```bash
+# Install via pip (may fail on some platforms)
+pip install -r requirements-structural.txt
+```
+
+#### What requires structural dependencies:
+
+- `amprenta_rag.structural.prep` - Protein structure preparation (PDBFixer)
+- Molecular docking workflows
+- Structure-based drug design features
+
+#### Troubleshooting
+
+If structural biology dependencies fail to install:
+1. The core platform will work without them
+2. Structural features will show helpful error messages
+3. Consider using conda-forge instead of pip
+4. On Apple Silicon (M1/M2), conda-forge is strongly recommended
+
 ---
 
 ## Step 4: Environment Configuration

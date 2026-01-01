@@ -57,6 +57,20 @@ python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Optional: Structural Biology Features
+
+For protein structure preparation and analysis (pdbfixer, openmm):
+
+```bash
+# Recommended (conda-forge):
+conda install -c conda-forge pdbfixer openmm
+
+# Alternative (pip - may fail on some platforms):
+pip install -r requirements-structural.txt
+```
+
+**Note**: Structural biology features are optional. The core platform works without these dependencies.
+
 # Configure (see docs/CONFIGURATION.md)
 cp .env.example .env
 # Edit .env with your API keys
