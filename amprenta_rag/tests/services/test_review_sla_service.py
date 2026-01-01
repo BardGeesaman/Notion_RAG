@@ -1,7 +1,7 @@
 """Unit tests for review SLA and cycle services."""
 
 from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 from uuid import uuid4
 
 from amprenta_rag.database.models import ReviewCycle, ReviewSLA
@@ -11,6 +11,7 @@ from amprenta_rag.services.review_sla import (
     apply_sla,
     check_sla_status,
     escalate_review,
+    send_reminder,
 )
 from amprenta_rag.services.review_cycles import (
     create_cycle,
@@ -184,6 +185,92 @@ class TestReviewSLAService:
         time_diff = abs((review.escalated_at - datetime.now(timezone.utc)).total_seconds())
         assert time_diff < 60
 
+        mock_db.commit.assert_called_once()
+
+    @patch("amprenta_rag.services.review_sla.create_user_notification")
+    def test_send_reminder_creates_notification(self, mock_create_notification):
+        """Test that send_reminder creates a user notification."""
+        mock_db = MagicMock()
+        
+        reviewer_id = uuid4()
+        review_id = uuid4()
+        entity_id = uuid4()
+        
+        review = EntityReview(
+            id=review_id,
+            reviewer_id=reviewer_id,
+            entity_type="dataset",
+            entity_id=entity_id,
+            due_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        )
+        
+        # Call function
+        result = send_reminder(review, mock_db)
+        
+        # Verify notification was created
+        assert result is True
+        mock_create_notification.assert_called_once_with(
+            recipient_id=reviewer_id,
+            event_type=ANY,  # ActivityEventType.REVIEW_REMINDER
+            target_type="entity_review",
+            target_id=review_id,
+            target_name=f"Review for dataset:{entity_id}",
+            metadata={
+                "entity_type": "dataset",
+                "entity_id": str(entity_id),
+                "due_at": review.due_at.isoformat(),
+            }
+        )
+        
+        # Verify reminder timestamp was set
+        assert review.reminder_sent_at is not None
+        mock_db.commit.assert_called_once()
+
+    @patch("amprenta_rag.services.review_sla.create_user_notification")
+    def test_escalate_review_notifies_both_reviewers(self, mock_create_notification):
+        """Test that escalate_review notifies both original and escalation target."""
+        mock_db = MagicMock()
+        
+        reviewer_id = uuid4()
+        escalation_target_id = uuid4()
+        review_id = uuid4()
+        entity_id = uuid4()
+        
+        escalation_chain = [str(escalation_target_id)]
+        
+        sla = ReviewSLA(
+            escalation_chain=escalation_chain,
+        )
+        
+        review = EntityReview(
+            id=review_id,
+            reviewer_id=reviewer_id,
+            entity_type="dataset",
+            entity_id=entity_id,
+            escalation_level=0,
+        )
+        review.sla = sla
+        
+        # Call function
+        result = escalate_review(review, mock_db)
+        
+        # Verify both notifications were created
+        assert result is True
+        assert mock_create_notification.call_count == 2
+        
+        # Check original reviewer notification
+        original_call = mock_create_notification.call_args_list[0]
+        assert original_call[1]["recipient_id"] == reviewer_id
+        assert original_call[1]["metadata"]["role"] == "original_reviewer"
+        
+        # Check escalation target notification
+        escalation_call = mock_create_notification.call_args_list[1]
+        assert escalation_call[1]["recipient_id"] == escalation_target_id
+        assert escalation_call[1]["metadata"]["role"] == "escalation_target"
+        
+        # Verify escalation tracking was updated
+        assert review.escalation_level == 1
+        assert review.escalated_at is not None
         mock_db.commit.assert_called_once()
 
 

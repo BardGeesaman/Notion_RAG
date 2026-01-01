@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from amprenta_rag.database.models import ReviewSLA
+from amprenta_rag.database.models import ReviewSLA, ActivityEventType
 from amprenta_rag.models.auth import EntityReview
+from amprenta_rag.services.activity import create_user_notification
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -202,8 +204,20 @@ def send_reminder(review: EntityReview, db: Session) -> bool:
         True if reminder sent successfully
     """
     try:
-        # NOTE: notification system integration tracked in ROADMAP
-        # For now, just update the reminder timestamp
+        # Create notification for reviewer
+        if review.reviewer_id:
+            create_user_notification(
+                recipient_id=review.reviewer_id,
+                event_type=ActivityEventType.REVIEW_REMINDER,
+                target_type="entity_review",
+                target_id=review.id,
+                target_name=f"Review for {review.entity_type}:{review.entity_id}",
+                metadata={
+                    "entity_type": review.entity_type,
+                    "entity_id": str(review.entity_id),
+                    "due_at": review.due_at.isoformat() if review.due_at else None,
+                }
+            )
         
         review.reminder_sent_at = datetime.now(timezone.utc)
         db.commit()
@@ -242,8 +256,26 @@ def escalate_review(review: EntityReview, db: Session) -> bool:
         # Get next escalation target
         next_reviewer_id = escalation_chain[current_level]
         
-        # NOTE: notification system integration tracked in ROADMAP
-        # For now, just update escalation tracking
+        # Notify original reviewer (informational)
+        if review.reviewer_id:
+            create_user_notification(
+                recipient_id=review.reviewer_id,
+                event_type=ActivityEventType.REVIEW_ESCALATED,
+                target_type="entity_review",
+                target_id=review.id,
+                target_name=f"Review escalated for {review.entity_type}:{review.entity_id}",
+                metadata={"escalation_level": review.escalation_level + 1, "role": "original_reviewer"}
+            )
+        
+        # Notify escalation target (action required)
+        create_user_notification(
+            recipient_id=UUID(next_reviewer_id),
+            event_type=ActivityEventType.REVIEW_ESCALATED,
+            target_type="entity_review",
+            target_id=review.id,
+            target_name="Review escalated - action required",
+            metadata={"escalation_level": review.escalation_level + 1, "role": "escalation_target"}
+        )
         
         review.escalation_level = current_level + 1
         review.escalated_at = datetime.now(timezone.utc)

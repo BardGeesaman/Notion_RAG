@@ -318,7 +318,10 @@ Items identified during feature development but deferred for future sessions.
 - ⏳ **R-group Decomposition** - RDKit-based molecular decomposition for scaffolds
 - ⏳ **Pathway Feature Filtering** - Filter features by type for accurate mapping
 - ⏳ **GraphNode Table** - First-class node metadata beyond provenance
-- ⏳ **Notification System** - Review SLA reminders and escalation notifications
+- ✅ **Notification System** - Review SLA reminders and escalation notifications (2025-01-01)
+  - Added recipient_id for direct user notifications
+  - REVIEW_REMINDER and REVIEW_ESCALATED event types
+  - 7 tests, DB migration required
 - ⏳ **Review Cycles Enhancement** - Entity querying based on cycle type and program
 
 - ✅ **Dead Code Final Triage** (2025-01-01)

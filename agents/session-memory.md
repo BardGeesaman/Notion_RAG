@@ -88,6 +88,17 @@
   - Prevents runtime crashes from None handling
   - Reviewer approved
 
+* [2025-01-01] – **Notification System for Review SLAs**:
+  - Added recipient_id to RepositoryNotification model for direct user notifications
+  - New event types: REVIEW_REMINDER, REVIEW_ESCALATED
+  - create_user_notification() function for user-targeted notifications
+  - Updated all notification queries (OR logic for program + direct)
+  - send_reminder() and escalate_review() now create notifications
+  - Escalation notifies both original reviewer and escalation target
+  - 7 new tests, all passing
+  - Reviewer approved
+  - Note: DB migration needed for recipient_id column
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

@@ -66,6 +66,8 @@ class ActivityEventType(str, PyEnum):
     REVIEW_SUBMITTED = "review_submitted"
     REVIEW_ASSIGNED = "review_assigned"
     REVIEW_DECIDED = "review_decided"
+    REVIEW_REMINDER = "review_reminder"
+    REVIEW_ESCALATED = "review_escalated"
 
 
 # Association tables for many-to-many relationships
@@ -1162,6 +1164,7 @@ class RepositoryNotification(Base):
     subscription_id = Column(UUID(as_uuid=True), ForeignKey("repository_subscriptions.id"), nullable=True)
     dataset_id = Column(UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=True)
     activity_event_id = Column(UUID(as_uuid=True), ForeignKey("activity_events.id"), nullable=True)
+    recipient_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     notification_type = Column(String(50), default="discovery", nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -1169,6 +1172,7 @@ class RepositoryNotification(Base):
     subscription: Mapped[Optional["RepositorySubscription"]] = relationship("RepositorySubscription")
     dataset: Mapped[Optional["Dataset"]] = relationship("Dataset")
     activity_event: Mapped["ActivityEvent"] = relationship("ActivityEvent", back_populates="repository_notifications")
+    recipient: Mapped[Optional["User"]] = relationship("User", foreign_keys=[recipient_id])
 
 
 class ActivityEvent(Base):

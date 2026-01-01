@@ -13,6 +13,7 @@ from amprenta_rag.services.activity import (
     mark_notification_read,
     mark_all_notifications_read,
     get_unread_count,
+    create_user_notification,
 )
 from amprenta_rag.database.models import (
     ActivityEvent,
@@ -574,3 +575,60 @@ class TestActivityService:
             mock_db.add.assert_called_once()
             mock_db.flush.assert_called_once()
             mock_db.commit.assert_called_once()
+
+    @patch("amprenta_rag.services.activity.db_session")
+    def test_create_user_notification_success(self, mock_db_session):
+        """Test successful user notification creation."""
+        # Setup mock
+        mock_db = Mock()
+        mock_db_session.return_value.__enter__.return_value = mock_db
+        mock_db_session.return_value.__exit__.return_value = None
+        
+        recipient_id = uuid4()
+        target_id = uuid4()
+        
+        # Mock event creation
+        mock_event = Mock()
+        mock_event.id = uuid4()
+        mock_db.add.side_effect = lambda obj: setattr(obj, 'id', mock_event.id) if isinstance(obj, ActivityEvent) else None
+        
+        # Mock notification creation
+        mock_notification = Mock()
+        mock_notification.id = uuid4()
+        
+        # Call function
+        result = create_user_notification(
+            recipient_id=recipient_id,
+            event_type=ActivityEventType.REVIEW_REMINDER,
+            target_type="entity_review",
+            target_id=target_id,
+            target_name="Test Review",
+            metadata={"test": "data"}
+        )
+        
+        # Verify activity event was created
+        assert mock_db.add.call_count == 2  # Event + Notification
+        assert mock_db.flush.called
+        assert mock_db.commit.called
+        assert mock_db.expunge.called
+
+    @patch("amprenta_rag.services.activity.db_session")
+    def test_create_user_notification_handles_exception(self, mock_db_session):
+        """Test that create_user_notification handles exceptions gracefully."""
+        # Setup mock
+        mock_db = Mock()
+        mock_db_session.return_value.__enter__.return_value = mock_db
+        mock_db_session.return_value.__exit__.return_value = None
+        mock_db.add.side_effect = Exception("Database error")
+        
+        # Call function
+        result = create_user_notification(
+            recipient_id=uuid4(),
+            event_type=ActivityEventType.REVIEW_REMINDER,
+            target_type="entity_review",
+            target_id=uuid4(),
+            target_name="Test Review"
+        )
+        
+        # Should return None on failure
+        assert result is None

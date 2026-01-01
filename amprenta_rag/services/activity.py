@@ -11,6 +11,8 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from uuid import UUID
 
+from sqlalchemy import or_
+
 from amprenta_rag.database.models import (
     ActivityEvent,
     ActivityEventType,
@@ -229,16 +231,18 @@ def get_user_notifications(
     """
     try:
         with db_session() as db:
-            # Note: This is a simplified implementation
-            # In a real system, we'd need proper user-notification relationships
-            query = db.query(RepositoryNotification).join(
+            # Query includes both program-based and direct notifications
+            query = db.query(RepositoryNotification).outerjoin(
                 ActivityEvent, 
                 RepositoryNotification.activity_event_id == ActivityEvent.id
-            ).join(
+            ).outerjoin(
                 Program,
                 ActivityEvent.program_id == Program.id
             ).filter(
-                Program.created_by_id == user_id
+                or_(
+                    Program.created_by_id == user_id,  # Program-based notifications
+                    RepositoryNotification.recipient_id == user_id  # Direct notifications
+                )
             )
             
             if unread_only:
@@ -275,14 +279,17 @@ def mark_notification_read(notification_id: UUID, user_id: UUID) -> bool:
     """
     try:
         with db_session() as db:
-            # Find notification that belongs to this user
+            # Find notification that belongs to this user (program-based or direct)
             notification = (
                 db.query(RepositoryNotification)
-                .join(ActivityEvent, RepositoryNotification.activity_event_id == ActivityEvent.id)
-                .join(Program, ActivityEvent.program_id == Program.id)
+                .outerjoin(ActivityEvent, RepositoryNotification.activity_event_id == ActivityEvent.id)
+                .outerjoin(Program, ActivityEvent.program_id == Program.id)
                 .filter(
                     RepositoryNotification.id == notification_id,
-                    Program.created_by_id == user_id
+                    or_(
+                        Program.created_by_id == user_id,  # Program-based
+                        RepositoryNotification.recipient_id == user_id  # Direct
+                    )
                 )
                 .first()
             )
@@ -314,13 +321,16 @@ def mark_all_notifications_read(user_id: UUID) -> int:
     """
     try:
         with db_session() as db:
-            # First, get all notification IDs for this user
+            # First, get all notification IDs for this user (program-based or direct)
             notification_ids = (
                 db.query(RepositoryNotification.id)
-                .join(ActivityEvent, RepositoryNotification.activity_event_id == ActivityEvent.id)
-                .join(Program, ActivityEvent.program_id == Program.id)
+                .outerjoin(ActivityEvent, RepositoryNotification.activity_event_id == ActivityEvent.id)
+                .outerjoin(Program, ActivityEvent.program_id == Program.id)
                 .filter(
-                    Program.created_by_id == user_id,
+                    or_(
+                        Program.created_by_id == user_id,  # Program-based
+                        RepositoryNotification.recipient_id == user_id  # Direct
+                    ),
                     RepositoryNotification.is_read.is_(False)
                 )
                 .all()
@@ -349,6 +359,75 @@ def mark_all_notifications_read(user_id: UUID) -> int:
         return 0
 
 
+def create_user_notification(
+    recipient_id: UUID,
+    event_type: ActivityEventType,
+    target_type: str,
+    target_id: UUID,
+    target_name: str,
+    actor_id: Optional[UUID] = None,
+    program_id: Optional[UUID] = None,
+    metadata: Optional[Dict] = None,
+) -> Optional[RepositoryNotification]:
+    """Create notification directly for a specific user.
+    
+    Args:
+        recipient_id: UUID of user to notify
+        event_type: Type of activity event
+        target_type: Type of target object (e.g., "entity_review")
+        target_id: UUID of target object
+        target_name: Human-readable name of target
+        actor_id: UUID of user who performed the action
+        program_id: UUID of associated program
+        metadata: Additional event metadata
+        
+    Returns:
+        Created RepositoryNotification or None on failure
+    """
+    try:
+        with db_session() as db:
+            # Handle both enum and string event types
+            if isinstance(event_type, ActivityEventType):
+                event_type_str = event_type.value
+            else:
+                event_type_str = str(event_type)
+            
+            # Create activity event
+            event = ActivityEvent(
+                event_type=event_type_str,
+                actor_id=actor_id,
+                target_type=target_type,
+                target_id=target_id,
+                target_name=target_name,
+                program_id=program_id,
+                event_metadata=metadata or {},
+            )
+            db.add(event)
+            db.flush()  # Get the event ID
+            
+            # Create notification for specific recipient
+            notification = RepositoryNotification(
+                activity_event_id=event.id,
+                recipient_id=recipient_id,
+                notification_type="activity",
+                is_read=False,
+            )
+            db.add(notification)
+            db.commit()
+            
+            logger.info(
+                f"User notification created: {event_type_str} for {target_type}:{target_id}, "
+                f"notified user {recipient_id}"
+            )
+            
+            db.expunge(notification)
+            return notification
+            
+    except Exception as e:
+        logger.error(f"Failed to create user notification: {e}")
+        return None
+
+
 def get_unread_count(user_id: UUID) -> int:
     """
     Get count of unread notifications for a user.
@@ -363,10 +442,13 @@ def get_unread_count(user_id: UUID) -> int:
         with db_session() as db:
             count = (
                 db.query(RepositoryNotification)
-                .join(ActivityEvent, RepositoryNotification.activity_event_id == ActivityEvent.id)
-                .join(Program, ActivityEvent.program_id == Program.id)
+                .outerjoin(ActivityEvent, RepositoryNotification.activity_event_id == ActivityEvent.id)
+                .outerjoin(Program, ActivityEvent.program_id == Program.id)
                 .filter(
-                    Program.created_by_id == user_id,
+                    or_(
+                        Program.created_by_id == user_id,  # Program-based
+                        RepositoryNotification.recipient_id == user_id  # Direct
+                    ),
                     RepositoryNotification.is_read.is_(False)
                 )
                 .count()
