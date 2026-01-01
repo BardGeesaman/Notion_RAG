@@ -207,7 +207,7 @@ class DiversityFilter:
             return []
         
         # Greedy selection
-        selected = []
+        selected: List[str] = []
         
         for smiles in valid_smiles:
             if len(selected) >= max_count:

@@ -80,6 +80,14 @@
   - Documentation added to MAINTENANCE_LOG.md
   - Reviewer approved
 
+* [2025-01-01] – **Type Coverage Improvement (Phase 1)**:
+  - Fixed 7 mypy type errors (actual bugs, not just annotations)
+  - Files fixed: spectral/matcher.py, mofa_runner.py, lincs_parser.py, scaffolds.py, filters.py, async_base.py
+  - Added return types to api/routers/review_sla.py (13 functions)
+  - Discovery: High-value files already excellently typed
+  - Prevents runtime crashes from None handling
+  - Reviewer approved
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

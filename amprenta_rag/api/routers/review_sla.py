@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/sla", tags=["SLA"])
 
 
-def require_admin_role(user: User):
+def require_admin_role(user: User) -> None:
     """Helper function to check admin role."""
     if user.role != "admin":
         raise HTTPException(
@@ -132,7 +132,7 @@ def list_sla_rules(
     is_active: Optional[bool] = Query(None),
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> List[SLARuleResponse]:
     """List all SLA rules with optional filtering."""
     require_admin_role(current_user)
     query = db.query(ReviewSLA)
@@ -154,7 +154,7 @@ def create_sla_rule(
     rule_data: SLARuleCreate,
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> SLARuleResponse:
     """Create a new SLA rule."""
     require_admin_role(current_user)
     try:
@@ -191,7 +191,7 @@ def update_sla_rule(
     rule_data: SLARuleUpdate,
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> SLARuleResponse:
     """Update an existing SLA rule."""
     require_admin_role(current_user)
     rule = db.query(ReviewSLA).filter(ReviewSLA.id == rule_id).first()
@@ -228,7 +228,7 @@ def delete_sla_rule(
     rule_id: UUID,
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> None:
     """Delete an SLA rule."""
     require_admin_role(current_user)
     rule = db.query(ReviewSLA).filter(ReviewSLA.id == rule_id).first()
@@ -262,7 +262,7 @@ def list_review_cycles(
     is_active: Optional[bool] = Query(None),
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> List[ReviewCycleResponse]:
     """List review cycles with optional filtering."""
     require_admin_role(current_user)
     cycles = get_cycles(db, program_id=program_id, entity_type=entity_type)
@@ -279,7 +279,7 @@ def create_review_cycle(
     cycle_data: ReviewCycleCreate,
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> ReviewCycleResponse:
     """Create a new review cycle."""
     require_admin_role(current_user)
     try:
@@ -312,7 +312,7 @@ def update_review_cycle(
     cycle_data: ReviewCycleUpdate,
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> ReviewCycleResponse:
     """Update an existing review cycle."""
     require_admin_role(current_user)
     cycle = db.query(ReviewCycle).filter(ReviewCycle.id == cycle_id).first()
@@ -349,7 +349,7 @@ def delete_review_cycle(
     cycle_id: UUID,
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> None:
     """Delete a review cycle."""
     require_admin_role(current_user)
     cycle = db.query(ReviewCycle).filter(ReviewCycle.id == cycle_id).first()
@@ -380,7 +380,7 @@ def run_cycle_now(
     cycle_id: UUID,
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> dict:
     """Manually trigger a review cycle."""
     require_admin_role(current_user)
     cycle = db.query(ReviewCycle).filter(ReviewCycle.id == cycle_id).first()
@@ -414,7 +414,7 @@ def run_cycle_now(
 def get_sla_status_summary(
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> SLAStatusResponse:
     """Get SLA status summary dashboard."""
     try:
         # Get all active reviews with SLAs
@@ -450,7 +450,7 @@ def get_overdue_reviews_list(
     limit: int = Query(50, le=200),
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> List[dict]:
     """Get list of overdue reviews."""
     try:
         overdue_reviews = get_overdue_reviews(db)
@@ -488,7 +488,7 @@ def get_review_sla_status(
     review_id: UUID,
     db: Session = Depends(get_database_session),
     current_user: User = Depends(get_current_user),
-):
+) -> ReviewSLAStatusResponse:
     """Get SLA status for a specific review."""
     review = db.query(EntityReview).filter(EntityReview.id == review_id).first()
     

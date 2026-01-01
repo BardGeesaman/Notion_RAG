@@ -69,6 +69,8 @@ def run_mofa(
         model.run()
         model.save(str(out_path))
     else:
+        if entry_point is None:
+            raise ImportError("mofapy2 entry_point is not available")
         ent = entry_point()
         ent.set_data_df(views)
         ent.set_model_options(factors=int(n_factors))

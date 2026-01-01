@@ -30,8 +30,12 @@ def get_async_engine() -> AsyncEngine:
         if postgres_cfg.url:
             db_url = postgres_cfg.url.replace("postgresql://", "postgresql+asyncpg://")
         else:
+            # Password is handled via secrets and included in url
+            # If no url is provided, we need to get password from secrets
+            from amprenta_rag.utils.secrets import get_secret
+            password = get_secret("postgres_password") or ""
             db_url = (
-                f"postgresql+asyncpg://{postgres_cfg.user}:{postgres_cfg.password}"
+                f"postgresql+asyncpg://{postgres_cfg.user}:{password}"
                 f"@{postgres_cfg.host}:{postgres_cfg.port}/{postgres_cfg.db}"
             )
 

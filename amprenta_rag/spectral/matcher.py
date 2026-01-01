@@ -84,7 +84,10 @@ def match_spectrum(
     cand = []
     for r in references:
         try:
-            pmz = float(r.get("precursor_mz"))
+            precursor_mz = r.get("precursor_mz")
+            if precursor_mz is None:
+                continue
+            pmz = float(precursor_mz)
         except Exception:
             continue
         ppm = abs(_ppm_error(query_mz, pmz))

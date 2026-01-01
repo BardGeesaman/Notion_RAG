@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from amprenta_rag.logging_utils import get_logger
 
@@ -148,7 +148,7 @@ class ScaffoldExtractor:
         return dict(scaffold_groups)
     
     @staticmethod
-    def get_scaffold_statistics(smiles_list: List[str]) -> Dict[str, int]:
+    def get_scaffold_statistics(smiles_list: List[str]) -> Dict[str, Union[int, float, List[Tuple[str, int]]]]:
         """Get statistics about scaffold diversity in a molecule set.
         
         Args:
@@ -258,7 +258,7 @@ class ScaffoldExtractor:
             ring_systems = []
             
             # Group rings into systems (connected rings)
-            ring_groups = []
+            ring_groups: List[Set[int]] = []
             for ring in ring_info.AtomRings():
                 ring_set = set(ring)
                 

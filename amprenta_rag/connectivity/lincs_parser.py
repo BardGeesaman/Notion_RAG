@@ -117,7 +117,7 @@ def parse_gctx(gctx_path: str) -> Iterator[LINCSSignatureData]:
     col_meta = getattr(gctoo, "col_metadata_df", None)
 
     if data_df is None:
-        return iter(())
+        return
 
     meta_by_sig: Dict[str, Dict[str, str]] = {}
     if col_meta is not None:
