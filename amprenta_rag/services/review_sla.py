@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from amprenta_rag.database.models import ReviewSLA, ActivityEventType
 from amprenta_rag.models.auth import EntityReview
@@ -16,34 +18,40 @@ from amprenta_rag.logging_utils import get_logger
 logger = get_logger(__name__)
 
 
-def get_default_sla(entity_type: str, db: Session) -> Optional[ReviewSLA]:
+async def get_default_sla(entity_type: str, db: AsyncSession) -> Optional[ReviewSLA]:
     """Find default SLA for entity type or global default.
     
     Args:
         entity_type: Entity type to find SLA for (dataset, experiment, etc.)
-        db: Database session
+        db: Async database session
         
     Returns:
         Default SLA for the entity type, or None if not found
     """
     try:
         # First try to find entity-specific default SLA
-        sla = db.query(ReviewSLA).filter(
-            ReviewSLA.entity_type == entity_type,
-            ReviewSLA.is_default.is_(True),
-            ReviewSLA.is_active.is_(True)
-        ).first()
+        result = await db.execute(
+            select(ReviewSLA).filter(
+                ReviewSLA.entity_type == entity_type,
+                ReviewSLA.is_default.is_(True),
+                ReviewSLA.is_active.is_(True)
+            )
+        )
+        sla = result.scalars().first()
         
         if sla:
             logger.debug(f"Found entity-specific default SLA for {entity_type}: {sla.name}")
             return sla
         
         # Fall back to global default SLA (entity_type is None)
-        sla = db.query(ReviewSLA).filter(
-            ReviewSLA.entity_type.is_(None),
-            ReviewSLA.is_default.is_(True),
-            ReviewSLA.is_active.is_(True)
-        ).first()
+        result = await db.execute(
+            select(ReviewSLA).filter(
+                ReviewSLA.entity_type.is_(None),
+                ReviewSLA.is_default.is_(True),
+                ReviewSLA.is_active.is_(True)
+            )
+        )
+        sla = result.scalars().first()
         
         if sla:
             logger.debug(f"Found global default SLA for {entity_type}: {sla.name}")
@@ -57,13 +65,13 @@ def get_default_sla(entity_type: str, db: Session) -> Optional[ReviewSLA]:
         return None
 
 
-def apply_sla(review: EntityReview, sla: ReviewSLA, db: Session) -> EntityReview:
+async def apply_sla(review: EntityReview, sla: ReviewSLA, db: AsyncSession) -> EntityReview:
     """Apply SLA rules to a review.
     
     Args:
         review: EntityReview to apply SLA to
         sla: ReviewSLA to apply
-        db: Database session
+        db: Async database session
         
     Returns:
         Updated EntityReview with SLA applied
@@ -80,14 +88,14 @@ def apply_sla(review: EntityReview, sla: ReviewSLA, db: Session) -> EntityReview
         review.reminder_sent_at = None
         review.escalated_at = None
         
-        db.commit()
+        await db.commit()
         
         logger.info(f"Applied SLA {sla.name} to review {review.id}, due at {due_at}")
         return review
         
     except Exception as e:
         logger.error(f"Failed to apply SLA {sla.id} to review {review.id}: {e}")
-        db.rollback()
+        await db.rollback()
         raise
 
 
@@ -135,11 +143,11 @@ def check_sla_status(review: EntityReview) -> Dict[str, any]:
     }
 
 
-def get_overdue_reviews(db: Session) -> List[EntityReview]:
+async def get_overdue_reviews(db: AsyncSession) -> List[EntityReview]:
     """Find reviews that are overdue.
     
     Args:
-        db: Database session
+        db: Async database session
         
     Returns:
         List of overdue EntityReview objects
@@ -147,11 +155,14 @@ def get_overdue_reviews(db: Session) -> List[EntityReview]:
     try:
         now = datetime.now(timezone.utc)
         
-        overdue_reviews = db.query(EntityReview).filter(
-            EntityReview.due_at < now,
-            EntityReview.status.in_(["pending", "in_review"]),
-            EntityReview.due_at.isnot(None)
-        ).all()
+        result = await db.execute(
+            select(EntityReview).filter(
+                EntityReview.due_at < now,
+                EntityReview.status.in_(["pending", "in_review"]),
+                EntityReview.due_at.isnot(None)
+            )
+        )
+        overdue_reviews = result.scalars().all()
         
         logger.info(f"Found {len(overdue_reviews)} overdue reviews")
         return overdue_reviews
@@ -161,11 +172,11 @@ def get_overdue_reviews(db: Session) -> List[EntityReview]:
         return []
 
 
-def get_at_risk_reviews(db: Session) -> List[EntityReview]:
+async def get_at_risk_reviews(db: AsyncSession) -> List[EntityReview]:
     """Find reviews that are at risk of breaching SLA.
     
     Args:
-        db: Database session
+        db: Async database session
         
     Returns:
         List of at-risk EntityReview objects
@@ -174,11 +185,14 @@ def get_at_risk_reviews(db: Session) -> List[EntityReview]:
         at_risk_reviews = []
         
         # Get active reviews with SLAs
-        active_reviews = db.query(EntityReview).filter(
-            EntityReview.status.in_(["pending", "in_review"]),
-            EntityReview.sla_id.isnot(None),
-            EntityReview.due_at.isnot(None)
-        ).all()
+        result = await db.execute(
+            select(EntityReview).filter(
+                EntityReview.status.in_(["pending", "in_review"]),
+                EntityReview.sla_id.isnot(None),
+                EntityReview.due_at.isnot(None)
+            )
+        )
+        active_reviews = result.scalars().all()
         
         for review in active_reviews:
             status_info = check_sla_status(review)
@@ -193,20 +207,21 @@ def get_at_risk_reviews(db: Session) -> List[EntityReview]:
         return []
 
 
-def send_reminder(review: EntityReview, db: Session) -> bool:
+async def send_reminder(review: EntityReview, db: AsyncSession) -> bool:
     """Send reminder notification for review.
     
     Args:
         review: EntityReview to send reminder for
-        db: Database session
+        db: Async database session
         
     Returns:
         True if reminder sent successfully
     """
     try:
-        # Create notification for reviewer
+        # Create notification for reviewer (run sync function in thread pool)
         if review.reviewer_id:
-            create_user_notification(
+            await asyncio.to_thread(
+                create_user_notification,
                 recipient_id=review.reviewer_id,
                 event_type=ActivityEventType.REVIEW_REMINDER,
                 target_type="entity_review",
@@ -220,23 +235,23 @@ def send_reminder(review: EntityReview, db: Session) -> bool:
             )
         
         review.reminder_sent_at = datetime.now(timezone.utc)
-        db.commit()
+        await db.commit()
         
         logger.info(f"Reminder sent for review {review.id} to reviewer {review.reviewer_id}")
         return True
         
     except Exception as e:
         logger.error(f"Failed to send reminder for review {review.id}: {e}")
-        db.rollback()
+        await db.rollback()
         return False
 
 
-def escalate_review(review: EntityReview, db: Session) -> bool:
+async def escalate_review(review: EntityReview, db: AsyncSession) -> bool:
     """Escalate review to next level in escalation chain.
     
     Args:
         review: EntityReview to escalate
-        db: Database session
+        db: Async database session
         
     Returns:
         True if escalation successful
@@ -256,9 +271,10 @@ def escalate_review(review: EntityReview, db: Session) -> bool:
         # Get next escalation target
         next_reviewer_id = escalation_chain[current_level]
         
-        # Notify original reviewer (informational)
+        # Notify original reviewer (informational) - run in thread pool
         if review.reviewer_id:
-            create_user_notification(
+            await asyncio.to_thread(
+                create_user_notification,
                 recipient_id=review.reviewer_id,
                 event_type=ActivityEventType.REVIEW_ESCALATED,
                 target_type="entity_review",
@@ -267,8 +283,9 @@ def escalate_review(review: EntityReview, db: Session) -> bool:
                 metadata={"escalation_level": review.escalation_level + 1, "role": "original_reviewer"}
             )
         
-        # Notify escalation target (action required)
-        create_user_notification(
+        # Notify escalation target (action required) - run in thread pool
+        await asyncio.to_thread(
+            create_user_notification,
             recipient_id=UUID(next_reviewer_id),
             event_type=ActivityEventType.REVIEW_ESCALATED,
             target_type="entity_review",
@@ -282,12 +299,12 @@ def escalate_review(review: EntityReview, db: Session) -> bool:
         # Optionally reassign reviewer
         # review.reviewer_id = UUID(next_reviewer_id)
         
-        db.commit()
+        await db.commit()
         
         logger.info(f"Escalated review {review.id} to level {review.escalation_level}, target: {next_reviewer_id}")
         return True
         
     except Exception as e:
         logger.error(f"Failed to escalate review {review.id}: {e}")
-        db.rollback()
+        await db.rollback()
         return False

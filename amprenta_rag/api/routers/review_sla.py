@@ -6,9 +6,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from amprenta_rag.api.dependencies import get_current_user, get_database_session
+from amprenta_rag.api.async_dependencies import get_async_database_session
 from amprenta_rag.database.models import ReviewSLA, ReviewCycle
 from amprenta_rag.models.auth import EntityReview, User
 from amprenta_rag.services.review_sla import (
@@ -127,15 +130,15 @@ class ReviewSLAStatusResponse(BaseModel):
 
 # SLA Rules Endpoints (Admin Only)
 @router.get("/rules", response_model=List[SLARuleResponse])
-def list_sla_rules(
+async def list_sla_rules(
     entity_type: Optional[str] = Query(None),
     is_active: Optional[bool] = Query(None),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> List[SLARuleResponse]:
     """List all SLA rules with optional filtering."""
     require_admin_role(current_user)
-    query = db.query(ReviewSLA)
+    query = select(ReviewSLA)
     
     if entity_type:
         query = query.filter(ReviewSLA.entity_type == entity_type)
@@ -143,16 +146,18 @@ def list_sla_rules(
     if is_active is not None:
         query = query.filter(ReviewSLA.is_active == is_active)
     
-    rules = query.order_by(ReviewSLA.created_at.desc()).all()
+    query = query.order_by(ReviewSLA.created_at.desc())
+    result = await db.execute(query)
+    rules = result.scalars().all()
     
     logger.info(f"Admin {current_user.id} listed {len(rules)} SLA rules")
     return rules
 
 
 @router.post("/rules", response_model=SLARuleResponse, status_code=status.HTTP_201_CREATED)
-def create_sla_rule(
+async def create_sla_rule(
     rule_data: SLARuleCreate,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> SLARuleResponse:
     """Create a new SLA rule."""
@@ -170,15 +175,15 @@ def create_sla_rule(
         )
         
         db.add(sla_rule)
-        db.commit()
-        db.refresh(sla_rule)
+        await db.commit()
+        await db.refresh(sla_rule)
         
         logger.info(f"Admin {current_user.id} created SLA rule {sla_rule.id}: {sla_rule.name}")
         return sla_rule
         
     except Exception as e:
         logger.error(f"Failed to create SLA rule: {e}")
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create SLA rule"
@@ -186,15 +191,18 @@ def create_sla_rule(
 
 
 @router.patch("/rules/{rule_id}", response_model=SLARuleResponse)
-def update_sla_rule(
+async def update_sla_rule(
     rule_id: UUID,
     rule_data: SLARuleUpdate,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> SLARuleResponse:
     """Update an existing SLA rule."""
     require_admin_role(current_user)
-    rule = db.query(ReviewSLA).filter(ReviewSLA.id == rule_id).first()
+    result = await db.execute(
+        select(ReviewSLA).filter(ReviewSLA.id == rule_id)
+    )
+    rule = result.scalars().first()
     
     if not rule:
         raise HTTPException(
@@ -208,15 +216,15 @@ def update_sla_rule(
         for field, value in update_data.items():
             setattr(rule, field, value)
         
-        db.commit()
-        db.refresh(rule)
+        await db.commit()
+        await db.refresh(rule)
         
         logger.info(f"Admin {current_user.id} updated SLA rule {rule_id}")
         return rule
         
     except Exception as e:
         logger.error(f"Failed to update SLA rule {rule_id}: {e}")
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update SLA rule"
@@ -224,14 +232,17 @@ def update_sla_rule(
 
 
 @router.delete("/rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_sla_rule(
+async def delete_sla_rule(
     rule_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> None:
     """Delete an SLA rule."""
     require_admin_role(current_user)
-    rule = db.query(ReviewSLA).filter(ReviewSLA.id == rule_id).first()
+    result = await db.execute(
+        select(ReviewSLA).filter(ReviewSLA.id == rule_id)
+    )
+    rule = result.scalars().first()
     
     if not rule:
         raise HTTPException(
@@ -240,14 +251,14 @@ def delete_sla_rule(
         )
     
     try:
-        db.delete(rule)
-        db.commit()
+        await db.delete(rule)
+        await db.commit()
         
         logger.info(f"Admin {current_user.id} deleted SLA rule {rule_id}")
         
     except Exception as e:
         logger.error(f"Failed to delete SLA rule {rule_id}: {e}")
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete SLA rule"
@@ -411,17 +422,20 @@ def run_cycle_now(
 
 # SLA Status Endpoints (Authenticated Users)
 @router.get("/status", response_model=SLAStatusResponse)
-def get_sla_status_summary(
-    db: Session = Depends(get_database_session),
+async def get_sla_status_summary(
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> SLAStatusResponse:
     """Get SLA status summary dashboard."""
     try:
         # Get all active reviews with SLAs
-        active_reviews = db.query(EntityReview).filter(
-            EntityReview.status.in_(["pending", "in_review"]),
-            EntityReview.sla_id.isnot(None),
-        ).all()
+        result = await db.execute(
+            select(EntityReview).filter(
+                EntityReview.status.in_(["pending", "in_review"]),
+                EntityReview.sla_id.isnot(None),
+            )
+        )
+        active_reviews = result.scalars().all()
         
         counts = {"on_track": 0, "warning": 0, "overdue": 0, "breached": 0}
         
@@ -446,14 +460,14 @@ def get_sla_status_summary(
 
 
 @router.get("/overdue", response_model=List[dict])
-def get_overdue_reviews_list(
+async def get_overdue_reviews_list(
     limit: int = Query(50, le=200),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> List[dict]:
     """Get list of overdue reviews."""
     try:
-        overdue_reviews = get_overdue_reviews(db)
+        overdue_reviews = await get_overdue_reviews(db)
         
         # Limit results and add SLA status
         limited_reviews = overdue_reviews[:limit]
@@ -484,13 +498,16 @@ def get_overdue_reviews_list(
 
 
 @router.get("/reviews/{review_id}/sla", response_model=ReviewSLAStatusResponse)
-def get_review_sla_status(
+async def get_review_sla_status(
     review_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> ReviewSLAStatusResponse:
     """Get SLA status for a specific review."""
-    review = db.query(EntityReview).filter(EntityReview.id == review_id).first()
+    result = await db.execute(
+        select(EntityReview).filter(EntityReview.id == review_id)
+    )
+    review = result.scalars().first()
     
     if not review:
         raise HTTPException(

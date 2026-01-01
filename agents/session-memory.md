@@ -99,6 +99,15 @@
   - Reviewer approved
   - Note: DB migration needed for recipient_id column
 
+* [2025-01-01] – **Async DB Migration - Phase 1 Pilot**:
+  - Converted review_sla service layer to async (6 functions)
+  - Converted review_sla router to async (8 endpoints)
+  - Smart hybrid: asyncio.to_thread() for sync notification calls
+  - Patterns: db.query() → await db.execute(select())
+  - Review Cycle endpoints intentionally kept sync (Phase 2)
+  - Test mocks need async updates (tracked in P2 backlog)
+  - Reviewer approved
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

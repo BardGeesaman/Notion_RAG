@@ -366,9 +366,10 @@ Items identified during feature development but deferred for future sessions.
   - Effort: 1-2 weeks
 
 ### Infrastructure & Performance
-- ⏳ **Async DB Connection Pooling - Router Migration**
+- ⏳ **Async DB Connection Pooling - Router Migration** (Phase 1 complete 2025-01-01)
   - Infrastructure complete (async_session.py, async_dependencies.py)
-  - 239 router access points identified for migration
+  - ✅ Phase 1: review_sla service + router (6 functions, 8 endpoints)
+  - 239 router access points identified for migration (Phase 2)
   - Sync → async conversion for improved throughput
   - Effort: 2-3 weeks
 
@@ -378,6 +379,36 @@ Items identified during feature development but deferred for future sessions.
   - P3: QC persistence to database
   - P3: Thumbnail cache for faster browsing
   - Effort: 2-3 days
+
+---
+
+## 📋 P2 Observations Backlog
+
+Non-blocking improvements identified during code reviews. Low priority but valuable for future sprints.
+
+### Code Quality
+- [ ] Consider `~=` constraint for pdfminer.six (compatible release)
+- [ ] Track `py` package removal when pytest plugins update
+- [ ] Add mypy CI check for typed files to prevent regression
+- [ ] Type Coverage Phase 2: activity.py, review_threads.py, compounds.py
+
+### Notification System
+- [ ] User notification preferences (opt-out by type)
+- [ ] Notification aggregation for escalation chains (avoid spam)
+- [ ] Edge case test: notifications without program_id
+
+### Async DB Migration
+- [ ] Review Cycle endpoints not yet converted (5 remaining)
+- [ ] Update test mocks to async-aware pattern (AsyncMock)
+- [ ] Consider async-first interface once migration complete
+- [ ] Connection pool sizing verification (pool_size, max_overflow)
+- [ ] Add timing metrics before/after async migration
+
+### Testing
+- [ ] Add performance benchmarks for converted async endpoints
+- [ ] Async test pattern documentation
+
+---
 
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
