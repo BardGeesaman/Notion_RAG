@@ -2,6 +2,19 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **OOP Refactoring Review Complete**:
+  - **Audit scope**: 7 layers (services, API, database, adapters, ML, dashboard, jobs)
+  - **Pattern findings**: 
+    - Services: 93% functional, 7% class-based
+    - API: 100% functional endpoints
+    - ML: Class-based predictors with registry
+    - Dashboard: render_*_page convention
+    - Jobs: Celery with exponential backoff
+  - **Documentation**: Created docs/CODE_ARCHITECTURE.md (762 lines)
+  - **Key sections**: Layer patterns, testing patterns, anti-patterns
+  - **Impact**: Developer onboarding guide, code consistency standards
+  - **Commits**: beb6536
+
 * [2025-01-01] – **Split requirements.txt Complete**:
   - **requirements-structural.txt**: Created for pdbfixer>=1.9, openmm>=8.0.0 (conda-forge only packages)
   - **requirements.txt**: Removed pdbfixer and openmm

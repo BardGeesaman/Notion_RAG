@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review added)
 
 Simple status legend:
 - ✅ DONE
@@ -269,7 +269,13 @@ Simple status legend:
   - Updated README.md and LOCAL_SETUP.md with installation guidance
   - CI verified: Tests skip gracefully when structural dependencies unavailable
   - Commits: ad5528a, 47e40eb
-- ❌ OOP Refactoring Review (code structure improvements)
+- ✅ OOP Refactoring Review (2025-01-01)
+  - Audited patterns across 7 layers (services, API, database, adapters, ML, dashboard, jobs)
+  - Created docs/CODE_ARCHITECTURE.md (762 lines)
+  - Documented: 93% functional services, 100% functional APIs, class-based ML predictors
+  - Established anti-patterns section
+  - No production code changes (documentation only)
+  - Commits: beb6536
 
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
