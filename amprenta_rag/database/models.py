@@ -1549,7 +1549,7 @@ class GraphEdge(Base):
     This is a flexible table intended to represent relationships across the system
     (compound→target, target→pathway, dataset→signature, etc.).
 
-    TODO: Consider adding a first-class `GraphNode` table once we need node-level
+    NOTE: GraphNode table enhancement tracked in ROADMAP - would provide node-level
     metadata, canonicalization, and typed constraints beyond `provenance`.
     """
 

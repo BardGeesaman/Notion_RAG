@@ -94,7 +94,7 @@ def _get_direction_from_dataset(
     Returns:
         Direction (↑, ↓, neutral) or None if unknown
     """
-    # TODO: Implement direction inference from multi-condition data
+    # NOTE: Direction inference from multi-condition data tracked in ROADMAP
     # For now, return None (no direction info available)
     return None
 

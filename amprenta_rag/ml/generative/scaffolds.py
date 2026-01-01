@@ -113,7 +113,7 @@ class ScaffoldExtractor:
             # is more complex and would require specialized algorithms
             # For now, we'll return an empty list as a placeholder
             
-            # TODO: Implement proper R-group decomposition
+            # NOTE: R-group decomposition enhancement tracked in ROADMAP
             # Could use RDKit's RGroupDecomposition or similar approaches
             
             return []

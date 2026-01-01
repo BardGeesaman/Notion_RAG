@@ -98,7 +98,7 @@ def process_attachments(
 
         # NOTE: Removed pinecone-specific deduplication check
         # Attachments will be reprocessed if ingested multiple times
-        # TODO: Implement pgvector-based deduplication if needed
+        # NOTE: pgvector-based deduplication tracked in ROADMAP
 
         try:
             data = download_zotero_file(att_key)

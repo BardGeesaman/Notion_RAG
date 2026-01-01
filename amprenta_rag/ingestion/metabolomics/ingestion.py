@@ -293,7 +293,7 @@ def ingest_metabolomics_file(
                 dataset_name=dataset_name,
                 species_or_features=list(metabolite_set),
                 omics_type=OmicsType.METABOLOMICS,
-                signature_matches=None,  # TODO: Add signature matching for metabolomics
+                signature_matches=None,  # NOTE: signature matching tracked in ROADMAP
                 notion_page_id=page_id,
             )
             logger.info(

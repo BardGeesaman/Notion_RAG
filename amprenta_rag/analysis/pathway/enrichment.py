@@ -107,7 +107,7 @@ def perform_pathway_enrichment(
 
     for feature_type in input_feature_types:
         # Note: Currently using all input_features for each type
-        # TODO: Filter features by type for more accurate mapping
+        # NOTE: Feature type filtering tracked in ROADMAP
         type_features = input_features
 
         # Query KEGG pathways (supports genes, proteins, metabolites)

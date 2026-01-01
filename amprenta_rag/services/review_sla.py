@@ -202,7 +202,7 @@ def send_reminder(review: EntityReview, db: Session) -> bool:
         True if reminder sent successfully
     """
     try:
-        # TODO: Integrate with notification system when available
+        # NOTE: notification system integration tracked in ROADMAP
         # For now, just update the reminder timestamp
         
         review.reminder_sent_at = datetime.now(timezone.utc)
@@ -242,7 +242,7 @@ def escalate_review(review: EntityReview, db: Session) -> bool:
         # Get next escalation target
         next_reviewer_id = escalation_chain[current_level]
         
-        # TODO: Integrate with notification system when available
+        # NOTE: notification system integration tracked in ROADMAP
         # For now, just update escalation tracking
         
         review.escalation_level = current_level + 1

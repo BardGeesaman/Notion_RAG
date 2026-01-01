@@ -123,7 +123,7 @@ def find_matching_signatures_for_postgres_dataset(
                 score_result = score_multi_omics_signature_against_dataset(
                     signature=signature,
                     dataset_features_by_type=dataset_features_by_type,
-                    dataset_directions=None,  # TODO: Support directions by feature type
+                    dataset_directions=None,  # NOTE: directions by feature type tracked in ROADMAP
                 )
             elif dataset_species:
                 # Legacy scoring (lipid-only)

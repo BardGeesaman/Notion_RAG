@@ -50,7 +50,7 @@ def create_experiment(db: Session, experiment: ExperimentCreate) -> ExperimentMo
             target_type="experiment",
             target_id=db_experiment.id,
             target_name=db_experiment.name,
-            actor_id=None,  # TODO: Get from request context
+            actor_id=None,  # NOTE: requires service layer refactor for user context
             program_id=program_id,
             metadata={
                 "experiment_type": db_experiment.type,

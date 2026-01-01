@@ -264,7 +264,7 @@ def ingest_transcriptomics_file(
                 dataset_name=dataset_name,
                 species_or_features=list(gene_set),
                 omics_type=OmicsType.TRANSCRIPTOMICS,
-                signature_matches=None,  # TODO: Add signature matching for transcriptomics
+                signature_matches=None,  # NOTE: signature matching tracked in ROADMAP
                 notion_page_id=page_id,
             )
             logger.info(

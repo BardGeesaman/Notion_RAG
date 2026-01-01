@@ -144,9 +144,8 @@ def create_cycle_reviews(cycle: ReviewCycle, db: Session) -> List[EntityReview]:
         List of created EntityReview objects
     """
     try:
-        # TODO: This is a simplified implementation
-        # In a real system, you would query actual entities (datasets, experiments, etc.)
-        # based on cycle.entity_type and cycle.program_id
+        # NOTE: Simplified implementation - entity querying enhancement tracked in ROADMAP
+        # Future: query actual entities (datasets, experiments, etc.) based on cycle.entity_type and cycle.program_id
         
         # For now, we'll simulate creating reviews for existing entities
         # that don't already have active reviews

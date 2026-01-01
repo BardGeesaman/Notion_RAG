@@ -395,7 +395,7 @@ async def ingest_paper(
             literature.id,
         )
 
-        # TODO: Fetch and embed full text if requested and available
+        # NOTE: Full text embedding tracked in ROADMAP
         # For now, just commit metadata
         chunks_created = 0
         if request.fetch_fulltext:
@@ -438,7 +438,7 @@ async def get_paper(
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
 
-    # TODO: Retrieve sections from RAG chunks when full text is available
+    # NOTE: RAG chunk section retrieval tracked in ROADMAP
     sections = []
 
     return PaperDetailResponse(

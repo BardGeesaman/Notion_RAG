@@ -37,7 +37,7 @@ def test_content_already_ingested_stub(monkeypatch):
     """Test that content_already_ingested is now a stub that always returns False.
     
     Pinecone deduplication removed - function now always returns (False, None).
-    TODO: Implement pgvector-based deduplication.
+    NOTE: pgvector-based deduplication tracked in ROADMAP.
     """
     res, h = pci._content_already_ingested("id")
     assert res is False

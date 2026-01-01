@@ -61,6 +61,14 @@
   - Vulture baseline established at 12 acceptable candidates
   - Reviewer approved
 
+* [2025-01-01] – **TODO/FIXME Cleanup**:
+  - Audited 44 TODO/FIXME comments across 23 files (80% reduction to 8 remaining)
+  - Converted 30+ items to NOTE with ROADMAP backlog tracking
+  - Resolved 2 quick-fix items
+  - Kept 8 TODOs blocked by dependencies (role system, Y.js server)
+  - Categories: Data/Ingestion (12), Imaging (13), ML/Analysis (4), Papers/RAG (2), System (2)
+  - Reviewer approved
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

@@ -85,7 +85,7 @@ def process_notes(
 
         # NOTE: Removed pinecone-specific deduplication check
         # Notes will be reprocessed if ingested multiple times
-        # TODO: Implement pgvector-based deduplication if needed
+        # NOTE: pgvector-based deduplication tracked in ROADMAP
 
         header = f"{item.title}\n[Zotero Note]\n\n"
         full_text = header + text

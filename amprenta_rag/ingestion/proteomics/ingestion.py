@@ -253,7 +253,7 @@ def ingest_proteomics_file(
                 dataset_name=dataset_name,
                 species_or_features=list(protein_set),
                 omics_type=OmicsType.PROTEOMICS,
-                signature_matches=None,  # TODO: Add signature matching for proteomics
+                signature_matches=None,  # NOTE: signature matching tracked in ROADMAP
                 notion_page_id=page_id,
             )
             logger.info(

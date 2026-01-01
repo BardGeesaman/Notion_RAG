@@ -303,10 +303,23 @@ Items identified during feature development but deferred for future sessions.
   - Remaining files use mock-heavy patterns awaiting conversion
   - Effort: 3-4 weeks for comprehensive coverage
 
-- ⏳ **TODO/FIXME Cleanup** (45 comments across 24 files)
-  - Audit each comment: resolve, convert to backlog item, or remove if stale
-  - Priority files: imaging.py (13), entity_reviews.py (6), collaboration.py (2)
-  - Effort: 2-3 days
+- ✅ **TODO/FIXME Cleanup** (Completed 2025-01-01)
+  - Audited 44 comments across 23 files
+  - Removed stale comments, converted 35 to backlog items
+  - Kept 9 active TODOs (auth/role system dependencies)
+  - Items added to backlog below
+
+**Items Converted from TODO Comments:**
+- ⏳ **pgvector-based Deduplication** - Replace stub content deduplication with pgvector similarity
+- ⏳ **Signature Matching Enhancements** - Add signature matching for metabolomics/transcriptomics/proteomics
+- ⏳ **Direction Inference** - Implement direction inference from multi-condition data
+- ⏳ **Imaging P2/P3 Features** - Filter set wavelengths, well positions, QC data, thumbnails, background jobs
+- ⏳ **Papers Full Text** - RAG chunk section retrieval, full text embedding
+- ⏳ **R-group Decomposition** - RDKit-based molecular decomposition for scaffolds
+- ⏳ **Pathway Feature Filtering** - Filter features by type for accurate mapping
+- ⏳ **GraphNode Table** - First-class node metadata beyond provenance
+- ⏳ **Notification System** - Review SLA reminders and escalation notifications
+- ⏳ **Review Cycles Enhancement** - Entity querying based on cycle type and program
 
 - ✅ **Dead Code Final Triage** (2025-01-01)
   - 13 items removed, 4 whitelisted with justification

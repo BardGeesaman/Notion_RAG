@@ -50,7 +50,7 @@ def _content_already_ingested(
 
     # NOTE: Removed pinecone-specific deduplication check
     # Content will be reprocessed if ingested multiple times
-    # TODO: Implement pgvector-based deduplication if needed
+    # NOTE: pgvector-based deduplication tracked in ROADMAP
     return False, None
 
 
