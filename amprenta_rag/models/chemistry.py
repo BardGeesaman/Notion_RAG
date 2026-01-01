@@ -82,6 +82,9 @@ class Compound(Base):
     # Version for concurrent editing safety
     version = Column(Integer, default=1, nullable=False)
 
+    # Lifecycle status
+    lifecycle_status = Column(String(20), default='active', nullable=False, index=True)
+
     # Relationships
     hts_campaigns: Mapped[List["HTSCampaign"]] = relationship(back_populates="library")
     hts_results: Mapped[List["HTSResult"]] = relationship(back_populates="compound")

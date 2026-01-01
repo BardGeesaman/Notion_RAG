@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish, Data Lifecycle Management P1 added)
 
 Simple status legend:
 - ✅ DONE
@@ -413,6 +413,18 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 ### Testing
 - [ ] Add performance benchmarks for converted async endpoints
 - [ ] Async test pattern documentation
+
+### Data Lifecycle Management
+- [ ] Dashboard Overview: Add `GET /lifecycle/stats` for status counts per entity type
+- [ ] Dashboard Audit tab: Add `GET /lifecycle/audit` with time/type/user filters
+- [ ] Add `is_archived_compat` property to Compound and Signature models for consistency
+- [ ] Status transition validation rules (e.g., prevent archived → quarantined directly)
+
+### UI Gaps (Backend features without dashboard UI)
+- [ ] AI Extraction Phase 2: No UI for OCR/scraper/normalizer services
+- [ ] External Sync Phase 2: Conflict resolver has no UI for manual conflict resolution
+- [ ] KEGG Refresh Adapter: No visibility into proactive refresh status
+- [ ] Entity Normalizer: No lookup UI for scientists to normalize entities manually
 
 ---
 

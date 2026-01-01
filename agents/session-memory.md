@@ -193,6 +193,25 @@
   - **Tests**: 38 tests across 4 test files (100% pass rate)
   - Reviewer approved with all P1/P2 gaps addressed
 
+* [2025-01-01] – **Data Lifecycle Management P1**:
+  - **LifecycleStatus enum**: ACTIVE, QUARANTINED, INVALID, ARCHIVED
+  - **Models updated**: Dataset, Experiment, Compound, Signature with `lifecycle_status` field
+  - **Backward compatibility**: `is_archived_compat` property for Dataset/Experiment
+  - **Migration**: 484be4b50b07 with indexes on all lifecycle_status columns
+  - **Service layer** (`amprenta_rag/services/lifecycle.py`):
+    - `calculate_deletion_impact()` - Cascade preview with blocking reference detection
+    - `update_lifecycle_status()` - With AuditLog integration
+    - `bulk_update_status()`, `bulk_delete_preview()`, `execute_bulk_archive()`
+  - **REST API** (`amprenta_rag/api/routers/lifecycle.py`):
+    - GET /lifecycle/impact/{entity_type}/{entity_id}
+    - POST /lifecycle/status, /bulk/status, /bulk/preview, /bulk/archive
+    - Safety: Max 100 entities, confirmation required for archive
+  - **Dashboard** (`scripts/dashboard/pages/data_lifecycle.py`):
+    - 4 tabs: Overview, Quarantine Queue, Bulk Operations, Audit Log
+    - Preview-before-execute workflow for bulk operations
+  - **Tests**: 19 tests (11 service + 8 API), all passing
+  - Reviewer approved with P2 observations added to ROADMAP backlog
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

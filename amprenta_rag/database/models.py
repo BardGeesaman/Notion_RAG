@@ -70,6 +70,14 @@ class ActivityEventType(str, PyEnum):
     REVIEW_ESCALATED = "review_escalated"
 
 
+class LifecycleStatus(str, PyEnum):
+    """Lifecycle status for data entities."""
+    ACTIVE = "active"           # Normal, visible
+    QUARANTINED = "quarantined" # Hidden but recoverable, under review
+    INVALID = "invalid"         # Visible with warning, known issues
+    ARCHIVED = "archived"       # Soft delete, hidden
+
+
 # Association tables for many-to-many relationships
 
 program_experiment_assoc = Table(
@@ -242,6 +250,14 @@ class Experiment(Base):
     is_archived = Column(Boolean, default=False, nullable=False)
     archived_at = Column(DateTime, nullable=True)
 
+    # Lifecycle status (replaces is_archived pattern)
+    lifecycle_status = Column(String(20), default='active', nullable=False, index=True)
+
+    @property
+    def is_archived_compat(self) -> bool:
+        """Backward compatibility: Check if entity is hidden."""
+        return self.lifecycle_status in ('archived', 'quarantined')
+
     # Relationships
     programs: Mapped[List["Program"]] = relationship(
         secondary=program_experiment_assoc, back_populates="experiments"
@@ -343,6 +359,14 @@ class Dataset(Base):
     # Archive fields for data retention
     is_archived = Column(Boolean, default=False, nullable=False)
     archived_at = Column(DateTime, nullable=True)
+
+    # Lifecycle status (replaces is_archived pattern)
+    lifecycle_status = Column(String(20), default='active', nullable=False, index=True)
+
+    @property
+    def is_archived_compat(self) -> bool:
+        """Backward compatibility: Check if entity is hidden."""
+        return self.lifecycle_status in ('archived', 'quarantined')
 
     # Ingestion status
     ingestion_status = Column(
@@ -625,6 +649,9 @@ class Signature(Base):
     # Audit
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
+
+    # Lifecycle status
+    lifecycle_status = Column(String(20), default='active', nullable=False, index=True)
 
     # Relationships
     components: Mapped[List["SignatureComponent"]] = relationship(

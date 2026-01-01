@@ -92,6 +92,7 @@ from amprenta_rag.api.routers import (
     versions,
     review_threads,
     review_sla,
+    lifecycle,
 )
 from amprenta_rag.config import get_config
 
@@ -207,6 +208,7 @@ app.include_router(collaboration.router, prefix="/api/v1", tags=["Collaboration"
 app.include_router(review_threads.review_threads_router, prefix="/api/v1", tags=["Review Threads"])
 app.include_router(review_threads.thread_actions_router, prefix="/api/v1", tags=["Review Threads"])
 app.include_router(review_sla.router, prefix="/api/v1", tags=["SLA"])
+app.include_router(lifecycle.router, prefix="/api/v1")
 
 
 @app.get("/")
