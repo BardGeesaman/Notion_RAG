@@ -140,6 +140,35 @@
   - 6 files modified/created, 9 tests passing
   - Reviewer approved with no P1 issues
 
+* [2025-01-01] – **Type Coverage Phase 2 (Partial)**:
+  - Audited services layer: Already 100% typed (no changes needed)
+  - Audited 6 API router files: 5/6 already typed
+  - **Actual work:** Added return types to `activity.py` (6 functions)
+  - Discovery: grep pattern unreliable for detecting type gaps
+  - Services + API routers now confirmed at high type coverage
+  - Remaining gaps likely in ingestion layer (lower priority)
+
+* [2025-01-01] – **AI Extraction Phase 2**:
+  - **OCR Service** (`amprenta_rag/extraction/ocr_service.py`):
+    - pytesseract + pdf2image integration for scanned documents
+    - Graceful degradation with TESSERACT_AVAILABLE check
+    - Helpful error messages with platform-specific install instructions
+    - Integrated into text_extraction.py as fallback for low-content PDFs
+  - **Web Scraper** (`amprenta_rag/extraction/web_scraper.py`):
+    - URL content extraction with readability-lxml
+    - Metadata extraction (title, author, publication_date)
+    - Per-domain rate limiting (0.5s minimum interval)
+    - ScrapedContent dataclass for structured results
+  - **Entity Normalizer** (`amprenta_rag/extraction/entity_normalizer.py`):
+    - PubChem API integration for compound lookups (name → CID, SMILES, InChI)
+    - UniProt API integration for gene lookups (symbol → UniProt ID, Entrez ID)
+    - In-memory caching to prevent duplicate API calls
+    - Per-service rate limiting for API compliance
+    - Batch processing support for multiple entities
+  - Dependencies added: pytesseract, pdf2image, beautifulsoup4, readability-lxml
+  - System dependencies documented: tesseract-ocr, poppler-utils (in LOCAL_SETUP.md)
+  - Reviewer approved with all P1 fixes verified
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

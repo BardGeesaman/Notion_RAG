@@ -17,6 +17,7 @@ from typing import List, Optional
 
 from pypdf import PdfReader
 
+from amprenta_rag.extraction.ocr_service import get_ocr_service, is_ocr_available
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +33,19 @@ def extract_text_from_pdf_bytes(data: bytes) -> str:
         t = page.extract_text() or ""
         if t:
             text_parts.append(t)
-    return "\n".join(text_parts)
+    text = "\n".join(text_parts)
+    
+    # If text is too short, try OCR fallback
+    if len(text) < 100 and is_ocr_available():
+        logger.info("PDF text too short, attempting OCR fallback")
+        ocr = get_ocr_service()
+        if ocr and ocr.is_scanned_pdf(data):
+            ocr_text = ocr.extract_from_scanned_pdf(data)
+            if len(ocr_text) > len(text):
+                logger.info(f"OCR fallback extracted {len(ocr_text)} chars")
+                return ocr_text
+    
+    return text
 
 
 def extract_text_from_attachment_bytes(

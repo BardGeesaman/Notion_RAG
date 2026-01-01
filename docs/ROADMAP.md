@@ -336,10 +336,12 @@ Items identified during feature development but deferred for future sessions.
   - Run full test suite after each batch
   - Effort: 1-2 weeks (spread across sprints)
 
-- ⏳ **Type Coverage Improvement** (46% → 60% target)
-  - Add type hints to untyped functions in services layer
-  - Enable stricter mypy rules incrementally
-  - Effort: 1-2 weeks (spread across sprints)
+- ⏳ **Type Coverage Improvement** (Partial - 2025-01-01)
+  - ✅ Services layer: 100% typed (audit confirmed)
+  - ✅ API routers: ~95% typed (6 functions added to activity.py)
+  - ⏳ Ingestion layer: ~94 functions untyped (lower priority)
+  - ⏳ Enable stricter mypy rules incrementally
+  - Effort: Remaining work ~1 week
 
 ### Activity & Notifications
 - ✅ **Activity Feed Phase 2** - Additional event type integrations (2025-01-01)
@@ -359,11 +361,10 @@ Items identified during feature development but deferred for future sessions.
   - Effort: 1 week
 
 ### AI & Extraction
-- ⏳ **AI Extraction Phase 2** - Extended document support
-  - OCR for scanned documents
-  - Web scraping for online sources
-  - Entity normalization APIs
-  - Effort: 1-2 weeks
+- ✅ **AI Extraction Phase 2** (2025-01-01)
+  - OCR for scanned documents (pytesseract + pdf2image)
+  - Web scraping for online sources (readability-lxml)
+  - Entity normalization APIs (PubChem, UniProt)
 
 ### Infrastructure & Performance
 - ⏳ **Async DB Connection Pooling - Router Migration** (Phases 1-6 complete 2025-01-01)

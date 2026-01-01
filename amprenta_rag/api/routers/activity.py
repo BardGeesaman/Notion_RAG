@@ -44,7 +44,7 @@ def get_activity_feed_endpoint(
     since: Optional[datetime] = Query(None, description="Filter events after this datetime"),
     limit: int = Query(50, ge=1, le=100, description="Maximum number of events to return"),
     offset: int = Query(0, ge=0, description="Number of events to skip"),
-):
+) -> List[ActivityEventSchema]:
     """
     Get paginated activity feed with optional filters.
     
@@ -75,7 +75,7 @@ def get_activity_feed_endpoint(
 
 
 @activity_router.get("/events/{event_id}", response_model=ActivityEventSchema)
-def get_activity_event(event_id: UUID):
+def get_activity_event(event_id: UUID) -> ActivityEventSchema:
     """
     Get a specific activity event by ID.
     
@@ -111,7 +111,7 @@ def get_notifications_endpoint(
     limit: int = Query(20, ge=1, le=100, description="Maximum number of notifications to return"),
     offset: int = Query(0, ge=0, description="Number of notifications to skip"),
     current_user: User = Depends(get_current_user),
-):
+) -> List[NotificationSchema]:
     """
     Get paginated notifications for the current user.
     
@@ -165,7 +165,7 @@ def get_notifications_endpoint(
 def mark_notification_read_endpoint(
     notification_id: UUID,
     current_user: User = Depends(get_current_user),
-):
+) -> dict:
     """
     Mark a specific notification as read.
     
@@ -190,7 +190,7 @@ def mark_notification_read_endpoint(
 @notifications_router.post("/read-all")
 def mark_all_notifications_read_endpoint(
     current_user: User = Depends(get_current_user),
-):
+) -> dict:
     """
     Mark all notifications as read for the current user.
     
@@ -209,7 +209,7 @@ def mark_all_notifications_read_endpoint(
 @notifications_router.get("/count", response_model=NotificationCountSchema)
 def get_notifications_count(
     current_user: User = Depends(get_current_user),
-):
+) -> NotificationCountSchema:
     """
     Get the count of unread notifications for the current user.
     """

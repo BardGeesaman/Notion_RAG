@@ -170,6 +170,26 @@ If structural biology dependencies fail to install:
 3. Consider using conda-forge instead of pip
 4. On Apple Silicon (M1/M2), conda-forge is strongly recommended
 
+### Optional: OCR Support
+
+For extracting text from scanned PDFs and images:
+
+**Linux:**
+```bash
+apt-get install tesseract-ocr poppler-utils
+```
+
+**macOS:**
+```bash
+brew install tesseract poppler
+```
+
+**Windows:**
+- Tesseract: Download from https://github.com/UB-Mannheim/tesseract/wiki
+- Poppler: Download from https://github.com/oschwartz10612/poppler-windows/releases
+
+**Note**: OCR functionality gracefully degrades if tesseract is not installed - the platform will continue to work but scanned PDFs will not be processed.
+
 ---
 
 ## Step 4: Environment Configuration
