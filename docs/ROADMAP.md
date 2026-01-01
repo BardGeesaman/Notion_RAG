@@ -292,6 +292,53 @@ Simple status legend:
   - New files: cache.py, loading.py, accessibility.py, query_timing.py
   - Documentation: docs/ACCESSIBILITY.md
 
+## ⏳ Deferred / Future Work
+
+Items identified during feature development but deferred for future sessions.
+
+### Testing & Code Quality
+- ⏳ **Functional Testing - Remaining Files** (~68 API test files)
+  - Phase 2 declared "strategically complete" with 6 high-priority files converted
+  - Methodology proven and documented in docs/INTEGRATION_TESTING.md
+  - Remaining files use mock-heavy patterns awaiting conversion
+  - Effort: 3-4 weeks for comprehensive coverage
+
+### Activity & Notifications
+- ⏳ **Activity Feed Phase 2** - Additional event type integrations
+  - `compound_added` events when compounds registered
+  - `hit_confirmed` events when HTS hits confirmed
+  - `status_changed` events for workflow transitions
+  - Effort: 1-2 days
+
+### External Data Integration
+- ⏳ **External Sync Phase 2** - Additional adapters and automation
+  - UniProt incremental sync adapter
+  - KEGG incremental sync adapter
+  - GEO incremental improvements
+  - Auto-conflict resolution for sync jobs
+  - Effort: 1 week
+
+### AI & Extraction
+- ⏳ **AI Extraction Phase 2** - Extended document support
+  - OCR for scanned documents
+  - Web scraping for online sources
+  - Entity normalization APIs
+  - Effort: 1-2 weeks
+
+### Infrastructure & Performance
+- ⏳ **Async DB Connection Pooling - Router Migration**
+  - Infrastructure complete (async_session.py, async_dependencies.py)
+  - 239 router access points identified for migration
+  - Sync → async conversion for improved throughput
+  - Effort: 2-3 weeks
+
+### Imaging & Microscopy
+- ⏳ **Imaging Metadata P2/P3**
+  - P2: well_id nullable handling
+  - P3: QC persistence to database
+  - P3: Thumbnail cache for faster browsing
+  - Effort: 2-3 days
+
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
 - ✅ KEGG API rate limit documentation in id_mapping.py (2025-01-01)
