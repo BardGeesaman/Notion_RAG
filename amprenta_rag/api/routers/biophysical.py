@@ -19,9 +19,11 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from amprenta_rag.api.dependencies import get_current_user, get_database_session
+from amprenta_rag.api.dependencies import get_current_user
+from amprenta_rag.api.async_dependencies import get_async_database_session
 from amprenta_rag.api.schemas import (
     BiophysicalCompareResponse,
     BiophysicalUploadResponse,
@@ -61,7 +63,7 @@ async def upload_spr_file(
     compound_id: Optional[UUID] = None,
     target_id: Optional[UUID] = None,
     target_name: Optional[str] = None,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ):
     """Upload and process SPR data file (CSV, TXT)."""
@@ -128,12 +130,12 @@ async def list_spr_experiments(
     target_id: Optional[UUID] = Query(None, description="Filter by target ID"),
     skip: int = Query(0, ge=0, description="Number of experiments to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of experiments to return"),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """List SPR experiments with optional filtering."""
     
     try:
-        query = db.query(SPRExperiment)
+        query = select(SPRExperiment)
         
         # Apply filters
         if compound_id:
@@ -142,7 +144,9 @@ async def list_spr_experiments(
             query = query.filter(SPRExperiment.target_id == target_id)
         
         # Apply pagination
-        experiments = query.order_by(SPRExperiment.created_at.desc()).offset(skip).limit(limit).all()
+        paginated_query = query.order_by(SPRExperiment.created_at.desc()).offset(skip).limit(limit)
+        result = await db.execute(paginated_query)
+        experiments = result.scalars().all()
         
         # Detach from session to prevent DetachedInstanceError
         for exp in experiments:
@@ -161,12 +165,15 @@ async def list_spr_experiments(
 @router.get("/spr/{spr_id}", response_model=SPRExperimentResponse)
 async def get_spr_experiment(
     spr_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """Get SPR experiment details by ID."""
     
     try:
-        experiment = db.query(SPRExperiment).filter(SPRExperiment.id == spr_id).first()
+        result = await db.execute(
+            select(SPRExperiment).filter(SPRExperiment.id == spr_id)
+        )
+        experiment = result.scalars().first()
         
         if not experiment:
             raise HTTPException(
@@ -192,13 +199,16 @@ async def get_spr_experiment(
 async def refit_spr_kinetics(
     spr_id: UUID,
     request: RefitRequest,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """Refit SPR kinetics with specified model."""
     
     try:
         # Check if experiment exists
-        experiment = db.query(SPRExperiment).filter(SPRExperiment.id == spr_id).first()
+        result = await db.execute(
+            select(SPRExperiment).filter(SPRExperiment.id == spr_id)
+        )
+        experiment = result.scalars().first()
         
         if not experiment:
             raise HTTPException(
@@ -245,7 +255,7 @@ async def upload_mst_file(
     compound_id: Optional[UUID] = None,
     target_id: Optional[UUID] = None,
     target_name: Optional[str] = None,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ):
     """Upload and process MST data file (CSV, XLSX)."""
@@ -312,12 +322,12 @@ async def list_mst_experiments(
     target_id: Optional[UUID] = Query(None, description="Filter by target ID"),
     skip: int = Query(0, ge=0, description="Number of experiments to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of experiments to return"),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """List MST experiments with optional filtering."""
     
     try:
-        query = db.query(MSTExperiment)
+        query = select(MSTExperiment)
         
         # Apply filters
         if compound_id:
@@ -326,7 +336,9 @@ async def list_mst_experiments(
             query = query.filter(MSTExperiment.target_id == target_id)
         
         # Apply pagination
-        experiments = query.order_by(MSTExperiment.created_at.desc()).offset(skip).limit(limit).all()
+        paginated_query = query.order_by(MSTExperiment.created_at.desc()).offset(skip).limit(limit)
+        result = await db.execute(paginated_query)
+        experiments = result.scalars().all()
         
         # Detach from session to prevent DetachedInstanceError
         for exp in experiments:
@@ -345,12 +357,15 @@ async def list_mst_experiments(
 @router.get("/mst/{mst_id}", response_model=MSTExperimentResponse)
 async def get_mst_experiment(
     mst_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """Get MST experiment details by ID."""
     
     try:
-        experiment = db.query(MSTExperiment).filter(MSTExperiment.id == mst_id).first()
+        result = await db.execute(
+            select(MSTExperiment).filter(MSTExperiment.id == mst_id)
+        )
+        experiment = result.scalars().first()
         
         if not experiment:
             raise HTTPException(
@@ -376,13 +391,16 @@ async def get_mst_experiment(
 async def refit_mst_affinity(
     mst_id: UUID,
     request: RefitRequest,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """Refit MST affinity with specified model."""
     
     try:
         # Check if experiment exists
-        experiment = db.query(MSTExperiment).filter(MSTExperiment.id == mst_id).first()
+        result = await db.execute(
+            select(MSTExperiment).filter(MSTExperiment.id == mst_id)
+        )
+        experiment = result.scalars().first()
         
         if not experiment:
             raise HTTPException(
@@ -429,7 +447,7 @@ async def upload_dsc_file(
     compound_id: Optional[UUID] = None,
     protein_id: Optional[UUID] = None,
     protein_name: Optional[str] = None,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ):
     """Upload and process DSC data file (CSV, TXT)."""
@@ -496,12 +514,12 @@ async def list_dsc_experiments(
     protein_id: Optional[UUID] = Query(None, description="Filter by protein ID"),
     skip: int = Query(0, ge=0, description="Number of experiments to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of experiments to return"),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """List DSC experiments with optional filtering."""
     
     try:
-        query = db.query(DSCExperiment)
+        query = select(DSCExperiment)
         
         # Apply filters (map protein_id to target_id for DSC)
         if compound_id:
@@ -510,7 +528,9 @@ async def list_dsc_experiments(
             query = query.filter(DSCExperiment.target_id == protein_id)
         
         # Apply pagination
-        experiments = query.order_by(DSCExperiment.created_at.desc()).offset(skip).limit(limit).all()
+        paginated_query = query.order_by(DSCExperiment.created_at.desc()).offset(skip).limit(limit)
+        result = await db.execute(paginated_query)
+        experiments = result.scalars().all()
         
         # Detach from session to prevent DetachedInstanceError
         for exp in experiments:
@@ -529,12 +549,15 @@ async def list_dsc_experiments(
 @router.get("/dsc/{dsc_id}", response_model=DSCExperimentResponse)
 async def get_dsc_experiment(
     dsc_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """Get DSC experiment details by ID."""
     
     try:
-        experiment = db.query(DSCExperiment).filter(DSCExperiment.id == dsc_id).first()
+        result = await db.execute(
+            select(DSCExperiment).filter(DSCExperiment.id == dsc_id)
+        )
+        experiment = result.scalars().first()
         
         if not experiment:
             raise HTTPException(
@@ -560,13 +583,16 @@ async def get_dsc_experiment(
 async def refit_dsc_thermal(
     dsc_id: UUID,
     request: RefitRequest,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """Refit DSC thermal analysis with specified model."""
     
     try:
         # Check if experiment exists
-        experiment = db.query(DSCExperiment).filter(DSCExperiment.id == dsc_id).first()
+        result = await db.execute(
+            select(DSCExperiment).filter(DSCExperiment.id == dsc_id)
+        )
+        experiment = result.scalars().first()
         
         if not experiment:
             raise HTTPException(
@@ -609,7 +635,7 @@ async def refit_dsc_thermal(
 @router.get("/compare", response_model=BiophysicalCompareResponse)
 async def compare_biophysical_results(
     compound_id: UUID = Query(..., description="Compound ID to compare across assays"),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ):
     """Compare biophysical results across SPR, MST, and DSC assays for a compound."""
     

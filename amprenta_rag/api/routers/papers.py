@@ -13,17 +13,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from amprenta_rag.api.dependencies import get_database_session
+from amprenta_rag.api.async_dependencies import get_async_database_session
 from amprenta_rag.database.models import Literature
 from amprenta_rag.ingestion.papers import PubMedRepository
-from amprenta_rag.ingestion.papers.embedding import embed_paper_sections
-from amprenta_rag.ingestion.papers.jats_parser import PaperSection, parse_jats_xml
 from amprenta_rag.ingestion.papers.semantic_scholar import SemanticScholarRepository
 from amprenta_rag.ingestion.papers.openalex import OpenAlexRepository
 from amprenta_rag.models.content import PaperCitation, PublicationExtraction, SupplementaryFile
-from amprenta_rag.extraction.publication_extractor import extract_from_pdf_bytes
 from amprenta_rag.extraction.supplementary_parser import parse_supplementary_file
 from amprenta_rag.logging_utils import get_logger
 
@@ -281,7 +279,7 @@ class LinkDatasetResponse(BaseModel):
 @router.post("/search", response_model=PaperSearchResponse)
 async def search_papers(
     request: PaperSearchRequest,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> PaperSearchResponse:
     """
     Search for scientific papers.
@@ -325,7 +323,7 @@ async def search_papers(
 @router.post("/ingest", response_model=PaperIngestResponse, status_code=201)
 async def ingest_paper(
     request: PaperIngestRequest,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> PaperIngestResponse:
     """
     Ingest a paper by PMID or DOI.
@@ -341,9 +339,15 @@ async def ingest_paper(
     # Check for existing paper (P0-2 deduplication)
     existing = None
     if request.pmid:
-        existing = db.query(Literature).filter(Literature.pmid == request.pmid).first()
+        result = await db.execute(
+            select(Literature).filter(Literature.pmid == request.pmid)
+        )
+        existing = result.scalars().first()
     if not existing and request.doi:
-        existing = db.query(Literature).filter(Literature.doi == request.doi).first()
+        result = await db.execute(
+            select(Literature).filter(Literature.doi == request.doi)
+        )
+        existing = result.scalars().first()
 
     if existing:
         logger.info(
@@ -387,7 +391,7 @@ async def ingest_paper(
             full_text_available=False,  # Will update if full text fetched
         )
         db.add(literature)
-        db.flush()  # Get literature.id
+        await db.flush()  # Get literature.id
 
         logger.info(
             "[PAPERS_API] Created Literature record: PMID=%s, ID=%s",
@@ -404,7 +408,7 @@ async def ingest_paper(
                 metadata.pmid,
             )
 
-        db.commit()
+        await db.commit()
 
         return PaperIngestResponse(
             literature_id=literature.id,
@@ -426,14 +430,17 @@ async def ingest_paper(
 @router.get("/{paper_id}", response_model=PaperDetailResponse)
 async def get_paper(
     paper_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> PaperDetailResponse:
     """
     Get paper details by ID.
 
     Returns paper metadata and sections if available.
     """
-    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    result = await db.execute(
+        select(Literature).filter(Literature.id == paper_id)
+    )
+    literature = result.scalars().first()
 
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
@@ -460,7 +467,7 @@ async def get_paper_citations(
     paper_id: UUID,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> List[CitationResponse]:
     """
     Get papers that cite this paper.
@@ -468,19 +475,22 @@ async def get_paper_citations(
     Returns citations stored in the PaperCitation table.
     """
     # Verify paper exists
-    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    result = await db.execute(
+        select(Literature).filter(Literature.id == paper_id)
+    )
+    literature = result.scalars().first()
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
     
     # Get citations
-    citations = (
-        db.query(PaperCitation)
+    citations_result = await db.execute(
+        select(PaperCitation)
         .filter(PaperCitation.cited_paper_id == paper_id)
         .order_by(PaperCitation.is_influential.desc())
         .offset(offset)
         .limit(limit)
-        .all()
     )
+    citations = citations_result.scalars().all()
     
     results = []
     for citation in citations:
@@ -505,7 +515,7 @@ async def get_paper_references(
     paper_id: UUID,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> List[CitationResponse]:
     """
     Get papers that this paper cites (references).
@@ -513,19 +523,22 @@ async def get_paper_references(
     Returns references stored in the PaperCitation table.
     """
     # Verify paper exists
-    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    result = await db.execute(
+        select(Literature).filter(Literature.id == paper_id)
+    )
+    literature = result.scalars().first()
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
     
     # Get references
-    references = (
-        db.query(PaperCitation)
+    references_result = await db.execute(
+        select(PaperCitation)
         .filter(PaperCitation.citing_paper_id == paper_id)
         .order_by(PaperCitation.is_influential.desc())
         .offset(offset)
         .limit(limit)
-        .all()
     )
+    references = references_result.scalars().all()
     
     results = []
     for ref in references:
@@ -549,7 +562,7 @@ async def get_paper_references(
 async def enrich_paper(
     paper_id: UUID,
     request: EnrichPaperRequest,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> EnrichPaperResponse:
     """
     Enrich paper with Semantic Scholar and OpenAlex metadata.
@@ -557,7 +570,10 @@ async def enrich_paper(
     Fetches additional metadata and optionally builds citation graph.
     """
     # Get paper
-    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    result = await db.execute(
+        select(Literature).filter(Literature.id == paper_id)
+    )
+    literature = result.scalars().first()
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
     
@@ -593,10 +609,13 @@ async def enrich_paper(
                 if citing_paper_s2_id:
                     cite_title = cite.get("title", "")
                     # Check if we already have this citation (avoid duplicates by title)
-                    existing = db.query(PaperCitation).filter(
-                        PaperCitation.cited_paper_id == paper_id,
-                        PaperCitation.cited_title == cite_title,
-                    ).first()
+                    existing_result = await db.execute(
+                        select(PaperCitation).filter(
+                            PaperCitation.cited_paper_id == paper_id,
+                            PaperCitation.cited_title == cite_title,
+                        )
+                    )
+                    existing = existing_result.scalars().first()
                     
                     if not existing and cite_title:
                         # External paper cites our paper
@@ -618,10 +637,13 @@ async def enrich_paper(
                 if cited_paper_s2_id:
                     ref_title = ref.get("title", "")
                     # Check if we already have this reference (avoid duplicates by title)
-                    existing = db.query(PaperCitation).filter(
-                        PaperCitation.citing_paper_id == paper_id,
-                        PaperCitation.cited_title == ref_title,
-                    ).first()
+                    existing_result = await db.execute(
+                        select(PaperCitation).filter(
+                            PaperCitation.citing_paper_id == paper_id,
+                            PaperCitation.cited_title == ref_title,
+                        )
+                    )
+                    existing = existing_result.scalars().first()
                     
                     if not existing and ref_title:
                         # Our paper cites an external paper
@@ -654,7 +676,7 @@ async def enrich_paper(
     except Exception as e:
         logger.warning("[PAPERS_API] OpenAlex enrichment failed: %r", e)
     
-    db.commit()
+    await db.commit()
     
     return EnrichPaperResponse(
         enriched=True,
@@ -669,7 +691,7 @@ async def enrich_paper(
 @router.post("/{paper_id}/extract", response_model=ExtractExperimentsResponse)
 async def extract_experiments_from_paper(
     paper_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> ExtractExperimentsResponse:
     """
     Extract structured experiment data from paper PDF.
@@ -677,7 +699,10 @@ async def extract_experiments_from_paper(
     NOTE: Requires PDF to be available. Currently placeholder - full implementation
     requires PDF storage integration.
     """
-    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    result = await db.execute(
+        select(Literature).filter(Literature.id == paper_id)
+    )
+    literature = result.scalars().first()
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
     
@@ -695,7 +720,7 @@ async def extract_experiments_from_paper(
 async def upload_supplementary_file(
     paper_id: UUID,
     file: UploadFile = File(...),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> SupplementaryUploadResponse:
     """
     Upload and parse supplementary file for a paper.
@@ -706,7 +731,10 @@ async def upload_supplementary_file(
     from pathlib import Path
     
     # Verify paper exists
-    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    result = await db.execute(
+        select(Literature).filter(Literature.id == paper_id)
+    )
+    literature = result.scalars().first()
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
     
@@ -744,7 +772,7 @@ async def upload_supplementary_file(
             data=data,
         )
         db.add(supp_file)
-        db.commit()
+        await db.commit()
         db.refresh(supp_file)
         
         logger.info(
@@ -772,22 +800,24 @@ async def upload_supplementary_file(
 @router.get("/{paper_id}/experiments", response_model=List[ExperimentResponse])
 async def get_paper_experiments(
     paper_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> List[ExperimentResponse]:
     """
     Get extracted experiments for a paper.
 
     Returns all PublicationExtraction records for the specified paper.
     """
-    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    result = await db.execute(
+        select(Literature).filter(Literature.id == paper_id)
+    )
+    literature = result.scalars().first()
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
     
-    experiments = (
-        db.query(PublicationExtraction)
-        .filter(PublicationExtraction.literature_id == paper_id)
-        .all()
+    experiments_result = await db.execute(
+        select(PublicationExtraction).filter(PublicationExtraction.literature_id == paper_id)
     )
+    experiments = experiments_result.scalars().all()
     
     return [ExperimentResponse.model_validate(exp) for exp in experiments]
 
@@ -796,7 +826,7 @@ async def get_paper_experiments(
 async def link_supplementary_to_dataset(
     paper_id: UUID,
     request: LinkDatasetRequest,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> LinkDatasetResponse:
     """
     Link a supplementary file to an existing Dataset.
@@ -804,22 +834,28 @@ async def link_supplementary_to_dataset(
     Updates the SupplementaryFile record to reference a Dataset ID.
     """
     # Verify paper exists
-    literature = db.query(Literature).filter(Literature.id == paper_id).first()
+    result = await db.execute(
+        select(Literature).filter(Literature.id == paper_id)
+    )
+    literature = result.scalars().first()
     if not literature:
         raise HTTPException(status_code=404, detail="Paper not found")
     
     # Get supplementary file
-    supp_file = db.query(SupplementaryFile).filter(
-        SupplementaryFile.id == request.supplementary_file_id,
-        SupplementaryFile.literature_id == paper_id,
-    ).first()
+    supp_result = await db.execute(
+        select(SupplementaryFile).filter(
+            SupplementaryFile.id == request.supplementary_file_id,
+            SupplementaryFile.literature_id == paper_id,
+        )
+    )
+    supp_file = supp_result.scalars().first()
     
     if not supp_file:
         raise HTTPException(status_code=404, detail="Supplementary file not found for this paper")
     
     # Update linked dataset
     supp_file.linked_dataset_id = request.dataset_id
-    db.commit()
+    await db.commit()
     
     logger.info(
         "[PAPERS_API] Linked supplementary file %s to dataset %s",

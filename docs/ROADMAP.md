@@ -366,12 +366,16 @@ Items identified during feature development but deferred for future sessions.
   - Effort: 1-2 weeks
 
 ### Infrastructure & Performance
-- ⏳ **Async DB Connection Pooling - Router Migration** (Phases 1-2 complete 2025-01-01)
+- ⏳ **Async DB Connection Pooling - Router Migration** (Phases 1-6 complete 2025-01-01)
   - Infrastructure complete (async_session.py, async_dependencies.py)
-  - ✅ Phase 1: review_sla service + router (6 functions, 8 endpoints)
-  - ✅ Phase 2: imaging router (18 endpoints, 27 db.query() calls converted)
-  - Total: 26+ async endpoints, 0 blocking sync calls
-  - 213+ router access points remaining for Phase 3+
+  - ✅ Phase 1: review_sla (8 endpoints)
+  - ✅ Phase 2: imaging (18 endpoints)
+  - ✅ Phase 3: biophysical (13 endpoints)
+  - ✅ Phase 4: papers (10 endpoints)
+  - ✅ Phase 5: datasets (9 endpoints)
+  - ✅ Phase 6: flow_cytometry (9 endpoints)
+  - **Total: 6 high-traffic routers, 71 endpoints, 0 blocking sync calls**
+  - ~200 lower-traffic endpoints remaining (see P2 Observations Backlog)
   - Sync → async conversion for improved throughput
   - Effort: 2-3 weeks
 
@@ -400,7 +404,7 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Edge case test: notifications without program_id
 
 ### Async DB Migration
-- [ ] Review Cycle endpoints not yet converted (5 remaining)
+- [ ] Lower-traffic routers (~200 endpoints): entity_reviews, inline_annotations, sharing, monitoring, teams, comments, experiment_tags, activity, dashboards, exports, reviews, review_cycles, structures, docking, poses, notebooks, ml_models, qsar, signatures, omics, pathways, variants
 - [ ] Update test mocks to async-aware pattern (AsyncMock)
 - [ ] Consider async-first interface once migration complete
 - [ ] Connection pool sizing verification (pool_size, max_overflow)

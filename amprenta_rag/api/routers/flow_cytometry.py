@@ -19,9 +19,11 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from amprenta_rag.api.dependencies import get_current_user, get_database_session
+from amprenta_rag.api.dependencies import get_current_user
+from amprenta_rag.api.async_dependencies import get_async_database_session
 from amprenta_rag.api.schemas import (
     EventsQueryParams,
     EventsResponse,
@@ -117,7 +119,7 @@ async def list_flow_datasets(
     skip: int = Query(0, ge=0, description="Number of datasets to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of datasets to return"),
     processing_status: Optional[str] = Query(None, description="Filter by processing status"),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> List[FlowCytometryDatasetResponse]:
     """
@@ -126,12 +128,14 @@ async def list_flow_datasets(
     Returns paginated list of flow cytometry datasets with optional filtering
     by processing status.
     """
-    query = db.query(FlowCytometryDataset).order_by(FlowCytometryDataset.ingested_at.desc())
+    query = select(FlowCytometryDataset).order_by(FlowCytometryDataset.ingested_at.desc())
     
     if processing_status:
         query = query.filter(FlowCytometryDataset.processing_status == processing_status)
     
-    datasets = query.offset(skip).limit(limit).all()
+    paginated_query = query.offset(skip).limit(limit)
+    result = await db.execute(paginated_query)
+    datasets = result.scalars().all()
     
     return [FlowCytometryDatasetResponse.model_validate(dataset) for dataset in datasets]
 
@@ -139,7 +143,7 @@ async def list_flow_datasets(
 @router.get("/datasets/{dataset_id}", response_model=FlowCytometryDatasetResponse)
 async def get_flow_dataset(
     dataset_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> FlowCytometryDatasetResponse:
     """
@@ -148,7 +152,10 @@ async def get_flow_dataset(
     Returns detailed information about a specific flow cytometry dataset
     including acquisition metadata and processing status.
     """
-    dataset = db.query(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id).first()
+    result = await db.execute(
+        select(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id)
+    )
+    dataset = result.scalars().first()
     
     if not dataset:
         raise HTTPException(
@@ -162,7 +169,7 @@ async def get_flow_dataset(
 @router.get("/datasets/{dataset_id}/parameters", response_model=List[FlowCytometryParameterResponse])
 async def get_dataset_parameters(
     dataset_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> List[FlowCytometryParameterResponse]:
     """
@@ -172,19 +179,22 @@ async def get_dataset_parameters(
     including metadata about fluorophores, detectors, and value ranges.
     """
     # Verify dataset exists
-    dataset = db.query(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id).first()
+    dataset_result = await db.execute(
+        select(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id)
+    )
+    dataset = dataset_result.scalars().first()
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Flow cytometry dataset {dataset_id} not found"
         )
     
-    parameters = (
-        db.query(FlowCytometryParameter)
+    params_result = await db.execute(
+        select(FlowCytometryParameter)
         .filter(FlowCytometryParameter.flow_dataset_id == dataset_id)
         .order_by(FlowCytometryParameter.parameter_index)
-        .all()
     )
+    parameters = params_result.scalars().all()
     
     return [FlowCytometryParameterResponse.model_validate(param) for param in parameters]
 
@@ -193,7 +203,7 @@ async def get_dataset_parameters(
 async def get_dataset_events(
     dataset_id: UUID,
     query_params: EventsQueryParams = Depends(),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> EventsResponse:
     """
@@ -203,7 +213,10 @@ async def get_dataset_events(
     Event data is loaded from Parquet files for performance.
     """
     # Verify dataset exists and is processed
-    dataset = db.query(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id).first()
+    result = await db.execute(
+        select(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id)
+    )
+    dataset = result.scalars().first()
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -281,7 +294,7 @@ async def get_dataset_events(
 async def create_gate(
     dataset_id: UUID,
     gate_data: GateCreate,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> GateResponse:
     """
@@ -291,7 +304,10 @@ async def create_gate(
     population statistics. Supports polygon, rectangle, and quadrant gates.
     """
     # Verify dataset exists
-    dataset = db.query(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id).first()
+    dataset_result = await db.execute(
+        select(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id)
+    )
+    dataset = dataset_result.scalars().first()
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -305,9 +321,10 @@ async def create_gate(
         )
     
     # Verify parameters exist
-    x_param = db.query(FlowCytometryParameter).filter(
-        FlowCytometryParameter.id == gate_data.x_parameter_id
-    ).first()
+    x_param_result = await db.execute(
+        select(FlowCytometryParameter).filter(FlowCytometryParameter.id == gate_data.x_parameter_id)
+    )
+    x_param = x_param_result.scalars().first()
     if not x_param:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -315,9 +332,10 @@ async def create_gate(
         )
     
     if gate_data.y_parameter_id:
-        y_param = db.query(FlowCytometryParameter).filter(
-            FlowCytometryParameter.id == gate_data.y_parameter_id
-        ).first()
+        y_param_result = await db.execute(
+            select(FlowCytometryParameter).filter(FlowCytometryParameter.id == gate_data.y_parameter_id)
+        )
+        y_param = y_param_result.scalars().first()
         if not y_param:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -356,7 +374,7 @@ async def create_gate(
 async def list_gates(
     dataset_id: UUID,
     include_inactive: bool = Query(False, description="Include inactive gates"),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> List[GateResponse]:
     """
@@ -366,19 +384,23 @@ async def list_gates(
     inactive gates for historical analysis.
     """
     # Verify dataset exists
-    dataset = db.query(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id).first()
+    dataset_result = await db.execute(
+        select(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id)
+    )
+    dataset = dataset_result.scalars().first()
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Flow cytometry dataset {dataset_id} not found"
         )
     
-    query = db.query(FlowCytometryGate).filter(FlowCytometryGate.flow_dataset_id == dataset_id)
+    query = select(FlowCytometryGate).filter(FlowCytometryGate.flow_dataset_id == dataset_id)
     
     if not include_inactive:
         query = query.filter(FlowCytometryGate.is_active.is_(True))
     
-    gates = query.order_by(FlowCytometryGate.created_at).all()
+    gates_result = await db.execute(query.order_by(FlowCytometryGate.created_at))
+    gates = gates_result.scalars().all()
     
     return [GateResponse.model_validate(gate) for gate in gates]
 
@@ -387,7 +409,7 @@ async def list_gates(
 async def update_gate(
     gate_id: UUID,
     gate_update: GateUpdate,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> GateResponse:
     """
@@ -396,7 +418,10 @@ async def update_gate(
     Allows partial updates to gate properties. If gate definition is changed,
     population statistics will be recomputed automatically.
     """
-    gate = db.query(FlowCytometryGate).filter(FlowCytometryGate.id == gate_id).first()
+    result = await db.execute(
+        select(FlowCytometryGate).filter(FlowCytometryGate.id == gate_id)
+    )
+    gate = result.scalars().first()
     
     if not gate:
         raise HTTPException(
@@ -412,7 +437,7 @@ async def update_gate(
             setattr(gate, field, value)
         
         db.add(gate)
-        db.commit()
+        await db.commit()
         db.refresh(gate)
         
         # If gate definition changed, recompute population (simplified for MVP)
@@ -436,7 +461,7 @@ async def update_gate(
 @router.delete("/gates/{gate_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_gate(
     gate_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> None:
     """
@@ -445,7 +470,10 @@ async def delete_gate(
     Marks the gate as inactive rather than physically deleting it
     to preserve analysis history. Associated populations are also marked inactive.
     """
-    gate = db.query(FlowCytometryGate).filter(FlowCytometryGate.id == gate_id).first()
+    result = await db.execute(
+        select(FlowCytometryGate).filter(FlowCytometryGate.id == gate_id)
+    )
+    gate = result.scalars().first()
     
     if not gate:
         raise HTTPException(
@@ -459,14 +487,15 @@ async def delete_gate(
         db.add(gate)
         
         # Mark associated populations as inactive (if needed in future)
-        # populations = db.query(FlowCytometryPopulation).filter(
-        #     FlowCytometryPopulation.gate_id == gate_id
-        # ).all()
+        # populations_result = await db.execute(
+        #     select(FlowCytometryPopulation).filter(FlowCytometryPopulation.gate_id == gate_id)
+        # )
+        # populations = populations_result.scalars().all()
         # for pop in populations:
         #     pop.is_active = False
         #     db.add(pop)
         
-        db.commit()
+        await db.commit()
         
         logger.info(f"Deleted (deactivated) gate {gate_id}")
         
@@ -483,7 +512,7 @@ async def delete_gate(
 async def get_population_statistics(
     dataset_id: UUID,
     gate_id: Optional[UUID] = Query(None, description="Filter by specific gate"),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
     current_user: User = Depends(get_current_user),
 ) -> List[PopulationResponse]:
     """
@@ -493,21 +522,25 @@ async def get_population_statistics(
     including event counts, percentages, and parameter statistics.
     """
     # Verify dataset exists
-    dataset = db.query(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id).first()
+    dataset_result = await db.execute(
+        select(FlowCytometryDataset).filter(FlowCytometryDataset.id == dataset_id)
+    )
+    dataset = dataset_result.scalars().first()
     if not dataset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Flow cytometry dataset {dataset_id} not found"
         )
     
-    query = db.query(FlowCytometryPopulation).filter(
+    query = select(FlowCytometryPopulation).filter(
         FlowCytometryPopulation.flow_dataset_id == dataset_id
     )
     
     if gate_id:
         query = query.filter(FlowCytometryPopulation.gate_id == gate_id)
     
-    populations = query.order_by(FlowCytometryPopulation.analyzed_at.desc()).all()
+    populations_result = await db.execute(query.order_by(FlowCytometryPopulation.analyzed_at.desc()))
+    populations = populations_result.scalars().all()
     
     return [PopulationResponse.model_validate(population) for population in populations]
 

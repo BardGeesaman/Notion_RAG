@@ -1,17 +1,18 @@
-from datetime import datetime
 """
 API router for Datasets.
 """
 
 import json
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from amprenta_rag.api.dependencies import get_database_session
+from amprenta_rag.api.async_dependencies import get_async_database_session
 from amprenta_rag.api.schemas import (
     AnnotationCreate,
     Dataset,
@@ -35,7 +36,7 @@ router = APIRouter()
 @router.post("/", response_model=Dataset, status_code=201)
 async def create_dataset(
     dataset: DatasetCreate,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> Dataset:
     """Create a new dataset."""
     return cast(Dataset, dataset_service.create_dataset(db, dataset))
@@ -49,7 +50,7 @@ async def list_datasets(
     omics_type: Optional[OmicsType] = Query(None, description="Filter by omics type"),
     program_id: Optional[UUID] = Query(None, description="Filter by program ID"),
     experiment_id: Optional[UUID] = Query(None, description="Filter by experiment ID"),
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> List[Dataset]:
     """List all datasets."""
     omics_type_str = omics_type.value if omics_type else None
@@ -70,7 +71,7 @@ async def list_datasets(
 @router.get("/{dataset_id}", response_model=Dataset)
 async def get_dataset(
     dataset_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> Dataset:
     """Get a dataset by ID."""
     dataset = dataset_service.get_dataset(db, dataset_id)
@@ -83,7 +84,7 @@ async def get_dataset(
 async def add_dataset_annotation(
     dataset_id: UUID,
     annotation: AnnotationCreate,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> Dict[str, Any]:
     """Add a note/annotation to a dataset."""
     dataset = dataset_service.get_dataset(db, dataset_id)
@@ -97,8 +98,8 @@ async def add_dataset_annotation(
         content=annotation.text,
     )
     db.add(note)
-    db.commit()
-    db.refresh(note)
+    await db.commit()
+    await db.refresh(note)
 
     created_at_val = getattr(note, "created_at", None)
     return {
@@ -114,7 +115,7 @@ async def add_dataset_annotation(
 @router.get("/{dataset_id}/notebook")
 async def download_dataset_notebook(
     dataset_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> Response:
     """
     Download an nbformat v4 notebook (JSON) for exploring a dataset.
@@ -136,7 +137,7 @@ async def download_dataset_notebook(
 async def update_dataset(
     dataset_id: UUID,
     dataset: DatasetUpdate,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> Dataset:
     """
     Update a dataset using optimistic locking.
@@ -189,7 +190,7 @@ async def update_dataset(
 @router.delete("/{dataset_id}", status_code=204)
 async def delete_dataset(
     dataset_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> None:
     """Delete a dataset."""
     success = dataset_service.delete_dataset(db, dataset_id)
@@ -251,7 +252,7 @@ async def find_datasets(
 @router.post("/{dataset_id}/enrich", response_model=MetadataEnrichmentResponse)
 async def enrich_dataset_metadata(
     dataset_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> MetadataEnrichmentResponse:
     """
     Enrich dataset metadata using LLM semantic extraction.
@@ -263,7 +264,10 @@ async def enrich_dataset_metadata(
         from amprenta_rag.services.metadata_enrichment import enrich_dataset_metadata as enrich_func
         
         # Check if dataset exists first
-        dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
+        result = await db.execute(
+            select(DatasetModel).filter(DatasetModel.id == dataset_id)
+        )
+        dataset = result.scalars().first()
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset not found")
         
@@ -291,7 +295,7 @@ async def enrich_dataset_metadata(
 @router.get("/{dataset_id}/enrichment-status", response_model=EnrichmentStatusResponse)
 async def get_dataset_enrichment_status(
     dataset_id: UUID,
-    db: Session = Depends(get_database_session),
+    db: AsyncSession = Depends(get_async_database_session),
 ) -> EnrichmentStatusResponse:
     """
     Get enrichment status for a dataset.
@@ -303,7 +307,10 @@ async def get_dataset_enrichment_status(
         from amprenta_rag.services.metadata_enrichment import get_enrichment_status
         
         # Check if dataset exists first
-        dataset = db.query(DatasetModel).filter(DatasetModel.id == dataset_id).first()
+        result = await db.execute(
+            select(DatasetModel).filter(DatasetModel.id == dataset_id)
+        )
+        dataset = result.scalars().first()
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset not found")
         
