@@ -9,6 +9,23 @@ from __future__ import annotations
 
 from pathlib import Path
 
+try:
+    from pdbfixer import PDBFixer  # noqa: F401
+    import openmm.app  # noqa: F401
+    STRUCTURAL_AVAILABLE = True
+except ImportError:
+    STRUCTURAL_AVAILABLE = False
+
+
+def _check_structural_deps():
+    """Check if structural biology dependencies are available."""
+    if not STRUCTURAL_AVAILABLE:
+        raise ImportError(
+            "Structural biology dependencies not installed. "
+            "Install with: pip install -r requirements-structural.txt "
+            "or: conda install -c conda-forge pdbfixer openmm"
+        )
+
 
 def prepare_structure(input_pdb: str, output_pdb: str, chain_id: str | None = None) -> None:
     """Prepare a PDB file for downstream docking/simulation.
@@ -20,14 +37,10 @@ def prepare_structure(input_pdb: str, output_pdb: str, chain_id: str | None = No
     - addMissingAtoms
     - addMissingHydrogens(pH=7.4)
     """
-    try:
-        from pdbfixer import PDBFixer
-        from openmm.app import PDBFile
-    except Exception as e:  # noqa: BLE001
-        raise ImportError(
-            "Structure preparation requires `pdbfixer` and `openmm`. "
-            "Install with: pip install pdbfixer openmm"
-        ) from e
+    _check_structural_deps()
+    
+    # Import after checking dependencies
+    from openmm.app import PDBFile
 
     in_path = Path(input_pdb)
     if not in_path.exists():

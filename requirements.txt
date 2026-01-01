@@ -101,8 +101,8 @@ upsetplot==0.9.0
 typing_extensions==4.15.0
 tzdata
 unicodedata2
-pdbfixer>=1.9
-openmm>=8.0.0
+# Structural biology deps (pdbfixer, openmm) moved to requirements-structural.txt
+# Install separately: pip install -r requirements-structural.txt
 urllib3>=2.6.0
 wcwidth
 xlrd

@@ -1,0 +1,8 @@
+# Structural Biology Dependencies (Optional)
+# These require conda-forge or may fail on some platforms with pip.
+#
+# Recommended: conda install -c conda-forge pdbfixer openmm
+# Alternative: pip install -r requirements-structural.txt
+
+pdbfixer>=1.9
+openmm>=8.0.0
