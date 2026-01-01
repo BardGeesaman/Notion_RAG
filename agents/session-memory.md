@@ -126,6 +126,20 @@
   - Zero blocking sync calls across all routers
   - Reviewer approved all phases
 
+* [2025-01-01] – **Imaging Metadata P2/P3**:
+  - **P2: Well Position Handling**: Fixed null well_id in plate QC and browse endpoints
+    - Uses standalone_{id} for orphan images, orphan_{id} for missing wells
+  - **P3: QC Persistence**: Added ImageQCRecord model for storing QC history
+    - New migration: 3297b2deeb08_add_image_qc_records_table
+    - GET /imaging/qc/{id}?persist=true saves results to DB
+    - GET /imaging/qc/history/{id} retrieves historical QC records
+  - **P3: Thumbnail Caching**: ThumbnailService with multi-size support (128, 256, 512)
+    - GET /imaging/thumbnails/{id} serves cached or generated thumbnails
+    - Browse API returns real thumbnail URLs
+    - Upload auto-generates initial thumbnail
+  - 6 files modified/created, 9 tests passing
+  - Reviewer approved with no P1 issues
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

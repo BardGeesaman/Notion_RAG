@@ -380,11 +380,10 @@ Items identified during feature development but deferred for future sessions.
   - Effort: 2-3 weeks
 
 ### Imaging & Microscopy
-- ⏳ **Imaging Metadata P2/P3**
+- ✅ **Imaging Metadata P2/P3** (2025-01-01)
   - P2: well_id nullable handling
-  - P3: QC persistence to database
+  - P3: QC persistence to database (ImageQCRecord model)
   - P3: Thumbnail cache for faster browsing
-  - Effort: 2-3 days
 
 ---
 

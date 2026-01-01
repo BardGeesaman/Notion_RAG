@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
@@ -145,7 +145,6 @@ async def upload_image(
         )
         
         # Get image metadata
-        import numpy as np
         from PIL import Image
         import io
         
@@ -173,6 +172,18 @@ async def upload_image(
         db.add(image_record)
         await db.commit()
         await db.refresh(image_record)
+        
+        # Generate initial thumbnail
+        try:
+            from amprenta_rag.imaging.thumbnails import get_thumbnail_service
+            thumbnail_service = get_thumbnail_service()
+            thumbnail_path = thumbnail_service.get_or_generate(image_record)
+            if thumbnail_path:
+                image_record.thumbnail_path = thumbnail_path
+                await db.commit()
+        except Exception as e:
+            logger.warning(f"Failed to generate initial thumbnail: {e}")
+            # Non-blocking - continue without thumbnail
         
         logger.info(f"Uploaded image {image_record.id} for user {current_user.id}")
         
@@ -1228,6 +1239,7 @@ async def list_channel_configs(
 async def get_image_qc(
     image_id: UUID,
     run_artifact_detection: bool = False,
+    persist: bool = False,  # NEW: Save results to DB
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_database_session),
     storage: ImageStorage = Depends(get_image_storage)
@@ -1255,6 +1267,27 @@ async def get_image_qc(
             run_artifact_detection=run_artifact_detection
         )
         
+        # Optionally persist QC results
+        if persist:
+            from amprenta_rag.imaging.models import ImageQCRecord
+            qc_record = ImageQCRecord(
+                image_id=image_id,
+                focus_score=qc_result.focus.score,
+                focus_algorithm=qc_result.focus.algorithm,
+                is_focused=qc_result.focus.is_focused,
+                saturation_percent=qc_result.saturation.saturated_percent,
+                is_saturated=qc_result.saturation.is_saturated,
+                uniformity_score=qc_result.uniformity.uniformity_score,
+                vignetting_detected=qc_result.uniformity.vignetting_detected,
+                artifact_count=qc_result.artifacts.artifact_count if qc_result.artifacts else None,
+                artifact_percent=qc_result.artifacts.artifact_percent if qc_result.artifacts else None,
+                overall_score=qc_result.overall_score,
+                passed_qc=qc_result.passed_qc,
+                issues=qc_result.issues,
+            )
+            db.add(qc_record)
+            await db.commit()
+
         return ImageQCResponse(
             image_id=image_id,
             focus_score=qc_result.focus.score,
@@ -1279,6 +1312,58 @@ async def get_image_qc(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get image QC"
+        )
+
+
+@router.get(
+    "/imaging/qc/history/{image_id}",
+    response_model=List[ImageQCResponse],
+    summary="Get QC history for image",
+    description="Get historical QC records for a microscopy image."
+)
+async def get_qc_history(
+    image_id: UUID,
+    limit: int = Query(10, ge=1, le=100, description="Maximum records to return"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_database_session)
+) -> List[ImageQCResponse]:
+    """Get historical QC records for an image."""
+    try:
+        from amprenta_rag.imaging.models import ImageQCRecord
+        
+        result = await db.execute(
+            select(ImageQCRecord)
+            .filter(ImageQCRecord.image_id == image_id)
+            .order_by(ImageQCRecord.created_at.desc())
+            .limit(limit)
+        )
+        records = result.scalars().all()
+        
+        return [
+            ImageQCResponse(
+                image_id=record.image_id,
+                focus_score=record.focus_score,
+                focus_algorithm=record.focus_algorithm,
+                is_focused=record.is_focused,
+                saturation_percent=record.saturation_percent,
+                is_saturated=record.is_saturated,
+                uniformity_score=record.uniformity_score,
+                vignetting_detected=record.vignetting_detected,
+                artifact_count=record.artifact_count,
+                artifact_percent=record.artifact_percent,
+                overall_score=record.overall_score,
+                passed_qc=record.passed_qc,
+                issues=record.issues or [],
+                timestamp=record.created_at
+            )
+            for record in records
+        ]
+        
+    except Exception as e:
+        logger.error(f"Failed to get QC history: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get QC history"
         )
 
 
@@ -1314,7 +1399,15 @@ async def get_plate_qc_report(
         for image in images:
             try:
                 image_array = storage.load_image(image.image_path)
-                well_position = f"Unknown_{len(image_data)}"  # NOTE: Well position mapping tracked in ROADMAP
+                # Resolve well position for images
+                if image.well_id:
+                    well_result = await db.execute(
+                        select(HTSWell).filter(HTSWell.id == image.well_id)
+                    )
+                    well = well_result.scalars().first()
+                    well_position = well.position if well else f"orphan_{image.id.hex[:8]}"
+                else:
+                    well_position = f"standalone_{image.id.hex[:8]}"
                 image_data.append((well_position, image_array))
             except Exception as e:
                 logger.warning(f"Failed to load image {image.id}: {e}")
@@ -1354,6 +1447,59 @@ async def get_plate_qc_report(
 # ============================================================================
 # 5D Browser Endpoint
 # ============================================================================
+
+
+@router.get(
+    "/imaging/thumbnails/{image_id}",
+    summary="Get image thumbnail",
+    description="Serve cached thumbnail for a microscopy image."
+)
+async def get_thumbnail(
+    image_id: UUID,
+    size: int = Query(256, ge=64, le=512, description="Thumbnail size in pixels"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_database_session)
+):
+    """Serve cached or generated thumbnail."""
+    from fastapi.responses import FileResponse
+    from amprenta_rag.imaging.thumbnails import get_thumbnail_service
+    
+    try:
+        # Verify image exists
+        result = await db.execute(
+            select(MicroscopyImage).filter(MicroscopyImage.id == image_id)
+        )
+        image = result.scalars().first()
+        if not image:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Image {image_id} not found"
+            )
+        
+        # Get or generate thumbnail
+        thumbnail_service = get_thumbnail_service()
+        thumbnail_path = thumbnail_service.get_or_generate(image, size=size)
+        
+        if not thumbnail_path:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to generate thumbnail"
+            )
+        
+        return FileResponse(
+            thumbnail_path,
+            media_type="image/jpeg",
+            headers={"Cache-Control": "public, max-age=86400"}  # 24h cache
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get thumbnail: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get thumbnail"
+        )
 
 
 @router.get(
@@ -1426,21 +1572,31 @@ async def browse_images(
         t_range = (t_range_row[0] or 0, t_range_row[1] or 0)
         
         # Convert to response format
-        image_summaries = [
-            ImageSummary(
+        image_summaries = []
+        for img in images:
+            # Resolve well position for images
+            if img.well_id:
+                well_result = await db.execute(
+                    select(HTSWell).filter(HTSWell.id == img.well_id)
+                )
+                well = well_result.scalars().first()
+                well_position = well.position if well else f"orphan_{img.id.hex[:8]}"
+            else:
+                well_position = f"standalone_{img.id.hex[:8]}"
+            
+            image_summaries.append(ImageSummary(
                 id=img.id,
-                well_position=None,  # NOTE: Well relationship mapping tracked in ROADMAP
+                well_position=well_position,
                 channel=img.channel,
                 z_slice=img.z_slice,
                 timepoint=img.timepoint,
                 width=img.width,
                 height=img.height,
-                thumbnail_url=None,  # NOTE: Thumbnail generation tracked in ROADMAP
+                thumbnail_url=f"/imaging/thumbnails/{img.id}",
                 focus_score=None,    # NOTE: QC data integration tracked in ROADMAP
                 passed_qc=None,      # NOTE: QC data integration tracked in ROADMAP
                 acquired_at=img.acquired_at
-            ) for img in images
-        ]
+            ))
         
         return BrowseResponse(
             images=image_summaries,

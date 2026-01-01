@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text, Index
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, relationship
 
@@ -145,4 +145,45 @@ class CellFeature(Base):
     # Index for efficient queries
     __table_args__ = (
         Index("idx_cell_features_segmentation_cell", "segmentation_id", "cell_id"),
+    )
+
+
+class ImageQCRecord(Base):
+    """Persisted QC results for microscopy images."""
+
+    __tablename__ = "image_qc_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    image_id = Column(UUID(as_uuid=True), ForeignKey("microscopy_images.id"), nullable=False, index=True)
+    
+    # Focus metrics
+    focus_score = Column(Float, nullable=True)
+    focus_algorithm = Column(String(50), nullable=True)
+    is_focused = Column(Boolean, nullable=True)
+    
+    # Saturation metrics
+    saturation_percent = Column(Float, nullable=True)
+    is_saturated = Column(Boolean, nullable=True)
+    
+    # Uniformity metrics
+    uniformity_score = Column(Float, nullable=True)
+    vignetting_detected = Column(Boolean, nullable=True)
+    
+    # Artifact metrics
+    artifact_count = Column(Integer, nullable=True)
+    artifact_percent = Column(Float, nullable=True)
+    
+    # Overall QC
+    overall_score = Column(Float, nullable=True)
+    passed_qc = Column(Boolean, nullable=True)
+    issues = Column(JSON, nullable=True)  # List of issue strings
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    image: Mapped["MicroscopyImage"] = relationship()
+
+    __table_args__ = (
+        Index("idx_image_qc_records_image_created", "image_id", "created_at"),
     )
