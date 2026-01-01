@@ -1,147 +1,194 @@
-"""AI Document Extraction dashboard page."""
+"""AI Extraction Tools Dashboard.
 
-from __future__ import annotations
+Provides UI for:
+- OCR text extraction
+- Web page scraping
+- Entity normalization
+"""
 
-import os
-from typing import Any, Dict, List
-
-import httpx
 import streamlit as st
 
-
-API_BASE = os.environ.get("API_URL", "http://localhost:8000")
-
-
-def _api_post_multipart(path: str, files: List[tuple[str, tuple[str, bytes, str]]], *, timeout: int = 300) -> Any:
-    with httpx.Client(timeout=timeout) as client:
-        r = client.post(f"{API_BASE}{path}", files=files)
-    r.raise_for_status()
-    return r.json()
+from scripts.dashboard.core.api import _api_post
+from scripts.dashboard.core.state import require_auth
 
 
-def _api_get(path: str, *, timeout: int = 60) -> Any:
-    with httpx.Client(timeout=timeout) as client:
-        r = client.get(f"{API_BASE}{path}")
-    r.raise_for_status()
-    return r.json()
-
-
-def _fetch_job(job_id: str) -> Dict[str, Any] | None:
-    if not job_id:
-        return None
-    try:
-        return _api_get(f"/api/extraction/jobs/{job_id}", timeout=60)
-    except Exception:
-        return None
-
-
-def render_ai_extraction_page() -> None:
-    from scripts.dashboard.auth import require_auth
-
+def render_ai_extraction_page():
+    """Main entry point for AI Extraction Tools page."""
     require_auth()
+    
+    st.title("🤖 AI Extraction Tools")
+    st.caption("Extract text from documents, scrape web pages, and normalize entity names")
+    
+    # Tab layout
+    tab_ocr, tab_scraper, tab_normalizer = st.tabs([
+        "📄 OCR",
+        "🌐 Web Scraper",
+        "🔬 Entity Normalizer"
+    ])
+    
+    with tab_ocr:
+        _render_ocr_tab()
+    
+    with tab_scraper:
+        _render_scraper_tab()
+    
+    with tab_normalizer:
+        _render_normalizer_tab()
 
-    st.header("AI Document Extraction")
-    st.caption("Upload documents for parsing + structured entity extraction (LLM-backed).")
 
-    tab1, tab2, tab3 = st.tabs(["Upload", "Jobs", "Results"])
-
-    with tab1:
-        st.subheader("Upload batch")
-        uploads = st.file_uploader(
-            "Select files",
-            accept_multiple_files=True,
-            type=["docx", "pptx", "xlsx", "csv", "pdf"],
+def _render_ocr_tab():
+    """OCR text extraction from images/PDFs."""
+    st.subheader("📄 OCR Text Extraction")
+    st.caption("Extract text from scanned documents and images using Tesseract OCR")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        uploaded_file = st.file_uploader(
+            "Upload file (PDF, PNG, JPEG, TIFF)",
+            type=["pdf", "png", "jpg", "jpeg", "tiff", "gif"],
+            key="ocr_file"
         )
-
-        if st.button("Start Extraction", type="primary", disabled=not uploads):
-            multipart: List[tuple[str, tuple[str, bytes, str]]] = []
-            for f in uploads or []:
-                name = getattr(f, "name", "upload")
-                content = f.getvalue()
-                multipart.append(("files", (name, content, "application/octet-stream")))
-
+    
+    with col2:
+        language = st.selectbox(
+            "Language",
+            ["eng", "fra", "deu", "spa", "ita", "por", "nld", "rus", "chi_sim", "jpn"],
+            format_func=lambda x: {
+                "eng": "English",
+                "fra": "French",
+                "deu": "German",
+                "spa": "Spanish",
+                "ita": "Italian",
+                "por": "Portuguese",
+                "nld": "Dutch",
+                "rus": "Russian",
+                "chi_sim": "Chinese (Simplified)",
+                "jpn": "Japanese",
+            }.get(x, x),
+            key="ocr_language"
+        )
+    
+    if uploaded_file and st.button("🔍 Extract Text", key="ocr_extract", type="primary"):
+        with st.spinner("Extracting text..."):
+            # Send file to API
+            import httpx
+            import os
+            
+            API_BASE = os.environ.get("API_URL", "http://localhost:8000")
+            
             try:
-                out = _api_post_multipart("/api/extraction/upload-batch", multipart, timeout=300)
-                st.session_state["ai_extraction_job_id"] = out.get("job_id")
-                st.session_state["ai_extraction_last_upload"] = out
-            except Exception as e:  # noqa: BLE001
-                st.error(f"Upload failed: {e}")
+                with httpx.Client(timeout=60) as client:
+                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
+                    response = client.post(
+                        f"{API_BASE}/api/v1/extraction/ocr?language={language}",
+                        files=files,
+                    )
+                    result = response.json()
+                
+                if result.get("success"):
+                    st.success(f"✅ Extracted {result.get('word_count', 0)} words")
+                    st.text_area(
+                        "Extracted Text",
+                        value=result.get("text", ""),
+                        height=300,
+                        key="ocr_result"
+                    )
+                else:
+                    st.error(f"❌ {result.get('error', 'OCR failed')}")
+            except Exception as e:
+                st.error(f"❌ Error: {str(e)}")
 
-        last = st.session_state.get("ai_extraction_last_upload")
-        job_id = st.session_state.get("ai_extraction_job_id") or (last.get("job_id") if isinstance(last, dict) else None)
-        if last:
-            st.json(last)
 
-        if job_id:
-            st.divider()
-            st.subheader("Progress")
-            col1, col2 = st.columns([3, 1])
-            with col2:
-                refresh = st.button("Refresh status")
-            status = _fetch_job(job_id)
-            if status:
-                pct = float(status.get("progress_pct") or 0.0)
-                st.progress(min(1.0, max(0.0, pct / 100.0)))
-                st.caption(f"Job: {job_id} • {pct:.1f}%")
+def _render_scraper_tab():
+    """Web page content scraping."""
+    st.subheader("🌐 Web Scraper")
+    st.caption("Extract content from web pages for RAG ingestion")
+    
+    url = st.text_input(
+        "URL",
+        placeholder="https://example.com/article",
+        key="scraper_url"
+    )
+    
+    if url and st.button("🔍 Scrape", key="scraper_extract", type="primary"):
+        with st.spinner("Scraping content..."):
+            result = _api_post("/extraction/scrape", {"url": url})
+            
+            if result and result.get("success"):
+                st.success(f"✅ Scraped {result.get('word_count', 0)} words")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("**Title:**", result.get("title", "N/A"))
+                with col2:
+                    st.write("**Author:**", result.get("author", "N/A"))
+                
+                with st.expander("📖 Full Content", expanded=True):
+                    st.write(result.get("content", ""))
             else:
-                st.info(f"Job: {job_id} (unable to fetch status)")
+                st.error(f"❌ {result.get('error', 'Scraping failed') if result else 'API error'}")
 
-    with tab2:
-        st.subheader("Recent jobs")
-        skip = st.number_input("Skip", min_value=0, value=0, step=10)
-        limit = st.number_input("Limit", min_value=1, max_value=200, value=25, step=5)
-        if st.button("Load jobs"):
-            try:
-                listing = _api_get(f"/api/extraction/jobs?skip={int(skip)}&limit={int(limit)}", timeout=60)
-                st.session_state["ai_extraction_jobs"] = listing
-            except Exception as e:  # noqa: BLE001
-                st.error(f"Failed to load jobs: {e}")
 
-        listing = st.session_state.get("ai_extraction_jobs") or {}
-        jobs = listing.get("jobs") if isinstance(listing, dict) else None
-        if isinstance(jobs, list) and jobs:
-            st.caption(f"Total: {listing.get('total')} • Showing: {len(jobs)}")
-            st.dataframe(jobs, use_container_width=True, hide_index=True)
-
-            ids = [j.get("id") for j in jobs if isinstance(j, dict) and j.get("id")]
-            chosen = st.selectbox("View job details", options=[""] + ids)
-            if chosen:
-                st.session_state["ai_extraction_job_id"] = chosen
-                details = _fetch_job(chosen)
-                if details:
-                    st.json(details)
-        else:
-            st.info("Load jobs to view recent extraction runs.")
-
-    with tab3:
-        st.subheader("Results")
-        # Prefer active job ID, else allow manual input
-        active_job = st.session_state.get("ai_extraction_job_id") or ""
-        job_id = st.text_input("Job ID", value=str(active_job))
-        if st.button("Load results") and job_id:
-            details = _fetch_job(job_id)
-            if details:
-                st.session_state["ai_extraction_job_details"] = details
+def _render_normalizer_tab():
+    """Entity name normalization."""
+    st.subheader("🔬 Entity Normalizer")
+    st.caption("Normalize gene, compound, and disease names to standard identifiers")
+    
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        entity_type = st.selectbox(
+            "Entity Type",
+            ["gene", "compound", "disease"],
+            key="normalize_type"
+        )
+    
+    with col2:
+        entity_name = st.text_input(
+            "Entity Name",
+            placeholder="e.g., BRCA1, aspirin, diabetes",
+            key="normalize_name"
+        )
+    
+    if entity_name and st.button("🔍 Lookup", key="normalize_lookup", type="primary"):
+        with st.spinner("Looking up..."):
+            result = _api_post("/extraction/normalize", {
+                "entity_type": entity_type,
+                "name": entity_name
+            })
+            
+            if result and result.get("success"):
+                st.success(f"✅ Found match for '{entity_name}'")
+                
+                data = result.get("result", {})
+                
+                if entity_type == "gene":
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.metric("Symbol", data.get("symbol", "N/A"))
+                        st.metric("UniProt ID", data.get("uniprot_id", "N/A"))
+                    with col_b:
+                        st.metric("Entrez ID", data.get("entrez_id", "N/A"))
+                        st.metric("Organism", data.get("organism", "N/A"))
+                    st.write("**Full Name:**", data.get("name", "N/A"))
+                
+                elif entity_type == "compound":
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.metric("PubChem CID", data.get("cid", "N/A"))
+                        st.metric("MW", f"{data.get('molecular_weight', 'N/A')}")
+                    with col_b:
+                        st.metric("Formula", data.get("molecular_formula", "N/A"))
+                    st.write("**SMILES:**", data.get("smiles", "N/A"))
+                    st.write("**InChI Key:**", data.get("inchi_key", "N/A"))
+                
+                elif entity_type == "disease":
+                    st.metric("Name", data.get("name", "N/A"))
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.metric("MeSH ID", data.get("mesh_id", "N/A"))
+                    with col_b:
+                        st.metric("DOID", data.get("doid", "N/A"))
             else:
-                st.error("Failed to fetch job details.")
-
-        details = st.session_state.get("ai_extraction_job_details")
-        if isinstance(details, dict):
-            st.caption(f"Progress: {details.get('progress_pct')}%")
-            docs = details.get("documents") or []
-            if isinstance(docs, list) and docs:
-                for d in docs:
-                    if not isinstance(d, dict):
-                        continue
-                    title = d.get("original_filename") or d.get("file_path") or d.get("id")
-                    with st.expander(f"{title} • {d.get('status')}"):
-                        st.json(d.get("extracted_entities") or {})
-                        if d.get("error_log"):
-                            st.caption(f"Error: {d.get('error_log')}")
-            else:
-                st.info("No documents found for this job.")
-
-
-__all__ = ["render_ai_extraction_page"]
-
-
+                st.warning(f"⚠️ {result.get('error', 'Not found') if result else 'API error'}")

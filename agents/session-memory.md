@@ -212,6 +212,27 @@
   - **Tests**: 19 tests (11 service + 8 API), all passing
   - Reviewer approved with P2 observations added to ROADMAP backlog
 
+* [2025-01-01] – **UI Feature Gaps Comprehensive Fix**:
+  - **Data Lifecycle Dashboard Completion**:
+    - Added `GET /lifecycle/stats` - Entity counts by lifecycle status
+    - Added `GET /lifecycle/audit` - Audit log with filters (days, entity_type)
+    - Updated Overview tab with real-time stats display
+    - Updated Audit tab with paginated audit entries
+    - Added 6 E2E tests (`test_data_lifecycle_e2e.py`)
+  - **AI Extraction Tools Dashboard** (NEW):
+    - `POST /extraction/ocr` - OCR with 10MB limit, content type validation
+    - `POST /extraction/scrape` - Web scraping with rate limiting
+    - `POST /extraction/normalize` - Gene/compound/disease lookup
+    - 3-tab Streamlit dashboard (`ai_extraction.py`)
+    - 3 E2E tests + 5 API tests
+  - **Sync Management Tabs** (Mapping Refresh extended):
+    - Added Conflicts tab - Manual conflict resolution UI
+    - Added KEGG Cache tab - Expiration monitoring, refresh status
+    - `GET /mappings/kegg/status` endpoint
+    - 2 E2E tests
+  - **Total Tests**: 16 new tests (11 E2E + 5 API), all passing
+  - P2 observations added to ROADMAP: SSRF prevention, OCR language validation, normalize caching
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

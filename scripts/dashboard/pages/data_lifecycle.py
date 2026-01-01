@@ -46,28 +46,36 @@ def _render_overview_tab():
     """Overview of entity counts by lifecycle status."""
     st.subheader("Entity Status Distribution")
     
-    # Entity type selector
-    entity_types = ["dataset", "experiment", "compound", "signature"]
+    # Fetch real stats from API
+    stats = _api_get("/lifecycle/stats")
     
-    col1, col2 = st.columns([1, 3])
-    
-    with col1:
-        st.selectbox(
-            "Entity Type",
-            entity_types,
-            key="overview_entity_type"
-        )
-    
-    # Fetch status counts (would need a new API endpoint for real data)
-    # For now, show placeholder with instructions
-    with col2:
-        st.info(
-            "📌 **Status Counts** (requires backend aggregation endpoint)\n\n"
-            "- **Active**: Visible, normal state\n"
-            "- **Quarantined**: Hidden, under review\n"
-            "- **Invalid**: Visible with warning\n"
-            "- **Archived**: Soft deleted"
-        )
+    if stats:
+        # Display as metrics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        for col, (entity_type, counts) in zip(
+            [col1, col2, col3, col4],
+            [("Dataset", stats.get("dataset", {})),
+             ("Experiment", stats.get("experiment", {})),
+             ("Compound", stats.get("compound", {})),
+             ("Signature", stats.get("signature", {}))]
+        ):
+            with col:
+                st.markdown(f"**{entity_type}**")
+                active = counts.get("active", 0)
+                quarantined = counts.get("quarantined", 0)
+                invalid = counts.get("invalid", 0)
+                archived = counts.get("archived", 0)
+                
+                st.metric("Active", active)
+                if quarantined > 0:
+                    st.metric("Quarantined", quarantined, delta_color="off")
+                if invalid > 0:
+                    st.metric("Invalid", invalid, delta_color="inverse")
+                if archived > 0:
+                    st.metric("Archived", archived, delta_color="off")
+    else:
+        st.warning("Unable to fetch lifecycle stats")
     
     # Recent status changes
     st.subheader("Recent Status Changes")
@@ -296,46 +304,57 @@ def _render_audit_tab():
     """View lifecycle change audit log."""
     st.subheader("📜 Lifecycle Audit Log")
     
-    st.info(
-        "Audit trail of all lifecycle status changes.\n\n"
-        "_Integration with AuditLog model - filter by action='lifecycle_status_change'_"
-    )
-    
     # Filters
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.selectbox(
+        entity_type_filter = st.selectbox(
             "Entity Type",
             ["All", "dataset", "experiment", "compound", "signature"],
             key="audit_entity_type"
         )
     
     with col2:
-        st.selectbox(
-            "Status Change",
-            ["All", "→ active", "→ quarantined", "→ invalid", "→ archived"],
-            key="audit_status"
-        )
-    
-    with col3:
-        st.selectbox(
+        days_filter = st.selectbox(
             "Time Range",
-            ["Last 7 days", "Last 30 days", "Last 90 days", "All time"],
+            [7, 30, 90],
+            format_func=lambda x: f"Last {x} days",
             key="audit_days"
         )
     
-    # Placeholder for audit log query
-    st.write("_Audit log query pending - requires dedicated API endpoint_")
+    with col3:
+        st.write("")  # Spacer
+        if st.button("🔄 Refresh", key="audit_refresh"):
+            st.rerun()
     
-    # Example audit entry format
-    with st.expander("Example Audit Entry Format"):
-        st.json({
-            "timestamp": "2026-01-01T12:00:00Z",
-            "entity_type": "dataset",
-            "entity_id": "550e8400-e29b-41d4-a716-446655440000",
-            "action": "lifecycle_status_change",
-            "old_value": {"lifecycle_status": "active"},
-            "new_value": {"lifecycle_status": "quarantined", "reason": "Data quality issues"},
-            "user": "scientist@example.com"
-        })
+    # Build query params
+    params = f"?days={days_filter}&limit=50"
+    if entity_type_filter != "All":
+        params += f"&entity_type={entity_type_filter}"
+    
+    # Fetch audit data
+    audit_data = _api_get(f"/lifecycle/audit{params}")
+    
+    if audit_data:
+        total = audit_data.get("total", 0)
+        entries = audit_data.get("entries", [])
+        
+        st.caption(f"Showing {len(entries)} of {total} entries")
+        
+        if entries:
+            for entry in entries:
+                with st.expander(
+                    f"{entry.get('timestamp', 'N/A')[:19]} - {entry.get('entity_type', 'unknown')}:{entry.get('entity_id', 'N/A')[:8]}..."
+                ):
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.write("**Old Value:**")
+                        st.json(entry.get("old_value") or {})
+                    with col_b:
+                        st.write("**New Value:**")
+                        st.json(entry.get("new_value") or {})
+                    st.caption(f"Changed by: {entry.get('username', 'system')}")
+        else:
+            st.info("No lifecycle changes in this time range.")
+    else:
+        st.warning("Unable to fetch audit log")

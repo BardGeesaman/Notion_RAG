@@ -1,6 +1,6 @@
 """ID Mapping API endpoints for lookup and management."""
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -8,7 +8,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_current_user, get_database_session
-from amprenta_rag.database.models import User
+from amprenta_rag.database.models import User, IDMapping, MappingRefreshLog
+from amprenta_rag.database.session import db_session
 from amprenta_rag.services.id_mapping_service import (
     get_mapping,
     get_mappings_batch,
@@ -71,6 +72,15 @@ class BatchMappingResponse(BaseModel):
     results: Dict[str, Optional[str]]  # {source_id: target_id or None}
     found: int
     not_found: int
+
+
+class KEGGCacheStatusResponse(BaseModel):
+    """KEGG cache status information."""
+    expiring_7_days: int
+    expiring_30_days: int
+    total_kegg_mappings: int
+    last_refresh: Optional[str]
+    last_refresh_count: Optional[int]
 
 
 # API Endpoints
@@ -199,3 +209,47 @@ def batch_lookup(
         found=found,
         not_found=len(results) - found
     )
+
+
+@router.get("/kegg/status", response_model=KEGGCacheStatusResponse)
+def get_kegg_cache_status(
+    current_user: User = Depends(get_current_user),
+) -> KEGGCacheStatusResponse:
+    """Get KEGG cache status: expiring counts, last refresh timestamp."""
+    now = datetime.now(timezone.utc)
+    seven_days = now + timedelta(days=7)
+    thirty_days = now + timedelta(days=30)
+    
+    with db_session() as db:
+        # Count expiring mappings
+        expiring_7 = db.query(IDMapping).filter(
+            IDMapping.target_type.like("kegg_%"),
+            IDMapping.expires_at.isnot(None),
+            IDMapping.expires_at <= seven_days,
+            IDMapping.expires_at > now,
+        ).count()
+        
+        expiring_30 = db.query(IDMapping).filter(
+            IDMapping.target_type.like("kegg_%"),
+            IDMapping.expires_at.isnot(None),
+            IDMapping.expires_at <= thirty_days,
+            IDMapping.expires_at > now,
+        ).count()
+        
+        # Total KEGG mappings
+        total = db.query(IDMapping).filter(
+            IDMapping.target_type.like("kegg_%"),
+        ).count()
+        
+        # Last refresh info
+        last_refresh_log = db.query(MappingRefreshLog).filter(
+            MappingRefreshLog.source == "kegg_refresh",
+        ).order_by(MappingRefreshLog.completed_at.desc()).first()
+        
+        return KEGGCacheStatusResponse(
+            expiring_7_days=expiring_7,
+            expiring_30_days=expiring_30,
+            total_kegg_mappings=total,
+            last_refresh=last_refresh_log.completed_at.isoformat() if last_refresh_log and last_refresh_log.completed_at else None,
+            last_refresh_count=last_refresh_log.records_processed if last_refresh_log else None,
+        )

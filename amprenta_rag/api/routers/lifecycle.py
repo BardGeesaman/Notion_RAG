@@ -11,11 +11,13 @@ from __future__ import annotations
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import func
 
 from amprenta_rag.api.dependencies import get_current_user
 from amprenta_rag.database.models import User, LifecycleStatus
+from amprenta_rag.database.session import db_session
 from amprenta_rag.services.lifecycle import (
     calculate_deletion_impact,
     update_lifecycle_status,
@@ -90,6 +92,33 @@ class BulkArchiveRequest(BaseModel):
     entity_ids: List[UUID]
     reason: str = Field(..., min_length=1, max_length=500)
     confirmed: bool = Field(False, description="Must be True to execute")
+
+
+class LifecycleStatsResponse(BaseModel):
+    """Entity counts by lifecycle status."""
+    dataset: dict[str, int]
+    experiment: dict[str, int]
+    compound: dict[str, int]
+    signature: dict[str, int]
+
+
+class AuditLogEntry(BaseModel):
+    """Single audit log entry."""
+    timestamp: str
+    entity_type: Optional[str]
+    entity_id: Optional[str]
+    action: str
+    old_value: Optional[dict]
+    new_value: Optional[dict]
+    username: Optional[str]
+
+
+class LifecycleAuditResponse(BaseModel):
+    """Paginated audit log entries."""
+    total: int
+    skip: int
+    limit: int
+    entries: List[AuditLogEntry]
 
 
 # --- Endpoints ---
@@ -275,3 +304,72 @@ def bulk_archive(
     )
     
     return BulkStatusResponse(**results)
+
+
+@router.get("/stats", response_model=LifecycleStatsResponse)
+def get_lifecycle_stats(
+    current_user: User = Depends(get_current_user),
+) -> LifecycleStatsResponse:
+    """Get entity counts grouped by lifecycle_status."""
+    from amprenta_rag.database.models import Dataset, Experiment, Signature
+    from amprenta_rag.models.chemistry import Compound
+    
+    def count_by_status(model) -> dict[str, int]:
+        with db_session() as db:
+            results = db.query(
+                model.lifecycle_status,
+                func.count(model.id)
+            ).group_by(model.lifecycle_status).all()
+            return {status or "active": count for status, count in results}
+    
+    return LifecycleStatsResponse(
+        dataset=count_by_status(Dataset),
+        experiment=count_by_status(Experiment),
+        compound=count_by_status(Compound),
+        signature=count_by_status(Signature),
+    )
+
+
+@router.get("/audit", response_model=LifecycleAuditResponse)
+def get_lifecycle_audit(
+    entity_type: Optional[str] = Query(None, description="Filter by entity type"),
+    days: int = Query(7, ge=1, le=90, description="Number of days to look back"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+) -> LifecycleAuditResponse:
+    """Query audit log for lifecycle_status_change actions."""
+    from datetime import datetime, timedelta, timezone
+    from amprenta_rag.database.models import AuditLog
+    
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    with db_session() as db:
+        q = db.query(AuditLog).filter(
+            AuditLog.action == "lifecycle_status_change",
+            AuditLog.timestamp >= cutoff,
+        )
+        
+        if entity_type:
+            q = q.filter(AuditLog.entity_type == entity_type)
+        
+        total = q.count()
+        entries = q.order_by(AuditLog.timestamp.desc()).offset(skip).limit(limit).all()
+        
+        return LifecycleAuditResponse(
+            total=total,
+            skip=skip,
+            limit=limit,
+            entries=[
+                AuditLogEntry(
+                    timestamp=e.timestamp.isoformat() if e.timestamp else "",
+                    entity_type=e.entity_type,
+                    entity_id=str(e.entity_id) if e.entity_id else None,
+                    action=e.action,
+                    old_value=e.details.get("old_value") if e.details else None,
+                    new_value=e.details.get("new_value") if e.details else None,
+                    username=e.username,
+                )
+                for e in entries
+            ],
+        )

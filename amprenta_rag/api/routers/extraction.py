@@ -1,135 +1,282 @@
-"""Batch extraction API endpoints.
+"""AI Extraction Tools API endpoints.
 
-Note: multipart uploads require `python-multipart`. In minimal environments (e.g. some CI/E2E runs),
-we degrade gracefully by exposing a stub upload endpoint that returns 501, so the API can still boot.
+Provides REST API for:
+- OCR text extraction from images/PDFs
+- Web page content scraping
+- Entity normalization (genes, compounds, diseases)
 """
 
 from __future__ import annotations
 
-import asyncio
-import tempfile
-from pathlib import Path
-from typing import Any, Dict, List
-from uuid import UUID
+from typing import Optional
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from pydantic import BaseModel
 
-from amprenta_rag.database.models import ExtractedDocument, ExtractionJob
-from amprenta_rag.database.session import db_session
-from amprenta_rag.extraction.batch_service import ExtractionBatchService
+from amprenta_rag.api.dependencies import get_current_user
+from amprenta_rag.database.models import User
+
+router = APIRouter(prefix="/extraction", tags=["extraction"])
 
 
-router = APIRouter(prefix="/extraction", tags=["Extraction"])
-
-try:
-    import multipart  # type: ignore  # noqa: F401
-
-    _MULTIPART_AVAILABLE = True
-except Exception:  # noqa: BLE001
-    _MULTIPART_AVAILABLE = False
-
-
-async def _run_job_in_background(job_id: UUID) -> None:
-    svc = ExtractionBatchService(db_session)
-    await asyncio.to_thread(svc.process_job, job_id)
+# --- Constants (P1 Security) ---
+MAX_FILE_SIZE = 10_000_000  # 10MB
+ALLOWED_CONTENT_TYPES = [
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+    "image/tiff",
+    "image/gif",
+]
 
 
-if _MULTIPART_AVAILABLE:
+# --- Schemas ---
 
-    @router.post("/upload-batch")
-    async def upload_batch(files: List[UploadFile] = File(...)) -> Dict[str, Any]:
-        if not files:
-            raise HTTPException(status_code=400, detail="files[] is required")
+class OCRResponse(BaseModel):
+    """OCR extraction result."""
+    success: bool
+    text: str
+    word_count: int
+    language: str
+    error: Optional[str] = None
 
-        tmpdir = Path(tempfile.mkdtemp(prefix="amprenta_extract_"))
-        saved: List[str] = []
-        for f in files:
-            try:
-                content = await f.read()
-            except Exception as e:  # noqa: BLE001
-                raise HTTPException(status_code=400, detail=f"Failed to read upload: {e}")
 
-            name = (f.filename or "upload").replace("/", "_")
-            path = tmpdir / name
-            try:
-                path.write_bytes(content)
-            except Exception as e:  # noqa: BLE001
-                raise HTTPException(status_code=500, detail=f"Failed to save upload: {e}")
-            saved.append(str(path))
+class ScrapeRequest(BaseModel):
+    """Web scraping request."""
+    url: str
 
-        svc = ExtractionBatchService(db_session)
-        job = svc.create_job(saved)
 
-        # Kick off background job processing
-        import os
-        if os.environ.get("USE_CELERY", "true").lower() == "true":
-            from amprenta_rag.jobs.tasks.extraction import process_extraction_job
-            process_extraction_job.delay(str(job.id))
-        else:
-            # Fallback to asyncio for gradual rollout
-            asyncio.create_task(_run_job_in_background(job.id))
+class ScrapeResponse(BaseModel):
+    """Web scraping result."""
+    success: bool
+    url: str
+    title: Optional[str]
+    author: Optional[str]
+    content: str
+    word_count: int
+    error: Optional[str] = None
 
-        return {"job_id": str(job.id), "status": job.status, "file_count": job.file_count}
 
-else:
+class NormalizeRequest(BaseModel):
+    """Entity normalization request."""
+    entity_type: str  # gene, compound, disease
+    name: str
 
-    @router.post("/upload-batch")
-    async def upload_batch() -> Dict[str, Any]:  # type: ignore[no-redef]
+
+class GeneResult(BaseModel):
+    """Normalized gene information."""
+    symbol: str
+    name: Optional[str]
+    entrez_id: Optional[str]
+    uniprot_id: Optional[str]
+    organism: Optional[str]
+
+
+class CompoundResult(BaseModel):
+    """Normalized compound information."""
+    name: str
+    cid: Optional[int]
+    inchi_key: Optional[str]
+    smiles: Optional[str]
+    molecular_formula: Optional[str]
+    molecular_weight: Optional[float]
+
+
+class NormalizeResponse(BaseModel):
+    """Entity normalization result."""
+    success: bool
+    entity_type: str
+    query: str
+    result: Optional[dict] = None
+    error: Optional[str] = None
+
+
+# --- Endpoints ---
+
+@router.post("/ocr", response_model=OCRResponse)
+async def extract_ocr(
+    file: UploadFile = File(...),
+    language: str = Query("eng", description="Tesseract language code"),
+    current_user: User = Depends(get_current_user),
+) -> OCRResponse:
+    """
+    Extract text from uploaded image or PDF using OCR.
+    
+    P1 Security:
+    - File size limit: 10MB
+    - Allowed types: PDF, PNG, JPEG, TIFF, GIF
+    """
+    # P1: Validate content type
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
-            status_code=501,
-            detail='Form upload requires "python-multipart" (pip install python-multipart)',
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported file type: {file.content_type}. Allowed: {ALLOWED_CONTENT_TYPES}",
+        )
+    
+    # Read file content
+    content = await file.read()
+    
+    # P1: Validate file size
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum size: {MAX_FILE_SIZE // 1_000_000}MB",
+        )
+    
+    try:
+        from amprenta_rag.extraction.ocr_service import OCRService
+        
+        ocr = OCRService(language=language)
+        
+        # Handle PDF vs image
+        if file.content_type == "application/pdf":
+            text = ocr.extract_from_scanned_pdf(content)
+        else:
+            text = ocr.extract_from_image(content)
+        
+        return OCRResponse(
+            success=True,
+            text=text,
+            word_count=len(text.split()),
+            language=language,
+        )
+    except ImportError as e:
+        return OCRResponse(
+            success=False,
+            text="",
+            word_count=0,
+            language=language,
+            error=str(e),
+        )
+    except Exception as e:
+        return OCRResponse(
+            success=False,
+            text="",
+            word_count=0,
+            language=language,
+            error=f"OCR failed: {str(e)}",
         )
 
 
-@router.get("/jobs/{job_id}")
-def get_job(job_id: UUID) -> Dict[str, Any]:
-    svc = ExtractionBatchService(db_session)
+@router.post("/scrape", response_model=ScrapeResponse)
+def scrape_url(
+    request: ScrapeRequest,
+    current_user: User = Depends(get_current_user),
+) -> ScrapeResponse:
+    """
+    Scrape content from a URL.
+    
+    Rate limiting: Inherits WebScraper's 0.5s per-domain limit.
+    """
     try:
-        return svc.get_job_status(job_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Job not found")
+        from amprenta_rag.extraction.web_scraper import WebScraper
+        
+        scraper = WebScraper()
+        result = scraper.extract_from_url(request.url)
+        
+        return ScrapeResponse(
+            success=result.success,
+            url=result.url,
+            title=result.title,
+            author=result.author,
+            content=result.content,
+            word_count=result.word_count,
+            error=result.error,
+        )
+    except Exception as e:
+        return ScrapeResponse(
+            success=False,
+            url=request.url,
+            title=None,
+            author=None,
+            content="",
+            word_count=0,
+            error=f"Scraping failed: {str(e)}",
+        )
 
 
-@router.get("/jobs")
-def list_jobs(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=200),
-) -> Dict[str, Any]:
-    with db_session() as db:
-        q = db.query(ExtractionJob).order_by(ExtractionJob.created_at.desc())
-        total = q.count()
-        jobs = q.offset(skip).limit(limit).all()
-
-        ids = [j.id for j in jobs]
-        docs_by_job: Dict[str, int] = {}
-        if ids:
-            # count documents per job for quick summary
-            rows = (
-                db.query(ExtractedDocument.job_id, db.func.count(ExtractedDocument.id))  # type: ignore[attr-defined]
-                .filter(ExtractedDocument.job_id.in_(ids))
-                .group_by(ExtractedDocument.job_id)
-                .all()
-            )
-            docs_by_job = {str(jid): int(cnt) for jid, cnt in rows}
-
-        def _job(j: ExtractionJob) -> Dict[str, Any]:
-            file_count = int(j.file_count or 0) if j.file_count is not None else 0
-            completed = int(j.completed_count or 0) if j.completed_count is not None else 0
-            pct = 0.0
-            if file_count > 0:
-                pct = max(0.0, min(100.0, 100.0 * (completed / file_count)))
-            return {
-                "id": str(j.id),
-                "batch_id": str(j.batch_id) if j.batch_id else None,
-                "file_count": j.file_count,
-                "completed_count": j.completed_count,
-                "status": j.status,
-                "progress_pct": pct,
-                "document_count": docs_by_job.get(str(j.id), 0),
-                "created_at": j.created_at.isoformat() if j.created_at else None,
-                "updated_at": j.updated_at.isoformat() if j.updated_at else None,
-            }
-
-        return {"total": total, "skip": skip, "limit": limit, "jobs": [_job(j) for j in jobs]}
-
-
+@router.post("/normalize", response_model=NormalizeResponse)
+def normalize_entity(
+    request: NormalizeRequest,
+    current_user: User = Depends(get_current_user),
+) -> NormalizeResponse:
+    """
+    Normalize entity name to standard identifiers.
+    
+    Supported entity types: gene, compound, disease
+    """
+    entity_type = request.entity_type.lower()
+    
+    if entity_type not in ["gene", "compound", "disease"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid entity_type: {entity_type}. Supported: gene, compound, disease",
+        )
+    
+    try:
+        from amprenta_rag.extraction.entity_normalizer import EntityNormalizer
+        
+        normalizer = EntityNormalizer()
+        
+        if entity_type == "gene":
+            result = normalizer.normalize_gene(request.name)
+            if result:
+                return NormalizeResponse(
+                    success=True,
+                    entity_type=entity_type,
+                    query=request.name,
+                    result={
+                        "symbol": result.symbol,
+                        "name": result.name,
+                        "entrez_id": result.entrez_id,
+                        "uniprot_id": result.uniprot_id,
+                        "organism": result.organism,
+                    },
+                )
+        
+        elif entity_type == "compound":
+            result = normalizer.normalize_compound(request.name)
+            if result:
+                return NormalizeResponse(
+                    success=True,
+                    entity_type=entity_type,
+                    query=request.name,
+                    result={
+                        "name": result.name,
+                        "cid": result.cid,
+                        "inchi_key": result.inchi_key,
+                        "smiles": result.smiles,
+                        "molecular_formula": result.molecular_formula,
+                        "molecular_weight": result.molecular_weight,
+                    },
+                )
+        
+        elif entity_type == "disease":
+            result = normalizer.normalize_disease(request.name)
+            if result:
+                return NormalizeResponse(
+                    success=True,
+                    entity_type=entity_type,
+                    query=request.name,
+                    result={
+                        "name": result.name,
+                        "mesh_id": result.mesh_id,
+                        "doid": result.doid,
+                    },
+                )
+        
+        # Not found
+        return NormalizeResponse(
+            success=False,
+            entity_type=entity_type,
+            query=request.name,
+            error=f"Could not normalize {entity_type}: {request.name}",
+        )
+    
+    except Exception as e:
+        return NormalizeResponse(
+            success=False,
+            entity_type=entity_type,
+            query=request.name,
+            error=f"Normalization failed: {str(e)}",
+        )

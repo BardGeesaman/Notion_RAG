@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish, Data Lifecycle Management P1 added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish, Data Lifecycle Management P1, UI Feature Gaps Comprehensive Fix added)
 
 Simple status legend:
 - ✅ DONE
@@ -420,11 +420,16 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Add `is_archived_compat` property to Compound and Signature models for consistency
 - [ ] Status transition validation rules (e.g., prevent archived → quarantined directly)
 
-### UI Gaps (Backend features without dashboard UI)
-- [ ] AI Extraction Phase 2: No UI for OCR/scraper/normalizer services
-- [ ] External Sync Phase 2: Conflict resolver has no UI for manual conflict resolution
-- [ ] KEGG Refresh Adapter: No visibility into proactive refresh status
-- [ ] Entity Normalizer: No lookup UI for scientists to normalize entities manually
+### UI Gaps (Backend features without dashboard UI) - ✅ COMPLETE (2026-01-01)
+- [x] AI Extraction Phase 2: AI Extraction Tools dashboard (3 tabs: OCR, Web Scraper, Entity Normalizer)
+- [x] External Sync Phase 2: Conflicts tab added to Mapping Refresh dashboard
+- [x] KEGG Refresh Adapter: KEGG Cache tab added to Mapping Refresh dashboard
+- [x] Entity Normalizer: Lookup UI in AI Extraction Tools dashboard
+
+### AI Extraction Security (P2 - Future)
+- [ ] Scraper URL validation: Block internal IP ranges (SSRF prevention)
+- [ ] OCR language validation: Validate against Tesseract's supported language list
+- [ ] Normalize caching: Dashboard-side caching for repeated entity lookups
 
 ---
 

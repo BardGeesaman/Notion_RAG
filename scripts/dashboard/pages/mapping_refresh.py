@@ -42,8 +42,10 @@ def render_mapping_refresh_page() -> None:
     st.header("🔄 ID Mapping Refresh")
     st.markdown("Monitor UniProt/KEGG ID mappings and trigger manual refreshes.")
     
-    # 4 tabs as specified in plan
-    tab1, tab2, tab3, tab4 = st.tabs(["Status", "Statistics", "Lookup", "Jobs"])
+    # 6 tabs as specified in plan
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "Status", "Statistics", "Lookup", "Jobs", "⚠️ Conflicts", "🔄 KEGG Cache"
+    ])
     
     with tab1:
         render_status_tab(user)
@@ -53,6 +55,10 @@ def render_mapping_refresh_page() -> None:
         render_lookup_tab()
     with tab4:
         render_jobs_tab(user)
+    with tab5:
+        render_conflicts_tab(user)
+    with tab6:
+        render_kegg_cache_tab(user)
 
 
 def render_status_tab(user: dict) -> None:
@@ -358,3 +364,153 @@ def render_jobs_tab(user: dict) -> None:
                 st.rerun()
     else:
         st.info("🔒 Admin access required for manual job triggers.")
+
+
+def render_conflicts_tab(user: dict) -> None:
+    """Render sync conflicts management tab."""
+    st.subheader("⚠️ Sync Conflicts")
+    st.caption("Review and resolve data conflicts from external source syncs")
+    
+    # Filters
+    col1, col2, col3 = st.columns([1, 1, 1])
+    
+    with col1:
+        source_filter = st.selectbox(
+            "Source",
+            ["All", "chembl", "pubchem", "geo"],
+            key="conflict_source"
+        )
+    
+    with col2:
+        status_filter = st.selectbox(
+            "Status",
+            ["pending", "resolved", "All"],
+            key="conflict_status"
+        )
+    
+    with col3:
+        if st.button("🔄 Refresh", key="conflict_refresh"):
+            st.rerun()
+    
+    # Build query params
+    params = "?limit=50"
+    if source_filter != "All":
+        params += f"&source={source_filter}"
+    if status_filter != "All":
+        params += f"&resolution_status={status_filter}"
+    
+    # Fetch conflicts
+    try:
+        conflicts_data = _api_get(f"/sync/conflicts{params}")
+    except Exception:
+        conflicts_data = None
+    
+    if conflicts_data:
+        total = conflicts_data.get("total", 0)
+        conflicts = conflicts_data.get("conflicts", [])
+        
+        st.caption(f"Showing {len(conflicts)} of {total} conflicts")
+        
+        if conflicts:
+            for conflict in conflicts:
+                conflict_id = conflict.get("id")
+                external_id = conflict.get("external_id", "N/A")
+                source = conflict.get("source", "unknown")
+                conflict_type = conflict.get("conflict_type", "unknown")
+                status = conflict.get("resolution_status", "pending")
+                
+                with st.expander(f"🔸 {source}:{external_id} - {conflict_type} ({status})"):
+                    col_a, col_b = st.columns(2)
+                    
+                    with col_a:
+                        st.write("**Local Value:**")
+                        st.json(conflict.get("local_value") or {})
+                    
+                    with col_b:
+                        st.write("**External Value:**")
+                        st.json(conflict.get("external_value") or {})
+                    
+                    # Resolution actions (only for pending conflicts)
+                    if status == "pending":
+                        st.divider()
+                        res_col1, res_col2, res_col3 = st.columns(3)
+                        
+                        with res_col1:
+                            if st.button("✅ Use External", key=f"ext_{conflict_id}"):
+                                resolve_conflict(conflict_id, "auto_merged")
+                        
+                        with res_col2:
+                            if st.button("🏠 Keep Local", key=f"loc_{conflict_id}"):
+                                resolve_conflict(conflict_id, "manual_override")
+                        
+                        with res_col3:
+                            if st.button("🚫 Ignore", key=f"ign_{conflict_id}"):
+                                resolve_conflict(conflict_id, "ignored")
+        else:
+            st.success("✅ No pending conflicts!")
+    else:
+        st.warning("Unable to fetch conflicts")
+
+
+def resolve_conflict(conflict_id: str, resolution: str) -> None:
+    """Resolve a sync conflict."""
+    try:
+        result = _api_post(f"/sync/conflicts/{conflict_id}/resolve", {"resolution": resolution})
+        if result:
+            st.success(f"✅ Conflict resolved: {resolution}")
+            st.rerun()
+        else:
+            st.error("Failed to resolve conflict")
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+
+
+def render_kegg_cache_tab(user: dict) -> None:
+    """Render KEGG cache status tab."""
+    st.subheader("🔄 KEGG Cache Status")
+    st.caption("Monitor KEGG ID mapping cache and expiration status")
+    
+    # Fetch cache status
+    try:
+        status = _api_get("/mappings/kegg/status")
+    except Exception:
+        status = None
+    
+    if status:
+        # Display metrics
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric(
+                "Expiring in 7 Days",
+                status.get("expiring_7_days", 0),
+                delta_color="inverse" if status.get("expiring_7_days", 0) > 0 else "off"
+            )
+        
+        with col2:
+            st.metric(
+                "Expiring in 30 Days",
+                status.get("expiring_30_days", 0),
+                delta_color="inverse" if status.get("expiring_30_days", 0) > 10 else "off"
+            )
+        
+        with col3:
+            st.metric("Total KEGG Mappings", status.get("total_kegg_mappings", 0))
+        
+        st.divider()
+        
+        # Last refresh info
+        last_refresh = status.get("last_refresh")
+        if last_refresh:
+            st.write(f"**Last Refresh:** {last_refresh[:19].replace('T', ' ')}")
+            st.write(f"**Records Processed:** {status.get('last_refresh_count', 'N/A')}")
+        else:
+            st.info("No refresh history available")
+        
+        # Manual refresh trigger (placeholder - would need Celery task trigger)
+        st.divider()
+        if st.button("🔄 Trigger Manual Refresh", key="kegg_refresh_trigger"):
+            st.info("Manual refresh would trigger the `refresh_kegg_cache_task` Celery job.")
+            st.caption("Automatic refresh runs daily via Celery scheduler.")
+    else:
+        st.warning("Unable to fetch KEGG cache status")
