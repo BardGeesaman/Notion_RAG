@@ -2,6 +2,14 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **Split requirements.txt Complete**:
+  - **requirements-structural.txt**: Created for pdbfixer>=1.9, openmm>=8.0.0 (conda-forge only packages)
+  - **requirements.txt**: Removed pdbfixer and openmm
+  - **prep.py updates**: STRUCTURAL_AVAILABLE flag, _check_structural_deps() with helpful error message
+  - **Documentation**: README.md and LOCAL_SETUP.md updated with conda-forge installation instructions
+  - **CI verified**: GitHub Actions tests skip gracefully when structural dependencies unavailable
+  - **Commits**: ad5528a, 47e40eb
+
 * [2025-01-01] – **Integration Tests with Real Database Complete**:
   - **conftest.py fixtures**: integration_db, db_session, test_user, test_program, integration_client
   - **test_critical_paths.py**: 8 tests covering Programs, Datasets, Experiments, Annotations, Mappings, Compounds, Activity, Reviews

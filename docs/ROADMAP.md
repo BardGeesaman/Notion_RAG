@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt added)
 
 Simple status legend:
 - ✅ DONE
@@ -262,7 +262,13 @@ Simple status legend:
   - pytest integration marker for selective execution
   - Reduces "mocked tests pass, production fails" risk
   - Commits: b636c2e, 852511a, 17f8555
-- ❌ Split requirements.txt - move pdbfixer/openmm to requirements-structural.txt (pdbfixer requires conda-forge, not pip-installable)
+- ✅ Split requirements.txt (2025-01-01)
+  - Created requirements-structural.txt for pdbfixer, openmm (conda-forge only)
+  - Removed from main requirements.txt
+  - Added conditional import in prep.py with helpful error message
+  - Updated README.md and LOCAL_SETUP.md with installation guidance
+  - CI verified: Tests skip gracefully when structural dependencies unavailable
+  - Commits: ad5528a, 47e40eb
 - ❌ OOP Refactoring Review (code structure improvements)
 
 ### ID Mapping Enhancements (P2 - Future)
