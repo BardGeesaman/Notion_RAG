@@ -366,10 +366,12 @@ Items identified during feature development but deferred for future sessions.
   - Effort: 1-2 weeks
 
 ### Infrastructure & Performance
-- ⏳ **Async DB Connection Pooling - Router Migration** (Phase 1 complete 2025-01-01)
+- ⏳ **Async DB Connection Pooling - Router Migration** (Phases 1-2 complete 2025-01-01)
   - Infrastructure complete (async_session.py, async_dependencies.py)
   - ✅ Phase 1: review_sla service + router (6 functions, 8 endpoints)
-  - 239 router access points identified for migration (Phase 2)
+  - ✅ Phase 2: imaging router (18 endpoints, 27 db.query() calls converted)
+  - Total: 26+ async endpoints, 0 blocking sync calls
+  - 213+ router access points remaining for Phase 3+
   - Sync → async conversion for improved throughput
   - Effort: 2-3 weeks
 

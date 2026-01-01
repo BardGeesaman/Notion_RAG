@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 
-from amprenta_rag.api.dependencies import get_current_user, get_db
+from amprenta_rag.api.dependencies import get_current_user
+from amprenta_rag.api.async_dependencies import get_async_database_session
 from amprenta_rag.api import schemas as api_schemas
 from amprenta_rag.api.schemas_imaging.imaging import (
     OMETiffImportRequest,
@@ -19,23 +20,18 @@ from amprenta_rag.api.schemas_imaging.imaging import (
     ImportStatusResponse,
     MicroscopeCreate,
     MicroscopeResponse,
-    ObjectiveCreate,
     ObjectiveResponse,
-    ChannelConfigCreate,
     ChannelConfigResponse,
     ImageQCResponse,
     PlateQCResponse,
     BrowseQuery,
     BrowseResponse,
-    ThumbnailRequest,
-    ThumbnailResponse,
 )
 from amprenta_rag.models.auth import User
 from amprenta_rag.models.chemistry import HTSWell
 from amprenta_rag.imaging.models import MicroscopyImage, CellSegmentation, CellFeature
 from amprenta_rag.imaging.models_metadata import (
-    Microscope, Objective, LightSource, FilterSet, ChannelConfig, 
-    AcquisitionSettings, ImageFileSet
+    Microscope, Objective, ChannelConfig, ImageFileSet
 )
 from amprenta_rag.imaging.cellpose_service import CellPoseService
 from amprenta_rag.imaging.feature_extraction import FeatureExtractor
@@ -93,7 +89,7 @@ def get_image_storage() -> ImageStorage:
     summary="Upload microscopy image",
     description="Upload a microscopy image with metadata and optional well association."
 )
-def upload_image(
+async def upload_image(
     file: UploadFile = File(..., description="Image file (TIFF, PNG, JPG)"),
     well_id: Optional[str] = Form(None, description="Well ID to associate with image"),
     channel: str = Form(..., description="Channel name (e.g., DAPI, GFP, RFP)"),
@@ -101,7 +97,7 @@ def upload_image(
     timepoint: int = Form(0, description="Time series index"),
     pixel_size_um: Optional[float] = Form(None, description="Pixel size in microns"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_database_session),
     storage: ImageStorage = Depends(get_image_storage)
 ) -> ImageUploadResponse:
     """Upload microscopy image with metadata."""
@@ -120,7 +116,10 @@ def upload_image(
                 well_uuid = UUID(well_id)
                 # Verify well exists
                 from amprenta_rag.models.chemistry import HTSWell
-                well = db.query(HTSWell).filter(HTSWell.id == well_uuid).first()
+                result = await db.execute(
+                    select(HTSWell).filter(HTSWell.id == well_uuid)
+                )
+                well = result.scalars().first()
                 if not well:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
@@ -172,8 +171,8 @@ def upload_image(
         )
         
         db.add(image_record)
-        db.commit()
-        db.refresh(image_record)
+        await db.commit()
+        await db.refresh(image_record)
         
         logger.info(f"Uploaded image {image_record.id} for user {current_user.id}")
         
@@ -204,10 +203,10 @@ def upload_image(
     summary="Segment cells in image",
     description="Run CellPose segmentation on a microscopy image."
 )
-def segment_image(
+async def segment_image(
     request: SegmentationRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_database_session),
     cellpose_service: CellPoseService = Depends(get_cellpose_service),
     feature_extractor: FeatureExtractor = Depends(get_feature_extractor),
     storage: ImageStorage = Depends(get_image_storage)
@@ -215,7 +214,10 @@ def segment_image(
     """Segment cells in microscopy image using CellPose."""
     try:
         # Get image record
-        image = db.query(MicroscopyImage).filter(MicroscopyImage.id == request.image_id).first()
+        result = await db.execute(
+            select(MicroscopyImage).filter(MicroscopyImage.id == request.image_id)
+        )
+        image = result.scalars().first()
         if not image:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -264,8 +266,8 @@ def segment_image(
         )
         
         db.add(segmentation)
-        db.commit()
-        db.refresh(segmentation)
+        await db.commit()
+        await db.refresh(segmentation)
         
         # Extract features if requested
         features_extracted = False
@@ -292,7 +294,7 @@ def segment_image(
                     )
                     db.add(cell_feature)
                 
-                db.commit()
+                await db.commit()
                 features_extracted = True
                 
             except Exception as e:
@@ -327,18 +329,21 @@ def segment_image(
     summary="Queue batch segmentation",
     description="Queue multiple images for batch segmentation processing using Celery."
 )
-def segment_batch(
+async def segment_batch(
     request: BatchSegmentationRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> BatchSegmentationResponse:
     """Queue batch segmentation task."""
     try:
         # Validate that all images exist
         image_ids = [str(img_id) for img_id in request.image_ids]
-        existing_images = db.query(MicroscopyImage).filter(
-            MicroscopyImage.id.in_(request.image_ids)
-        ).all()
+        result = await db.execute(
+            select(MicroscopyImage).filter(
+                MicroscopyImage.id.in_(request.image_ids)
+            )
+        )
+        existing_images = result.scalars().all()
         
         if len(existing_images) != len(request.image_ids):
             missing_ids = set(request.image_ids) - {img.id for img in existing_images}
@@ -382,14 +387,17 @@ def segment_batch(
     summary="Get image metadata",
     description="Retrieve metadata for a microscopy image."
 )
-def get_image_metadata(
+async def get_image_metadata(
     image_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> ImageMetadataResponse:
     """Get microscopy image metadata."""
     try:
-        image = db.query(MicroscopyImage).filter(MicroscopyImage.id == image_id).first()
+        result = await db.execute(
+            select(MicroscopyImage).filter(MicroscopyImage.id == image_id)
+        )
+        image = result.scalars().first()
         if not image:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -428,16 +436,17 @@ def get_image_metadata(
     summary="Get segmentation results",
     description="Retrieve segmentation results and metadata."
 )
-def get_segmentation(
+async def get_segmentation(
     segmentation_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> SegmentationResultResponse:
     """Get segmentation results."""
     try:
-        segmentation = db.query(CellSegmentation).filter(
-            CellSegmentation.id == segmentation_id
-        ).first()
+        result = await db.execute(
+            select(CellSegmentation).filter(CellSegmentation.id == segmentation_id)
+        )
+        segmentation = result.scalars().first()
         if not segmentation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -472,17 +481,18 @@ def get_segmentation(
     summary="Get cell features",
     description="Retrieve extracted cell features for a segmentation."
 )
-def get_features(
+async def get_features(
     segmentation_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> CellFeaturesResponse:
     """Get cell features for segmentation."""
     try:
         # Check segmentation exists
-        segmentation = db.query(CellSegmentation).filter(
-            CellSegmentation.id == segmentation_id
-        ).first()
+        result = await db.execute(
+            select(CellSegmentation).filter(CellSegmentation.id == segmentation_id)
+        )
+        segmentation = result.scalars().first()
         if not segmentation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -490,9 +500,10 @@ def get_features(
             )
         
         # Get features
-        features = db.query(CellFeature).filter(
-            CellFeature.segmentation_id == segmentation_id
-        ).all()
+        result = await db.execute(
+            select(CellFeature).filter(CellFeature.segmentation_id == segmentation_id)
+        )
+        features = result.scalars().all()
         
         # Convert to response format
         feature_list = []
@@ -534,17 +545,20 @@ def get_features(
     summary="Get well summary",
     description="Get aggregated features and statistics for all images in a well."
 )
-def get_well_summary(
+async def get_well_summary(
     well_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_database_session),
     feature_extractor: FeatureExtractor = Depends(get_feature_extractor)
 ) -> WellSummaryResponse:
     """Get well-level aggregated imaging summary."""
     try:
         # Check well exists
         from amprenta_rag.models.chemistry import HTSWell
-        well = db.query(HTSWell).filter(HTSWell.id == well_id).first()
+        result = await db.execute(
+            select(HTSWell).filter(HTSWell.id == well_id)
+        )
+        well = result.scalars().first()
         if not well:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -552,9 +566,10 @@ def get_well_summary(
             )
         
         # Get all images for this well
-        images = db.query(MicroscopyImage).filter(
-            MicroscopyImage.well_id == well_id
-        ).all()
+        result = await db.execute(
+            select(MicroscopyImage).filter(MicroscopyImage.well_id == well_id)
+        )
+        images = result.scalars().all()
         
         if not images:
             return api_schemas.WellSummaryResponse(
@@ -568,15 +583,17 @@ def get_well_summary(
         
         # Get all segmentations for these images
         image_ids = [img.id for img in images]
-        segmentations = db.query(CellSegmentation).filter(
-            CellSegmentation.image_id.in_(image_ids)
-        ).all()
+        result = await db.execute(
+            select(CellSegmentation).filter(CellSegmentation.image_id.in_(image_ids))
+        )
+        segmentations = result.scalars().all()
         
         # Get all features for these segmentations
         segmentation_ids = [seg.id for seg in segmentations]
-        features = db.query(CellFeature).filter(
-            CellFeature.segmentation_id.in_(segmentation_ids)
-        ).all()
+        result = await db.execute(
+            select(CellFeature).filter(CellFeature.segmentation_id.in_(segmentation_ids))
+        )
+        features = result.scalars().all()
         
         # Calculate summary statistics
         total_cell_count = sum(seg.cell_count for seg in segmentations)
@@ -645,11 +662,11 @@ def get_well_summary(
     summary="Import OME-TIFF file",
     description="Import OME-TIFF file with metadata extraction and optional well association."
 )
-def import_ome_tiff(
+async def import_ome_tiff(
     file: UploadFile = File(..., description="OME-TIFF file"),
     request: OMETiffImportRequest = Depends(),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_database_session),
     storage: ImageStorage = Depends(get_image_storage)
 ) -> OMETiffImportResponse:
     """Import OME-TIFF file with metadata extraction."""
@@ -737,8 +754,8 @@ def import_ome_tiff(
                 }
             
             db.add(image_record)
-            db.commit()
-            db.refresh(image_record)
+            await db.commit()
+            await db.refresh(image_record)
             
             logger.info(f"Imported OME-TIFF {file.filename} as image {image_record.id}")
             
@@ -774,11 +791,11 @@ def import_ome_tiff(
     summary="Batch import from vendor export",
     description="Import multiple images from vendor export directory (Opera, ImageXpress, Cell Voyager)."
 )
-def import_batch_vendor(
+async def import_batch_vendor(
     request: BatchImportRequest,
     import_path: str = Form(..., description="Path to vendor export directory"),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> BatchImportResponse:
     """Import batch of images from vendor export."""
     try:
@@ -802,13 +819,13 @@ def import_batch_vendor(
         )
         
         db.add(fileset)
-        db.commit()
-        db.refresh(fileset)
+        await db.commit()
+        await db.refresh(fileset)
         
         # NOTE: Background import jobs tracked in ROADMAP
         # For now, just update status to importing
         fileset.import_status = "importing"
-        db.commit()
+        await db.commit()
         
         logger.info(f"Queued batch import {fileset.id} for {len(import_result.images)} images")
         
@@ -837,14 +854,17 @@ def import_batch_vendor(
     summary="Get import job status",
     description="Get status and progress of batch import job."
 )
-def get_import_status(
+async def get_import_status(
     fileset_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> ImportStatusResponse:
     """Get import job status."""
     try:
-        fileset = db.query(ImageFileSet).filter(ImageFileSet.id == fileset_id).first()
+        result = await db.execute(
+            select(ImageFileSet).filter(ImageFileSet.id == fileset_id)
+        )
+        fileset = result.scalars().first()
         if not fileset:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -889,26 +909,33 @@ def get_import_status(
     summary="List microscopes",
     description="Get list of registered microscope instruments."
 )
-def list_microscopes(
+async def list_microscopes(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> List[MicroscopeResponse]:
     """List all registered microscopes."""
     try:
-        microscopes = db.query(Microscope).filter(Microscope.is_active == True).all()
+        result = await db.execute(
+            select(Microscope).filter(Microscope.is_active.is_(True))
+        )
+        microscopes = result.scalars().all()
         
         result = []
         for microscope in microscopes:
             # Get associated objectives
-            objectives = db.query(Objective).filter(
-                Objective.microscope_id == microscope.id,
-                Objective.is_active == True
-            ).all()
+            obj_result = await db.execute(
+                select(Objective).filter(
+                    Objective.microscope_id == microscope.id,
+                    Objective.is_active.is_(True)
+                )
+            )
+            objectives = obj_result.scalars().all()
             
             # Get associated channel configs
-            channels = db.query(ChannelConfig).filter(
-                ChannelConfig.microscope_id == microscope.id
-            ).all()
+            chan_result = await db.execute(
+                select(ChannelConfig).filter(ChannelConfig.microscope_id == microscope.id)
+            )
+            channels = chan_result.scalars().all()
             
             result.append(MicroscopeResponse(
                 id=microscope.id,
@@ -963,18 +990,19 @@ def list_microscopes(
     summary="Register microscope",
     description="Register a new microscope instrument."
 )
-def create_microscope(
+async def create_microscope(
     request: MicroscopeCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> MicroscopeResponse:
     """Register new microscope."""
     try:
         # Check for duplicate serial number
         if request.serial_number:
-            existing = db.query(Microscope).filter(
-                Microscope.serial_number == request.serial_number
-            ).first()
+            result = await db.execute(
+                select(Microscope).filter(Microscope.serial_number == request.serial_number)
+            )
+            existing = result.scalars().first()
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -990,8 +1018,8 @@ def create_microscope(
         )
         
         db.add(microscope)
-        db.commit()
-        db.refresh(microscope)
+        await db.commit()
+        await db.refresh(microscope)
         
         logger.info(f"Created microscope {microscope.id}: {microscope.name}")
         
@@ -1024,14 +1052,17 @@ def create_microscope(
     summary="Get microscope details",
     description="Get detailed information about a specific microscope."
 )
-def get_microscope(
+async def get_microscope(
     microscope_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> MicroscopeResponse:
     """Get microscope details."""
     try:
-        microscope = db.query(Microscope).filter(Microscope.id == microscope_id).first()
+        result = await db.execute(
+            select(Microscope).filter(Microscope.id == microscope_id)
+        )
+        microscope = result.scalars().first()
         if not microscope:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1039,14 +1070,18 @@ def get_microscope(
             )
         
         # Get objectives and channels (same as list_microscopes)
-        objectives = db.query(Objective).filter(
-            Objective.microscope_id == microscope.id,
-            Objective.is_active == True
-        ).all()
+        obj_result = await db.execute(
+            select(Objective).filter(
+                Objective.microscope_id == microscope.id,
+                Objective.is_active.is_(True)
+            )
+        )
+        objectives = obj_result.scalars().all()
         
-        channels = db.query(ChannelConfig).filter(
-            ChannelConfig.microscope_id == microscope.id
-        ).all()
+        chan_result = await db.execute(
+            select(ChannelConfig).filter(ChannelConfig.microscope_id == microscope.id)
+        )
+        channels = chan_result.scalars().all()
         
         return MicroscopeResponse(
             id=microscope.id,
@@ -1100,19 +1135,20 @@ def get_microscope(
     summary="List objectives",
     description="Get list of available objective lenses."
 )
-def list_objectives(
+async def list_objectives(
     microscope_id: Optional[UUID] = None,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> List[ObjectiveResponse]:
     """List objectives, optionally filtered by microscope."""
     try:
-        query = db.query(Objective).filter(Objective.is_active == True)
+        query = select(Objective).filter(Objective.is_active.is_(True))
         
         if microscope_id:
             query = query.filter(Objective.microscope_id == microscope_id)
         
-        objectives = query.all()
+        result = await db.execute(query)
+        objectives = result.scalars().all()
         
         return [
             ObjectiveResponse(
@@ -1142,19 +1178,20 @@ def list_objectives(
     summary="List channel configurations",
     description="Get list of channel configurations for microscopes."
 )
-def list_channel_configs(
+async def list_channel_configs(
     microscope_id: Optional[UUID] = None,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> List[ChannelConfigResponse]:
     """List channel configurations."""
     try:
-        query = db.query(ChannelConfig)
+        query = select(ChannelConfig)
         
         if microscope_id:
             query = query.filter(ChannelConfig.microscope_id == microscope_id)
         
-        channels = query.all()
+        result = await db.execute(query)
+        channels = result.scalars().all()
         
         return [
             ChannelConfigResponse(
@@ -1188,17 +1225,20 @@ def list_channel_configs(
     summary="Get single image QC",
     description="Get quality control metrics for a single image."
 )
-def get_image_qc(
+async def get_image_qc(
     image_id: UUID,
     run_artifact_detection: bool = False,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_database_session),
     storage: ImageStorage = Depends(get_image_storage)
 ) -> ImageQCResponse:
     """Get QC metrics for single image."""
     try:
         # Get image record
-        image = db.query(MicroscopyImage).filter(MicroscopyImage.id == image_id).first()
+        result = await db.execute(
+            select(MicroscopyImage).filter(MicroscopyImage.id == image_id)
+        )
+        image = result.scalars().first()
         if not image:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1248,20 +1288,20 @@ def get_image_qc(
     summary="Get plate QC report",
     description="Get quality control report for an entire plate."
 )
-def get_plate_qc_report(
+async def get_plate_qc_report(
     plate_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_database_session),
     storage: ImageStorage = Depends(get_image_storage)
 ) -> PlateQCResponse:
     """Get plate-wide QC report."""
     try:
         # Get all images for the plate
-        images = db.query(MicroscopyImage).filter(
-            MicroscopyImage.well_id.in_(
-                db.query(HTSWell.id).filter(HTSWell.plate_id == plate_id)
-            )
-        ).all()
+        well_subquery = select(HTSWell.id).filter(HTSWell.plate_id == plate_id)
+        result = await db.execute(
+            select(MicroscopyImage).filter(MicroscopyImage.well_id.in_(well_subquery))
+        )
+        images = result.scalars().all()
         
         if not images:
             raise HTTPException(
@@ -1322,23 +1362,20 @@ def get_plate_qc_report(
     summary="5D data browser query",
     description="Browse and filter microscopy images across 5 dimensions (X, Y, Z, C, T)."
 )
-def browse_images(
+async def browse_images(
     query: BrowseQuery = Depends(),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_database_session)
 ) -> BrowseResponse:
     """Browse images with 5D filtering."""
     try:
         # Build query
-        image_query = db.query(MicroscopyImage)
+        image_query = select(MicroscopyImage)
         
         # Apply filters
         if query.plate_id:
-            image_query = image_query.filter(
-                MicroscopyImage.well_id.in_(
-                    db.query(HTSWell.id).filter(HTSWell.plate_id == query.plate_id)
-                )
-            )
+            well_subquery = select(HTSWell.id).filter(HTSWell.plate_id == query.plate_id)
+            image_query = image_query.filter(MicroscopyImage.well_id.in_(well_subquery))
         
         if query.well_position:
             # NOTE: Well position filtering tracked in ROADMAP
@@ -1354,35 +1391,39 @@ def browse_images(
             image_query = image_query.filter(MicroscopyImage.timepoint == query.timepoint)
         
         # Get total count before pagination
-        total_count = image_query.count()
+        count_result = await db.execute(select(func.count()).select_from(image_query.subquery()))
+        total_count = count_result.scalar()
         
         # Apply pagination
-        images = image_query.offset(query.skip).limit(query.limit).all()
+        paginated_query = image_query.offset(query.skip).limit(query.limit)
+        result = await db.execute(paginated_query)
+        images = result.scalars().all()
         
         # Get available channels and ranges
-        all_images_query = db.query(MicroscopyImage)
+        all_images_query = select(MicroscopyImage)
         if query.plate_id:
-            all_images_query = all_images_query.filter(
-                MicroscopyImage.well_id.in_(
-                    db.query(HTSWell.id).filter(HTSWell.plate_id == query.plate_id)
-                )
-            )
+            well_subquery = select(HTSWell.id).filter(HTSWell.plate_id == query.plate_id)
+            all_images_query = all_images_query.filter(MicroscopyImage.well_id.in_(well_subquery))
         
-        available_channels = [
-            row[0] for row in db.query(MicroscopyImage.channel.distinct()).all()
-        ]
+        # Get distinct channels
+        channels_result = await db.execute(
+            select(MicroscopyImage.channel.distinct())
+        )
+        available_channels = [row[0] for row in channels_result.all()]
         
-        z_range_result = db.query(
-            db.func.min(MicroscopyImage.z_slice),
-            db.func.max(MicroscopyImage.z_slice)
-        ).first()
-        z_range = (z_range_result[0] or 0, z_range_result[1] or 0)
+        # Get z range
+        z_range_result = await db.execute(
+            select(func.min(MicroscopyImage.z_slice), func.max(MicroscopyImage.z_slice))
+        )
+        z_range_row = z_range_result.first()
+        z_range = (z_range_row[0] or 0, z_range_row[1] or 0)
         
-        t_range_result = db.query(
-            db.func.min(MicroscopyImage.timepoint),
-            db.func.max(MicroscopyImage.timepoint)
-        ).first()
-        t_range = (t_range_result[0] or 0, t_range_result[1] or 0)
+        # Get timepoint range
+        t_range_result = await db.execute(
+            select(func.min(MicroscopyImage.timepoint), func.max(MicroscopyImage.timepoint))
+        )
+        t_range_row = t_range_result.first()
+        t_range = (t_range_row[0] or 0, t_range_row[1] or 0)
         
         # Convert to response format
         image_summaries = [

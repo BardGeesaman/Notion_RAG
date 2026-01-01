@@ -108,6 +108,14 @@
   - Test mocks need async updates (tracked in P2 backlog)
   - Reviewer approved
 
+* [2025-01-01] – **Async DB Migration - Phase 2 (imaging.py)**:
+  - Converted 18 endpoints to async
+  - Fixed P1: 27 db.query() calls → await db.execute(select())
+  - Complex patterns: pagination, subqueries, aggregations
+  - Zero blocking sync calls verified (grep confirms 0)
+  - Reviewer approved after P1 fix
+  - Total async progress: review_sla + imaging = 26+ endpoints
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners
