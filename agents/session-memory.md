@@ -2,6 +2,22 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **Strategic Backlog Created**:
+  - New ROADMAP section "Strategic Backlog (Long-Term Vision)" with **44 items across 11 categories**
+  - **Clinical & Regulatory** (3): Clinical trials (phased 10-12w), patient data, 21 CFR Part 11
+  - **Lab Operations** (3): LIMS, real-time streaming, instrument APIs
+  - **Genomics & NGS** (3): ENA ingestion, IGV.js, GWAS
+  - **Advanced ML & AI** (3): Neural toxicity, active learning, LLM fine-tuning
+  - **Discovery & MedChem** (4): Target management, SAR analysis, retrosynthesis, compound inventory
+  - **Data Governance** (2): Data catalog, data quality engine
+  - **Visualization & UX** (4): Cytoscape.js, 3D projector, Mol*, Ag-Grid
+  - **Infrastructure & Scale** (3): Multi-region, Kubernetes, data lake
+  - **User Access & Mobility** (3): Mobile UI, offline mode, CRO portal
+  - **Translational & Clinical Biomarkers** (5): Patient stratification, PD validation, surrogate endpoints, CDx, regulatory submissions
+  - **Security & Hardening** (11): Secrets management (P0), OWASP audit, rate limiting, CVE monitoring, penetration testing
+  - Items migrated from "Out of Scope": Clinical trials, patient data, real-time streaming, wet lab integration
+  - Reviewer-approved with 2 rounds of feedback (effort estimates adjusted, gaps filled)
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners
@@ -226,11 +242,11 @@ It should be updated at natural breakpoints in work sessions to support continui
   - Integration with public repositories (Metabolomics Workbench, GEO, PRIDE, MetaboLights)
   - Chemistry and HTS (High-Throughput Screening) data management
 
-* **Out of Scope:**
-  - Real-time data streaming (batch processing only)
-  - Direct wet lab integration
-  - Clinical trial management
-  - Patient data management (research data only)
+* **Out of Scope (Now in Strategic Backlog):**
+  - Real-time data streaming → Strategic Backlog: Infrastructure & Scale
+  - Direct wet lab integration → Strategic Backlog: Lab Operations
+  - Clinical trial management → Strategic Backlog: Clinical & Regulatory
+  - Patient data management → Strategic Backlog: Clinical & Regulatory
 
 * **Key Constraints:**
   - **Postgres** as primary system of record (Notion 100% REMOVED per Chairman directive)

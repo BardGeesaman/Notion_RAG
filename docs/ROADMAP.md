@@ -316,6 +316,7 @@ Items identified during feature development but deferred for future sessions.
   - KEGG incremental sync adapter
   - GEO incremental improvements
   - Auto-conflict resolution for sync jobs
+  - *See also: ENA/Genomics Ingestion in Strategic Backlog*
   - Effort: 1 week
 
 ### AI & Extraction
@@ -468,6 +469,119 @@ Items identified during feature development but deferred for future sessions.
   - Z' factor QC metrics and plate heatmaps
   - 4-tab dashboard (Upload/Segment/Features/Plate View)
   - 52 tests (10 schema + 14 CellPose + 10 API + 10 HTS integration + 8 E2E) - 100% pass rate
+
+---
+
+## 🎯 Strategic Backlog (Long-Term Vision)
+
+Items originally scoped out or identified as major future initiatives. These represent significant capability expansions requiring dedicated planning cycles.
+
+### Clinical & Regulatory
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **Clinical Trial Management** | Phase 1: Protocol tracking (3w), Phase 2: Subject enrollment (3w), Phase 3: AE/CRFs (4w), Phase 4: ClinicalTrials.gov (2w) | 10-12 weeks | 21 CFR Part 11 |
+| **P2** | **Patient Data Management** | PHI handling, HIPAA compliance, consent tracking, de-identification | 4-6 weeks | Legal review |
+| **P2** | **21 CFR Part 11 Full Certification** | Electronic signatures, validation documentation, IQ/OQ/PQ | 8-10 weeks | Audit complete |
+
+### Lab Operations & Automation
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **LIMS Integration** | LabWare, STARLIMS, Benchling connectors, sample tracking, inventory | 3-4 weeks | Vendor APIs |
+| **P2** | **Real-time Data Streaming** | Kafka/Pub-Sub for instrument feeds, live experiment dashboards | 2-3 weeks | Infrastructure |
+| **P3** | **Instrument API Integration** | Direct connection to mass spec, flow cytometers, plate readers | 2-3 weeks | Vendor docs |
+
+### Genomics & NGS
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **ENA/Genomics Ingestion** | European Nucleotide Archive, FASTQ/BAM/VCF parsing, NGS metadata. *See also: External Sync Phase 2 in Deferred section.* | 2-3 weeks | None |
+| **P2** | **IGV.js Genome Browser** | Embedded genome visualization, BAM/VCF track support | 2 weeks | ENA complete |
+| **P3** | **GWAS Integration** | GWAS Catalog import, LD analysis, PRS calculation | 3-4 weeks | Variant pipeline |
+
+### Advanced ML & AI
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **Neural Network Toxicity Models** | Deep learning ADMET (beyond rule-based), GNN for molecular properties | 3-4 weeks | GPU resources |
+| **P2** | **Active Learning Pipeline** | Human-in-the-loop model refinement, uncertainty sampling | 2-3 weeks | ML models |
+| **P3** | **LLM Fine-tuning for Science** | MVP: Entity extraction from scientific literature only. General hypothesis generation deferred. | 8-12 weeks | GPU cluster |
+
+### Discovery & Medicinal Chemistry
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **Target Management** | Target validation tracking, assay linkage, druggability scores, competitive landscape per target | 3-4 weeks | None |
+| **P1** | **SAR Analysis Module** | Activity cliff detection, R-group decomposition tables, potency trend visualization, matched molecular pairs | 3-4 weeks | Compounds |
+| **P2** | **Retrosynthesis Advisor** | ASKCOS/IBM RXN API integration, route scoring, reagent availability check, cost estimation | 4-6 weeks | Chemistry |
+| **P2** | **Compound Inventory** | Physical sample tracking, storage locations, tube/plate barcodes, request/fulfillment workflow | 2-3 weeks | Compounds |
+
+### Data Governance
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **Data Catalog** | Entity dictionary, column-level metadata, data lineage graphs, glossary integration | 3-4 weeks | None |
+| **P2** | **Data Quality Engine** | Validation rule builder, completeness scoring, anomaly detection, data health dashboard | 2-3 weeks | Data Catalog |
+
+### Visualization & UX
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **Cytoscape.js Networks** | Interactive PPI/pathway graphs, expression overlay, cluster highlighting | 1-2 weeks | None |
+| **P2** | **High-Dimensional Projector** | 3D UMAP/t-SNE for embeddings, interactive exploration | 1 week | None |
+| **P2** | **Mol*/PyMOL Integration** | Advanced protein visualization (beyond 3Dmol.js) | 2 weeks | Structure data |
+| **P3** | **Ag-Grid Enterprise** | Excel-like filtering, pivoting, range selection. *⚠️ Requires license cost approval.* | 1 week | License |
+
+### Infrastructure & Scale
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P2** | **Multi-Region Deployment** | AWS cross-region replication, global CDN, DR failover. *Note: GDPR compliance required for EU regions.* | 3-4 weeks | Cloud budget |
+| **P3** | **Kubernetes Migration** | Container orchestration, auto-scaling, self-healing | 4-6 weeks | DevOps |
+| **P3** | **Data Lake Integration** | S3/Parquet analytics layer, Athena/Spark queries | 2-3 weeks | Data Catalog |
+
+### User Access & Mobility
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P2** | **Mobile/Responsive UI** | Tablet-optimized dashboards for field scientists | 2-3 weeks | None |
+| **P3** | **Offline Mode** | PWA with local caching for labs with intermittent connectivity | 3-4 weeks | Mobile UI |
+| **P3** | **CRO Portal** | External collaborator access with limited permissions, data sharing workflows | 2-3 weeks | Multi-tenant |
+
+### Translational & Clinical Biomarkers
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **Patient Stratification Module** | Multi-signature patient scoring, cohort identification, biomarker-based inclusion/exclusion criteria builder, population enrichment simulation. Extends existing Signature model. | 3-4 weeks | Signatures |
+| **P1** | **PD Biomarker Validation** | Baseline vs on-treatment signature tracking, time-course dynamics visualization, dose-response relationships, responder/non-responder classification, PD/PK correlation. | 3-4 weeks | Stratification |
+| **P2** | **Surrogate Endpoint Development** | FDA Biomarker Qualification Program pathway tracking, analytical validation (sensitivity/specificity/reproducibility), clinical validation correlation, Level of Evidence scoring. | 4-6 weeks | PD Validation |
+| **P2** | **Companion Diagnostic (CDx) Management** | IVD development milestones, CLIA/CAP validation checklist, assay platform selection (PCR/NGS/IHC/ELISA), technology transfer docs, commercial partner tracking. | 4-6 weeks | Surrogate |
+| **P3** | **Regulatory Submission Builder** | Biomarker qualification dossier generation, FDA/EMA template compliance, evidence package assembly with cross-references to validation data. | 3-4 weeks | CDx Management |
+
+*Note: This feature area bridges Discovery → Translational → Clinical → Regulatory, enabling vertical integration of biomarker signatures from research through companion diagnostic approval.*
+
+### Security & Hardening
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P0** | **Secrets Management Overhaul** | Migrate 52 env vars from .env to AWS Secrets Manager. Wire ECS to fetch secrets at runtime. Remove secrets from Terraform state. Create `.env.example` template. | 1-2 weeks | AWS access |
+| **P0** | **GitHub Secrets Integration** | Configure GitHub Actions secrets for CI/CD. Add secret scanning to pre-commit hooks. Document secrets rotation procedure. | 3-5 days | Secrets Manager |
+| **P1** | **OWASP Top 10 Audit** | Systematic review: injection, broken auth, sensitive data exposure, XXE, broken access control, security misconfiguration, XSS, insecure deserialization, vulnerable components, insufficient logging. | 2 weeks | None |
+| **P1** | **Input Validation Hardening** | Pydantic strict mode for all schemas. SQL parameterization audit. HTML/JS sanitization for user-generated content. | 1 week | None |
+| **P1** | **Rate Limiting & Brute Force Protection** | Per-user/IP throttling on auth endpoints. Slowloris protection. Account lockout after failed attempts. | 1 week | None |
+| **P2** | **Security Headers** | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy. Streamlit + FastAPI configuration. | 3-5 days | None |
+| **P2** | **CVE Monitoring Pipeline** | Dependabot/Snyk integration. Automated PR for patches. Block deploys on critical CVEs. Address existing 4 CVEs. | 1 week | GitHub |
+| **P2** | **Penetration Testing** | Engage professional pentest firm. Remediation sprint for findings. Re-test validation. | 3-4 weeks | Budget |
+| **P3** | **Container Security** | Trivy image scanning in CI. Distroless/Alpine base images. Non-root container execution. | 1 week | Docker |
+| **P3** | **WAF & Network Hardening** | AWS WAF with OWASP rules. VPC private subnets audit. Security group least-privilege review. | 1-2 weeks | AWS |
+| **P3** | **Secret Rotation Automation** | Automatic rotation for DB passwords, API keys. Zero-downtime rotation strategy. | 1-2 weeks | Secrets Manager |
+
+**Current Security Debt:**
+- 4 CVEs in dependencies (biopython, nbconvert, pdfminer-six, py) - monitoring for patches
+- 52 secrets in `.env` files not synced to AWS Secrets Manager
+- Terraform state contains plaintext DB password
+- No automated secret scanning in CI
 
 ---
 
