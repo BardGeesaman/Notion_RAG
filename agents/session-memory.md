@@ -169,6 +169,30 @@
   - System dependencies documented: tesseract-ocr, poppler-utils (in LOCAL_SETUP.md)
   - Reviewer approved with all P1 fixes verified
 
+* [2025-01-01] – **External Sync Phase 2**:
+  - **KEGG Refresh Adapter** (`amprenta_rag/sync/adapters/kegg_refresh.py`):
+    - Proactive cache refresh for mappings expiring within 7 days
+    - Rate limiting (0.35s between requests) for KEGG API compliance
+    - Batch processing (100 mappings per run)
+  - **Auto-Conflict Resolver** (`amprenta_rag/sync/conflict_resolver.py`):
+    - 4 resolution strategies: PREFER_EXTERNAL, PREFER_LOCAL, PREFER_NEWEST, MANUAL_REQUIRED
+    - Default strategy mappings for common conflict types
+    - Batch auto-resolution with source filtering
+  - **UniProt Incremental Sync** (enhanced `uniprot_mapping.py`):
+    - HTTP 304 Not Modified support to skip unchanged files
+    - ETag/Last-Modified header tracking in MappingRefreshLog
+    - Bandwidth savings: ~500MB per sync when unchanged
+  - **GEO Pagination** (enhanced `geo.py`):
+    - Removed 50-record cap, added pagination (20 pages × 50 = 1000 max)
+    - P1 fix: Rate limiting (0.5s between pages) for NCBI compliance
+    - Better error recovery with per-study retry
+  - **Celery Tasks** (3 new in `mapping_refresh.py`):
+    - `refresh_kegg_cache_task` - Daily KEGG cache refresh
+    - `auto_resolve_sync_conflicts_task` - Hourly conflict resolution
+    - `cleanup_expired_mappings_task` - Daily expired mapping cleanup
+  - **Tests**: 38 tests across 4 test files (100% pass rate)
+  - Reviewer approved with all P1/P2 gaps addressed
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

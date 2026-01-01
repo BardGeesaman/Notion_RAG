@@ -245,6 +245,7 @@ class GEORepository(RepositoryInterface):
         self,
         query: str,
         max_results: int = 100,
+        retstart: int = 0,
         retry_count: int = 0,
     ) -> List[str]:
         """
@@ -255,6 +256,7 @@ class GEORepository(RepositoryInterface):
         Args:
             query: Entrez search query
             max_results: Maximum results to return
+            retstart: Starting offset for pagination
             retry_count: Current retry attempt (for error handling)
 
         Returns:
@@ -269,6 +271,7 @@ class GEORepository(RepositoryInterface):
                 db="gds",
                 term=query,
                 retmax=min(max_results, 10000),  # NCBI limit
+                retstart=retstart,  # ADD pagination support
                 retmode="xml",
             )
             record = Entrez.read(handle)

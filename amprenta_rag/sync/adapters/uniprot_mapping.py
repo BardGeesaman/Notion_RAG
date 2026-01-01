@@ -13,7 +13,7 @@ from typing import AsyncIterator
 import httpx
 from uuid import UUID
 
-from amprenta_rag.database.models import IDMapping
+from amprenta_rag.database.models import IDMapping, MappingRefreshLog
 from amprenta_rag.database.session import db_session
 from amprenta_rag.sync.adapters.base import BaseSyncAdapter
 
@@ -39,13 +39,42 @@ class UniProtMappingAdapter(BaseSyncAdapter):
     ]
     
     async def fetch_records(self, since: datetime | None = None) -> AsyncIterator[dict]:
-        """Download and parse UniProt mapping file."""
-        logger.info("Downloading UniProt ID mapping file...")
+        """Download and parse UniProt mapping file with conditional GET."""
+        logger.info("Checking UniProt ID mapping file for updates...")
+        
+        # Check last successful sync for ETag/Last-Modified
+        last_etag = None
+        last_modified = None
+        with db_session() as db:
+            last_log = db.query(MappingRefreshLog).filter(
+                MappingRefreshLog.source == "uniprot_mapping",
+                MappingRefreshLog.status == "success"
+            ).order_by(MappingRefreshLog.completed_at.desc()).first()
+            if last_log and last_log.metadata_:
+                last_etag = last_log.metadata_.get("etag")
+                last_modified = last_log.metadata_.get("last_modified")
+        
+        # Build conditional headers
+        headers = {}
+        if last_etag:
+            headers["If-None-Match"] = last_etag
+        if last_modified:
+            headers["If-Modified-Since"] = last_modified
         
         # Download the gzipped file
         async with httpx.AsyncClient(timeout=300.0) as client:
-            response = await client.get(self.MAPPING_URL)
+            response = await client.get(self.MAPPING_URL, headers=headers)
+            
+            # 304 Not Modified - file unchanged
+            if response.status_code == 304:
+                logger.info("UniProt mapping file unchanged (304 Not Modified)")
+                return  # Empty iterator - nothing to sync
+            
             response.raise_for_status()
+            
+            # Store ETag/Last-Modified for next sync
+            self._last_etag = response.headers.get("ETag")
+            self._last_modified = response.headers.get("Last-Modified")
             
             # Write to temporary file
             with tempfile.NamedTemporaryFile(suffix=".tab.gz", delete=False) as temp_file:
@@ -224,6 +253,13 @@ class UniProtMappingAdapter(BaseSyncAdapter):
         # For ID mappings, we don't map to a specific entity
         # This is a cross-reference table, not entity-specific
         return ("id_mapping", None)
+    
+    def get_sync_metadata(self) -> dict:
+        """Return metadata to store in MappingRefreshLog."""
+        return {
+            "etag": getattr(self, '_last_etag', None),
+            "last_modified": getattr(self, '_last_modified', None),
+        }
 
 
 async def sync_uniprot_mappings() -> int:

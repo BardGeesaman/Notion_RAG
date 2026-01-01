@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+import time
+from datetime import datetime
 from typing import Any, AsyncIterator, Dict, Optional
 from uuid import UUID
 
@@ -19,7 +20,9 @@ class GEOSyncAdapter(BaseSyncAdapter):
     """Sync adapter for Gene Expression Omnibus (GEO)."""
     
     source = "geo"
-    BATCH_SIZE = 50  # Smaller than ChEMBL due to heavier metadata
+    PAGE_SIZE = 50  # Records per page
+    MAX_PAGES = 20  # Max 1000 total records per sync
+    PAGE_RATE_LIMIT = 0.5  # P1 FIX: 0.5s between pages
     
     def __init__(self, geo_repo: Optional[GEORepository] = None):
         """Initialize with GEORepository for rate limiting."""
@@ -29,35 +32,52 @@ class GEOSyncAdapter(BaseSyncAdapter):
         self, 
         since: Optional[datetime] = None
     ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        Fetch GEO studies modified since given date.
-        
-        Uses MDAT (modification date) filter for true incremental sync.
-        """
-        # Build query with MDAT filter for incremental
+        """Fetch GEO studies with pagination and rate limiting."""
         query = '"Homo sapiens"[Organism] AND gse[Entry Type]'
         
         if since:
-            # MDAT = modification date (includes updates, not just new)
             date_str = since.strftime('%Y/%m/%d')
             query += f" AND {date_str}:3000[MDAT]"
             logger.info(f"[GEO-SYNC] Incremental sync since {date_str}")
         else:
             logger.info("[GEO-SYNC] Full sync (no since date)")
         
-        # Use GEORepository's search with rate limiting
-        gse_ids = self._repo._search_geo(query, max_results=self.BATCH_SIZE)
-        logger.info(f"[GEO-SYNC] Found {len(gse_ids)} studies to sync")
+        total_yielded = 0
         
-        for gse_id in gse_ids:
-            try:
-                metadata = self._repo.fetch_study_metadata(gse_id)
-                if metadata:
-                    record = self._to_sync_record(gse_id, metadata)
-                    yield record
-            except Exception as e:
-                logger.error(f"[GEO-SYNC] Error fetching {gse_id}: {e}")
-                continue
+        for page in range(self.MAX_PAGES):
+            # P1 FIX: Rate limit between pages
+            if page > 0:
+                time.sleep(self.PAGE_RATE_LIMIT)
+            
+            retstart = page * self.PAGE_SIZE
+            gse_ids = self._repo._search_geo(
+                query, 
+                max_results=self.PAGE_SIZE,
+                retstart=retstart  # Add pagination parameter
+            )
+            
+            if not gse_ids:
+                logger.info(f"[GEO-SYNC] No more results at page {page}")
+                break
+            
+            logger.info(f"[GEO-SYNC] Page {page+1}: Processing {len(gse_ids)} studies")
+            
+            for gse_id in gse_ids:
+                try:
+                    metadata = self._repo.fetch_study_metadata(gse_id)
+                    if metadata:
+                        record = self._to_sync_record(gse_id, metadata)
+                        yield record
+                        total_yielded += 1
+                except Exception as e:
+                    logger.error(f"[GEO-SYNC] Error fetching {gse_id}: {e}")
+                    continue
+            
+            # Stop if we got fewer results than page size (last page)
+            if len(gse_ids) < self.PAGE_SIZE:
+                break
+        
+        logger.info(f"[GEO-SYNC] Completed: {total_yielded} studies synced")
     
     def compute_checksum(self, record: Dict[str, Any]) -> str:
         """Compute MD5 hash for change detection."""

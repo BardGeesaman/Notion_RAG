@@ -352,13 +352,13 @@ Items identified during feature development but deferred for future sessions.
   - Effort: 1-2 days
 
 ### External Data Integration
-- ⏳ **External Sync Phase 2** - Additional adapters and automation
-  - UniProt incremental sync adapter
-  - KEGG incremental sync adapter
-  - GEO incremental improvements
-  - Auto-conflict resolution for sync jobs
+- ✅ **External Sync Phase 2** (2025-01-01)
+  - KEGG cache refresh adapter with rate limiting
+  - Auto-conflict resolution engine (4 strategies)
+  - UniProt incremental sync (HTTP 304 support)
+  - GEO pagination with rate limiting (P1 fix)
+  - 3 new Celery tasks, 38 tests
   - *See also: ENA/Genomics Ingestion in Strategic Backlog*
-  - Effort: 1 week
 
 ### AI & Extraction
 - ✅ **AI Extraction Phase 2** (2025-01-01)
