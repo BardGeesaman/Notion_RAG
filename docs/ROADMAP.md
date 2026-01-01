@@ -308,10 +308,10 @@ Items identified during feature development but deferred for future sessions.
   - Priority files: imaging.py (13), entity_reviews.py (6), collaboration.py (2)
   - Effort: 2-3 days
 
-- ⏳ **Dead Code Final Triage** (7 uncertain candidates)
-  - Manual review of 7 deferred items from vulture scan
-  - Determine: keep (document why) or remove
-  - Effort: 1 day
+- ✅ **Dead Code Final Triage** (2025-01-01)
+  - 13 items removed, 4 whitelisted with justification
+  - 88% total reduction (99 → 12 candidates)
+  - Vulture baseline established
 
 - ⏳ **Dependency Updates** (33 outdated packages)
   - Batch A: Security-fix upgrades (when CVE patches available)

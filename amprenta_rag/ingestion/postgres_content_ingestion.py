@@ -33,7 +33,6 @@ def _calculate_content_hash(content: str) -> str:
 
 def _content_already_ingested(
     content_id: str,
-    current_hash: Optional[str] = None,
     force: bool = False,
 ) -> tuple[bool, Optional[str]]:
     """
@@ -53,16 +52,6 @@ def _content_already_ingested(
     # Content will be reprocessed if ingested multiple times
     # TODO: Implement pgvector-based deduplication if needed
     return False, None
-
-    # Content has changed - need to delete old vectors
-    logger.info(
-        "[INGEST][POSTGRES-CONTENT] Content %s has changed (stored hash=%s, current hash=%s); "
-        "deleting old vectors and re-ingesting",
-        content_id[:8],
-        stored_hash[:8] if stored_hash else "None",
-        current_hash[:8],
-    )
-    return False, stored_hash
 
 
 def _delete_content_vectors(content_id: str) -> None:

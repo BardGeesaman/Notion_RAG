@@ -97,3 +97,14 @@ def streamlit_server():
     ...
 
 
+# Signal handler parameters (required by signal API but not used)
+signum = None
+
+# Stub function parameters (API compatibility for removed features)
+db_id = None
+
+# Dashboard variables that may be used conditionally
+touch_friendly = None
+max_concurrent = None
+
+

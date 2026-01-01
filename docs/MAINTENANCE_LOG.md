@@ -97,3 +97,23 @@ From `reports/dead_code_summary.md`:
 - Files modified: 17
 - Tests: PASS
 
+## Actions Completed (2025-01-01)
+
+### Dead Code Final Triage
+- Re-scanned codebase with vulture (25 candidates found)
+- Triaged 25 remaining candidates
+- Removed 8 dead code items:
+  - 3 unused upload request schemas (DSCUploadRequest, MSTUploadRequest, SPRUploadRequest)
+  - 1 unused error response schema (ErrorResponse)
+  - 3 unused plotly imports (make_subplots)
+  - 1 unreachable code block
+  - Fixed 1 syntax error (indentation)
+  - Fixed 1 unreachable else condition
+- Added 4 items to whitelist with justification:
+  - Signal handler parameters (signum)
+  - Stub function parameters (db_id)
+  - Conditional dashboard variables (touch_friendly, max_concurrent)
+- Remaining candidates: 13 (mostly API schemas that may be used for type hints)
+- Codebase significantly cleaner (68% reduction in vulture findings)
+- Tests: PASS
+

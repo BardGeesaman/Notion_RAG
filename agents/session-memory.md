@@ -54,6 +54,13 @@
   - 3 new unit tests added to `test_activity_service.py`
   - Reviewer approved with P2 observation (add COMPOUND_ADDED test for completeness)
 
+* [2025-01-01] – **Dead Code Final Triage**:
+  - Completed dead code audit from December 2024 (99 → 12 candidates, 88% reduction)
+  - Removed 13 items: unused schemas, imports, unreachable code across 9 files
+  - Whitelisted 4 items with justifications (signal handlers, compat stubs)
+  - Vulture baseline established at 12 acceptable candidates
+  - Reviewer approved
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

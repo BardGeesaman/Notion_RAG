@@ -26,12 +26,9 @@ from amprenta_rag.api.schemas import (
     BiophysicalCompareResponse,
     BiophysicalUploadResponse,
     DSCExperimentResponse,
-    DSCUploadRequest,
     MSTExperimentResponse,
-    MSTUploadRequest,
     RefitRequest,
     SPRExperimentResponse,
-    SPRUploadRequest,
 )
 from amprenta_rag.biophysical.ingest_service import (
     get_compound_biophysical_profile,

@@ -20,7 +20,6 @@ from amprenta_rag.api.schemas import (
     GenerativeModelsResponse,
     GenerativeModelInfo,
     MoleculeSchema,
-    ErrorResponse,
 )
 from amprenta_rag.ml.generative.service import GenerativeChemistryService, GenerativeModelNotFoundError
 from amprenta_rag.logging_utils import get_logger

@@ -205,9 +205,9 @@ def render_evidence_links_tab() -> None:
     
     if links:
         df = pd.DataFrame(links)
-            st.dataframe(df, use_container_width=True, hide_index=True)
-        else:
-            st.info("No IP links found for this entity")
+        st.dataframe(df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No IP links found for this entity")
 
 
 if __name__ == "__main__":

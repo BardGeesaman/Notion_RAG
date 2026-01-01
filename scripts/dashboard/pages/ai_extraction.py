@@ -78,7 +78,7 @@ def render_ai_extraction_page() -> None:
             col1, col2 = st.columns([3, 1])
             with col2:
                 refresh = st.button("Refresh status")
-            status = _fetch_job(job_id) if refresh or True else None
+            status = _fetch_job(job_id)
             if status:
                 pct = float(status.get("progress_pct") or 0.0)
                 st.progress(min(1.0, max(0.0, pct / 100.0)))

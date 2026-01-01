@@ -9,8 +9,7 @@ from sqlalchemy import func
 from scripts.dashboard.utils.accessibility import (
     render_skip_link,
     add_heading_structure,
-    ensure_minimum_contrast,
-    render_status_with_icon
+    ensure_minimum_contrast
 )
 
 from amprenta_rag.database.models import (
@@ -32,8 +31,6 @@ from amprenta_rag.utils.activity import (
     get_recent_experiments,
 )
 from amprenta_rag.utils.widgets import (
-    get_experiment_count,
-    get_compound_count,
     get_sample_count,
     get_discovery_count,
 )
