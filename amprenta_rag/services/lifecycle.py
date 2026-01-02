@@ -273,3 +273,88 @@ def execute_bulk_archive(
         reason=reason,
         actor_id=actor_id,
     )
+
+
+def execute_bulk_delete(
+    entity_type: str,
+    entity_ids: List[UUID],
+    reason: str,
+    actor_id: Optional[UUID] = None,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """
+    Execute permanent deletion of entities.
+    
+    Args:
+        dry_run: If True, return impact preview without deleting
+    """
+    results = {
+        "total": len(entity_ids),
+        "deleted": 0,
+        "failed": 0,
+        "errors": [],
+        "dry_run": dry_run,
+    }
+    
+    if dry_run:
+        # Return aggregated impact preview
+        return bulk_delete_preview(entity_type, entity_ids)
+    
+    model = ENTITY_MODELS.get(entity_type)
+    if not model:
+        results["errors"].append({"error": f"Unknown entity type: {entity_type}"})
+        return results
+    
+    with db_session() as db:
+        for entity_id in entity_ids:
+            try:
+                entity = db.query(model).filter(model.id == entity_id).first()
+                if not entity:
+                    results["failed"] += 1
+                    results["errors"].append({"id": str(entity_id), "error": "Not found"})
+                    continue
+                
+                # Get entity name for audit
+                entity_name = getattr(entity, "name", None) or str(entity_id)
+                
+                # Cascade: Remove from association tables first
+                _cascade_delete_associations(db, entity_type, entity_id)
+                
+                # Delete main entity
+                db.delete(entity)
+                
+                # Audit log entry
+                audit_entry = AuditLog(
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    action="permanent_delete",
+                    old_value={"name": entity_name},
+                    new_value={"reason": reason, "deleted_by": str(actor_id) if actor_id else None},
+                    user_id=actor_id,
+                )
+                db.add(audit_entry)
+                
+                results["deleted"] += 1
+                
+            except Exception as e:
+                results["failed"] += 1
+                results["errors"].append({"id": str(entity_id), "error": str(e)})
+        
+        db.commit()
+    
+    logger.info(f"Bulk delete: {results['deleted']}/{results['total']} {entity_type}s deleted")
+    return results
+
+
+def _cascade_delete_associations(db: Session, entity_type: str, entity_id: UUID) -> None:
+    """Remove entity from all association tables before deletion."""
+    if entity_type == "dataset":
+        db.execute(dataset_feature_assoc.delete().where(dataset_feature_assoc.c.dataset_id == entity_id))
+        db.execute(dataset_signature_assoc.delete().where(dataset_signature_assoc.c.dataset_id == entity_id))
+        db.execute(experiment_dataset_assoc.delete().where(experiment_dataset_assoc.c.experiment_id == entity_id))
+    elif entity_type == "experiment":
+        db.execute(experiment_dataset_assoc.delete().where(experiment_dataset_assoc.c.experiment_id == entity_id))
+    elif entity_type == "signature":
+        db.execute(dataset_signature_assoc.delete().where(dataset_signature_assoc.c.signature_id == entity_id))
+        db.execute(signature_feature_assoc.delete().where(signature_feature_assoc.c.signature_id == entity_id))
+    # Compound associations handled by FK cascade or separate logic

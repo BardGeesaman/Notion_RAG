@@ -24,6 +24,7 @@ from amprenta_rag.services.lifecycle import (
     bulk_update_status,
     bulk_delete_preview,
     execute_bulk_archive,
+    execute_bulk_delete,
 )
 
 router = APIRouter(prefix="/lifecycle", tags=["lifecycle"])
@@ -92,6 +93,24 @@ class BulkArchiveRequest(BaseModel):
     entity_ids: List[UUID]
     reason: str = Field(..., min_length=1, max_length=500)
     confirmed: bool = Field(False, description="Must be True to execute")
+
+
+class BulkDeleteRequest(BaseModel):
+    """Request for bulk permanent delete."""
+    entity_type: str
+    entity_ids: List[UUID]
+    reason: str = Field(..., min_length=1, max_length=500)
+    confirmed: bool = Field(False, description="Must be True to execute")
+    dry_run: bool = Field(False, description="Preview only, no deletion")
+
+
+class BulkDeleteResponse(BaseModel):
+    """Response for bulk delete."""
+    total: int
+    deleted: int
+    failed: int
+    errors: List[dict]
+    dry_run: bool
 
 
 class LifecycleStatsResponse(BaseModel):
@@ -373,3 +392,46 @@ def get_lifecycle_audit(
                 for e in entries
             ],
         )
+
+
+@router.delete(
+    "/bulk/delete",
+    response_model=BulkDeleteResponse,
+    summary="Bulk permanent delete (DESTRUCTIVE)",
+)
+def bulk_delete(
+    request: BulkDeleteRequest,
+    current_user: User = Depends(get_current_user),
+) -> BulkDeleteResponse:
+    """
+    Permanently delete entities. CANNOT BE UNDONE.
+    
+    Requires `confirmed: true` to execute. Use `dry_run: true` for preview.
+    """
+    if not request.dry_run and not request.confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Set confirmed=true to execute permanent delete, or dry_run=true for preview.",
+        )
+    
+    if request.entity_type not in ["dataset", "experiment", "compound", "signature"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid entity_type: {request.entity_type}",
+        )
+    
+    if len(request.entity_ids) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 100 entities per bulk delete",
+        )
+    
+    results = execute_bulk_delete(
+        entity_type=request.entity_type,
+        entity_ids=request.entity_ids,
+        reason=request.reason,
+        actor_id=current_user.id,
+        dry_run=request.dry_run,
+    )
+    
+    return BulkDeleteResponse(**results)
