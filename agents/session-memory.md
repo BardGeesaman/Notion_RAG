@@ -1,5 +1,23 @@
 # Session Memory
 
+## January 2, 2025 - IGV.js Genome Browser Complete
+
+* [2025-01-02] – **IGV.js Genome Browser Integration (P2 Genomics)**:
+  - **Batch 1**: Byte-range file streaming endpoints (`genomics.py`)
+    - GET /alignments/{id}/file - RFC 7233 compliant byte-range streaming
+    - GET /alignments/{id}/index - Index file serving
+    - Path traversal protection (P1 security requirement)
+  - **Batch 2**: CORS `expose_headers` for browser byte-range access (`main.py`)
+  - **Batch 3**: Enhanced genome browser UI (`genome_browser.py`)
+    - Alignment file selector from database
+    - Multi-track support
+    - CRAM reference URL input (P1 requirement)
+  - **Batch 4**: Quick launch from alignments page (`alignments.py`)
+  - **Batch 5**: Test suite (6 API tests, 4 E2E tests)
+  - Commits: d6cd11e, f78e42a, ae7e69e, 4c44526, e2366f8
+  - Tests: 6 API tests, 100% pass rate
+  - Reviewer approved with no blocking issues
+
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
 * [2025-01-01] – **Secrets Management Overhaul (P0 Security)**:
@@ -1800,13 +1818,15 @@ The system has reached **production maturity** with **65+ features**, **1905+ un
    ```
 
 **Quick context for next session:**
-- 1905+ tests, ~92% coverage, 54+ commits (sessions 2025-12-30/31), 781 tests added
+- 1911+ tests, ~92% coverage, 59+ commits (sessions 2025-01-02/01/12-30/31), 787 tests added
+- Session 2025-01-02: IGV.js Genome Browser integration complete
+- Session 2025-01-01: BAM/CRAM Alignment Viewing + Strategic Planning + Secrets Management + Activity Feed + Tech Debt Cleanup complete
 - Session 2025-12-31: 5 features (Collaborative Notebook Editing RTC, GEO Incremental Harvester, Provenance Ledger Enhancement, Enhanced System Administration Tools, Automated Backup & Disaster Recovery complete)
 - Session 2025-12-30: 11 features (Async SQLAlchemy Infrastructure Phase 4, Async Compute APIs Phase 3, Async External APIs Phase 2, Async LLM Endpoints Phase 1, Job Queue Test Suite, Imaging Metadata & HCS, Biophysical Assays, Flow Cytometry, Generative Chemistry, Navigation UI, Image Analysis) + Context Policy Update
 - Session 2025-12-29: 10 features (Test Coverage, UI Dev, Tech Debt, Semantic Scholar, Publication Extraction, Projector, Chemical Sketcher, Scientist's Cockpit, Job Queue System, Backup & Disaster Recovery)
 - 100% pass rate, zero skipped tests, zero technical debt
 - Current Policies: No Deferral (complete all work), 50% Context Alert (alert Chairman at 50% - updated 2025-12-30)
-- Infrastructure: Celery background tasks + S3 backup storage + Imaging metadata (OME-TIFF) + Biophysical assays (SPR/MST/DSC) + Flow cytometry + Image analysis (CellPose) + Generative chemistry operational
+- Infrastructure: Celery background tasks + S3 backup storage + Imaging metadata (OME-TIFF) + Biophysical assays (SPR/MST/DSC) + Flow cytometry + Image analysis (CellPose) + Generative chemistry + IGV.js genome browser operational
 - Next suggested focus: Continue with remaining ROADMAP items
 
 ---
