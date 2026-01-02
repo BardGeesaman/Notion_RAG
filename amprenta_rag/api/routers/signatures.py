@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from amprenta_rag.api.dependencies import get_database_session
 from amprenta_rag.auth.signatures import create_signature, get_signatures, verify_signature
 from amprenta_rag.api.rate_limit import limiter
+from amprenta_rag.auth.lockout import record_failed_attempt, is_locked_out, clear_failed_attempts
 
 router = APIRouter()
 
@@ -61,11 +62,21 @@ async def sign_document(
     sign_request: SignRequest,
     db: Session = Depends(get_database_session),
 ) -> SignResponse:
-    """
-    Create electronic signature.
-
-    Requires user password for authentication.
-    """
+    """Create electronic signature with brute force protection."""
+    # Build lockout identifier from IP
+    client_ip = request.client.host if request.client else "unknown"
+    identifier = f"sign:{client_ip}"
+    
+    # Check lockout status
+    locked, remaining = is_locked_out(identifier, db)
+    if locked:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed attempts. Try again in {remaining} seconds.",
+            headers={"Retry-After": str(remaining)},
+        )
+    
+    # Attempt signature creation
     signature = create_signature(
         user_id=str(sign_request.user_id),
         action=sign_request.action,
@@ -77,7 +88,11 @@ async def sign_document(
     )
     
     if not signature:
+        record_failed_attempt(identifier, db)
         raise HTTPException(status_code=401, detail="Authentication failed - incorrect password")
+    
+    # Success - clear any failed attempts
+    clear_failed_attempts(identifier, db)
     
     return SignResponse(
         signature_id=signature.id,
