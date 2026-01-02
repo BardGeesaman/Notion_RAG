@@ -37,6 +37,10 @@ def analyze_target(
     current_user: User = Depends(get_current_user),
 ):
     """Analyze target molecule and return synthesis routes."""
+    # ADD THIS VALIDATION
+    if not request.smiles or not request.smiles.strip():
+        raise HTTPException(status_code=400, detail="SMILES cannot be empty")
+    
     logger.info(f"Retrosynthesis analysis requested for {request.smiles[:20]}...")
     
     planner = RetrosynthesisPlanner(backend="mock")
