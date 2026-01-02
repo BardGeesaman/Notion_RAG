@@ -104,6 +104,8 @@ class SynthesisStepSchema(BaseModel):
     reaction_type: str
     conditions: str
     confidence: float = Field(ge=0.0, le=1.0)
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SynthesisRouteSchema(BaseModel):
@@ -111,6 +113,8 @@ class SynthesisRouteSchema(BaseModel):
     steps: List[SynthesisStepSchema]
     total_steps: int
     confidence: float = Field(ge=0.0, le=1.0)
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SynthesisTreeSchema(BaseModel):
@@ -118,6 +122,8 @@ class SynthesisTreeSchema(BaseModel):
     routes: List[SynthesisRouteSchema]
     analysis_time_ms: int
     num_alternatives: int
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RetrosynthesisRequest(BaseModel):
@@ -136,12 +142,16 @@ class RouteScoreSchema(BaseModel):
     complexity_score: float
     availability_score: float
     estimated_cost: float
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BuildingBlockResultSchema(BaseModel):
     smiles: str
     available: bool
     vendors: List[dict]
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AnnotationCreate(BaseSchema):
