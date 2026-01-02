@@ -97,6 +97,53 @@ def validate_url(v: str) -> str:
     return v
 
 
+# Retrosynthesis schemas
+class SynthesisStepSchema(BaseModel):
+    reactants: List[str]
+    product: str
+    reaction_type: str
+    conditions: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class SynthesisRouteSchema(BaseModel):
+    id: str
+    steps: List[SynthesisStepSchema]
+    total_steps: int
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class SynthesisTreeSchema(BaseModel):
+    target: str
+    routes: List[SynthesisRouteSchema]
+    analysis_time_ms: int
+    num_alternatives: int
+
+
+class RetrosynthesisRequest(BaseModel):
+    smiles: str
+    max_depth: int = Field(default=5, ge=1, le=10)
+
+
+class RetrosynthesisResponse(BaseModel):
+    analysis_id: str
+    tree: SynthesisTreeSchema
+
+
+class RouteScoreSchema(BaseModel):
+    total_score: float = Field(ge=0.0, le=100.0)
+    step_count: int
+    complexity_score: float
+    availability_score: float
+    estimated_cost: float
+
+
+class BuildingBlockResultSchema(BaseModel):
+    smiles: str
+    available: bool
+    vendors: List[dict]
+
+
 class AnnotationCreate(BaseSchema):
     """Schema for creating an annotation/note on an entity."""
 
@@ -105,7 +152,6 @@ class AnnotationCreate(BaseSchema):
 
 
 # Import PriorConfig from analysis layer to avoid circular imports
-from amprenta_rag.analysis.models import PriorConfig
 
 
 # ============================================================================
