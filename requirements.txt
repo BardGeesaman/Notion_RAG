@@ -213,3 +213,4 @@ scikit-image>=0.21
 tifffile>=2023.0
 pytest-asyncio>=1.3.0
 slowapi>=0.1.9
+nh3>=0.2.0

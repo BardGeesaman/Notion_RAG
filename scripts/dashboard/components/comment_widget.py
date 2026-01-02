@@ -7,6 +7,7 @@ from uuid import UUID
 import streamlit as st
 from amprenta_rag.utils.comments import add_comment, get_comments, delete_comment, update_comment
 from amprenta_rag.auth.session import get_current_user
+from amprenta_rag.utils.sanitize import escape_html
 from scripts.dashboard.db_session import db_session
 
 
@@ -73,13 +74,17 @@ def _highlight_mentions(content: str) -> str:
         content: Comment text
         
     Returns:
-        HTML string with highlighted mentions
+        HTML string with highlighted mentions (XSS-safe)
     """
+    # FIRST escape HTML to prevent XSS
+    safe_content = escape_html(content)
+    
+    # THEN apply highlighting to escaped content
     pattern = r'@([a-zA-Z0-9_-]+)'
     highlighted = re.sub(
         pattern,
         r'<span style="color: #1f77b4; font-weight: bold; background-color: #e3f2fd; padding: 2px 4px; border-radius: 3px;">@\1</span>',
-        content
+        safe_content
     )
     return highlighted
 
