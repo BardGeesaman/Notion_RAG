@@ -114,6 +114,39 @@ class GeneticVariant(Base):
     experiment: Mapped[Optional["Experiment"]] = relationship("Experiment", backref="variants")
 
 
+class AlignmentFile(Base):
+    """BAM/CRAM alignment file metadata and statistics."""
+
+    __tablename__ = "alignment_files"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    filename = Column(String(500), nullable=False)
+    file_path = Column(String(1000), nullable=False)
+    index_file_path = Column(String(1000), nullable=True)
+    file_format = Column(String(10), nullable=False)  # "BAM" or "CRAM"
+    has_index = Column(Boolean, default=False, nullable=False, index=True)
+    
+    # Header metadata
+    reference_genome = Column(String(100), nullable=True)
+    num_references = Column(Integer, nullable=True)
+    read_groups = Column(JSON, nullable=True)
+    
+    # Stats
+    total_reads = Column(Integer, nullable=True)  # Use Integer, BigInteger if needed
+    mapped_reads = Column(Integer, nullable=True)
+    unmapped_reads = Column(Integer, nullable=True)
+    duplicate_rate = Column(Float, nullable=True)
+    mean_coverage = Column(Float, nullable=True)
+    
+    # Relationships
+    experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True, index=True)
+    created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    experiment: Mapped[Optional["Experiment"]] = relationship("Experiment", backref="alignment_files")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+
+
 class CostEntry(Base):
     """Cost tracking entries for projects and experiments."""
 
@@ -141,6 +174,7 @@ __all__ = [
     "RetentionPolicy",
     "OntologyTerm",
     "GeneticVariant",
+    "AlignmentFile",
     "CostEntry",
 ]
 

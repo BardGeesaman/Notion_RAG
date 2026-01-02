@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish, Data Lifecycle Management P1, UI Feature Gaps Comprehensive Fix, AI Extraction Security, ENA/Genomics P1 Package added)
+**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish, Data Lifecycle Management P1, UI Feature Gaps Comprehensive Fix, AI Extraction Security, ENA/Genomics P1 Package, BAM/CRAM Alignment Viewing added)
 
 Simple status legend:
 - ✅ DONE
@@ -436,6 +436,11 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Explicit pagination indicator for VCF preview
 - [ ] Celery task integration documentation for ENA ingest
 
+### BAM/CRAM P2 Observations
+- [ ] CRAM reference FASTA handling (may require ref genome for decoding)
+- [ ] Auto-index Celery task (pysam.index() if no index uploaded)
+- [ ] samtools flagstat for files >10GB (performance optimization)
+
 ---
 
 ### ID Mapping Enhancements (P2 - Future)
@@ -596,8 +601,8 @@ Items originally scoped out or identified as major future initiatives. These rep
 |----------|------|-------------|--------|--------------|
 | ✅ **P1** | **VCF File Support** | VCF parser, upload API, variants UI tab | **COMPLETE** | 2025-01-01 |
 | ✅ **P1** | **ENA Data Discovery** | Search/browse/ingest dashboard | **COMPLETE** | 2025-01-01 |
-| **P2** | **BAM/CRAM alignment viewing** | Binary alignment file support | 2 weeks | VCF complete |
-| **P2** | **IGV.js Genome Browser** | Embedded genome visualization, BAM/VCF track support | 2 weeks | ENA complete |
+| ✅ **P2** | **BAM/CRAM alignment viewing** | Parser, API, 4-tab dashboard | **COMPLETE** | 2025-01-01 |
+| **P2** | **IGV.js Genome Browser** | Embedded genome visualization, BAM/VCF track support | 2 weeks | BAM/CRAM complete |
 | **P2** | **Variant annotation pipeline** | VEP/SnpEff integration | 2-3 weeks | VCF complete |
 | **P3** | **GWAS Integration** | GWAS Catalog import, LD analysis, PRS calculation | 3-4 weeks | Variant pipeline |
 

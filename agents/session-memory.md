@@ -275,6 +275,14 @@
   - **Tests**: 16 total (3 VCF parser + 5 API + 8 E2E)
   - P2 observations added: VCF.gz support, pagination, Celery docs
 
+* [2025-01-01] – **BAM/CRAM Alignment Viewing**:
+  - **Parser**: `bam_parser.py` with 5 functions (check_index_exists, parse_bam_header, get_alignment_stats, fetch_reads, get_coverage).
+  - **Model**: `AlignmentFile` with 18 fields including `index_file_path`, `has_index` for index file support.
+  - **API**: 5 new endpoints in `genomics.py` (upload, list, details, reads, coverage) with magic byte validation, 500MB limit, pagination (1000 cap).
+  - **Dashboard**: `alignments.py` with 4 tabs (Browse, Upload, View, Stats) in Discovery group.
+  - **Tests**: 12 tests (4 parser, 4 API, 4 E2E covering all tabs).
+  - All P1 fixes from review applied (index support, pagination, storage config).
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners
