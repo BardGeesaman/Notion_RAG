@@ -71,9 +71,14 @@ pip install -r requirements-structural.txt
 
 **Note**: Structural biology features are optional. The core platform works without these dependencies.
 
-# Configure (see docs/CONFIGURATION.md)
+# Configure environment (choose one):
+# Option A: direnv (recommended - auto-activates conda + sets env vars)
+cp .envrc.example .envrc
+direnv allow
+
+# Option B: Traditional .env file
 cp .env.example .env
-# Edit .env with your API keys
+# Edit with your API keys
 
 # Verify setup
 python scripts/validate_configuration.py
@@ -523,13 +528,19 @@ This project uses `direnv` to automatically activate the `myenv` conda environme
    source ~/.zshrc  # or ~/.bashrc
    ```
 
-4. **Allow direnv in the project directory**:
+4. **Copy and configure the environment template**:
    ```bash
    cd /path/to/RAG
+   cp .envrc.example .envrc
+   # Edit .envrc with your real values (see comments in file)
+   ```
+
+5. **Allow direnv in the project directory**:
+   ```bash
    direnv allow
    ```
 
-5. **Verify auto-activation**:
+6. **Verify auto-activation**:
    ```bash
    # cd into project - should auto-activate myenv
    cd /path/to/RAG

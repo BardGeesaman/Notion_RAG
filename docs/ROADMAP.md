@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
+**Last Updated**: 2025-01-02 (Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
 
 Simple status legend:
 - ✅ DONE
@@ -397,6 +397,9 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Track `py` package removal when pytest plugins update
 - [ ] Add mypy CI check for typed files to prevent regression
 - [ ] Type Coverage Phase 2: activity.py, review_threads.py, compounds.py
+- [ ] **Schema Inheritance Audit** - 21 schemas inherit from BaseModel instead of BaseSchema (missing from_attributes=True). Refactor to consistent inheritance pattern.
+- [ ] **Pre-commit Hooks** - Add checks for: module-level celery imports, schemas inheriting BaseModel directly, datetime.utcnow() usage
+- [ ] **Lazy Import Pattern Enforcement** - Lint rule to prevent module-level imports of celery, heavy database modules in API routers
 
 ### CI/CD & Secrets Scanning
 - [ ] Fix detect-secrets CI failures on push (false positives in test files/docs)
@@ -680,7 +683,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 |----------|------|-------------|--------|--------------|
 | **P1** | **Target Management** | Target validation tracking, assay linkage, druggability scores, competitive landscape per target | 3-4 weeks | None |
 | **P1** | **SAR Analysis Module** | Activity cliff detection, R-group decomposition tables, potency trend visualization, matched molecular pairs | 3-4 weeks | Compounds |
-| **P2** | **Retrosynthesis Advisor** | ASKCOS/IBM RXN API integration, route scoring, reagent availability check, cost estimation | 4-6 weeks | Chemistry |
+| ✅ **P2** | **Retrosynthesis Advisor** | Mock service MVP, 4 API endpoints, Cytoscape tree viz, 20 tests | **COMPLETE** | 2025-01-02 |
 | **P2** | **Compound Inventory** | Physical sample tracking, storage locations, tube/plate barcodes, request/fulfillment workflow | 2-3 weeks | Compounds |
 
 ### Data Governance

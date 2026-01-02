@@ -31,9 +31,11 @@ htmlcov/
 # Environment variables
 .env
 .env.local
+.envrc
 .envrc.local
-# Allow .env.example to be tracked
+# Allow example files to be tracked
 !.env.example
+!.envrc.example
 
 # Terraform (secrets in tfvars)
 *.tfvars

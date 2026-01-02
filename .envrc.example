@@ -1,0 +1,92 @@
+# Amprenta RAG - Local Development Environment
+# =============================================
+# Copy this file to .envrc and fill in values:
+#   cp .envrc.example .envrc
+#   direnv allow
+#
+# NEVER commit .envrc with real secrets!
+
+# =============================================================================
+# CONDA ENVIRONMENT (auto-activation)
+# =============================================================================
+if command -v conda >/dev/null 2>&1; then
+  if [ "$CONDA_DEFAULT_ENV" != "myenv" ]; then
+    conda activate myenv
+  fi
+fi
+
+# =============================================================================
+# REQUIRED FOR ALL TESTS
+# These must be set or imports will fail at module load time
+# =============================================================================
+
+# Electronic signature HMAC key (32+ hex chars)
+# Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+export SIGNATURE_SECRET_KEY="your-signature-key-here"
+
+# JWT authentication signing key (32+ hex chars)
+# Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+export JWT_SECRET_KEY="your-jwt-key-here"
+
+# =============================================================================
+# DATABASE (required for integration tests)
+# =============================================================================
+
+# Option 1: Individual credentials
+# export POSTGRES_USER="postgres"
+# export POSTGRES_PASSWORD="your-password"
+# export POSTGRES_HOST="localhost"
+# export POSTGRES_PORT="5432"
+# export POSTGRES_DB="amprenta"
+
+# Option 2: Full connection URL (takes precedence)
+# export DATABASE_URL="postgresql://user:password@localhost:5432/amprenta"
+
+# =============================================================================
+# EXTERNAL APIS (optional - tests skip if not set)
+# =============================================================================
+
+# OpenAI - for LLM integration tests
+# export OPENAI_API_KEY="sk-..."
+
+# NCBI - required for genomics features
+# export NCBI_EMAIL="your-email@example.com"
+
+# =============================================================================
+# DASHBOARD & AUTH
+# =============================================================================
+
+# Disable auth for local dashboard testing (default: false)
+# export DISABLE_AUTH="true"
+
+# Environment identifier (dev/staging/production)
+# Controls HSTS headers and other security features
+export ENVIRONMENT="dev"
+
+# =============================================================================
+# OPTIONAL SERVICES
+# =============================================================================
+
+# Redis for rate limiting (falls back to in-memory if not set)
+# export REDIS_URL="redis://localhost:6379/0"
+
+# Celery broker (defaults to Redis URL or in-memory)
+# export CELERY_BROKER_URL="redis://localhost:6379/1"
+
+# =============================================================================
+# TEST CONFIGURATION
+# =============================================================================
+
+# Run Celery tasks synchronously in tests
+export CELERY_TASK_ALWAYS_EAGER="true"
+
+# =============================================================================
+# QUICK START (for local development only - NOT for production)
+# =============================================================================
+# Uncomment these lines for quick local setup with dummy values:
+#
+# export SIGNATURE_SECRET_KEY="local-dev-signature-key-not-for-production"
+# export JWT_SECRET_KEY="local-dev-jwt-key-not-for-production"
+# export DISABLE_AUTH="true"
+# export ENVIRONMENT="dev"
+
