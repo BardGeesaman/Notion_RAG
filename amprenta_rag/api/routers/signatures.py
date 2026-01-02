@@ -6,7 +6,7 @@ Provides signature creation, verification, and querying.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -17,19 +17,20 @@ from amprenta_rag.api.dependencies import get_database_session
 from amprenta_rag.auth.signatures import create_signature, get_signatures, verify_signature
 from amprenta_rag.api.rate_limit import limiter
 from amprenta_rag.auth.lockout import record_failed_attempt, is_locked_out, clear_failed_attempts
+from amprenta_rag.api.schemas import StrictBaseSchema
 
 router = APIRouter()
 
 
-class SignRequest(BaseModel):
-    """Request for creating electronic signature."""
+class SignRequest(StrictBaseSchema):
+    """Request for electronic signature (strict validation)."""
 
     user_id: UUID
     action: str
     entity_type: str
     entity_id: UUID
-    meaning: str
-    password: str
+    password: str  # Sensitive!
+    meaning: Optional[str] = None
 
 
 class SignResponse(BaseModel):

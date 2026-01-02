@@ -7,6 +7,7 @@ mapping between domain models and API representations.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple
 from uuid import UUID
@@ -33,6 +34,67 @@ class BaseSchema(BaseModel):
             datetime: lambda v: v.isoformat(),
         }
     )
+
+
+class StrictBaseSchema(BaseModel):
+    """Strict schema for security-sensitive endpoints.
+    
+    Use this for endpoints that handle:
+    - Authentication/passwords
+    - URLs/external resources
+    - Chemical structures (SMILES)
+    - File paths
+    
+    Strict mode prevents type coercion (e.g., "1" → 1) which can
+    bypass validation in edge cases.
+    """
+    
+    model_config = ConfigDict(
+        from_attributes=True,
+        strict=True,
+        json_encoders={
+            UUID: str,
+            datetime: lambda v: v.isoformat(),
+        }
+    )
+
+
+def validate_safe_string(v: str, max_length: int = 10000) -> str:
+    """Validate string is safe (no control chars, reasonable length)."""
+    if not v:
+        return v
+    # Remove null bytes and control characters (except newline, tab)
+    v = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', v)
+    if len(v) > max_length:
+        raise ValueError(f"String exceeds maximum length of {max_length}")
+    return v
+
+
+def validate_smiles(v: str) -> str:
+    """Validate SMILES string is safe and well-formed."""
+    if not v or not v.strip():
+        raise ValueError("SMILES cannot be empty")
+    v = v.strip()
+    # Basic SMILES character validation (conservative)
+    if not re.match(r'^[A-Za-z0-9@+\-\[\]()=#%.$\\/:*]+$', v):
+        raise ValueError("Invalid characters in SMILES")
+    if len(v) > 5000:
+        raise ValueError("SMILES too long (max 5000 chars)")
+    return v
+
+
+def validate_url(v: str) -> str:
+    """Validate URL is safe (no javascript:, data:, etc.)."""
+    if not v:
+        return v
+    v = v.strip()
+    # Block dangerous URL schemes
+    dangerous_schemes = ['javascript:', 'data:', 'vbscript:', 'file:']
+    v_lower = v.lower()
+    for scheme in dangerous_schemes:
+        if v_lower.startswith(scheme):
+            raise ValueError(f"Dangerous URL scheme: {scheme}")
+    return v
 
 
 class AnnotationCreate(BaseSchema):

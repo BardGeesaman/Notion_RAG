@@ -13,11 +13,12 @@ import socket
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from amprenta_rag.api.dependencies import get_current_user
 from amprenta_rag.database.models import User
 from amprenta_rag.api.rate_limit import limiter
+from amprenta_rag.api.schemas import StrictBaseSchema, validate_url
 
 router = APIRouter(prefix="/extraction", tags=["extraction"])
 
@@ -105,9 +106,14 @@ class OCRResponse(BaseModel):
     error: Optional[str] = None
 
 
-class ScrapeRequest(BaseModel):
-    """Web scraping request."""
+class ScrapeRequest(StrictBaseSchema):
+    """Request to scrape a URL (strict validation)."""
     url: str
+    
+    @field_validator('url')
+    @classmethod
+    def validate_scrape_url(cls, v):
+        return validate_url(v)
 
 
 class ScrapeResponse(BaseModel):
