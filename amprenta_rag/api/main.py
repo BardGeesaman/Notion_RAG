@@ -5,6 +5,7 @@ This module sets up the FastAPI application with all routes, middleware,
 and configuration.
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -100,11 +101,32 @@ from amprenta_rag.config import get_config
 # Get configuration
 cfg = get_config()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI lifespan with startup validation."""
+    import logging
+    from amprenta_rag.utils.config_check import validate_required_secrets
+    
+    logger = logging.getLogger(__name__)
+    
+    # Validate secrets on startup
+    secrets_valid, missing = validate_required_secrets()
+    if not secrets_valid:
+        logger.critical(f"Missing required secrets: {missing}")
+        raise RuntimeError(f"Cannot start: missing secrets - {', '.join(missing)}")
+    
+    logger.info("Secret validation passed - starting application")
+    yield
+    logger.info("Application shutdown")
+
+
 # Create FastAPI app
 app = FastAPI(
     title="Amprenta Multi-Omics Platform API",
     description="REST API for the multi-omics research platform",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Configure CORS
