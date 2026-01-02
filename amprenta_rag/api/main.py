@@ -23,6 +23,7 @@ from amprenta_rag.api.routers import (
     planner,
     portfolio,
     projector,
+    retrosynthesis,
     share_links,
     signatures,
     experiments,
@@ -236,6 +237,7 @@ app.include_router(predictors.router, prefix="/api/v1/predictors", tags=["Predic
 app.include_router(papers.router, prefix="/api/v1/papers", tags=["Papers"])
 app.include_router(projector.router, prefix="/api/v1", tags=["Projector"])
 app.include_router(portfolio.router, prefix="/api/v1", tags=["Portfolio"])
+app.include_router(retrosynthesis.router, prefix="/api/v1/retrosynthesis", tags=["Retrosynthesis"])
 app.include_router(planner.router, prefix="/api/v1", tags=["Planner"])
 app.include_router(export.router, prefix="/api/v1", tags=["Export"])
 app.include_router(audit.router, prefix="/api/v1", tags=["Audit"])
