@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from amprenta_rag.database.models import (
     Dataset, Experiment, Signature, AuditLog, LifecycleStatus,
     dataset_feature_assoc, dataset_signature_assoc, experiment_dataset_assoc,
+    signature_feature_assoc,
 )
 from amprenta_rag.models.chemistry import Compound
 from amprenta_rag.database.session import db_session
