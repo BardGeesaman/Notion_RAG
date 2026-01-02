@@ -138,6 +138,16 @@ def get_feature_dimensions() -> dict:
     return {"node_features": node_dim, "edge_features": edge_dim}
 
 
+def get_feature_dims() -> tuple[int, int]:
+    """Get feature dimensions for model initialization.
+    
+    Returns:
+        (node_features, edge_features) tuple
+    """
+    dims = get_feature_dimensions()
+    return dims["node_features"], dims["edge_features"]
+
+
 class MoleculeDataset(Dataset):
     """PyTorch Geometric Dataset for molecules."""
     
