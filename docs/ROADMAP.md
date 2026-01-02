@@ -506,6 +506,11 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Consider Content-Security-Policy headers for additional XSS protection
 - [ ] Add input validation metrics/logging for security monitoring
 
+### SAR Analysis P2 Observations (2025-01-02)
+- [ ] Increase SAR analysis coverage (build_sar_matrix function coverage from 56% to 80%+)
+- [ ] SAR API test environment dependencies (complex database migration requirements)
+- [ ] Systemic API test import chain issue affects multiple test suites
+
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
 - ✅ KEGG API rate limit documentation in id_mapping.py (2025-01-01)
@@ -682,7 +687,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
 | **P1** | **Target Management** | Target validation tracking, assay linkage, druggability scores, competitive landscape per target | 3-4 weeks | None |
-| **P1** | **SAR Analysis Module** | Activity cliff detection, R-group decomposition tables, potency trend visualization, matched molecular pairs | 3-4 weeks | Compounds |
+| ✅ **P1** | **SAR Analysis Module** | Activity cliff detection, R-group decomposition tables, potency trend visualization, matched molecular pairs | **COMPLETE** | 2025-01-02 |
 | ✅ **P2** | **Retrosynthesis Advisor** | Mock service MVP, 4 API endpoints, Cytoscape tree viz, 20 tests | **COMPLETE** | 2025-01-02 |
 | **P2** | **Compound Inventory** | Physical sample tracking, storage locations, tube/plate barcodes, request/fulfillment workflow | 2-3 weeks | Compounds |
 
