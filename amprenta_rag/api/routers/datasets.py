@@ -89,6 +89,7 @@ async def get_dataset(
 async def add_dataset_annotation(
     dataset_id: UUID,
     annotation: AnnotationCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_database_session),
 ) -> Dict[str, Any]:
     """Add a note/annotation to a dataset."""
