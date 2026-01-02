@@ -14,6 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from amprenta_rag.api.async_dependencies import get_async_database_session
+from amprenta_rag.api.dependencies import get_current_user
+from amprenta_rag.database.models import User
 from amprenta_rag.api.schemas import (
     AnnotationCreate,
     Dataset,
@@ -37,6 +39,7 @@ router = APIRouter()
 @router.post("/", response_model=Dataset, status_code=201)
 async def create_dataset(
     dataset: DatasetCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_database_session),
 ) -> Dataset:
     """Create a new dataset."""
@@ -51,6 +54,7 @@ async def list_datasets(
     omics_type: Optional[OmicsType] = Query(None, description="Filter by omics type"),
     program_id: Optional[UUID] = Query(None, description="Filter by program ID"),
     experiment_id: Optional[UUID] = Query(None, description="Filter by experiment ID"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_database_session),
 ) -> List[Dataset]:
     """List all datasets."""
