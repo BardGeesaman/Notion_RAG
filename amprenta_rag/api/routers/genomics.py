@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Header, Query, UploadFile, status
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 
 from amprenta_rag.api.dependencies import get_current_user
@@ -583,3 +585,118 @@ def get_alignment_coverage(
             coverage=[],
             error=str(e),
         )
+
+
+@router.get("/alignments/{alignment_id}/file")
+async def stream_alignment_file(
+    alignment_id: UUID,
+    range_header: str = Header(None, alias="Range"),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """
+    Stream BAM/CRAM file with byte-range support for IGV.js.
+    
+    Supports Range header for partial content requests (RFC 7233).
+    """
+    # 1. Fetch alignment from DB
+    with db_session() as db:
+        alignment = db.query(AlignmentFile).filter(AlignmentFile.id == alignment_id).first()
+        if not alignment:
+            raise HTTPException(status_code=404, detail="Alignment not found")
+        file_path = Path(alignment.file_path)
+    
+    # 2. [P1] Path traversal protection
+    file_path = file_path.resolve()
+    storage_root = Path(ALIGNMENT_STORAGE_PATH).resolve()
+    if not str(file_path).startswith(str(storage_root)):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    file_size = file_path.stat().st_size
+    
+    # 3. Parse Range header
+    if range_header:
+        # Handle "bytes=start-end" or "bytes=start-"
+        range_match = re.match(r"bytes=(\d+)-(\d*)", range_header)
+        if range_match:
+            start = int(range_match.group(1))
+            end = int(range_match.group(2)) if range_match.group(2) else file_size - 1
+            end = min(end, file_size - 1)
+            
+            if start >= file_size:
+                raise HTTPException(status_code=416, detail="Range not satisfiable")
+            
+            # Stream partial content
+            return StreamingResponse(
+                _stream_file_range(file_path, start, end),
+                status_code=206,
+                media_type="application/octet-stream",
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{file_size}",
+                    "Accept-Ranges": "bytes",
+                    "Content-Length": str(end - start + 1),
+                },
+            )
+    
+    # 4. Full file response
+    return StreamingResponse(
+        _stream_file_range(file_path, 0, file_size - 1),
+        media_type="application/octet-stream",
+        headers={
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(file_size),
+        },
+    )
+
+
+@router.get("/alignments/{alignment_id}/index")
+async def stream_alignment_index(
+    alignment_id: UUID,
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """Stream BAM/CRAM index file (.bai/.crai)."""
+    with db_session() as db:
+        alignment = db.query(AlignmentFile).filter(AlignmentFile.id == alignment_id).first()
+        if not alignment:
+            raise HTTPException(status_code=404, detail="Alignment not found")
+        
+        if not alignment.index_file_path:
+            raise HTTPException(status_code=404, detail="No index file available")
+        
+        index_path = Path(alignment.index_file_path)
+    
+    # Path traversal protection
+    index_path = index_path.resolve()
+    storage_root = Path(ALIGNMENT_STORAGE_PATH).resolve()
+    if not str(index_path).startswith(str(storage_root)):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not index_path.exists():
+        raise HTTPException(status_code=404, detail="Index file not found on disk")
+    
+    file_size = index_path.stat().st_size
+    
+    return StreamingResponse(
+        _stream_file_range(index_path, 0, file_size - 1),
+        media_type="application/octet-stream",
+        headers={
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(file_size),
+        },
+    )
+
+
+def _stream_file_range(path: Path, start: int, end: int):
+    """Generator for streaming file bytes."""
+    with open(path, "rb") as f:
+        f.seek(start)
+        remaining = end - start + 1
+        while remaining > 0:
+            chunk_size = min(8192, remaining)
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
