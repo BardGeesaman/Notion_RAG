@@ -447,3 +447,95 @@ def cleanup_orphans(dry_run: bool = True) -> Dict[str, Any]:
     
     logger.info(f"Orphan cleanup: {results['deleted']}")
     return results
+
+
+def enforce_retention_policies(dry_run: bool = True) -> Dict[str, Any]:
+    """
+    Enforce active retention policies.
+    
+    Finds entities older than policy retention_days and applies action.
+    """
+    results = {
+        "dry_run": dry_run,
+        "policies_checked": 0,
+        "entities_affected": 0,
+        "actions": [],
+        "errors": [],
+    }
+    
+    try:
+        from amprenta_rag.models.misc import RetentionPolicy
+        from datetime import datetime, timedelta, timezone
+        
+        with db_session() as db:
+            # Get active policies
+            policies = db.query(RetentionPolicy).filter(
+                RetentionPolicy.is_active.is_(True)
+            ).all()
+            
+            results["policies_checked"] = len(policies)
+            
+            for policy in policies:
+                model = ENTITY_MODELS.get(policy.entity_type)
+                if not model:
+                    results["errors"].append(f"Unknown entity type: {policy.entity_type}")
+                    continue
+                
+                cutoff = datetime.now(timezone.utc) - timedelta(days=policy.retention_days)
+                
+                # Find entities older than cutoff, not exempt
+                query = db.query(model).filter(
+                    model.created_at < cutoff,
+                    model.lifecycle_status == "active",  # Only active entities
+                )
+                
+                # Add retention_exempt filter if column exists
+                if hasattr(model, 'retention_exempt'):
+                    query = query.filter(model.retention_exempt.is_(False))
+                
+                affected_entities = query.all()
+                
+                action_record = {
+                    "policy": policy.name,
+                    "entity_type": policy.entity_type,
+                    "action": policy.action,
+                    "count": len(affected_entities),
+                    "entity_ids": [str(e.id) for e in affected_entities[:10]],  # Sample
+                }
+                results["actions"].append(action_record)
+                results["entities_affected"] += len(affected_entities)
+                
+                if dry_run:
+                    continue
+                
+                # Execute action
+                for entity in affected_entities:
+                    try:
+                        if policy.action == "archive":
+                            update_lifecycle_status(
+                                policy.entity_type, entity.id, "archived",
+                                reason=f"Auto-archived by policy: {policy.name}"
+                            )
+                        elif policy.action == "delete":
+                            # Use bulk delete for permanent removal
+                            execute_bulk_delete(
+                                policy.entity_type, [entity.id],
+                                reason=f"Auto-deleted by policy: {policy.name}",
+                                dry_run=False
+                            )
+                        elif policy.action == "notify":
+                            # Log notification (actual notification system integration TBD)
+                            logger.info(f"Retention notify: {policy.entity_type}:{entity.id}")
+                    except Exception as e:
+                        results["errors"].append(f"{entity.id}: {str(e)}")
+            
+            if not dry_run:
+                db.commit()
+    
+    except ImportError:
+        results["errors"].append("RetentionPolicy model not found - skipping enforcement")
+    except Exception as e:
+        results["errors"].append(f"Retention enforcement failed: {str(e)}")
+    
+    logger.info(f"Retention enforcement: {results['entities_affected']} entities affected")
+    return results

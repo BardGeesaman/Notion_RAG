@@ -18,3 +18,17 @@ def cleanup_orphans_task(dry_run: bool = False) -> dict:
     results = cleanup_orphans(dry_run=dry_run)
     logger.info(f"Orphan cleanup complete: {results}")
     return results
+
+
+@shared_task(name="enforce_retention_task")
+def enforce_retention_task(dry_run: bool = False) -> dict:
+    """
+    Scheduled task to enforce retention policies.
+    
+    Run daily: celery -A amprenta_rag.jobs beat
+    """
+    from amprenta_rag.services.lifecycle import enforce_retention_policies
+    logger.info(f"Starting retention enforcement (dry_run={dry_run})")
+    results = enforce_retention_policies(dry_run=dry_run)
+    logger.info(f"Retention enforcement complete: {results}")
+    return results
