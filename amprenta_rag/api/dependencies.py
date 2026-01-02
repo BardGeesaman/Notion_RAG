@@ -54,6 +54,11 @@ def get_current_user(request: Request, db: Session = Depends(get_database_sessio
         )
         # Set role attribute for admin access
         mock_user.role = "admin"
+        
+        # Set user on request state for rate limiting
+        from amprenta_rag.api.rate_limit import set_user_state
+        set_user_state(request, mock_user)
+        
         return mock_user
     
     raw = request.headers.get("x-user-id") or request.headers.get("X-User-Id")
@@ -66,6 +71,11 @@ def get_current_user(request: Request, db: Session = Depends(get_database_sessio
     user = db.query(User).filter(User.id == uid).first()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+    
+    # Set user on request state for rate limiting
+    from amprenta_rag.api.rate_limit import set_user_state
+    set_user_state(request, user)
+    
     return user
 
 

@@ -139,6 +139,13 @@ app.add_middleware(
     expose_headers=["Content-Range", "Accept-Ranges", "Content-Length"],
 )
 
+# Add rate limiting
+from slowapi.errors import RateLimitExceeded
+from amprenta_rag.api.rate_limit import limiter, rate_limit_exceeded_handler
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
 # Include routers
 app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
 app.include_router(backup.router, prefix="/api/v1", tags=["Backup"])
