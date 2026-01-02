@@ -1791,3 +1791,29 @@ The system has reached **production maturity** with **65+ features**, **1905+ un
 - Current Policies: No Deferral (complete all work), 50% Context Alert (alert Chairman at 50% - updated 2025-12-30)
 - Infrastructure: Celery background tasks + S3 backup storage + Imaging metadata (OME-TIFF) + Biophysical assays (SPR/MST/DSC) + Flow cytometry + Image analysis (CellPose) + Generative chemistry operational
 - Next suggested focus: Continue with remaining ROADMAP items
+
+---
+
+## Session Summary (2025-01-01)
+
+### Completed This Session
+- **BAM/CRAM Alignment Viewing** (P2 Genomics & NGS)
+  - Parser: 5 functions in `bam_parser.py`
+  - Model: `AlignmentFile` with 18 fields + index support
+  - API: 5 endpoints (upload, list, details, reads, coverage)
+  - Dashboard: 4-tab `alignments.py` in Discovery group
+  - Tests: 12 total (4 parser + 4 API + 4 E2E)
+  - All P1 fixes from review applied
+
+### Commits This Session
+- `b5c28e3` - feat(genomics): add BAM/CRAM alignment viewing
+
+### Next Session Priorities
+1. **IGV.js Genome Browser** (P2 Genomics - depends on BAM/CRAM)
+2. **Variant Annotation Pipeline** (P2 Genomics - VEP/SnpEff)
+3. **Other Strategic Backlog items** (Discovery & Med Chem, Advanced ML, etc.)
+
+### P2 Observations Added to Backlog
+- CRAM reference FASTA handling
+- Auto-index Celery task (pysam.index())
+- samtools flagstat for files >10GB
