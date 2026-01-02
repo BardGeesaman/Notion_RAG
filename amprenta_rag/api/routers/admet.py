@@ -19,6 +19,10 @@ from amprenta_rag.api.schemas import (
 from amprenta_rag.database.base import get_db
 from amprenta_rag.ml.admet.predictor import ADMET_MODELS, get_admet_predictor
 from amprenta_rag.ml.registry import get_registry
+from amprenta_rag.ml.gnn.predictor import get_gnn_predictor
+from amprenta_rag.api.dependencies import get_current_user
+from amprenta_rag.models.auth import User
+from fastapi import HTTPException, Query
 
 
 router = APIRouter(prefix="/admet", tags=["ADMET"])
@@ -164,6 +168,182 @@ async def explain_admet_prediction(
 ) -> ADMETExplainResponse:
     """Explain ADMET prediction using async thread pool for ML + SHAP analysis."""
     return await asyncio.to_thread(_sync_explain_admet, request, db)
+
+
+# ============ GNN Toxicity Endpoints ============
+
+GNN_ENDPOINTS = ["herg", "ames", "dili", "ld50", "clintox"]
+
+
+@router.post(
+    "/predict-gnn",
+    summary="Predict using GNN models",
+    description="Deep learning toxicity predictions using Graph Neural Networks."
+)
+def predict_gnn(
+    request: ADMETPredictRequest,
+    endpoints: List[str] = Query(default=["herg"], description="GNN endpoints to run"),
+    with_uncertainty: bool = Query(default=True, description="Include MC Dropout uncertainty"),
+    current_user: User = Depends(get_current_user)
+):
+    """Predict toxicity using GNN models.
+    
+    Uses Graph Neural Networks trained on TDC datasets for molecular
+    toxicity prediction with uncertainty quantification.
+    """
+    results = []
+    
+    for smiles in request.smiles_list:
+        pred = {"smiles": smiles, "endpoints": {}}
+        
+        for endpoint in endpoints:
+            if endpoint not in GNN_ENDPOINTS:
+                pred["endpoints"][endpoint] = {"error": f"Unknown endpoint: {endpoint}"}
+                continue
+            
+            predictor = get_gnn_predictor(endpoint)
+            if predictor is None:
+                pred["endpoints"][endpoint] = {"error": "Model not available"}
+                continue
+            
+            try:
+                result = predictor.predict([smiles], with_uncertainty=with_uncertainty)[0]
+                pred["endpoints"][endpoint] = {
+                    k: v for k, v in result.items() if k != "smiles"
+                }
+            except Exception as e:
+                pred["endpoints"][endpoint] = {"error": str(e)}
+        
+        results.append(pred)
+    
+    return {"predictions": results}
+
+
+@router.get(
+    "/gnn-models",
+    summary="List GNN models",
+    description="List available GNN toxicity models."
+)
+def list_gnn_models(current_user: User = Depends(get_current_user)):
+    """List available GNN models.
+    
+    Returns status and performance metrics for each GNN toxicity endpoint.
+    """
+    models = []
+    for endpoint in GNN_ENDPOINTS:
+        model_path = Path(f"models/gnn/gnn_{endpoint}.pt")
+        if model_path.exists():
+            try:
+                checkpoint = torch.load(model_path, map_location="cpu")
+                models.append({
+                    "endpoint": endpoint,
+                    "available": True,
+                    "metrics": checkpoint.get("metrics", {}),
+                    "trained_at": checkpoint.get("trained_at"),
+                    "task_type": checkpoint.get("config", {}).get("task_type", "unknown")
+                })
+            except Exception as e:
+                models.append({
+                    "endpoint": endpoint,
+                    "available": False,
+                    "error": str(e)
+                })
+        else:
+            models.append({
+                "endpoint": endpoint,
+                "available": False,
+                "error": "Model not trained"
+            })
+    
+    return {"models": models}
+
+
+@router.get(
+    "/gnn-models/{endpoint}/info",
+    summary="Get GNN model info",
+    description="Get detailed information about a specific GNN model."
+)
+def get_gnn_model_info(
+    endpoint: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get GNN model metadata.
+    
+    Returns detailed information about model architecture,
+    training metrics, and configuration.
+    """
+    if endpoint not in GNN_ENDPOINTS:
+        raise HTTPException(status_code=404, detail=f"Unknown endpoint: {endpoint}")
+    
+    model_path = Path(f"models/gnn/gnn_{endpoint}.pt")
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail=f"Model not trained: {endpoint}")
+    
+    try:
+        checkpoint = torch.load(model_path, map_location="cpu")
+        
+        return {
+            "endpoint": endpoint,
+            "config": checkpoint.get("config", {}),
+            "metrics": checkpoint.get("metrics", {}),
+            "trained_at": checkpoint.get("trained_at"),
+            "model_path": str(model_path),
+            "file_size_mb": model_path.stat().st_size / (1024 * 1024)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load model info: {str(e)}")
+
+
+@router.post(
+    "/compare",
+    summary="Compare XGBoost vs GNN",
+    description="Compare predictions from traditional and deep learning models."
+)
+def compare_models(
+    request: ADMETPredictRequest,
+    endpoint: str = Query(default="herg", description="Endpoint to compare"),
+    current_user: User = Depends(get_current_user)
+):
+    """Compare XGBoost ensemble vs GNN predictions.
+    
+    Provides side-by-side comparison of traditional ML (XGBoost ensemble)
+    vs deep learning (GNN) approaches for toxicity prediction.
+    """
+    from amprenta_rag.ml.admet.predictor import ADMETPredictor
+    
+    # Get XGBoost predictions
+    try:
+        xgb_predictor = ADMETPredictor()
+        xgb_results = xgb_predictor.predict(request.smiles_list, endpoints=[endpoint])
+    except Exception as e:
+        xgb_results = [{"error": f"XGBoost prediction failed: {str(e)}"}] * len(request.smiles_list)
+    
+    # Get GNN predictions
+    gnn_predictor = get_gnn_predictor(endpoint)
+    
+    comparisons = []
+    for i, smiles in enumerate(request.smiles_list):
+        comparison = {"smiles": smiles}
+        
+        # XGBoost result
+        if i < len(xgb_results) and endpoint in xgb_results[i]:
+            comparison["xgboost"] = xgb_results[i][endpoint]
+        else:
+            comparison["xgboost"] = {"error": "Not available"}
+        
+        # GNN result
+        if gnn_predictor:
+            try:
+                gnn_result = gnn_predictor.predict([smiles])[0]
+                comparison["gnn"] = {k: v for k, v in gnn_result.items() if k != "smiles"}
+            except Exception as e:
+                comparison["gnn"] = {"error": str(e)}
+        else:
+            comparison["gnn"] = {"error": "Model not available"}
+        
+        comparisons.append(comparison)
+    
+    return {"endpoint": endpoint, "comparisons": comparisons}
 
 
 __all__ = ["router"]
