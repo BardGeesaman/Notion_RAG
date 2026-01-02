@@ -13,7 +13,14 @@ from sqlalchemy.orm import Mapped, relationship
 from amprenta_rag.database.base import Base
 
 if TYPE_CHECKING:
-    from amprenta_rag.database.models import Experiment, Program, User
+    from amprenta_rag.database.models import Experiment, Program, User, Target
+
+# Import the association table
+try:
+    from amprenta_rag.database.models import compound_target
+except ImportError:
+    # For backwards compatibility during migration
+    compound_target = None
 
 
 def generate_uuid() -> uuid.UUID:
@@ -98,6 +105,7 @@ class Compound(Base):
     pk_studies: Mapped[List["PKStudy"]] = relationship(back_populates="compound")
     toxicology_results: Mapped[List["ToxicologyResult"]] = relationship(back_populates="compound")
     generic_assay_results: Mapped[List["GenericAssayResult"]] = relationship(back_populates="compound")
+    targets: Mapped[List["Target"]] = relationship(secondary="compound_target", back_populates="compounds")
 
 
 class BiochemicalAssay(Base):

@@ -130,6 +130,17 @@ program_signature_assoc = Table(
     Column("signature_id", UUID(as_uuid=True), ForeignKey("signatures.id"), primary_key=True),
 )
 
+compound_target = Table(
+    'compound_target',
+    Base.metadata,
+    Column('compound_id', UUID(as_uuid=True), ForeignKey('compounds.id'), primary_key=True),
+    Column('target_id', UUID(as_uuid=True), ForeignKey('targets.id'), primary_key=True),
+    Column('activity_type', String(50)),  # IC50, Ki, Kd, EC50
+    Column('activity_value', Float),
+    Column('activity_units', String(20)),  # nM, uM
+    Column('assay_id', UUID(as_uuid=True), ForeignKey('experiments.id'), nullable=True)
+)
+
 
 class Program(Base):
     """Research program/therapeutic area."""
@@ -185,6 +196,46 @@ class Program(Base):
     pinned_dashboards: Mapped[List["PinnedDashboard"]] = relationship(
         "PinnedDashboard", back_populates="program", cascade="all, delete-orphan"
     )
+
+
+class Target(Base):
+    """Biological target for drug discovery."""
+    
+    __tablename__ = "targets"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    name = Column(String(200), nullable=False, unique=True)
+    description = Column(Text)
+    gene_symbol = Column(String(50), index=True)
+    uniprot_id = Column(String(20), index=True)
+    
+    # Classification
+    target_class = Column(String(100))  # kinase, gpcr, ion_channel, etc.
+    target_family = Column(String(100))  # e.g., "Tyrosine kinase"
+    
+    # Druggability
+    druggability_score = Column(Float)  # 0-1
+    druggability_source = Column(String(50))  # manual, cansar, opentargets
+    pocket_count = Column(Integer)
+    
+    # Validation
+    validation_status = Column(String(50))  # hypothesis, validated, clinical
+    validation_evidence = Column(JSON)
+    
+    # Lifecycle
+    lifecycle_status = Column(String(50), default="active")  # active, archived, deprecated
+    is_synthetic = Column(Boolean, default=False)  # Mutant, fusion protein, etc.
+    
+    # External IDs
+    chembl_id = Column(String(50))
+    ensembl_id = Column(String(50))
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships (add back_populates to Experiment if target_id exists)
+    compounds: Mapped[List["Compound"]] = relationship("Compound", secondary=compound_target, back_populates="targets")
 
 
 class PinnedDashboard(Base):
