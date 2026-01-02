@@ -92,3 +92,53 @@ class TestPydanticStrictMode:
         
         # Safe URLs should pass
         assert validate_url("https://example.com") == "https://example.com"
+
+
+class TestRequestSizeLimits:
+    """Test request body size limits."""
+    
+    def test_size_limit_middleware_configured(self):
+        """Test that size limit middleware is configured."""
+        from amprenta_rag.api.main import app
+        
+        middleware_classes = [m.cls.__name__ for m in app.user_middleware]
+        assert "RequestSizeLimitMiddleware" in middleware_classes
+    
+    def test_upload_routes_have_higher_limit(self):
+        """Test that upload routes are configured for higher limits."""
+        from amprenta_rag.api.middleware import UPLOAD_ROUTES, MAX_UPLOAD_SIZE, MAX_REQUEST_SIZE
+        
+        # Upload limit should be higher than default
+        assert MAX_UPLOAD_SIZE > MAX_REQUEST_SIZE
+        
+        # Should have upload routes defined
+        assert len(UPLOAD_ROUTES) > 0
+        assert "/api/v1/datasets/upload" in UPLOAD_ROUTES or any(
+            "upload" in route for route in UPLOAD_ROUTES
+        )
+    
+    def test_size_limit_returns_413(self):
+        """Test that oversized requests return 413."""
+        from amprenta_rag.api.middleware import RequestSizeLimitMiddleware
+        from starlette.testclient import TestClient
+        from starlette.applications import Starlette
+        from starlette.responses import PlainTextResponse
+        from starlette.routing import Route
+        
+        async def echo(request):
+            body = await request.body()
+            return PlainTextResponse(f"Received {len(body)} bytes")
+        
+        test_app = Starlette(routes=[Route("/test", echo, methods=["POST"])])
+        test_app.add_middleware(RequestSizeLimitMiddleware, default_limit=100)  # 100 bytes
+        
+        client = TestClient(test_app)
+        
+        # Small request should work
+        response = client.post("/test", content="small")
+        assert response.status_code == 200
+        
+        # Large request should be rejected
+        response = client.post("/test", content="x" * 200, headers={"content-length": "200"})
+        assert response.status_code == 413
+        assert "request_too_large" in response.json()["error"]
