@@ -8,7 +8,7 @@ and configuration.
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from amprenta_rag.api.middleware import TimeoutMiddleware, RequestSizeLimitMiddleware
+from amprenta_rag.api.middleware import TimeoutMiddleware, RequestSizeLimitMiddleware, SecurityHeadersMiddleware
 
 from amprenta_rag.api.routers import (
     admin,
@@ -150,6 +150,9 @@ from amprenta_rag.api.rate_limit import limiter, rate_limit_exceeded_handler
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Include routers
 app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
