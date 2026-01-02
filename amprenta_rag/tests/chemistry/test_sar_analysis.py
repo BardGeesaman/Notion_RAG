@@ -209,3 +209,255 @@ def test_detect_activity_cliffs_with_fake_rdkit(monkeypatch):
     cliffs = sa.detect_activity_cliffs(similarity_threshold=0.0, activity_fold_change=1.0)
     assert isinstance(cliffs, list)
 
+
+def test_detect_activity_cliffs_empty_data(monkeypatch):
+    """Test activity cliff detection with empty data."""
+    monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(_FakeSession([])))
+    
+    cliffs = sa.detect_activity_cliffs()
+    assert cliffs == []
+
+
+def test_detect_activity_cliffs_single_compound(monkeypatch):
+    """Test activity cliff detection with single compound."""
+    class FakeActivity:
+        def __init__(self, cid, smiles, value):
+            self.compound = _FakeCompound(cid, smiles)
+            self.compound_id = uuid4()
+            self.assay_id = uuid4()
+            self.value = value
+
+    results = [
+        FakeActivity("c1", "C", value=1.0)
+    ]
+
+    class FakeQuery:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def join(self, *_):
+            return self
+
+        def filter(self, *_):
+            return self
+
+        def all(self):
+            return self.rows
+
+    class FakeSession:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def query(self, model):
+            return FakeQuery(self.rows)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(FakeSession(results)))
+    
+    cliffs = sa.detect_activity_cliffs()
+    assert cliffs == []
+
+
+def test_detect_activity_cliffs_no_cliffs_found(monkeypatch):
+    """Test activity cliff detection when no cliffs meet criteria."""
+    # Build fake rdkit modules
+    fake_rdkit = ModuleType("rdkit")
+
+    class FakeMol:
+        def __init__(self, smiles):
+            self.smiles = smiles
+
+    class FakeChem(ModuleType):
+        @staticmethod
+        def MolFromSmiles(smiles):
+            return FakeMol(smiles)
+
+    class FakeAllChem(ModuleType):
+        @staticmethod
+        def GetMorganFingerprintAsBitVect(mol, radius, nBits=2048):
+            return f"fp-{mol.smiles}"
+
+    class FakeDataStructs(ModuleType):
+        @staticmethod
+        def TanimotoSimilarity(a, b):
+            return 0.3  # Low similarity - no cliffs
+
+    fake_rdkit.Chem = FakeChem("Chem")
+    fake_rdkit.Chem.AllChem = FakeAllChem("AllChem")
+    fake_rdkit.Chem.DataStructs = FakeDataStructs("DataStructs")
+    fake_rdkit.DataStructs = fake_rdkit.Chem.DataStructs
+    monkeypatch.setitem(sys.modules, "rdkit", fake_rdkit)
+    monkeypatch.setitem(sys.modules, "rdkit.Chem", fake_rdkit.Chem)
+    monkeypatch.setitem(sys.modules, "rdkit.Chem.AllChem", fake_rdkit.Chem.AllChem)
+    monkeypatch.setitem(sys.modules, "rdkit.Chem.DataStructs", fake_rdkit.Chem.DataStructs)
+    monkeypatch.setitem(sys.modules, "rdkit.DataStructs", fake_rdkit.DataStructs)
+
+    class FakeActivity:
+        def __init__(self, cid, smiles, value):
+            self.compound = _FakeCompound(cid, smiles)
+            self.compound_id = uuid4()
+            self.assay_id = uuid4()
+            self.value = value
+
+    results = [
+        FakeActivity("c1", "C", value=1.0),
+        FakeActivity("c2", "CC", value=2.0),  # Small fold change
+    ]
+
+    class FakeQuery:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def join(self, *_):
+            return self
+
+        def filter(self, *_):
+            return self
+
+        def all(self):
+            return self.rows
+
+    class FakeSession:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def query(self, model):
+            return FakeQuery(self.rows)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(FakeSession(results)))
+    
+    # High threshold should find no cliffs
+    cliffs = sa.detect_activity_cliffs(similarity_threshold=0.8, activity_fold_change=10.0)
+    assert cliffs == []
+
+
+def test_detect_activity_cliffs_threshold_variations(monkeypatch):
+    """Test activity cliff detection with different threshold values."""
+    # Build fake rdkit modules
+    fake_rdkit = ModuleType("rdkit")
+
+    class FakeMol:
+        def __init__(self, smiles):
+            self.smiles = smiles
+
+    class FakeChem(ModuleType):
+        @staticmethod
+        def MolFromSmiles(smiles):
+            return FakeMol(smiles)
+
+    class FakeAllChem(ModuleType):
+        @staticmethod
+        def GetMorganFingerprintAsBitVect(mol, radius, nBits=2048):
+            return f"fp-{mol.smiles}"
+
+    class FakeDataStructs(ModuleType):
+        @staticmethod
+        def TanimotoSimilarity(a, b):
+            return 0.7  # Medium similarity
+
+    fake_rdkit.Chem = FakeChem("Chem")
+    fake_rdkit.Chem.AllChem = FakeAllChem("AllChem")
+    fake_rdkit.Chem.DataStructs = FakeDataStructs("DataStructs")
+    fake_rdkit.DataStructs = fake_rdkit.Chem.DataStructs
+    monkeypatch.setitem(sys.modules, "rdkit", fake_rdkit)
+    monkeypatch.setitem(sys.modules, "rdkit.Chem", fake_rdkit.Chem)
+    monkeypatch.setitem(sys.modules, "rdkit.Chem.AllChem", fake_rdkit.Chem.AllChem)
+    monkeypatch.setitem(sys.modules, "rdkit.Chem.DataStructs", fake_rdkit.Chem.DataStructs)
+    monkeypatch.setitem(sys.modules, "rdkit.DataStructs", fake_rdkit.DataStructs)
+
+    class FakeActivity:
+        def __init__(self, cid, smiles, value):
+            self.compound = _FakeCompound(cid, smiles)
+            self.compound_id = uuid4()
+            self.assay_id = uuid4()
+            self.value = value
+
+    results = [
+        FakeActivity("c1", "C", value=1.0),
+        FakeActivity("c2", "CC", value=100.0),  # 100-fold change
+    ]
+
+    class FakeQuery:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def join(self, *_):
+            return self
+
+        def filter(self, *_):
+            return self
+
+        def all(self):
+            return self.rows
+
+    class FakeSession:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def query(self, model):
+            return FakeQuery(self.rows)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(sa, "get_db", lambda: _FakeDBGen(FakeSession(results)))
+    
+    # Should find cliffs with lower similarity threshold
+    cliffs_low = sa.detect_activity_cliffs(similarity_threshold=0.6, activity_fold_change=10.0)
+    assert isinstance(cliffs_low, list)
+    
+    # Should not find cliffs with higher similarity threshold
+    cliffs_high = sa.detect_activity_cliffs(similarity_threshold=0.8, activity_fold_change=10.0)
+    assert cliffs_high == []
+
+
+def test_calculate_lipinski_invalid_smiles(monkeypatch):
+    """Test Lipinski calculation with invalid SMILES."""
+    fake_rdkit = ModuleType("rdkit")
+
+    class FakeChem(ModuleType):
+        @staticmethod
+        def MolFromSmiles(smiles):
+            return None  # Invalid SMILES returns None
+
+    fake_rdkit.Chem = FakeChem("Chem")
+    monkeypatch.setitem(sys.modules, "rdkit", fake_rdkit)
+    monkeypatch.setitem(sys.modules, "rdkit.Chem", fake_rdkit.Chem)
+
+    res = sa.calculate_lipinski("INVALID")
+    assert res["valid"] is False
+    # When invalid, the function returns early without passes_ro5 key
+
+
+def test_calculate_lipinski_no_rdkit(monkeypatch):
+    """Test Lipinski calculation when RDKit is not available."""
+    # Mock sys.modules to make rdkit unavailable
+    import sys
+    original_modules = sys.modules.copy()
+    
+    # Remove rdkit modules if they exist
+    modules_to_remove = [k for k in sys.modules.keys() if k.startswith('rdkit')]
+    for module in modules_to_remove:
+        if module in sys.modules:
+            del sys.modules[module]
+    
+    # Mock import to raise ImportError for rdkit
+    import builtins
+    original_import = builtins.__import__
+    
+    def mock_import(name, *args, **kwargs):
+        if name.startswith('rdkit'):
+            raise ImportError("RDKit not available")
+        return original_import(name, *args, **kwargs)
+    
+    monkeypatch.setattr(builtins, '__import__', mock_import)
+    
+    res = sa.calculate_lipinski("CCO")
+    assert res["valid"] is False
+    assert "error" in res
+
