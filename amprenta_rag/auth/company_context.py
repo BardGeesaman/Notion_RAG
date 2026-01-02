@@ -21,7 +21,10 @@ def set_company_context(request, db: Session, current_user: User) -> User:  # no
         return current_user
 
     # SET LOCAL is scoped to the current transaction; SQLAlchemy session keeps it within the request.
-    db.execute(text(f"SET LOCAL app.current_company_id = '{current_user.company_id}'"))
+    db.execute(
+        text("SET LOCAL app.current_company_id = :company_id"),
+        {"company_id": str(current_user.company_id)}
+    )
     return current_user
 
 
