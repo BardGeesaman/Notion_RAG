@@ -32,7 +32,7 @@ class TestBulkDeleteAPI:
         """DELETE without confirmation should fail."""
         response = client.request(
             "DELETE",
-            "/lifecycle/bulk/delete",
+            "/api/v1/lifecycle/bulk/delete",
             json={
                 "entity_type": "dataset",
                 "entity_ids": [str(uuid4())],
@@ -47,7 +47,7 @@ class TestBulkDeleteAPI:
         """DELETE with dry_run should work without confirmation."""
         response = client.request(
             "DELETE",
-            "/lifecycle/bulk/delete",
+            "/api/v1/lifecycle/bulk/delete",
             json={
                 "entity_type": "dataset",
                 "entity_ids": [str(uuid4())],
@@ -62,7 +62,7 @@ class TestBulkDeleteAPI:
         """Invalid entity type should return 400."""
         response = client.request(
             "DELETE",
-            "/lifecycle/bulk/delete",
+            "/api/v1/lifecycle/bulk/delete",
             json={
                 "entity_type": "invalid",
                 "entity_ids": [str(uuid4())],
@@ -78,7 +78,7 @@ class TestOrphansAPI:
     
     def test_get_orphan_stats(self, client):
         """GET /orphans should return stats."""
-        response = client.get("/lifecycle/orphans")
+        response = client.get("/api/v1/lifecycle/orphans")
         assert response.status_code == 200
         data = response.json()
         assert "features" in data
@@ -91,7 +91,7 @@ class TestExportAPI:
     def test_export_entity(self, client):
         """POST /export should return export data."""
         response = client.post(
-            "/lifecycle/export",
+            "/api/v1/lifecycle/export",
             json={
                 "entity_type": "dataset",
                 "entity_id": str(uuid4())
@@ -104,7 +104,7 @@ class TestExportAPI:
     def test_export_download(self, client):
         """POST /export/download should return ZIP."""
         response = client.post(
-            "/lifecycle/export/download",
+            "/api/v1/lifecycle/export/download",
             json={
                 "entity_type": "dataset",
                 "entity_id": str(uuid4())
@@ -120,7 +120,7 @@ class TestStatusAPI:
     def test_update_status_invalid(self, client):
         """Invalid status should return 400."""
         response = client.post(
-            "/lifecycle/status",
+            "/api/v1/lifecycle/status",
             json={
                 "entity_type": "dataset",
                 "entity_id": str(uuid4()),
