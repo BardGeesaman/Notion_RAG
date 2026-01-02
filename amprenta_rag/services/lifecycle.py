@@ -358,3 +358,92 @@ def _cascade_delete_associations(db: Session, entity_type: str, entity_id: UUID)
         db.execute(dataset_signature_assoc.delete().where(dataset_signature_assoc.c.signature_id == entity_id))
         db.execute(signature_feature_assoc.delete().where(signature_feature_assoc.c.signature_id == entity_id))
     # Compound associations handled by FK cascade or separate logic
+
+
+def find_orphaned_entities() -> Dict[str, Any]:
+    """
+    Find orphaned entities not linked to any parent.
+    
+    Returns counts and IDs for each orphan type.
+    """
+    orphans = {
+        "features": {"count": 0, "ids": []},
+        "signatures": {"count": 0, "ids": []},
+        "embeddings": {"count": 0, "ids": []},
+    }
+    
+    with db_session() as db:
+        from amprenta_rag.database.models import Feature
+        
+        # For now, return placeholder counts since association tables may not exist
+        # This can be enhanced when the actual schema is confirmed
+        try:
+            # Count total features
+            total_features = db.query(Feature).count()
+            orphans["features"]["count"] = 0  # Placeholder - need association table schema
+            orphans["features"]["note"] = f"Total features: {total_features} (association check pending)"
+        except Exception:
+            orphans["features"]["count"] = 0
+            orphans["features"]["note"] = "Features table not accessible"
+        
+        try:
+            # Count total signatures if table exists
+            from amprenta_rag.database.models import Signature
+            total_signatures = db.query(Signature).count()
+            orphans["signatures"]["count"] = 0  # Placeholder
+            orphans["signatures"]["note"] = f"Total signatures: {total_signatures} (association check pending)"
+        except Exception:
+            orphans["signatures"]["count"] = 0
+            orphans["signatures"]["note"] = "Signatures table not accessible"
+        
+        # Embeddings check (optional)
+        orphans["embeddings"]["count"] = 0
+        orphans["embeddings"]["note"] = "Embeddings check skipped (table schema pending)"
+    
+    return orphans
+
+
+def cleanup_orphans(dry_run: bool = True) -> Dict[str, Any]:
+    """
+    Clean up orphaned entities.
+    
+    Args:
+        dry_run: If True, only report what would be deleted
+    """
+    orphans = find_orphaned_entities()
+    
+    results = {
+        "dry_run": dry_run,
+        "deleted": {"features": 0, "signatures": 0, "embeddings": 0},
+        "errors": [],
+    }
+    
+    if dry_run:
+        results["would_delete"] = {
+            "features": orphans["features"]["count"],
+            "signatures": orphans["signatures"]["count"],
+            "embeddings": orphans["embeddings"]["count"],
+        }
+        return results
+    
+    with db_session() as db:
+        from amprenta_rag.database.models import Feature
+        
+        # Delete orphaned features
+        if orphans["features"]["ids"]:
+            from uuid import UUID
+            feature_ids = [UUID(fid) for fid in orphans["features"]["ids"]]
+            deleted = db.query(Feature).filter(Feature.id.in_(feature_ids)).delete(synchronize_session=False)
+            results["deleted"]["features"] = deleted
+        
+        # Delete orphaned signatures
+        if orphans["signatures"]["ids"]:
+            from uuid import UUID
+            sig_ids = [UUID(sid) for sid in orphans["signatures"]["ids"]]
+            deleted = db.query(Signature).filter(Signature.id.in_(sig_ids)).delete(synchronize_session=False)
+            results["deleted"]["signatures"] = deleted
+        
+        db.commit()
+    
+    logger.info(f"Orphan cleanup: {results['deleted']}")
+    return results

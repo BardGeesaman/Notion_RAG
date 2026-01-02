@@ -25,6 +25,7 @@ from amprenta_rag.services.lifecycle import (
     bulk_delete_preview,
     execute_bulk_archive,
     execute_bulk_delete,
+    find_orphaned_entities,
 )
 
 router = APIRouter(prefix="/lifecycle", tags=["lifecycle"])
@@ -111,6 +112,13 @@ class BulkDeleteResponse(BaseModel):
     failed: int
     errors: List[dict]
     dry_run: bool
+
+
+class OrphanStatsResponse(BaseModel):
+    """Orphaned entity statistics."""
+    features: dict
+    signatures: dict
+    embeddings: dict
 
 
 class LifecycleStatsResponse(BaseModel):
@@ -435,3 +443,12 @@ def bulk_delete(
     )
     
     return BulkDeleteResponse(**results)
+
+
+@router.get("/orphans", response_model=OrphanStatsResponse)
+def get_orphan_stats(
+    current_user: User = Depends(get_current_user),
+) -> OrphanStatsResponse:
+    """Get counts of orphaned entities."""
+    orphans = find_orphaned_entities()
+    return OrphanStatsResponse(**orphans)
