@@ -17,6 +17,7 @@ from amprenta_rag.api.routers import (
     export,
     ip,
     jobs,
+    lifecycle,
     planner,
     portfolio,
     projector,
@@ -93,7 +94,6 @@ from amprenta_rag.api.routers import (
     versions,
     review_threads,
     review_sla,
-    lifecycle,
 )
 from amprenta_rag.config import get_config
 
