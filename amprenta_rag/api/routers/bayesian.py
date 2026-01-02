@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 
 from amprenta_rag.analysis.bayesian_optimization import recommend_multi_objective
 from amprenta_rag.analysis.bayesian_dose_response import fit_bayesian_dose_response
-from amprenta_rag.api.schemas import PriorConfig
+from amprenta_rag.analysis.models import PriorConfig
 
 router = APIRouter(prefix="/bayesian-optimization", tags=["bayesian-optimization"])
 

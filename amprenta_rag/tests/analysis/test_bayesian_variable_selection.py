@@ -78,7 +78,7 @@ def test_compute_pip_threshold_filtering():
 
 def test_prior_config_schema_validation():
     """Test PriorConfig schema accepts valid values."""
-    from amprenta_rag.api.schemas import PriorConfig
+    from amprenta_rag.analysis.models import PriorConfig
     
     config = PriorConfig(
         ec50_prior_mean=-6.0,
@@ -92,7 +92,7 @@ def test_prior_config_schema_validation():
 
 def test_prior_config_defaults():
     """Test PriorConfig uses correct defaults."""
-    from amprenta_rag.api.schemas import PriorConfig
+    from amprenta_rag.analysis.models import PriorConfig
     
     config = PriorConfig()
     assert config.ec50_prior_mean is None  # Auto from data
