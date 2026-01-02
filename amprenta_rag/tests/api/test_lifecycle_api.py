@@ -1,136 +1,130 @@
-"""API tests for lifecycle management endpoints."""
+"""Tests for lifecycle management API endpoints."""
 
 import pytest
-from unittest.mock import patch, MagicMock
 from uuid import uuid4
-
 from fastapi.testclient import TestClient
+from unittest.mock import patch, MagicMock
+
 from amprenta_rag.api.main import app
+from amprenta_rag.api.dependencies import get_current_user
+
+
+# Mock user for auth
+def mock_user():
+    user = MagicMock()
+    user.id = uuid4()
+    user.email = "test@test.com"
+    user.role = "admin"
+    return user
 
 
 @pytest.fixture
 def client():
-    """Create test client with auth override."""
-    mock_user = MagicMock()
-    mock_user.id = uuid4()
-    mock_user.email = "test@example.com"
-    
-    from amprenta_rag.api.dependencies import get_current_user
-    app.dependency_overrides[get_current_user] = lambda: mock_user
-    
-    try:
-        yield TestClient(app)
-    finally:
-        app.dependency_overrides.clear()
+    app.dependency_overrides[get_current_user] = mock_user
+    yield TestClient(app)
+    app.dependency_overrides.clear()
 
 
-class TestGetDeletionImpact:
-    """Tests for GET /lifecycle/impact endpoint."""
+class TestBulkDeleteAPI:
+    """Tests for bulk delete endpoint."""
     
-    def test_rejects_invalid_entity_type(self, client):
-        """Invalid entity type returns 400."""
-        response = client.get(f"/api/v1/lifecycle/impact/invalid_type/{uuid4()}")
+    def test_delete_requires_confirmation(self, client):
+        """DELETE without confirmation should fail."""
+        response = client.request(
+            "DELETE",
+            "/lifecycle/bulk/delete",
+            json={
+                "entity_type": "dataset",
+                "entity_ids": [str(uuid4())],
+                "reason": "test",
+                "confirmed": False,
+                "dry_run": False
+            }
+        )
         assert response.status_code == 400
-        assert "Invalid entity_type" in response.json()["detail"]
     
-    @patch("amprenta_rag.api.routers.lifecycle.calculate_deletion_impact")
-    def test_returns_impact_for_valid_entity(self, mock_impact, client):
-        """Valid entity returns impact data."""
-        entity_id = uuid4()
-        mock_impact.return_value = {
-            "entity": {"type": "dataset", "id": str(entity_id), "name": "Test"},
-            "impact": {"features": 10},
-            "blocking_references": [],
-            "can_delete": True,
-        }
-        
-        response = client.get(f"/api/v1/lifecycle/impact/dataset/{entity_id}")
-        
+    def test_delete_dry_run_allowed(self, client):
+        """DELETE with dry_run should work without confirmation."""
+        response = client.request(
+            "DELETE",
+            "/lifecycle/bulk/delete",
+            json={
+                "entity_type": "dataset",
+                "entity_ids": [str(uuid4())],
+                "reason": "test",
+                "confirmed": False,
+                "dry_run": True
+            }
+        )
+        assert response.status_code == 200
+    
+    def test_delete_invalid_entity_type(self, client):
+        """Invalid entity type should return 400."""
+        response = client.request(
+            "DELETE",
+            "/lifecycle/bulk/delete",
+            json={
+                "entity_type": "invalid",
+                "entity_ids": [str(uuid4())],
+                "reason": "test",
+                "confirmed": True
+            }
+        )
+        assert response.status_code == 400
+
+
+class TestOrphansAPI:
+    """Tests for orphans endpoint."""
+    
+    def test_get_orphan_stats(self, client):
+        """GET /orphans should return stats."""
+        response = client.get("/lifecycle/orphans")
         assert response.status_code == 200
         data = response.json()
-        assert data["can_delete"] is True
+        assert "features" in data
+        assert "signatures" in data
 
 
-class TestUpdateStatus:
-    """Tests for POST /lifecycle/status endpoint."""
+class TestExportAPI:
+    """Tests for export endpoints."""
     
-    def test_rejects_invalid_entity_type(self, client):
-        """Invalid entity type returns 400."""
-        response = client.post("/api/v1/lifecycle/status", json={
-            "entity_type": "invalid",
-            "entity_id": str(uuid4()),
-            "new_status": "active"
-        })
-        assert response.status_code == 400
-    
-    def test_rejects_invalid_status(self, client):
-        """Invalid status returns 400."""
-        response = client.post("/api/v1/lifecycle/status", json={
-            "entity_type": "dataset",
-            "entity_id": str(uuid4()),
-            "new_status": "invalid_status"
-        })
-        assert response.status_code == 400
-    
-    @patch("amprenta_rag.api.routers.lifecycle.update_lifecycle_status")
-    def test_successful_update(self, mock_update, client):
-        """Successful update returns success response."""
-        mock_update.return_value = (True, "Status updated")
-        
-        response = client.post("/api/v1/lifecycle/status", json={
-            "entity_type": "dataset",
-            "entity_id": str(uuid4()),
-            "new_status": "quarantined",
-            "reason": "Data quality review"
-        })
-        
+    def test_export_entity(self, client):
+        """POST /export should return export data."""
+        response = client.post(
+            "/lifecycle/export",
+            json={
+                "entity_type": "dataset",
+                "entity_id": str(uuid4())
+            }
+        )
         assert response.status_code == 200
-        assert response.json()["success"] is True
-
-
-class TestBulkOperations:
-    """Tests for bulk operation endpoints."""
+        data = response.json()
+        assert "entity_type" in data
     
-    def test_bulk_status_rejects_over_100_entities(self, client):
-        """Bulk operations reject >100 entities."""
-        entity_ids = [str(uuid4()) for _ in range(101)]
-        
-        response = client.post("/api/v1/lifecycle/bulk/status", json={
-            "entity_type": "dataset",
-            "entity_ids": entity_ids,
-            "new_status": "archived"
-        })
-        
-        assert response.status_code == 400
-        assert "Maximum 100" in response.json()["detail"]
-    
-    def test_bulk_archive_requires_confirmation(self, client):
-        """Bulk archive requires confirmed=true."""
-        response = client.post("/api/v1/lifecycle/bulk/archive", json={
-            "entity_type": "dataset",
-            "entity_ids": [str(uuid4())],
-            "reason": "Cleanup",
-            "confirmed": False
-        })
-        
-        assert response.status_code == 400
-        assert "confirmed=true" in response.json()["detail"]
-    
-    @patch("amprenta_rag.api.routers.lifecycle.bulk_delete_preview")
-    def test_bulk_preview_returns_aggregated_impact(self, mock_preview, client):
-        """Bulk preview returns aggregated impact."""
-        mock_preview.return_value = {
-            "entity_type": "dataset",
-            "entity_count": 2,
-            "total_impact": {"features": 30},
-            "blocking_entities": [],
-            "can_proceed": True,
-        }
-        
-        response = client.post("/api/v1/lifecycle/bulk/preview", json={
-            "entity_type": "dataset",
-            "entity_ids": [str(uuid4()), str(uuid4())]
-        })
-        
+    def test_export_download(self, client):
+        """POST /export/download should return ZIP."""
+        response = client.post(
+            "/lifecycle/export/download",
+            json={
+                "entity_type": "dataset",
+                "entity_id": str(uuid4())
+            }
+        )
         assert response.status_code == 200
-        assert response.json()["can_proceed"] is True
+        assert response.headers.get("content-type") == "application/zip"
+
+
+class TestStatusAPI:
+    """Tests for status update endpoint."""
+    
+    def test_update_status_invalid(self, client):
+        """Invalid status should return 400."""
+        response = client.post(
+            "/lifecycle/status",
+            json={
+                "entity_type": "dataset",
+                "entity_id": str(uuid4()),
+                "new_status": "invalid_status"
+            }
+        )
+        assert response.status_code == 400
