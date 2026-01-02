@@ -8,6 +8,7 @@ and configuration.
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from amprenta_rag.api.middleware import TimeoutMiddleware
 
 from amprenta_rag.api.routers import (
     admin,
@@ -128,6 +129,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Add timeout middleware BEFORE other middleware (middleware is applied in reverse order)
+app.add_middleware(TimeoutMiddleware)
 
 # Configure CORS
 app.add_middleware(

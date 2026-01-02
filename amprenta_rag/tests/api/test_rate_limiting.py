@@ -72,3 +72,35 @@ def test_share_link_validate_rate_limited():
     from amprenta_rag.api.routers.share_links import validate_token
     
     assert hasattr(validate_token, "__wrapped__") or hasattr(validate_token, "_limit")
+
+
+def test_timeout_middleware_configured():
+    """Test that timeout middleware is configured on app."""
+    from amprenta_rag.api.main import app
+    
+    # Check middleware stack includes TimeoutMiddleware
+    middleware_classes = [m.cls.__name__ for m in app.user_middleware]
+    assert "TimeoutMiddleware" in middleware_classes
+
+
+def test_timeout_middleware_returns_504_on_timeout():
+    """Test timeout middleware returns 504 on timeout."""
+    import asyncio
+    from amprenta_rag.api.middleware import TimeoutMiddleware
+    from starlette.testclient import TestClient
+    from starlette.applications import Starlette
+    from starlette.responses import PlainTextResponse
+    from starlette.routing import Route
+    
+    async def slow_endpoint(request):
+        await asyncio.sleep(5)  # Simulate slow response
+        return PlainTextResponse("done")
+    
+    test_app = Starlette(routes=[Route("/slow", slow_endpoint)])
+    test_app.add_middleware(TimeoutMiddleware, timeout=1)  # 1 second timeout
+    
+    client = TestClient(test_app)
+    response = client.get("/slow")
+    
+    assert response.status_code == 504
+    assert "request_timeout" in response.json()["error"]
