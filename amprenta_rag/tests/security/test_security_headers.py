@@ -31,3 +31,15 @@ def test_csp_header():
     csp = response.headers.get("Content-Security-Policy")
     assert csp is not None
     assert "default-src 'self'" in csp
+
+
+def test_streamlit_xsrf_config():
+    """Test that Streamlit XSRF protection is configured."""
+    from pathlib import Path
+    
+    config_path = Path(".streamlit/config.toml")
+    if config_path.exists():
+        content = config_path.read_text()
+        # Check that XSRF protection is enabled
+        assert "enableXsrfProtection = true" in content, "XSRF protection should be enabled"
+        assert "enableCORS = false" in content, "CORS should be disabled for security"
