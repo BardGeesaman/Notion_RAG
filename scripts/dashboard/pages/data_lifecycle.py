@@ -7,11 +7,38 @@ Provides UI for:
 - Audit log viewing
 """
 
+import os
+from typing import Any, Dict, Optional
+
+import httpx
 import streamlit as st
 from uuid import UUID
 
-from scripts.dashboard.core.api import _api_get, _api_post
-from scripts.dashboard.core.state import require_auth
+from scripts.dashboard.auth import require_auth
+
+
+def _api_base() -> str:
+    return os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
+
+
+def _api_get(path: str, params: Optional[Dict] = None) -> Any:
+    try:
+        with httpx.Client(timeout=60) as client:
+            r = client.get(f"{_api_base()}{path}", params=params)
+            r.raise_for_status()
+            return r.json()
+    except Exception:
+        return None
+
+
+def _api_post(path: str, payload: Dict) -> Any:
+    try:
+        with httpx.Client(timeout=60) as client:
+            r = client.post(f"{_api_base()}{path}", json=payload)
+            r.raise_for_status()
+            return r.json()
+    except Exception:
+        return None
 
 
 def render_data_lifecycle_page():
@@ -77,6 +104,23 @@ def _render_overview_tab():
     else:
         st.warning("Unable to fetch lifecycle stats")
     
+    # Orphan Stats
+    st.subheader("Orphaned Entities")
+    orphan_stats = _api_get("/lifecycle/orphans")
+    
+    if orphan_stats:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Orphaned Features", orphan_stats.get("features", {}).get("count", 0))
+        with col2:
+            st.metric("Orphaned Signatures", orphan_stats.get("signatures", {}).get("count", 0))
+        with col3:
+            st.metric("Orphaned Embeddings", orphan_stats.get("embeddings", {}).get("count", 0))
+        
+        if st.button("🧹 Run Orphan Cleanup (Dry Run)", key="orphan_cleanup_preview"):
+            # This would trigger the cleanup task - for now just show stats
+            st.info("Orphan cleanup preview - no changes made")
+    
     # Recent status changes
     st.subheader("Recent Status Changes")
     st.caption("Last 7 days of lifecycle transitions")
@@ -118,7 +162,7 @@ def _render_quarantine_tab():
     with col_action:
         action = st.selectbox(
             "Action",
-            ["Check Impact", "Restore (→ active)", "Archive (→ archived)"],
+            ["Check Impact", "Restore (→ active)", "Archive (→ archived)", "Export Data"],
             key="quarantine_action"
         )
     
@@ -159,6 +203,21 @@ def _render_quarantine_tab():
                         st.success(f"✅ {result.get('message')}")
                     else:
                         st.error(f"Failed: {result}")
+                
+                elif action == "Export Data":
+                    result = _api_post("/lifecycle/export", {
+                        "entity_type": entity_type,
+                        "entity_id": str(uuid_id),
+                    })
+                    if result and not result.get("error"):
+                        st.success(f"✅ Export ready - Checksum: {result.get('checksum', 'N/A')[:16]}...")
+                        st.json(result.get("data", {}))
+                        
+                        # Download button
+                        if st.button("📥 Download ZIP Package", key="download_export"):
+                            st.info("Use POST /lifecycle/export/download endpoint directly for ZIP download")
+                    else:
+                        st.error(f"Export failed: {result.get('error', 'Unknown error')}")
                         
             except ValueError:
                 st.error("Invalid UUID format")
@@ -298,6 +357,72 @@ def _render_bulk_operations_tab():
                         del st.session_state["bulk_preview_result"]
                 else:
                     st.error("Bulk operation failed")
+    
+    # After the existing bulk status update section, add:
+    st.markdown("---")
+    st.subheader("⚠️ Permanent Delete")
+    st.warning("**DESTRUCTIVE ACTION** - Permanently deletes entities. Cannot be undone!")
+    
+    with st.expander("Permanent Delete (Advanced)", expanded=False):
+        delete_entity_type = st.selectbox(
+            "Entity Type",
+            ["dataset", "experiment", "compound", "signature"],
+            key="delete_entity_type"
+        )
+        
+        delete_ids_input = st.text_area(
+            "Entity IDs to DELETE (one per line)",
+            height=100,
+            placeholder="UUIDs of entities to permanently delete",
+            key="delete_entity_ids"
+        )
+        
+        delete_reason = st.text_input(
+            "Reason for deletion",
+            placeholder="GDPR request, data quality issue, etc.",
+            key="delete_reason"
+        )
+        
+        # Parse IDs
+        delete_ids = []
+        if delete_ids_input:
+            for line in delete_ids_input.strip().split("\n"):
+                try:
+                    delete_ids.append(str(UUID(line.strip())))
+                except ValueError:
+                    pass
+        
+        st.caption(f"Parsed {len(delete_ids)} valid UUIDs")
+        
+        col_preview, col_delete = st.columns(2)
+        
+        with col_preview:
+            if st.button("🔍 Preview Delete Impact", key="delete_preview"):
+                if delete_ids:
+                    result = _api_post("/lifecycle/bulk/preview", {
+                        "entity_type": delete_entity_type,
+                        "entity_ids": delete_ids
+                    })
+                    if result:
+                        st.json(result)
+        
+        with col_delete:
+            confirm_delete = st.checkbox("I understand this is permanent", key="confirm_permanent")
+            if st.button("🗑️ PERMANENTLY DELETE", key="execute_delete", type="primary", disabled=not confirm_delete):
+                if delete_ids and delete_reason:
+                    result = _api_post("/lifecycle/bulk/delete", {
+                        "entity_type": delete_entity_type,
+                        "entity_ids": delete_ids,
+                        "reason": delete_reason,
+                        "confirmed": True,
+                        "dry_run": False
+                    })
+                    if result:
+                        st.success(f"Deleted {result.get('deleted', 0)} entities")
+                        if result.get("errors"):
+                            st.warning(f"Errors: {result['errors']}")
+                else:
+                    st.error("Provide IDs and reason")
 
 
 def _render_audit_tab():
