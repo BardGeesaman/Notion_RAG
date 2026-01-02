@@ -995,6 +995,31 @@ class VariantAnnotation(Base):
     revel_score = Column(Float, nullable=True)
     sift_prediction = Column(String(50), nullable=True)
     polyphen_prediction = Column(String(50), nullable=True)
+    
+    # Additional VEP fields
+    consequence = Column(String(100), nullable=True, index=True)  # e.g., missense_variant
+    impact = Column(String(20), nullable=True, index=True)  # HIGH, MODERATE, LOW, MODIFIER
+    symbol = Column(String(50), nullable=True, index=True)  # Gene symbol
+    gene_id = Column(String(50), nullable=True)  # Ensembl gene ID
+    transcript_id = Column(String(50), nullable=True)  # Ensembl transcript ID
+    biotype = Column(String(50), nullable=True)  # protein_coding, etc.
+    
+    # Protein change
+    amino_acids = Column(String(20), nullable=True)  # e.g., "A/T"
+    codons = Column(String(20), nullable=True)  # e.g., "Gcc/Acc"
+    protein_position = Column(Integer, nullable=True)
+    
+    # Additional predictions
+    sift_score = Column(Float, nullable=True)
+    polyphen_score = Column(Float, nullable=True)
+    
+    # Clinical (additional to existing clinical_significance)
+    clin_sig = Column(String(100), nullable=True)  # pathogenic, benign, etc.
+    pubmed_ids = Column(ARRAY(String), nullable=True)
+    
+    # Metadata
+    source_version = Column(String(50), nullable=True)
+    annotated_at = Column(DateTime(timezone=True), server_default=func.now())
 
     variant: Mapped["Variant"] = relationship("Variant", back_populates="annotations", foreign_keys=[variant_id])
 
