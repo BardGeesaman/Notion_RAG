@@ -63,6 +63,7 @@ PAGE_REGISTRY = {
     "RAG Chunks": ("scripts.dashboard.pages.rag_chunks", "render_rag_chunks_page"),
     "Chemistry": ("scripts.dashboard.pages.chemistry", "render_chemistry_page"),
     "Chemical Sketcher": ("scripts.dashboard.pages.chemical_sketcher", "render_chemical_sketcher_page"),
+    "Target Management": ("scripts.dashboard.pages.targets", "main"),
     "Generative Chemistry": ("scripts.dashboard.pages.generative_chemistry", "render_generative_chemistry_page"),
     "Image Analysis": ("scripts.dashboard.pages.image_analysis", "render_image_analysis_page"),
     "Compound Portfolio": ("scripts.dashboard.pages.compound_portfolio", "render_compound_portfolio_page"),
@@ -150,7 +151,7 @@ PAGE_REGISTRY = {
 PAGE_GROUPS = {
     "Home": ["Overview", "Cockpit", "Getting Started"],
     "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue", "Discovery Workflow", "Discovery", "Repositories", "Search", "Features", "Signatures", "Workspaces", "ENA Discovery", "Alignments"],
-    "Chemistry": ["Chemistry", "Chemical Sketcher", "Generative Chemistry", "Compound Portfolio", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network", "SAR What-If", "Candidate Selection", "Retrosynthesis Advisor"],
+    "Chemistry": ["Chemistry", "Chemical Sketcher", "Target Management", "Generative Chemistry", "Compound Portfolio", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network", "SAR What-If", "Candidate Selection", "Retrosynthesis Advisor"],
     "HTS": ["HTS QC", "Dose-Response Explorer", "Screening"],
     "Structure": ["Protein Structures", "Binding Sites", "Docking Runs", "Docking Triage", "Molecule Viewer"],
     "Omics": ["Single-Cell Viewer", "CRISPR Analysis", "Variant Analysis", "Multi-Omics Integration", "Connectivity Map", "Biomarker Discovery", "Cross-Omics", "Cross-Omics Pathways", "Sphingolipid Imbalance"],
