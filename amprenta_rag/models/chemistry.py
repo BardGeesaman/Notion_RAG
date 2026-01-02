@@ -84,6 +84,7 @@ class Compound(Base):
 
     # Lifecycle status
     lifecycle_status = Column(String(20), default='active', nullable=False, index=True)
+    retention_exempt = Column(Boolean, default=False, nullable=False)
 
     # Relationships
     hts_campaigns: Mapped[List["HTSCampaign"]] = relationship(back_populates="library")

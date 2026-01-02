@@ -252,6 +252,7 @@ class Experiment(Base):
 
     # Lifecycle status (replaces is_archived pattern)
     lifecycle_status = Column(String(20), default='active', nullable=False, index=True)
+    retention_exempt = Column(Boolean, default=False, nullable=False)
 
     @property
     def is_archived_compat(self) -> bool:
@@ -362,6 +363,7 @@ class Dataset(Base):
 
     # Lifecycle status (replaces is_archived pattern)
     lifecycle_status = Column(String(20), default='active', nullable=False, index=True)
+    retention_exempt = Column(Boolean, default=False, nullable=False)
 
     @property
     def is_archived_compat(self) -> bool:
@@ -652,6 +654,7 @@ class Signature(Base):
 
     # Lifecycle status
     lifecycle_status = Column(String(20), default='active', nullable=False, index=True)
+    retention_exempt = Column(Boolean, default=False, nullable=False)
 
     # Relationships
     components: Mapped[List["SignatureComponent"]] = relationship(
