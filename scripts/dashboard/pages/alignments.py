@@ -99,6 +99,22 @@ def _render_browse_tab() -> None:
                     key="selected_alignment",
                 )
                 st.session_state["selected_alignment_id"] = selected
+                
+                # Quick launch to Genome Browser
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    selected_row = df[df["id"] == selected].iloc[0]
+                    has_index = selected_row.get("has_index", False)
+                    if has_index:
+                        st.success(f"✅ {selected_row['filename']} is ready for IGV.js viewing")
+                    else:
+                        st.warning("⚠️ No index file - upload .bai/.crai for genome browser")
+
+                with col2:
+                    if has_index:
+                        if st.button("🧬 Open in Genome Browser", type="primary"):
+                            st.session_state["igv_alignment_id"] = selected
+                            st.info("Navigate to **Visualizations → Genome Browser** to view this alignment")
             else:
                 st.info("No alignment files found. Upload one in the Upload tab.")
         else:
