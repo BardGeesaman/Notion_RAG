@@ -2182,3 +2182,92 @@ class ReviewSLA(Base):
     __table_args__ = (
         Index("ix_review_slas_entity_type", "entity_type"),
     )
+
+
+class LabelQueueItem(Base):
+    """Item in the active learning labeling queue."""
+    __tablename__ = "label_queue"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    
+    # What to label
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=False)
+    model_id = Column(UUID(as_uuid=True), ForeignKey("ml_models.id"), nullable=False)
+    
+    # Uncertainty info
+    prediction = Column(Float)
+    uncertainty = Column(Float)  # Std deviation from ensemble
+    applicability_distance = Column(Float)
+    
+    # Selection metadata
+    selection_strategy = Column(String(50))  # uncertainty, margin, entropy, hybrid, random
+    selection_batch = Column(Integer)
+    priority_score = Column(Float)
+    
+    # Labeling workflow
+    status = Column(String(50), default="pending")  # pending, in_progress, labeled, skipped
+    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    assigned_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Label result
+    label = Column(Float, nullable=True)
+    label_source = Column(String(100), nullable=True)  # experimental, literature, expert_estimate
+    label_confidence = Column(String(20), nullable=True)  # high, medium, low
+    labeled_at = Column(DateTime(timezone=True), nullable=True)
+    labeled_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    notes = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    compound: Mapped["Compound"] = relationship("Compound")
+    model: Mapped["MLModel"] = relationship("MLModel", foreign_keys=[model_id])
+    assigned_user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[assigned_to])
+    labeling_user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[labeled_by])
+    
+    __table_args__ = (
+        UniqueConstraint("compound_id", "model_id", "selection_batch", name="uq_label_queue_compound_model_batch"),
+        Index("ix_label_queue_status_model", "status", "model_id"),
+        Index("ix_label_queue_priority", "priority_score"),
+    )
+
+
+class ActiveLearningCycle(Base):
+    """Tracks an active learning iteration cycle."""
+    __tablename__ = "active_learning_cycles"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
+    model_id = Column(UUID(as_uuid=True), ForeignKey("ml_models.id"), nullable=False)
+    
+    # Cycle info
+    cycle_number = Column(Integer, nullable=False)
+    selection_strategy = Column(String(50))
+    batch_size = Column(Integer)
+    
+    # Status
+    status = Column(String(50), default="selecting")  # selecting, labeling, training, complete
+    
+    # Metrics comparison
+    metrics_before = Column(JSON)  # {"auc": 0.85, "ece": 0.08}
+    metrics_after = Column(JSON)
+    
+    # Stats
+    items_selected = Column(Integer, default=0)
+    items_labeled = Column(Integer, default=0)
+    items_skipped = Column(Integer, default=0)
+    
+    # New model version (after retrain)
+    new_model_id = Column(UUID(as_uuid=True), ForeignKey("ml_models.id"), nullable=True)
+    
+    started_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    model: Mapped["MLModel"] = relationship("MLModel", foreign_keys=[model_id])
+    new_model: Mapped[Optional["MLModel"]] = relationship("MLModel", foreign_keys=[new_model_id])
+    
+    __table_args__ = (
+        UniqueConstraint("model_id", "cycle_number", name="uq_al_cycle_model_number"),
+        Index("ix_al_cycles_model_status", "model_id", "status"),
+    )
