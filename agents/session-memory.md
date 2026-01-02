@@ -2,6 +2,13 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **Multi-Modality Platform Strategic Plan**:
+  - Created comprehensive 2-3 year roadmap for all therapeutic modalities
+  - Reviewer approved with all P1/P2 feedback incorporated
+  - Key decisions: joined-table inheritance, ModalityAnalyzer protocol, migration strategy
+  - Phases: Peptides → Antibodies → Formulation → Nucleic Acids → Vaccines → Cell → ADCs → Gene
+  - Saved to: `.cursor/plans/multi_modality_platform_v2.plan.md`
+
 * [2025-01-01] – **Strategic Backlog Created**:
   - New ROADMAP section "Strategic Backlog (Long-Term Vision)" with **53 items across 12 categories**
   - **Clinical & Regulatory** (3): Clinical trials (phased 10-12w), patient data, 21 CFR Part 11

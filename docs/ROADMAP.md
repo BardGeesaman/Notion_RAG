@@ -708,6 +708,35 @@ Items originally scoped out or identified as major future initiatives. These rep
 
 ---
 
+### Multi-Modality Therapeutics (2-3 Year Strategic Initiative)
+
+Expand platform from small molecules to all therapeutic modalities. Full plan: `.cursor/plans/multi_modality_platform_v2.plan.md`
+
+| Phase | Content | Timeline | Dependencies |
+|-------|---------|----------|--------------|
+| **Phase 0** | Foundation (joined-table inheritance, migration, plugins) | Q1 | - |
+| **Phase 1A** | Peptides (bridge modality) | Q2 | Phase 0 |
+| **Phase 1B** | Antibodies (core biologics) | Q2-Q3 | Phase 0 |
+| **Phase 1C** | Formulation (cross-cutting) | Q3 | Phase 1B |
+| **Phase 2A** | Nucleic Acid Therapeutics (ASO, siRNA, mRNA) | Q4-Y2Q1 | Phase 1 |
+| **Phase 2B** | Vaccines | Y2Q2 | Phase 1C |
+| **Phase 2C** | Cell Therapy (CAR-T, manufacturing) | Y2Q3-Q4 | Phase 2A |
+| **Phase 3A** | ADCs (multi-modal) | Y3Q1 | Phase 1B + SM |
+| **Phase 3B** | Gene Therapy | Y3Q2-Q4 | Phase 2C |
+
+**Key Architecture Decisions:**
+- Joined-table SQLAlchemy inheritance (TherapeuticEntity base)
+- ModalityAnalyzer plugin protocol for modality-specific analysis
+- Multi-modal entity support (ADCs reference antibody + compound)
+- Migration from existing Compound model with rollback safety
+
+**External Integrations by Phase:**
+- Phase 1: UniProt, IMGT, SAbDab, PDB, PeptideAtlas, TherapeuticTarget, BindingDB
+- Phase 2: Ensembl, miRBase, IEDB, MHCflurry, FlowRepository, ImmPort
+- Phase 3: GTEx, AAV databases, ClinicalTrials.gov
+
+---
+
 ## ⏳ NEXT UP (Prioritized)
 
 ### 1) Jupyter Notebook Integration
