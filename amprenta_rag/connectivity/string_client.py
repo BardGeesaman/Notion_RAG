@@ -16,6 +16,9 @@ STRING_API_BASE = "https://string-db.org/api"
 RATE_LIMIT_DELAY = 1.0  # 1 request per second
 DEFAULT_SPECIES = 9606  # Human
 
+# Internal cache for interactions
+_interactions_cache: dict = {}
+
 
 class StringInteraction(BaseModel):
     """Protein-protein interaction from STRING."""
@@ -115,6 +118,11 @@ def get_interactions(
     if not proteins:
         return []
     
+    # Check cache first
+    cache_key = (tuple(sorted(proteins)), species, min_score, network_type)
+    if cache_key in _interactions_cache:
+        return _interactions_cache[cache_key]
+    
     identifiers = "\r".join(proteins)
     params = {
         "identifiers": identifiers,
@@ -142,6 +150,9 @@ def get_interactions(
                 tscore=int(item.get("tscore", 0) * 1000),
             ))
         logger.info(f"STRING returned {len(interactions)} interactions for {len(proteins)} proteins")
+        
+        # Cache the result
+        _interactions_cache[cache_key] = interactions
         return interactions
     except Exception as e:
         logger.error(f"STRING network request failed: {e}")
