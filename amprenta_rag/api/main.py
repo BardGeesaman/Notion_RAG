@@ -68,6 +68,7 @@ from amprenta_rag.api.routers import (
     variants,
     companies,
     extraction,
+    genomics,
     sync,
     admet,
     qsar,
@@ -173,6 +174,7 @@ app.include_router(multi_omics_viz.router, prefix="/api")
 app.include_router(variants.router, prefix="/api")
 app.include_router(companies.router, prefix="/api")
 app.include_router(extraction.router, prefix="/api")
+app.include_router(genomics.router, prefix="/api/v1")
 app.include_router(sync.router, prefix="/api")
 app.include_router(admet.router, prefix="/api")
 app.include_router(qsar.router, prefix="/api")

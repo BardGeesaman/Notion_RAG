@@ -4,23 +4,7 @@
 
 ## Scope
 
-| Gap | Solution | Batch |
-
-|-----|----------|-------|
-
-| Data Lifecycle E2E tests | Add 6 E2E tests for existing dashboard | 0 |
-
-| Lifecycle stats endpoint | Add `GET /lifecycle/stats` | 1 |
-
-| Lifecycle audit endpoint | Add `GET /lifecycle/audit` | 1 |
-
-| OCR/Scraper/Normalizer UI | New "AI Extraction Tools" page | 2 |
-
-| Conflict Resolver UI | Add "Conflicts" tab to Mapping Refresh | 3 |
-
-| KEGG Refresh visibility | Add "KEGG Cache" tab to Mapping Refresh | 3 |
-
-| New page E2E tests | 5 E2E tests for new UI components | 4 |---
+| Gap | Solution | Batch ||-----|----------|-------|| Data Lifecycle E2E tests | Add 6 E2E tests for existing dashboard | 0 || Lifecycle stats endpoint | Add `GET /lifecycle/stats` | 1 || Lifecycle audit endpoint | Add `GET /lifecycle/audit` | 1 || OCR/Scraper/Normalizer UI | New "AI Extraction Tools" page | 2 || Conflict Resolver UI | Add "Conflicts" tab to Mapping Refresh | 3 || KEGG Refresh visibility | Add "KEGG Cache" tab to Mapping Refresh | 3 || New page E2E tests | 5 E2E tests for new UI components | 4 |---
 
 ## Batch 0: Data Lifecycle E2E Tests (ADDED per Reviewer)
 
@@ -204,56 +188,13 @@ def test_kegg_cache_tab_shows_status()
 
 ## Test Summary (Updated)
 
-| Category | Count |
-
-|----------|-------|
-
-| Batch 0: Data Lifecycle E2E | 6 |
-
-| Batch 4: API tests | 8 |
-
-| Batch 4: Import tests | 3 |
-
-| Batch 4: New page E2E | 5 |
-
-| Batch 4: Lifecycle API extensions | 3 |
-
-| **Total** | **25** |---
+| Category | Count ||----------|-------|| Batch 0: Data Lifecycle E2E | 6 || Batch 4: API tests | 8 || Batch 4: Import tests | 3 || Batch 4: New page E2E | 5 || Batch 4: Lifecycle API extensions | 3 || **Total** | **25** |---
 
 ## File Summary
 
-| File | Action |
-
-|------|--------|
-
-| `amprenta_rag/tests/e2e/test_data_lifecycle_e2e.py` | NEW - 6 E2E tests |
-
-| `amprenta_rag/api/routers/lifecycle.py` | Add 2 endpoints |
-
-| `amprenta_rag/api/routers/extraction.py` | NEW - 3 endpoints |
-
-| `amprenta_rag/api/routers/mappings.py` | Add 1 endpoint |
-
-| `amprenta_rag/api/main.py` | Register extraction router |
-
-| `scripts/dashboard/pages/data_lifecycle.py` | Update 2 tabs |
-
-| `scripts/dashboard/pages/ai_extraction.py` | NEW - 3 tabs |
-
-| `scripts/dashboard/pages/mapping_refresh.py` | Add 2 tabs |
-
-| `scripts/dashboard/core/config.py` | Register AI Extraction page |
-
-| `amprenta_rag/tests/api/test_extraction_api.py` | NEW - 5 tests |
-
-| `amprenta_rag/tests/api/test_lifecycle_api.py` | Add 2 tests |
-
-| `amprenta_rag/tests/e2e/test_ai_extraction_e2e.py` | NEW - 3 tests |
-
-| `amprenta_rag/tests/e2e/test_mapping_refresh_extended_e2e.py` | NEW - 2 tests |---
+| File | Action ||------|--------|| `amprenta_rag/tests/e2e/test_data_lifecycle_e2e.py` | NEW - 6 E2E tests || `amprenta_rag/api/routers/lifecycle.py` | Add 2 endpoints || `amprenta_rag/api/routers/extraction.py` | NEW - 3 endpoints || `amprenta_rag/api/routers/mappings.py` | Add 1 endpoint || `amprenta_rag/api/main.py` | Register extraction router || `scripts/dashboard/pages/data_lifecycle.py` | Update 2 tabs || `scripts/dashboard/pages/ai_extraction.py` | NEW - 3 tabs || `scripts/dashboard/pages/mapping_refresh.py` | Add 2 tabs || `scripts/dashboard/core/config.py` | Register AI Extraction page || `amprenta_rag/tests/api/test_extraction_api.py` | NEW - 5 tests || `amprenta_rag/tests/api/test_lifecycle_api.py` | Add 2 tests || `amprenta_rag/tests/e2e/test_ai_extraction_e2e.py` | NEW - 3 tests || `amprenta_rag/tests/e2e/test_mapping_refresh_extended_e2e.py` | NEW - 2 tests |---
 
 ## P2 Observations (Deferred)
 
 1. **Bulk restore API**: Consider `POST /lifecycle/bulk/restore` for symmetry
 2. **SSRF prevention**: Block internal IPs in scraper
-3. **Per-endpoint rate limits**: OCR (expensive) vs normalize (cheap)

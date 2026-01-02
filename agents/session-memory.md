@@ -249,6 +249,32 @@
   - **Security Tests**: 5 tests (4 SSRF + 1 OCR), all passing
   - Addresses OWASP Top 10: SSRF (A10), Injection (A03)
 
+* [2025-01-01] – **ENA/Genomics P1 Package**:
+  - **VCF Parser** (`amprenta_rag/ingestion/genomics/vcf_parser.py`):
+    - pysam-based VCF file parsing
+    - Extracts chromosome, position, ref/alt alleles, quality, filter
+    - GENE/ANN INFO field parsing for gene annotation
+    - MAX_VARIANTS=10000 limit, 50MB file size limit
+  - **GeneticVariant Model Extension**:
+    - Added 6 VCF fields: chromosome, position, reference_allele, alternate_allele, quality, vcf_filter
+    - Index on chromosome column
+  - **Genomics API Router** (`amprenta_rag/api/routers/genomics.py`):
+    - POST /genomics/variants/upload - VCF file upload with preview mode
+    - GET /genomics/ena/search - ENA study search with filters
+    - POST /genomics/ena/ingest - Queue studies for ingestion
+  - **ENA Discovery Dashboard** (`scripts/dashboard/pages/ena_discovery.py`):
+    - 3-tab interface: Search, Results, Ingest
+    - Keyword search with organism/library filters
+    - Bulk study selection for batch ingestion
+  - **Variants Page Enhancement** (`scripts/dashboard/pages/variants.py`):
+    - Added "Upload VCF" tab (now 3 tabs total)
+    - File upload, preview mode, experiment linking
+  - **ENA Feature Extraction Integration**:
+    - Added `extract_ena_features()` to repository_feature_extraction.py
+    - ENA now supported alongside GEO, PRIDE, MetaboLights, MW
+  - **Tests**: 16 total (3 VCF parser + 5 API + 8 E2E)
+  - P2 observations added: VCF.gz support, pagination, Celery docs
+
 * [2025-01-01] – **User Experience Polish Complete**:
   - **Performance**: Query optimization (29→84 eager loading), Streamlit caching (7 functions), slow query logging
   - **UI Refinements**: Loading component library (275 lines), error utilities (+165 lines), 41 standardized spinners

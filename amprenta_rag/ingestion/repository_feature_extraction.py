@@ -14,7 +14,7 @@ Supports:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Set, Tuple
 from uuid import UUID
 
 from amprenta_rag.database.session import db_session
@@ -26,10 +26,59 @@ from amprenta_rag.ingestion.repositories.geo import extract_geo_features_with_ge
 from amprenta_rag.ingestion.repositories.pride import extract_pride_proteins_from_data_files
 from amprenta_rag.ingestion.repositories.metabolights import extract_metabolights_metabolites_from_isa_tab
 from amprenta_rag.ingestion.repositories.mw import extract_mw_metabolites_from_data_endpoint
+from amprenta_rag.ingestion.genomics.pipeline import extract_gene_counts_from_salmon
 from amprenta_rag.logging_utils import get_logger
 from amprenta_rag.models.domain import FeatureType
 
 logger = get_logger(__name__)
+
+
+def extract_ena_features(
+    study_id: str,
+    download_dir: Path = None,
+) -> Set[str]:
+    """
+    Extract gene features from ENA study.
+    
+    Uses existing Salmon quantification output if available.
+    
+    Args:
+        study_id: ENA run accession (e.g., ERR123456)
+        download_dir: Directory containing quantification results
+        
+    Returns:
+        Set of gene identifiers from quantification
+    """
+    if download_dir is None:
+        download_dir = Path("./quants")
+    
+    # Look for Salmon quant.sf output
+    quant_file = download_dir / study_id / "quant.sf"
+    
+    if not quant_file.exists():
+        # Try alternate location
+        quant_file = download_dir / f"{study_id}_quant" / "quant.sf"
+    
+    if not quant_file.exists():
+        logger.warning(
+            "[FEATURE-EXTRACT] No quantification file found for ENA study %s",
+            study_id,
+        )
+        return set()
+    
+    # Extract gene counts using existing function
+    gene_counts = extract_gene_counts_from_salmon(quant_file)
+    
+    # Return gene IDs with non-zero expression
+    gene_set = set(gene_counts.keys())
+    
+    logger.info(
+        "[FEATURE-EXTRACT] Extracted %d genes from ENA study %s",
+        len(gene_set),
+        study_id,
+    )
+    
+    return gene_set
 
 
 def extract_features_from_repository_dataset(
@@ -110,6 +159,13 @@ def extract_features_from_repository_dataset(
                     study_id=study_id,
                 )
                 features = [(metabolite, FeatureType.METABOLITE.value) for metabolite in metabolite_set]
+
+            elif repository.upper() == "ENA":
+                gene_set = extract_ena_features(
+                    study_id=study_id,
+                    download_dir=download_dir,
+                )
+                features = [(gene, FeatureType.GENE.value) for gene in gene_set]
 
             else:
                 logger.warning("[FEATURE-EXTRACT] Unknown repository: %s", repository)

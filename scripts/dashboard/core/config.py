@@ -79,6 +79,7 @@ PAGE_REGISTRY = {
     "Pathway Map Viewer": ("scripts.dashboard.pages.pathway_map_viewer", "render_pathway_map_viewer_page"),
     "Compound Ranking": ("scripts.dashboard.pages.compound_ranking", "render_compound_ranking_page"),
     "AI Extraction": ("scripts.dashboard.pages.ai_extraction", "render_ai_extraction_page"),
+    "ENA Discovery": ("scripts.dashboard.pages.ena_discovery", "render_ena_discovery_page"),
     "Sync Monitor": ("scripts.dashboard.pages.sync_monitor", "render_sync_monitor_page"),
     "Cross-Omics Pathways": ("scripts.dashboard.pages.cross_omics_pathways", "render_cross_omics_pathways_page"),
     "RAG Query": ("scripts.dashboard.pages.rag_query", "render_rag_query_page"),
@@ -146,7 +147,7 @@ PAGE_REGISTRY = {
 # Navigation groups for organized sidebar
 PAGE_GROUPS = {
     "Home": ["Overview", "Cockpit", "Getting Started"],
-    "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue", "Discovery Workflow", "Discovery", "Repositories", "Search", "Features", "Signatures", "Workspaces"],
+    "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue", "Discovery Workflow", "Discovery", "Repositories", "Search", "Features", "Signatures", "Workspaces", "ENA Discovery"],
     "Chemistry": ["Chemistry", "Chemical Sketcher", "Generative Chemistry", "Compound Portfolio", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network", "SAR What-If", "Candidate Selection"],
     "HTS": ["HTS QC", "Dose-Response Explorer", "Screening"],
     "Structure": ["Protein Structures", "Binding Sites", "Docking Runs", "Docking Triage", "Molecule Viewer"],

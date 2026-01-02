@@ -102,6 +102,14 @@ class GeneticVariant(Base):
     experiment_id = Column(UUID(as_uuid=True), ForeignKey("experiments.id"), nullable=True)
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # VCF-specific fields (nullable for backward compatibility)
+    chromosome = Column(String(50), nullable=True, index=True)
+    position = Column(Integer, nullable=True)
+    reference_allele = Column(String(500), nullable=True)
+    alternate_allele = Column(String(500), nullable=True)
+    quality = Column(Float, nullable=True)
+    vcf_filter = Column(String(100), nullable=True)
 
     experiment: Mapped[Optional["Experiment"]] = relationship("Experiment", backref="variants")
 

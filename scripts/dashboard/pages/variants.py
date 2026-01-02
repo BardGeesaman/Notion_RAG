@@ -13,13 +13,16 @@ def render_variants_page() -> None:
     st.title("🧬 Variant Tracking")
     st.markdown("Track genetic variants in experiments and cell lines")
 
-    tab_browse, tab_add = st.tabs(["Browse", "Add Variant"])
+    tab_browse, tab_add, tab_vcf = st.tabs(["Browse", "Add Variant", "📤 Upload VCF"])
 
     with tab_browse:
         _render_browse_tab()
 
     with tab_add:
         _render_add_tab()
+
+    with tab_vcf:
+        _render_vcf_upload_tab()
 
 
 def _render_browse_tab() -> None:
@@ -119,4 +122,89 @@ def _render_add_tab() -> None:
             except Exception as e:
                 st.error(f"Failed to save variant: {e}")
                 st.exception(e)
+
+
+def _render_vcf_upload_tab() -> None:
+    """VCF file upload and import tab."""
+    st.subheader("📤 Upload VCF File")
+    st.caption("Import genetic variants from VCF files")
+    
+    # File uploader
+    uploaded_file = st.file_uploader(
+        "Choose VCF file",
+        type=["vcf"],  # Note: .vcf.gz may need special handling
+        help="Max 50MB. Supports standard VCF format.",
+        key="vcf_file_uploader"
+    )
+    
+    # Optional experiment selector
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # Get experiments for selector
+        from amprenta_rag.database.session import db_session
+        from amprenta_rag.database.models import Experiment
+        
+        experiments = []
+        with db_session() as db:
+            exps = db.query(Experiment).order_by(Experiment.name).limit(100).all()
+            experiments = [(str(e.id), e.name) for e in exps]
+        
+        experiment_options = [("", "No experiment (standalone)")] + experiments
+        experiment_id = st.selectbox(
+            "Link to Experiment (optional)",
+            options=[x[0] for x in experiment_options],
+            format_func=lambda x: dict(experiment_options).get(x, x),
+            key="vcf_experiment"
+        )
+    
+    with col2:
+        preview_only = st.checkbox("Preview only", value=True, key="vcf_preview_mode")
+    
+    if uploaded_file:
+        st.info(f"📁 File: {uploaded_file.name} ({uploaded_file.size / 1024:.1f} KB)")
+        
+        action_label = "🔍 Preview Variants" if preview_only else "📥 Import Variants"
+        
+        if st.button(action_label, key="vcf_action_btn", type="primary"):
+            with st.spinner("Processing VCF file..."):
+                import httpx
+                import os
+                
+                API_BASE = os.environ.get("API_URL", "http://localhost:8000")
+                
+                try:
+                    params = f"?preview_only={str(preview_only).lower()}"
+                    if experiment_id:
+                        params += f"&experiment_id={experiment_id}"
+                    
+                    with httpx.Client(timeout=120) as client:
+                        files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "text/plain")}
+                        response = client.post(
+                            f"{API_BASE}/api/v1/genomics/variants/upload{params}",
+                            files=files,
+                        )
+                        result = response.json()
+                    
+                    if result.get("success"):
+                        if preview_only:
+                            st.success(f"✅ Parsed {result.get('variants_count', 0)} variants")
+                            
+                            # Show preview table
+                            variants = result.get("variants", [])
+                            if variants:
+                                import pandas as pd
+                                df = pd.DataFrame(variants)
+                                st.dataframe(df, use_container_width=True, hide_index=True)
+                                
+                                if result.get("variants_count", 0) > len(variants):
+                                    st.info(f"Showing first {len(variants)} of {result.get('variants_count')} variants")
+                        else:
+                            st.success(f"✅ Imported {result.get('imported_count', 0)} variants to database")
+                            st.balloons()
+                    else:
+                        st.error(f"❌ Error: {result.get('error', 'Unknown error')}")
+                
+                except Exception as e:
+                    st.error(f"❌ Upload failed: {str(e)}")
 
