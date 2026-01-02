@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management complete)
+**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration complete)
 
 Simple status legend:
 - ✅ DONE
@@ -476,6 +476,12 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Soft-delete grace period (30-day buffer before permanent deletion)
 - [ ] Dry-run flag for retention enforcement preview
 
+### GitHub Secrets Integration P2 Observations (Completed 2025-01-02)
+- [ ] AWS Secrets Manager automated rotation setup
+- [ ] Secret validation health checks in startup
+- [ ] Environment-specific secret namespacing
+- [ ] Secret usage audit logging
+
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
 - ✅ KEGG API rate limit documentation in id_mapping.py (2025-01-01)
@@ -722,7 +728,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
 | ✅ **P0** | **Secrets Management Overhaul** | Migrate 52 env vars from .env to AWS Secrets Manager. Wire ECS to fetch secrets at runtime. Remove secrets from Terraform state. Create `.env.example` template. | **COMPLETE** | 2025-01-01 |
-| **P0** | **GitHub Secrets Integration** | Configure GitHub Actions secrets for CI/CD. Add secret scanning to pre-commit hooks. Document secrets rotation procedure. | 3-5 days | Secrets Manager |
+| ✅ **P0** | **GitHub Secrets Integration** | Configure GitHub Actions secrets for CI/CD. Add secret scanning to pre-commit hooks. Document secrets rotation procedure. | **COMPLETE** | 2025-01-02 |
 | **P1** | **OWASP Top 10 Audit** | Systematic review: injection, broken auth, sensitive data exposure, XXE, broken access control, security misconfiguration, XSS, insecure deserialization, vulnerable components, insufficient logging. | 2 weeks | None |
 | **P1** | **Input Validation Hardening** | Pydantic strict mode for all schemas. SQL parameterization audit. HTML/JS sanitization for user-generated content. | 1 week | None |
 | **P1** | **Rate Limiting & Brute Force Protection** | Per-user/IP throttling on auth endpoints. Slowloris protection. Account lockout after failed attempts. | 1 week | None |
@@ -737,7 +743,6 @@ Items originally scoped out or identified as major future initiatives. These rep
 - 4 CVEs in dependencies (biopython, nbconvert, pdfminer-six, py) - monitoring for patches
 - 52 secrets in `.env` files not synced to AWS Secrets Manager
 - Terraform state contains plaintext DB password
-- No automated secret scanning in CI
 
 ---
 

@@ -11,6 +11,36 @@ This document describes the GitHub secrets required for CI/CD workflows.
 | `SIGNATURE_SECRET_KEY` | HMAC key for signatures | All tests |
 | `JWT_SECRET_KEY` | JWT signing key | Auth tests |
 
+## CD Deployment Secrets
+
+These secrets are required for the CD workflow to deploy to AWS Lightsail:
+
+| Secret Name | Description | Where Used |
+|-------------|-------------|------------|
+| `LIGHTSAIL_HOST` | Lightsail instance IP or hostname | CD workflow SSH connection |
+| `LIGHTSAIL_USER` | SSH username (default: ubuntu) | CD workflow SSH connection |
+| `LIGHTSAIL_SSH_KEY` | Private SSH key for deployment | CD workflow authentication |
+
+### Setting Up CD Secrets
+
+1. Generate SSH key pair (if not exists):
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions-deploy" -f deploy_key
+   ```
+
+2. Add public key to Lightsail instance:
+   ```bash
+   cat deploy_key.pub >> ~/.ssh/authorized_keys
+   ```
+
+3. Add private key to GitHub:
+   - Go to Repository → Settings → Secrets → Actions
+   - Create `LIGHTSAIL_SSH_KEY` with contents of `deploy_key`
+
+4. Add host and user:
+   - `LIGHTSAIL_HOST`: Your Lightsail instance public IP
+   - `LIGHTSAIL_USER`: `ubuntu` (default for Ubuntu instances)
+
 ## Setting Up GitHub Secrets
 
 1. Navigate to repository Settings → Secrets and variables → Actions
