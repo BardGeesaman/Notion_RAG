@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -336,4 +337,44 @@ async def get_dataset_enrichment_status(
             status_code=500,
             detail=f"Failed to get enrichment status: {str(e)}"
         )
+
+
+# --- Expression Overlay Schemas ---
+
+class ExpressionOverlayRequest(BaseModel):
+    """Request for expression overlay data."""
+    gene_symbols: List[str]
+    colormap: str = "diverging"
+
+
+class ExpressionOverlayResponse(BaseModel):
+    """Response for expression overlay data."""
+    node_colors: Dict[str, str]
+    expression_values: Dict[str, float]
+    genes_found: int
+    genes_missing: int
+
+
+# --- Expression Overlay Endpoints ---
+
+@router.post("/{dataset_id}/expression-overlay", response_model=ExpressionOverlayResponse)
+async def get_dataset_expression_overlay(
+    dataset_id: UUID,
+    request: ExpressionOverlayRequest,
+) -> ExpressionOverlayResponse:
+    """Get expression values and colors for network overlay."""
+    from amprenta_rag.services.expression_overlay import get_expression_overlay
+    
+    colors, expression = get_expression_overlay(
+        request.gene_symbols,
+        dataset_id,
+        request.colormap,
+    )
+    
+    return ExpressionOverlayResponse(
+        node_colors=colors,
+        expression_values=expression,
+        genes_found=len(expression),
+        genes_missing=len(request.gene_symbols) - len(expression),
+    )
 
