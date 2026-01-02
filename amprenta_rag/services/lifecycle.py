@@ -8,7 +8,11 @@ Provides:
 
 from __future__ import annotations
 
+import hashlib
+import json
+import zipfile
 from datetime import datetime, timezone
+from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
@@ -539,3 +543,132 @@ def enforce_retention_policies(dry_run: bool = True) -> Dict[str, Any]:
     
     logger.info(f"Retention enforcement: {results['entities_affected']} entities affected")
     return results
+
+
+def export_entity_data(
+    entity_type: str,
+    entity_id: UUID,
+) -> Dict[str, Any]:
+    """
+    Export entity and related data for GDPR compliance.
+    
+    Returns dict with:
+    - data: serialized entity + relationships
+    - audit_trail: all audit log entries for this entity
+    - checksum: SHA256 of the data
+    - format: JSON
+    """
+    result = {
+        "entity_type": entity_type,
+        "entity_id": str(entity_id),
+        "data": None,
+        "audit_trail": [],
+        "related_entities": {},
+        "checksum": None,
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+    }
+    
+    model = ENTITY_MODELS.get(entity_type)
+    if not model:
+        result["error"] = f"Unknown entity type: {entity_type}"
+        return result
+    
+    with db_session() as db:
+        entity = db.query(model).filter(model.id == entity_id).first()
+        if not entity:
+            result["error"] = "Entity not found"
+            return result
+        
+        # Serialize main entity (exclude SQLAlchemy internals)
+        entity_data = {}
+        for column in model.__table__.columns:
+            value = getattr(entity, column.name, None)
+            if isinstance(value, (datetime,)):
+                value = value.isoformat()
+            elif isinstance(value, UUID):
+                value = str(value)
+            entity_data[column.name] = value
+        
+        result["data"] = entity_data
+        
+        # Get related entities based on type
+        if entity_type == "dataset":
+            # Features linked to dataset
+            result["related_entities"]["features"] = [
+                str(f.id) for f in entity.features
+            ] if hasattr(entity, 'features') else []
+            # Signatures linked to dataset
+            result["related_entities"]["signatures"] = [
+                str(s.id) for s in entity.signatures
+            ] if hasattr(entity, 'signatures') else []
+        
+        elif entity_type == "experiment":
+            result["related_entities"]["datasets"] = [
+                str(d.id) for d in entity.datasets
+            ] if hasattr(entity, 'datasets') else []
+        
+        # Get audit trail
+        audit_entries = db.query(AuditLog).filter(
+            AuditLog.entity_type == entity_type,
+            AuditLog.entity_id == entity_id,
+        ).order_by(AuditLog.timestamp.desc()).all()
+        
+        result["audit_trail"] = [
+            {
+                "timestamp": e.timestamp.isoformat() if e.timestamp else None,
+                "action": e.action,
+                "old_value": e.old_value,
+                "new_value": e.new_value,
+                "user_id": str(e.user_id) if e.user_id else None,
+            }
+            for e in audit_entries
+        ]
+    
+    # Calculate checksum
+    data_str = json.dumps(result["data"], sort_keys=True, default=str)
+    result["checksum"] = hashlib.sha256(data_str.encode()).hexdigest()
+    
+    return result
+
+
+def create_export_package(
+    entity_type: str,
+    entity_id: UUID,
+) -> bytes:
+    """
+    Create a downloadable ZIP package with entity export.
+    
+    Returns ZIP file bytes.
+    """
+    export_data = export_entity_data(entity_type, entity_id)
+    
+    # Create ZIP in memory
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        # Main data as JSON
+        zf.writestr(
+            f"{entity_type}_{entity_id}_data.json",
+            json.dumps(export_data["data"], indent=2, default=str)
+        )
+        
+        # Audit trail
+        zf.writestr(
+            f"{entity_type}_{entity_id}_audit.json",
+            json.dumps(export_data["audit_trail"], indent=2, default=str)
+        )
+        
+        # Manifest with checksum
+        manifest = {
+            "entity_type": entity_type,
+            "entity_id": str(entity_id),
+            "exported_at": export_data["exported_at"],
+            "checksum": export_data["checksum"],
+            "files": [
+                f"{entity_type}_{entity_id}_data.json",
+                f"{entity_type}_{entity_id}_audit.json",
+            ]
+        }
+        zf.writestr("manifest.json", json.dumps(manifest, indent=2))
+    
+    zip_buffer.seek(0)
+    return zip_buffer.getvalue()

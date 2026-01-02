@@ -12,6 +12,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy import func
 
@@ -26,6 +27,8 @@ from amprenta_rag.services.lifecycle import (
     execute_bulk_archive,
     execute_bulk_delete,
     find_orphaned_entities,
+    export_entity_data,
+    create_export_package,
 )
 
 router = APIRouter(prefix="/lifecycle", tags=["lifecycle"])
@@ -119,6 +122,24 @@ class OrphanStatsResponse(BaseModel):
     features: dict
     signatures: dict
     embeddings: dict
+
+
+class ExportRequest(BaseModel):
+    """Request to export entity data."""
+    entity_type: str
+    entity_id: UUID
+
+
+class ExportResponse(BaseModel):
+    """Export metadata response."""
+    entity_type: str
+    entity_id: str
+    data: Optional[dict]
+    audit_trail: List[dict]
+    related_entities: dict
+    checksum: Optional[str]
+    exported_at: str
+    error: Optional[str] = None
 
 
 class LifecycleStatsResponse(BaseModel):
@@ -452,3 +473,41 @@ def get_orphan_stats(
     """Get counts of orphaned entities."""
     orphans = find_orphaned_entities()
     return OrphanStatsResponse(**orphans)
+
+
+@router.post("/export", response_model=ExportResponse)
+def export_entity(
+    request: ExportRequest,
+    current_user: User = Depends(get_current_user),
+) -> ExportResponse:
+    """Export entity data as JSON (preview)."""
+    if request.entity_type not in ["dataset", "experiment", "compound", "signature"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid entity_type: {request.entity_type}",
+        )
+    
+    result = export_entity_data(request.entity_type, request.entity_id)
+    return ExportResponse(**result)
+
+
+@router.post("/export/download")
+def download_export(
+    request: ExportRequest,
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """Download entity export as ZIP package."""
+    if request.entity_type not in ["dataset", "experiment", "compound", "signature"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid entity_type: {request.entity_type}",
+        )
+    
+    zip_bytes = create_export_package(request.entity_type, request.entity_id)
+    
+    filename = f"{request.entity_type}_{request.entity_id}_export.zip"
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
