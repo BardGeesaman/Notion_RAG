@@ -236,6 +236,122 @@ class TargetAssayResponse(BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ============ Active Learning Schemas ============
+
+class SampleSelectionRequest(BaseSchema):
+    """Request to select samples for labeling."""
+    compound_ids: List[UUID]
+    strategy: str = Field(default="uncertainty", description="Selection strategy")
+    batch_size: int = Field(default=50, ge=1, le=200, description="Number of samples to select")
+    
+    @field_validator('strategy')
+    @classmethod
+    def validate_strategy(cls, v):
+        allowed = ["uncertainty", "margin", "entropy", "hybrid", "random"]
+        if v not in allowed:
+            raise ValueError(f"Strategy must be one of: {allowed}")
+        return v
+
+
+class LabelSubmitRequest(BaseSchema):
+    """Request to submit a label."""
+    label: float = Field(..., description="Label value (e.g., IC50, activity score)")
+    source: str = Field(..., description="Label source")
+    confidence: str = Field(..., description="Label confidence level")
+    notes: Optional[str] = Field(None, description="Additional notes")
+    
+    @field_validator('source')
+    @classmethod
+    def validate_source(cls, v):
+        allowed = ["experimental", "literature", "expert_estimate"]
+        if v not in allowed:
+            raise ValueError(f"Source must be one of: {allowed}")
+        return v
+    
+    @field_validator('confidence')
+    @classmethod
+    def validate_confidence(cls, v):
+        allowed = ["high", "medium", "low"]
+        if v not in allowed:
+            raise ValueError(f"Confidence must be one of: {allowed}")
+        return v
+
+
+class LabelQueueItemResponse(BaseSchema):
+    """Response for a label queue item."""
+    id: UUID
+    compound_id: UUID
+    model_id: UUID
+    prediction: Optional[float] = None
+    uncertainty: Optional[float] = None
+    applicability_distance: Optional[float] = None
+    selection_strategy: Optional[str] = None
+    selection_batch: Optional[int] = None
+    priority_score: Optional[float] = None
+    status: str
+    assigned_to: Optional[UUID] = None
+    assigned_at: Optional[datetime] = None
+    label: Optional[float] = None
+    label_source: Optional[str] = None
+    label_confidence: Optional[str] = None
+    labeled_at: Optional[datetime] = None
+    labeled_by: Optional[UUID] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LabelQueueItemWithCompound(LabelQueueItemResponse):
+    """Queue item with compound details for UI."""
+    compound_smiles: Optional[str] = None
+    compound_name: Optional[str] = None
+
+
+class ActiveLearningCycleResponse(BaseSchema):
+    """Response for an AL cycle."""
+    id: UUID
+    model_id: UUID
+    cycle_number: int
+    selection_strategy: Optional[str] = None
+    batch_size: Optional[int] = None
+    status: str
+    metrics_before: Optional[dict] = None
+    metrics_after: Optional[dict] = None
+    items_selected: int = 0
+    items_labeled: int = 0
+    items_skipped: int = 0
+    new_model_id: Optional[UUID] = None
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ActiveLearningStatsResponse(BaseSchema):
+    """Statistics for active learning on a model."""
+    model_id: UUID
+    total_cycles: int
+    pending_items: int
+    labeled_items: int
+    cycles: List[dict]
+
+
+class CreateCycleRequest(BaseSchema):
+    """Request to create a new AL cycle."""
+    selection_strategy: str = Field(default="uncertainty", description="Sample selection strategy")
+    batch_size: int = Field(default=50, ge=1, le=200, description="Number of samples per cycle")
+    
+    @field_validator('selection_strategy')
+    @classmethod
+    def validate_strategy(cls, v):
+        allowed = ["uncertainty", "margin", "entropy", "hybrid", "random"]
+        if v not in allowed:
+            raise ValueError(f"Strategy must be one of: {allowed}")
+        return v
+
+
 class AnnotationCreate(BaseSchema):
     """Schema for creating an annotation/note on an entity."""
 
