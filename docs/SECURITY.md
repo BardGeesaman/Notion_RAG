@@ -176,12 +176,19 @@ app.add_middleware(
 
 ## Security Headers
 
-**Recommended Headers** (Future implementation):
-- `Content-Security-Policy`: Prevent XSS attacks
-- `Strict-Transport-Security`: Force HTTPS
-- `X-Frame-Options`: Prevent clickjacking
-- `X-Content-Type-Options`: Prevent MIME sniffing
-- `Referrer-Policy`: Control referrer information
+**Implemented Headers**: All security headers are configured via `SecurityHeadersMiddleware` in `amprenta_rag/api/middleware.py`:
+
+- `Content-Security-Policy`: `"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"` - Prevent XSS attacks
+- `Strict-Transport-Security`: `"max-age=31536000; includeSubDomains"` - Force HTTPS (production only)
+- `X-Frame-Options`: `"DENY"` - Prevent clickjacking
+- `X-Content-Type-Options`: `"nosniff"` - Prevent MIME sniffing
+- `Referrer-Policy`: `"strict-origin-when-cross-origin"` - Control referrer information
+- `X-XSS-Protection`: `"1; mode=block"` - Legacy XSS protection
+
+**Key Features**:
+- Environment-aware HSTS (production-only to avoid localhost issues)
+- Streamlit XSRF protection with meta tags
+- FastAPI and Streamlit dual configuration
 
 ## Monitoring & Logging
 

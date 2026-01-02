@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening complete)
+**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers complete)
 
 Simple status legend:
 - ✅ DONE
@@ -753,7 +753,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 | **P1** | **OWASP Top 10 Audit** | Systematic review: injection, broken auth, sensitive data exposure, XXE, broken access control, security misconfiguration, XSS, insecure deserialization, vulnerable components, insufficient logging. | 2 weeks | None |
 | ✅ **P1** | **Input Validation Hardening** | Pydantic strict mode for all schemas. SQL parameterization audit. HTML/JS sanitization for user-generated content. | **COMPLETE** | 2025-01-02 |
 | ✅ **P1** | **Rate Limiting & Brute Force Protection** | Per-user/IP throttling on auth endpoints. Slowloris protection. Account lockout after failed attempts. | **COMPLETE** | 2025-01-02 |
-| **P2** | **Security Headers** | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy. Streamlit + FastAPI configuration. | 3-5 days | None |
+| ✅ **P2** | **Security Headers** | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy. Streamlit + FastAPI configuration. | **COMPLETE** | 2025-01-02 |
 | **P2** | **CVE Monitoring Pipeline** | Dependabot/Snyk integration. Automated PR for patches. Block deploys on critical CVEs. Address existing 4 CVEs. | 1 week | GitHub |
 | **P2** | **Penetration Testing** | Engage professional pentest firm. Remediation sprint for findings. Re-test validation. | 3-4 weeks | Budget |
 | **P3** | **Container Security** | Trivy image scanning in CI. Distroless/Alpine base images. Non-root container execution. | 1 week | Docker |
