@@ -25,4 +25,14 @@ repos:
             \.github/workflows/.*\.yml|
             alembic/.*\.py
           )$
+  # Custom Amprenta checks for common issues
+  - repo: local
+    hooks:
+      - id: amprenta-checks
+        name: Amprenta custom checks
+        description: Check for celery imports, utcnow(), schema inheritance
+        entry: python scripts/pre_commit_checks.py
+        language: python
+        files: \.py$
+        pass_filenames: true
 

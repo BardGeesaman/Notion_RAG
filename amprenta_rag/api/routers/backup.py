@@ -1,7 +1,7 @@
 """Backup and disaster recovery API endpoints."""
 
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import UUID, uuid4
@@ -331,7 +331,7 @@ async def create_project_export(
             engine.backup_client.upload_file(str(temp_path), file_path)
             
             # Create ProjectExport record with 24-hour expiration
-            expires_at = datetime.utcnow() + timedelta(hours=24)
+            expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
             
             project_export = ProjectExport(
                 id=export_id,
@@ -395,7 +395,7 @@ async def download_project_export(
         )
     
     # Check expiration (return 410 GONE if expired)
-    if datetime.utcnow() > project_export.expires_at:
+    if datetime.now(timezone.utc) > project_export.expires_at:
         # Clean up expired record
         db.delete(project_export)
         db.commit()
