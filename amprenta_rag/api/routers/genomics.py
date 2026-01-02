@@ -132,6 +132,48 @@ class CoverageResponse(BaseModel):
     error: Optional[str] = None
 
 
+# --- Annotation Schemas ---
+
+class AnnotationResponse(BaseModel):
+    """Single annotation response."""
+    id: UUID
+    variant_id: UUID
+    consequence: Optional[str] = None
+    impact: Optional[str] = None
+    symbol: Optional[str] = None
+    gene_id: Optional[str] = None
+    sift_prediction: Optional[str] = None
+    sift_score: Optional[float] = None
+    polyphen_prediction: Optional[str] = None
+    polyphen_score: Optional[float] = None
+    clin_sig: Optional[str] = None
+    source: str = "VEP"
+    annotated_at: Optional[datetime] = None
+
+
+class BatchAnnotateRequest(BaseModel):
+    """Request for batch annotation."""
+    variant_ids: List[UUID]
+
+
+class BatchAnnotateResponse(BaseModel):
+    """Response for batch annotation."""
+    success: bool
+    job_id: Optional[str] = None
+    queued_count: int
+    message: str
+
+
+class AnnotationStatsResponse(BaseModel):
+    """Statistics for annotations."""
+    total_variants: int
+    annotated_variants: int
+    unannotated_variants: int
+    high_impact: int
+    moderate_impact: int
+    low_impact: int
+
+
 @router.post("/variants/upload", response_model=VCFUploadResponse)
 async def upload_vcf(
     file: UploadFile = File(...),
@@ -700,3 +742,147 @@ def _stream_file_range(path: Path, start: int, end: int):
                 break
             remaining -= len(chunk)
             yield chunk
+
+
+# --- Variant Annotation Endpoints ---
+
+@router.post("/variants/{variant_id}/annotate", response_model=AnnotationResponse)
+def annotate_single_variant(
+    variant_id: UUID,
+    current_user: User = Depends(get_current_user),
+) -> AnnotationResponse:
+    """
+    Trigger VEP annotation for a single variant.
+    
+    Returns the created annotation or error if annotation fails.
+    """
+    from amprenta_rag.ingestion.genomics.annotation_service import annotate_variant_by_id
+    
+    annotation = annotate_variant_by_id(variant_id)
+    
+    if not annotation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Annotation failed. Variant may be missing required fields or VEP returned no results.",
+        )
+    
+    return AnnotationResponse(
+        id=annotation.id,
+        variant_id=annotation.variant_id,
+        consequence=annotation.consequence,
+        impact=annotation.impact,
+        symbol=annotation.symbol,
+        gene_id=annotation.gene_id,
+        sift_prediction=annotation.sift_prediction,
+        sift_score=annotation.sift_score,
+        polyphen_prediction=annotation.polyphen_prediction,
+        polyphen_score=annotation.polyphen_score,
+        clin_sig=annotation.clin_sig,
+        source=annotation.annotation_source or "VEP",
+        annotated_at=annotation.annotated_at,
+    )
+
+
+@router.post("/variants/annotate/batch", response_model=BatchAnnotateResponse)
+def annotate_variants_batch(
+    request: BatchAnnotateRequest,
+    current_user: User = Depends(get_current_user),
+) -> BatchAnnotateResponse:
+    """
+    Queue batch annotation job for multiple variants.
+    
+    Submits a Celery task for background processing.
+    Max 1000 variants per request.
+    """
+    from amprenta_rag.jobs.tasks.genomics import annotate_variants_task
+    
+    if len(request.variant_ids) > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 1000 variants per batch request",
+        )
+    
+    if not request.variant_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No variant IDs provided",
+        )
+    
+    # Submit Celery task
+    task = annotate_variants_task.delay([str(vid) for vid in request.variant_ids])
+    
+    return BatchAnnotateResponse(
+        success=True,
+        job_id=task.id,
+        queued_count=len(request.variant_ids),
+        message=f"Queued {len(request.variant_ids)} variants for annotation",
+    )
+
+
+@router.get("/variants/{variant_id}/annotations", response_model=List[AnnotationResponse])
+def get_variant_annotations(
+    variant_id: UUID,
+    current_user: User = Depends(get_current_user),
+) -> List[AnnotationResponse]:
+    """Get all annotations for a variant."""
+    from amprenta_rag.database.models import VariantAnnotation
+    
+    with db_session() as db:
+        annotations = db.query(VariantAnnotation).filter(
+            VariantAnnotation.variant_id == variant_id
+        ).order_by(VariantAnnotation.annotated_at.desc()).all()
+        
+        return [
+            AnnotationResponse(
+                id=a.id,
+                variant_id=a.variant_id,
+                consequence=a.consequence,
+                impact=a.impact,
+                symbol=a.symbol,
+                gene_id=a.gene_id,
+                sift_prediction=a.sift_prediction,
+                sift_score=a.sift_score,
+                polyphen_prediction=a.polyphen_prediction,
+                polyphen_score=a.polyphen_score,
+                clin_sig=a.clin_sig,
+                source=a.annotation_source or "VEP",
+                annotated_at=a.annotated_at,
+            )
+            for a in annotations
+        ]
+
+
+@router.get("/variants/annotations/stats", response_model=AnnotationStatsResponse)
+def get_annotation_stats(
+    current_user: User = Depends(get_current_user),
+) -> AnnotationStatsResponse:
+    """Get annotation statistics."""
+    from amprenta_rag.database.models import Variant, VariantAnnotation
+    from sqlalchemy import func
+    
+    with db_session() as db:
+        total = db.query(func.count(Variant.id)).scalar() or 0
+        
+        annotated_subq = db.query(VariantAnnotation.variant_id).distinct().subquery()
+        annotated = db.query(func.count()).select_from(annotated_subq).scalar() or 0
+        
+        high = db.query(func.count(VariantAnnotation.id)).filter(
+            VariantAnnotation.impact == "HIGH"
+        ).scalar() or 0
+        
+        moderate = db.query(func.count(VariantAnnotation.id)).filter(
+            VariantAnnotation.impact == "MODERATE"
+        ).scalar() or 0
+        
+        low = db.query(func.count(VariantAnnotation.id)).filter(
+            VariantAnnotation.impact == "LOW"
+        ).scalar() or 0
+        
+        return AnnotationStatsResponse(
+            total_variants=total,
+            annotated_variants=annotated,
+            unannotated_variants=total - annotated,
+            high_impact=high,
+            moderate_impact=moderate,
+            low_impact=low,
+        )
