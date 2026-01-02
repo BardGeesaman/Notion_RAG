@@ -154,6 +154,88 @@ class BuildingBlockResultSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Target Management Schemas
+class TargetCreate(BaseSchema):
+    """Schema for creating a new target."""
+    name: str = Field(..., min_length=1, max_length=200)
+    gene_symbol: Optional[str] = Field(None, max_length=50)
+    uniprot_id: Optional[str] = Field(None, max_length=20)
+    target_class: Optional[str] = Field(None, max_length=100)
+    target_family: Optional[str] = Field(None, max_length=100)
+    description: Optional[str] = None
+
+
+class TargetUpdate(BaseSchema):
+    """Schema for updating target fields."""
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    gene_symbol: Optional[str] = Field(None, max_length=50)
+    target_class: Optional[str] = Field(None, max_length=100)
+    target_family: Optional[str] = Field(None, max_length=100)
+    validation_status: Optional[str] = Field(None, max_length=50)
+    lifecycle_status: Optional[str] = Field(None, max_length=50)
+    druggability_score: Optional[float] = Field(None, ge=0.0, le=1.0)
+    pocket_count: Optional[int] = Field(None, ge=0)
+    is_synthetic: Optional[bool] = None
+
+
+class TargetResponse(BaseSchema):
+    """Schema for target response data."""
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    gene_symbol: Optional[str] = None
+    uniprot_id: Optional[str] = None
+    target_class: Optional[str] = None
+    target_family: Optional[str] = None
+    druggability_score: Optional[float] = None
+    druggability_source: Optional[str] = None
+    pocket_count: Optional[int] = None
+    validation_status: Optional[str] = None
+    validation_evidence: Optional[dict] = None
+    lifecycle_status: str = "active"
+    is_synthetic: bool = False
+    chembl_id: Optional[str] = None
+    ensembl_id: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CompoundActivityResponse(BaseSchema):
+    """Schema for compound activity data."""
+    compound_id: UUID
+    compound_name: Optional[str] = None
+    smiles: str
+    activity_type: Optional[str] = None
+    activity_value: Optional[float] = None
+    activity_units: Optional[str] = None
+    assay_id: Optional[UUID] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DruggabilityResponse(BaseSchema):
+    """Schema for druggability calculation results."""
+    target_id: UUID
+    score: float = Field(ge=0.0, le=1.0)
+    factors: dict
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TargetAssayResponse(BaseSchema):
+    """Schema for target-linked assay data."""
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    experiment_type: Optional[str] = None
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AnnotationCreate(BaseSchema):
     """Schema for creating an annotation/note on an entity."""
 

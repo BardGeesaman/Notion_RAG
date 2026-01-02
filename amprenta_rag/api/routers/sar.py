@@ -45,7 +45,7 @@ def list_targets(limit: int = Query(200, ge=1, le=2000, description="Maximum num
     response_model=List[schemas.CompoundActivityResponse],
 )
 def get_compounds_by_target(
-    target: str = Field(..., description="Target protein name or identifier"),
+    target: str,
     limit: int = Query(2000, ge=1, le=20000, description="Maximum number of compounds to return")
 ):
     """Get compounds with activity data for a specific target.
@@ -70,7 +70,7 @@ def get_compounds_by_target(
     response_model=List[schemas.ActivityCliffResponse],
 )
 def get_activity_cliffs(
-    target: str = Field(..., description="Target protein name or identifier"),
+    target: str,
     similarity_threshold: float = Query(0.6, ge=0.0, le=1.0, description="Minimum Tanimoto similarity threshold"),
     fold_change: float = Query(10.0, ge=1.0, le=1e6, description="Minimum fold change in activity"),
     limit: int = Query(50, ge=1, le=500, description="Maximum number of cliffs to return"),
