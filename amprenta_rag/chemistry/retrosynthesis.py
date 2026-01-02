@@ -119,7 +119,7 @@ class RetrosynthesisPlanner:
             SynthesisStep(
                 reactants=["CC(C)OC(=O)c1ccc(Br)cc1", "CC(=O)NHNH2"],
                 product="CC(C)OC(=O)c1ccc(NHNC(=O)C)cc1",
-                reaction_type="buchwald_hartwig",
+                reaction_type="suzuki_coupling",
                 conditions="Pd(OAc)2, BINAP, Cs2CO3, toluene, 110°C, 12h",
                 confidence=0.75
             ),
@@ -166,7 +166,7 @@ def score_route(route: SynthesisRoute) -> RouteScore:
     complexity_score = max(0, 100 - (step_count * 15))
     
     # Availability: based on reaction types (mock)
-    common_reactions = {"amide_coupling", "ester_hydrolysis", "reduction"}
+    common_reactions = {"amide_coupling", "ester_hydrolysis", "reduction", "suzuki_coupling", "oxidation", "protection", "deprotection"}
     availability_score = sum(
         80 if step.reaction_type in common_reactions else 60
         for step in route.steps
