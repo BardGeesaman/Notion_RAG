@@ -9,12 +9,13 @@ from __future__ import annotations
 from typing import Any, Dict, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from amprenta_rag.api.dependencies import get_database_session
 from amprenta_rag.auth.signatures import create_signature, get_signatures, verify_signature
+from amprenta_rag.api.rate_limit import limiter
 
 router = APIRouter()
 
@@ -54,8 +55,10 @@ class SignatureInfoResponse(BaseModel):
 
 
 @router.post("/sign", response_model=SignResponse, status_code=201)
+@limiter.limit("5/minute")
 async def sign_document(
-    request: SignRequest,
+    request: Request,
+    sign_request: SignRequest,
     db: Session = Depends(get_database_session),
 ) -> SignResponse:
     """
@@ -64,12 +67,12 @@ async def sign_document(
     Requires user password for authentication.
     """
     signature = create_signature(
-        user_id=str(request.user_id),
-        action=request.action,
-        entity_type=request.entity_type,
-        entity_id=str(request.entity_id),
-        password=request.password,
-        meaning=request.meaning,
+        user_id=str(sign_request.user_id),
+        action=sign_request.action,
+        entity_type=sign_request.entity_type,
+        entity_id=str(sign_request.entity_id),
+        password=sign_request.password,
+        meaning=sign_request.meaning,
         db=db,
     )
     

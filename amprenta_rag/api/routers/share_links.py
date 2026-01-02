@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,7 @@ from amprenta_rag.services.share_link_service import (
     revoke_share_link,
     validate_share_link,
 )
+from amprenta_rag.api.rate_limit import limiter
 
 router = APIRouter()
 
@@ -142,7 +143,9 @@ async def revoke_link(
 
 
 @router.get("/{token}/validate", response_model=ShareLinkValidateResponse)
+@limiter.limit("30/minute")
 async def validate_token(
+    request: Request,
     token: str,
     db: Session = Depends(get_database_session),
 ) -> ShareLinkValidateResponse:

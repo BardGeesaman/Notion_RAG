@@ -12,11 +12,12 @@ import ipaddress
 import socket
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from pydantic import BaseModel
 
 from amprenta_rag.api.dependencies import get_current_user
 from amprenta_rag.database.models import User
+from amprenta_rag.api.rate_limit import limiter
 
 router = APIRouter(prefix="/extraction", tags=["extraction"])
 
@@ -157,7 +158,9 @@ class NormalizeResponse(BaseModel):
 # --- Endpoints ---
 
 @router.post("/ocr", response_model=OCRResponse)
+@limiter.limit("5/minute")
 async def extract_ocr(
+    request: Request,
     file: UploadFile = File(...),
     language: str = Query("eng", description="Tesseract language code"),
     current_user: User = Depends(get_current_user),
@@ -229,8 +232,10 @@ async def extract_ocr(
 
 
 @router.post("/scrape", response_model=ScrapeResponse)
+@limiter.limit("10/minute")
 def scrape_url(
-    request: ScrapeRequest,
+    request: Request,
+    scrape_request: ScrapeRequest,
     current_user: User = Depends(get_current_user),
 ) -> ScrapeResponse:
     """
@@ -239,7 +244,7 @@ def scrape_url(
     Rate limiting: Inherits WebScraper's 0.5s per-domain limit.
     """
     # SSRF Prevention
-    is_safe, error = _is_safe_url(request.url)
+    is_safe, error = _is_safe_url(scrape_request.url)
     if not is_safe:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -250,7 +255,7 @@ def scrape_url(
         from amprenta_rag.extraction.web_scraper import WebScraper
         
         scraper = WebScraper()
-        result = scraper.extract_from_url(request.url)
+        result = scraper.extract_from_url(scrape_request.url)
         
         return ScrapeResponse(
             success=result.success,
@@ -264,7 +269,7 @@ def scrape_url(
     except Exception as e:
         return ScrapeResponse(
             success=False,
-            url=request.url,
+            url=scrape_request.url,
             title=None,
             author=None,
             content="",

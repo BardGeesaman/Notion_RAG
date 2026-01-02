@@ -57,3 +57,18 @@ def test_get_user_or_ip_without_user():
         result = get_user_or_ip(request)
     
     assert result == "ip:192.168.1.1"
+
+
+def test_signature_endpoint_rate_limited():
+    """Test that signature endpoint has rate limiting."""
+    from amprenta_rag.api.routers.signatures import sign_document
+    
+    # Check the endpoint has the limiter decorator
+    assert hasattr(sign_document, "__wrapped__") or hasattr(sign_document, "_limit")
+
+
+def test_share_link_validate_rate_limited():
+    """Test that share link validation has rate limiting."""
+    from amprenta_rag.api.routers.share_links import validate_token
+    
+    assert hasattr(validate_token, "__wrapped__") or hasattr(validate_token, "_limit")
