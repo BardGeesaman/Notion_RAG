@@ -282,7 +282,7 @@ def render_target_detail_tab():
     
     # Action buttons
     st.divider()
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         if st.button("Calculate Druggability", type="primary"):
@@ -298,6 +298,103 @@ def render_target_detail_tab():
         if st.button("Edit Target"):
             st.session_state["edit_target_id"] = target_id
             st.session_state["edit_target_data"] = target
+            st.rerun()
+    
+    with col3:
+        if target.get('uniprot_id') and st.button("Enrich from UniProt"):
+            with st.spinner("Fetching UniProt data..."):
+                uniprot_data = api_get(f"/api/v1/targets/{target_id}/enrich/uniprot")
+                if uniprot_data:
+                    st.session_state["uniprot_enrichment"] = uniprot_data
+                    st.success("UniProt data fetched!")
+                    st.rerun()
+                else:
+                    st.error("Failed to fetch UniProt data")
+    
+    with col4:
+        if target.get('chembl_id') and st.button("Enrich from ChEMBL"):
+            with st.spinner("Fetching ChEMBL data..."):
+                chembl_data = api_get(f"/api/v1/targets/{target_id}/enrich/chembl")
+                if chembl_data:
+                    st.session_state["chembl_enrichment"] = chembl_data
+                    st.success("ChEMBL data fetched!")
+                    st.rerun()
+                else:
+                    st.error("Failed to fetch ChEMBL data")
+    
+    # Display enrichment data if available
+    if st.session_state.get("uniprot_enrichment"):
+        st.divider()
+        st.subheader("UniProt Enrichment Data")
+        uniprot_data = st.session_state["uniprot_enrichment"]
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Protein Information**")
+            st.text(f"Protein Name: {uniprot_data.get('protein_name', 'N/A')}")
+            st.text(f"Gene Names: {', '.join(uniprot_data.get('gene_names', []))}")
+            st.text(f"Organism: {uniprot_data.get('organism', 'N/A')}")
+            st.text(f"Sequence Length: {uniprot_data.get('sequence_length', 'N/A')} aa")
+        
+        with col2:
+            st.markdown("**Functional Information**")
+            function_text = uniprot_data.get('function', 'N/A')
+            if function_text and len(function_text) > 200:
+                function_text = function_text[:200] + "..."
+            st.text_area("Function", value=function_text, height=100, disabled=True)
+            
+            location = uniprot_data.get('subcellular_location', 'N/A')
+            st.text(f"Subcellular Location: {location}")
+        
+        if st.button("Clear UniProt Data"):
+            del st.session_state["uniprot_enrichment"]
+            st.rerun()
+    
+    if st.session_state.get("chembl_enrichment"):
+        st.divider()
+        st.subheader("ChEMBL Enrichment Data")
+        chembl_data = st.session_state["chembl_enrichment"]
+        
+        # Target information
+        target_info = chembl_data.get("target", {})
+        if target_info:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**ChEMBL Target Info**")
+                st.text(f"Preferred Name: {target_info.get('pref_name', 'N/A')}")
+                st.text(f"Target Type: {target_info.get('target_type', 'N/A')}")
+                st.text(f"Organism: {target_info.get('organism', 'N/A')}")
+            
+            with col2:
+                components = target_info.get('target_components', [])
+                st.markdown("**Target Components**")
+                if components:
+                    for comp in components[:3]:  # Show first 3
+                        st.text(f"• {comp.get('component_type', 'Unknown')}")
+                else:
+                    st.text("No components available")
+        
+        # Known drugs
+        drugs = chembl_data.get("drugs", [])
+        if drugs:
+            st.markdown("**Known Drugs & Compounds**")
+            drug_data = []
+            for drug in drugs[:10]:  # Show first 10
+                drug_data.append({
+                    "ChEMBL ID": drug.get("molecule_chembl_id", "N/A"),
+                    "Mechanism": drug.get("mechanism_of_action", "N/A"),
+                    "Action": drug.get("action_type", "N/A"),
+                    "Max Phase": drug.get("max_phase", "N/A")
+                })
+            
+            if drug_data:
+                drug_df = pd.DataFrame(drug_data)
+                st.dataframe(drug_df, hide_index=True, use_container_width=True)
+        else:
+            st.info("No known drugs found for this target")
+        
+        if st.button("Clear ChEMBL Data"):
+            del st.session_state["chembl_enrichment"]
             st.rerun()
     
     # Edit form (if in edit mode)

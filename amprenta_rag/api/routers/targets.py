@@ -10,6 +10,7 @@ from amprenta_rag.api.dependencies import get_current_user
 from amprenta_rag.database.base import get_db
 from amprenta_rag.models.auth import User
 from amprenta_rag.services import target_service
+from amprenta_rag.integrations.external_apis import fetch_uniprot_data, fetch_chembl_target, fetch_chembl_drugs_for_target
 import logging
 
 logger = logging.getLogger(__name__)
@@ -351,4 +352,97 @@ def search_targets(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to search targets"
+        )
+
+
+@router.get(
+    "/{target_id}/enrich/uniprot",
+    summary="Fetch UniProt data",
+    description="Enrich target with data from UniProt database.",
+    response_model=dict
+)
+def enrich_from_uniprot(
+    target_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Fetch enrichment data from UniProt for target.
+    
+    Retrieves protein information from UniProt including gene names,
+    protein function, subcellular location, and sequence data.
+    """
+    target = target_service.get_target(target_id, db=db)
+    if not target:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Target {target_id} not found"
+        )
+    
+    if not target.uniprot_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Target has no UniProt ID"
+        )
+    
+    try:
+        data = fetch_uniprot_data(target.uniprot_id)
+        if not data:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Failed to fetch UniProt data"
+            )
+        return data
+    except Exception as e:
+        logger.error(f"Error enriching target {target_id} from UniProt: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to enrich from UniProt"
+        )
+
+
+@router.get(
+    "/{target_id}/enrich/chembl",
+    summary="Fetch ChEMBL data",
+    description="Enrich target with data from ChEMBL database including known drugs.",
+    response_model=dict
+)
+def enrich_from_chembl(
+    target_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Fetch enrichment data from ChEMBL for target.
+    
+    Retrieves target information and associated drugs/compounds from ChEMBL
+    including mechanism of action and clinical development phase.
+    """
+    target = target_service.get_target(target_id, db=db)
+    if not target:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Target {target_id} not found"
+        )
+    
+    if not target.chembl_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Target has no ChEMBL ID"
+        )
+    
+    try:
+        target_data = fetch_chembl_target(target.chembl_id)
+        drugs = fetch_chembl_drugs_for_target(target.chembl_id)
+        
+        if not target_data:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Failed to fetch ChEMBL target data"
+            )
+        
+        return {"target": target_data, "drugs": drugs}
+    except Exception as e:
+        logger.error(f"Error enriching target {target_id} from ChEMBL: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to enrich from ChEMBL"
         )
