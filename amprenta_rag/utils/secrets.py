@@ -306,6 +306,65 @@ def get_backup_config(config: str) -> Optional[str]:
         return os.getenv(key_name)
 
 
+def get_auth_secret(secret: str) -> Optional[str]:
+    """
+    Get authentication/signing secret.
+    
+    Args:
+        secret: Secret name (signature_key, jwt_key)
+        
+    Returns:
+        Secret value or None if not found
+    """
+    secret_mapping = {
+        "signature_key": "SIGNATURE_SECRET_KEY",
+        "jwt_key": "JWT_SECRET_KEY",
+    }
+    
+    key_name = secret_mapping.get(secret.lower())
+    if not key_name:
+        logger.warning(f"Unknown auth secret: {secret}")
+        return None
+    
+    environment = os.getenv("ENVIRONMENT", "dev")
+    
+    if IS_AWS:
+        return get_secret(f"amprenta/{environment}/auth", key_name)
+    else:
+        return os.getenv(key_name)
+
+
+def get_email_credential(credential: str) -> Optional[str]:
+    """
+    Get email service credential.
+    
+    Args:
+        credential: Credential name (smtp_host, smtp_port, smtp_user, smtp_password, from_email)
+        
+    Returns:
+        Credential value or None if not found
+    """
+    credential_mapping = {
+        "smtp_host": "SMTP_HOST",
+        "smtp_port": "SMTP_PORT",
+        "smtp_user": "SMTP_USER",
+        "smtp_password": "SMTP_PASSWORD",
+        "from_email": "FROM_EMAIL",
+    }
+    
+    key_name = credential_mapping.get(credential.lower())
+    if not key_name:
+        logger.warning(f"Unknown email credential: {credential}")
+        return None
+    
+    environment = os.getenv("ENVIRONMENT", "dev")
+    
+    if IS_AWS:
+        return get_secret(f"amprenta/{environment}/email", key_name)
+    else:
+        return os.getenv(key_name)
+
+
 def clear_cache() -> None:
     """
     Clear the secrets cache.

@@ -24,7 +24,10 @@ c.JupyterHub.db_url = "sqlite:////srv/jupyterhub/jupyterhub.sqlite"
 c.JupyterHub.authenticator_class = TokenAuthenticator
 
 # JWT config
-c.TokenAuthenticator.jwt_secret = os.environ.get("JWT_SECRET_KEY", "dev-secret-change-me")
+_jwt_secret = os.environ.get("JWT_SECRET_KEY")
+if not _jwt_secret:
+    raise RuntimeError("JWT_SECRET_KEY environment variable is required for JupyterHub")
+c.TokenAuthenticator.jwt_secret = _jwt_secret
 
 # Spawner: DockerSpawner (production-style user isolation)
 c.JupyterHub.spawner_class = "dockerspawner.DockerSpawner"

@@ -1,7 +1,6 @@
 """Email notification service."""
 from __future__ import annotations
 
-import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -15,15 +14,17 @@ from amprenta_rag.notifications.email_templates import (
     get_experiment_summary_html,
     get_share_email_html,
 )
+from amprenta_rag.utils.secrets import get_email_credential
 
 logger = get_logger(__name__)
 
-# Email configuration from environment variables
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-FROM_EMAIL = os.getenv("FROM_EMAIL", "") or (SMTP_USER or "")
+# Email configuration from secrets
+
+SMTP_HOST = get_email_credential("smtp_host") or "smtp.gmail.com"
+SMTP_PORT = int(get_email_credential("smtp_port") or "587")
+SMTP_USER = get_email_credential("smtp_user")
+SMTP_PASSWORD = get_email_credential("smtp_password")
+FROM_EMAIL = get_email_credential("from_email") or SMTP_USER or ""
 
 
 def is_email_configured() -> bool:

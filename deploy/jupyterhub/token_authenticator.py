@@ -26,7 +26,9 @@ class TokenAuthenticator(Authenticator):
             return None
 
         try:
-            secret = self.jwt_secret or "dev-secret-change-me"
+            secret = self.jwt_secret
+            if not secret:
+                raise ValueError("JWT secret not configured - TokenAuthenticator requires jwt_secret")
             payload = jwt.decode(token, secret, algorithms=["HS256"])
             username = payload.get("username")
             if username:

@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-import os
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -13,11 +12,18 @@ from sqlalchemy.orm import Session
 from amprenta_rag.auth.password import verify_password
 from amprenta_rag.models.auth import ElectronicSignature, User
 from amprenta_rag.logging_utils import get_logger
+from amprenta_rag.utils.secrets import get_auth_secret
 
 logger = get_logger(__name__)
 
-# Secret key for HMAC (should be in env var in production)
-SECRET_KEY = os.getenv("SIGNATURE_SECRET_KEY", "default-secret-key-change-in-production").encode()
+# Secret key for HMAC - REQUIRED for electronic signatures
+_signature_secret = get_auth_secret("signature_key")
+if not _signature_secret:
+    raise RuntimeError(
+        "SIGNATURE_SECRET_KEY not configured. "
+        "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+SECRET_KEY = _signature_secret.encode()
 
 
 def create_signature(

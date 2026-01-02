@@ -5,7 +5,12 @@ from datetime import datetime, timedelta, timezone
 
 def generate_jupyter_token(username: str, expires_hours: int = 1) -> str:
     """Generate JWT token for JupyterHub authentication."""
-    secret = os.environ.get("JWT_SECRET_KEY", "dev-secret-change-me")
+    secret = os.environ.get("JWT_SECRET_KEY")
+    if not secret:
+        raise RuntimeError(
+            "JWT_SECRET_KEY not configured. "
+            "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+        )
     payload = {
         "username": username,
         "exp": datetime.now(timezone.utc) + timedelta(hours=expires_hours),

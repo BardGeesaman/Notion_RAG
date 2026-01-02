@@ -45,7 +45,8 @@ resource "aws_iam_role_policy" "ecs_secrets_execution" {
         aws_secretsmanager_secret.api_keys.arn,
         aws_secretsmanager_secret.auth.arn,
         aws_secretsmanager_secret.integrations.arn,
-        aws_secretsmanager_secret.backup.arn
+        aws_secretsmanager_secret.backup.arn,
+        aws_secretsmanager_secret.email.arn
       ]
     }]
   })
@@ -69,7 +70,8 @@ resource "aws_iam_role_policy" "ecs_secrets_task" {
         aws_secretsmanager_secret.api_keys.arn,
         aws_secretsmanager_secret.auth.arn,
         aws_secretsmanager_secret.integrations.arn,
-        aws_secretsmanager_secret.backup.arn
+        aws_secretsmanager_secret.backup.arn,
+        aws_secretsmanager_secret.email.arn
       ]
     }]
   })

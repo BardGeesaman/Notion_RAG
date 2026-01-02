@@ -2,13 +2,13 @@
 
 **Generated**: 2025-01-01  
 **Source**: `amprenta_rag/config.py`  
-**Total Environment Variables**: 52
+**Total Environment Variables**: 57
 
 ## Summary
 
-- **Total environment variables**: 52
-- **Required secrets**: 17
-- **Optional secrets**: 4
+- **Total environment variables**: 57
+- **Required secrets**: 19
+- **Optional secrets**: 6
 - **Required configuration**: 7  
 - **Optional configuration**: 24
 
@@ -35,6 +35,8 @@
 | Variable | Category | Default | Description |
 |----------|----------|---------|-------------|
 | NCBI_EMAIL | REQUIRED_SECRET | - | Email required by NCBI for API access |
+| SIGNATURE_SECRET_KEY | REQUIRED_SECRET | - | HMAC key for electronic signatures (32+ hex chars) |
+| JWT_SECRET_KEY | REQUIRED_SECRET | - | JWT signing key for authentication (32+ hex chars) |
 
 ### Group: `amprenta/{env}/integrations`
 
@@ -59,6 +61,16 @@
 | Variable | Category | Default | Description |
 |----------|----------|---------|-------------|
 | BACKUP_KMS_KEY_ID | OPTIONAL_SECRET | - | AWS KMS key ID for backup encryption |
+
+### Group: `amprenta/{env}/email`
+
+| Variable | Category | Default | Description |
+|----------|----------|---------|-------------|
+| SMTP_HOST | OPTIONAL_CONFIG | smtp.gmail.com | SMTP server hostname |
+| SMTP_PORT | OPTIONAL_CONFIG | 587 | SMTP server port |
+| SMTP_USER | OPTIONAL_SECRET | - | SMTP username/email |
+| SMTP_PASSWORD | OPTIONAL_SECRET | - | SMTP password or app password |
+| FROM_EMAIL | OPTIONAL_CONFIG | - | Override sender email address |
 
 ## Environment Variables (Non-Secret)
 

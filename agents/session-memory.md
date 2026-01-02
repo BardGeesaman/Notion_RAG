@@ -2,6 +2,16 @@
 
 ## January 1, 2025 - Dashboard UIs & Mapping Refresh Complete
 
+* [2025-01-01] – **Secrets Management Overhaul (P0 Security)**:
+  - Removed all insecure hardcoded defaults from 4 files
+  - Added `get_auth_secret()` and `get_email_credential()` to secrets.py
+  - Updated AWS Terraform: auth secrets + new email group
+  - Updated ECS task definitions with 7 new secrets
+  - Created `.env.example` (93 lines, 57 variables)
+  - Created `docs/GITHUB_SECRETS.md` for CI/CD guidance
+  - Added 13 tests for secrets functions (all passing)
+  - Reviewer P2 deferred: startup validation, Celery secrets, rotation docs
+
 * [2025-01-01] – **Multi-Modality Platform Strategic Plan**:
   - Created comprehensive 2-3 year roadmap for all therapeutic modalities
   - Reviewer approved with all P1/P2 feedback incorporated

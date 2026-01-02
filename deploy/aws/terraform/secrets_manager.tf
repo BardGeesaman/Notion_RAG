@@ -65,7 +65,9 @@ resource "aws_secretsmanager_secret_version" "auth" {
 
   # NOTE: Secret values must be populated manually in AWS Console after terraform apply
   secret_string = jsonencode({
-    NCBI_EMAIL = "" # Required: Email required by NCBI for API access
+    NCBI_EMAIL           = "" # Required: Email required by NCBI for API access
+    SIGNATURE_SECRET_KEY = "" # HMAC key for electronic signatures
+    JWT_SECRET_KEY       = "" # JWT signing key for JupyterHub
   })
 }
 
@@ -120,6 +122,31 @@ resource "aws_secretsmanager_secret_version" "backup" {
   # NOTE: Secret values must be populated manually in AWS Console after terraform apply
   secret_string = jsonencode({
     BACKUP_KMS_KEY_ID = "" # Optional: AWS KMS key ID for backup encryption
+  })
+}
+
+# Group 6: Email service credentials
+resource "aws_secretsmanager_secret" "email" {
+  name = "${var.project_name}/${var.environment}/email"
+
+  tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "terraform"
+    SecretGroup = "email"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "email" {
+  secret_id = aws_secretsmanager_secret.email.id
+
+  # NOTE: Secret values must be populated manually in AWS Console after terraform apply
+  secret_string = jsonencode({
+    SMTP_HOST     = "smtp.gmail.com" # Default SMTP host
+    SMTP_PORT     = "587"            # Default SMTP port
+    SMTP_USER     = ""               # Required: SMTP username
+    SMTP_PASSWORD = ""               # Required: SMTP password/app password
+    FROM_EMAIL    = ""               # Optional: Override from address
   })
 }
 

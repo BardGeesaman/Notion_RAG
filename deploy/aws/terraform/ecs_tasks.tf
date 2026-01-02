@@ -47,7 +47,17 @@ resource "aws_ecs_task_definition" "api" {
         { name = "NOTION_PATHWAYS_DB_ID", valueFrom = "${aws_secretsmanager_secret.integrations.arn}:NOTION_PATHWAYS_DB_ID::" },
 
         # Backup configuration
-        { name = "BACKUP_KMS_KEY_ID", valueFrom = "${aws_secretsmanager_secret.backup.arn}:BACKUP_KMS_KEY_ID::" }
+        { name = "BACKUP_KMS_KEY_ID", valueFrom = "${aws_secretsmanager_secret.backup.arn}:BACKUP_KMS_KEY_ID::" },
+
+        # Authentication secrets
+        { name = "SIGNATURE_SECRET_KEY", valueFrom = "${aws_secretsmanager_secret.auth.arn}:SIGNATURE_SECRET_KEY::" },
+        { name = "JWT_SECRET_KEY", valueFrom = "${aws_secretsmanager_secret.auth.arn}:JWT_SECRET_KEY::" },
+
+        # Email service credentials
+        { name = "SMTP_HOST", valueFrom = "${aws_secretsmanager_secret.email.arn}:SMTP_HOST::" },
+        { name = "SMTP_PORT", valueFrom = "${aws_secretsmanager_secret.email.arn}:SMTP_PORT::" },
+        { name = "SMTP_USER", valueFrom = "${aws_secretsmanager_secret.email.arn}:SMTP_USER::" },
+        { name = "SMTP_PASSWORD", valueFrom = "${aws_secretsmanager_secret.email.arn}:SMTP_PASSWORD::" }
       ]
       portMappings = [
         {
@@ -106,7 +116,10 @@ resource "aws_ecs_task_definition" "dashboard" {
 
         # API keys that dashboard might need
         { name = "OPENAI_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:OPENAI_API_KEY::" },
-        { name = "NOTION_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:NOTION_API_KEY::" }
+        { name = "NOTION_API_KEY", valueFrom = "${aws_secretsmanager_secret.api_keys.arn}:NOTION_API_KEY::" },
+
+        # Authentication secrets (for JupyterHub integration)
+        { name = "JWT_SECRET_KEY", valueFrom = "${aws_secretsmanager_secret.auth.arn}:JWT_SECRET_KEY::" }
       ]
       portMappings = [
         {
