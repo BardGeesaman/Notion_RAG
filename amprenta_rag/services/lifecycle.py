@@ -16,7 +16,7 @@ from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from amprenta_rag.database.models import (
@@ -379,26 +379,33 @@ def find_orphaned_entities() -> Dict[str, Any]:
     with db_session() as db:
         from amprenta_rag.database.models import Feature
         
-        # For now, return placeholder counts since association tables may not exist
-        # This can be enhanced when the actual schema is confirmed
+        # Orphaned features (not linked to any dataset)
         try:
-            # Count total features
-            total_features = db.query(Feature).count()
-            orphans["features"]["count"] = 0  # Placeholder - need association table schema
-            orphans["features"]["note"] = f"Total features: {total_features} (association check pending)"
-        except Exception:
+            from amprenta_rag.database.models import Feature, dataset_feature_assoc
+            orphan_features = db.execute(
+                select(Feature.id).outerjoin(
+                    dataset_feature_assoc, Feature.id == dataset_feature_assoc.c.feature_id
+                ).where(dataset_feature_assoc.c.dataset_id.is_(None))
+            ).fetchall()
+            orphans["features"]["count"] = len(orphan_features)
+            orphans["features"]["ids"] = [str(row[0]) for row in orphan_features[:100]]
+        except Exception as e:
             orphans["features"]["count"] = 0
-            orphans["features"]["note"] = "Features table not accessible"
+            orphans["features"]["error"] = str(e)
         
+        # Orphaned signatures (not linked to any dataset)
         try:
-            # Count total signatures if table exists
-            from amprenta_rag.database.models import Signature
-            total_signatures = db.query(Signature).count()
-            orphans["signatures"]["count"] = 0  # Placeholder
-            orphans["signatures"]["note"] = f"Total signatures: {total_signatures} (association check pending)"
-        except Exception:
+            from amprenta_rag.database.models import Signature, dataset_signature_assoc
+            orphan_sigs = db.execute(
+                select(Signature.id).outerjoin(
+                    dataset_signature_assoc, Signature.id == dataset_signature_assoc.c.signature_id
+                ).where(dataset_signature_assoc.c.dataset_id.is_(None))
+            ).fetchall()
+            orphans["signatures"]["count"] = len(orphan_sigs)
+            orphans["signatures"]["ids"] = [str(row[0]) for row in orphan_sigs[:100]]
+        except Exception as e:
             orphans["signatures"]["count"] = 0
-            orphans["signatures"]["note"] = "Signatures table not accessible"
+            orphans["signatures"]["error"] = str(e)
         
         # Embeddings check (optional)
         orphans["embeddings"]["count"] = 0
