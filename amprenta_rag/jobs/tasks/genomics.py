@@ -1,10 +1,13 @@
 """Celery tasks for genomics pipeline processing."""
 
+import logging
 from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
 from amprenta_rag.jobs.celery_app import celery_app
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=60, queue='default')
@@ -96,3 +99,66 @@ def run_genomics_pipeline(self, job_id: str) -> dict:
             return {"status": "failed", "error": str(exc), "job_id": job_id}
         
         self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
+@celery_app.task(bind=True, max_retries=3)
+def annotate_variants_task(self, variant_ids: list[str]) -> dict:
+    """
+    Background task to annotate variants using VEP.
+    
+    Args:
+        variant_ids: List of variant UUID strings
+        
+    Returns:
+        Dict with annotation results: {annotated, failed, skipped}
+    """
+    from amprenta_rag.ingestion.genomics.annotation_service import annotate_variants_bulk
+    
+    try:
+        # Convert string UUIDs to UUID objects
+        uuids = [UUID(vid) for vid in variant_ids]
+        
+        results = annotate_variants_bulk(uuids)
+        
+        logger.info(f"Annotation task complete: {results}")
+        return results
+        
+    except Exception as e:
+        logger.error(f"Annotation task failed: {e}")
+        raise self.retry(exc=e, countdown=60)
+
+
+@celery_app.task
+def annotate_unannotated_variants_task(limit: int = 500) -> dict:
+    """
+    Background task to annotate variants that don't have VEP annotations.
+    
+    Args:
+        limit: Maximum variants to process
+        
+    Returns:
+        Dict with annotation results
+    """
+    from amprenta_rag.ingestion.genomics.annotation_service import (
+        get_unannotated_variants,
+        annotate_variants_bulk,
+    )
+    
+    try:
+        # Find unannotated variants
+        variant_ids = get_unannotated_variants(limit=limit)
+        
+        if not variant_ids:
+            logger.info("No unannotated variants found")
+            return {"annotated": 0, "failed": 0, "skipped": 0}
+        
+        logger.info(f"Found {len(variant_ids)} unannotated variants")
+        
+        # Annotate them
+        results = annotate_variants_bulk(variant_ids)
+        
+        return results
+        
+    except Exception as e:
+        logger.error(f"Unannotated variants task failed: {e}")
+        return {"error": str(e)}
