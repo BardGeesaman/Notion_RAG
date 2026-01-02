@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends
@@ -193,7 +194,7 @@ def predict_gnn(
     """
     results = []
     
-    for smiles in request.smiles_list:
+    for smiles in request.smiles:
         pred = {"smiles": smiles, "endpoints": {}}
         
         for endpoint in endpoints:
@@ -314,15 +315,15 @@ def compare_models(
     # Get XGBoost predictions
     try:
         xgb_predictor = ADMETPredictor()
-        xgb_results = xgb_predictor.predict(request.smiles_list, endpoints=[endpoint])
+        xgb_results = xgb_predictor.predict(request.smiles, endpoints=[endpoint])
     except Exception as e:
-        xgb_results = [{"error": f"XGBoost prediction failed: {str(e)}"}] * len(request.smiles_list)
+        xgb_results = [{"error": f"XGBoost prediction failed: {str(e)}"}] * len(request.smiles)
     
     # Get GNN predictions
     gnn_predictor = get_gnn_predictor(endpoint)
     
     comparisons = []
-    for i, smiles in enumerate(request.smiles_list):
+    for i, smiles in enumerate(request.smiles):
         comparison = {"smiles": smiles}
         
         # XGBoost result
