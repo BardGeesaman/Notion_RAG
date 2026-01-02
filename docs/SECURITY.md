@@ -174,6 +174,36 @@ app.add_middleware(
 )
 ```
 
+### SSRF Protection
+
+**Pattern**: Use safe HTTP client for all external requests.
+
+**Implementation**: `amprenta_rag/utils/safe_requests.py`
+
+```python
+from amprenta_rag.utils.safe_requests import safe_get, safe_post
+
+# Safe external API calls with allowlist validation
+response = safe_get(
+    url="https://api.trusted-service.com/data",
+    allowed_domains=["api.trusted-service.com"],
+    timeout=30
+)
+
+# Automatic protection against:
+# - Private IP ranges (RFC 1918)
+# - Localhost/loopback addresses
+# - Cloud metadata endpoints
+# - Non-HTTP/HTTPS schemes
+```
+
+**Key Features**:
+- URL allowlist validation
+- Private IP range blocking
+- Timeout enforcement
+- Request size limits
+- Redirect following controls
+
 ## Security Headers
 
 **Implemented Headers**: All security headers are configured via `SecurityHeadersMiddleware` in `amprenta_rag/api/middleware.py`:
@@ -192,23 +222,41 @@ app.add_middleware(
 
 ## Monitoring & Logging
 
-### Security Events
+### Security Logging
 
-**Log These Events**:
+**Implementation**: `amprenta_rag/utils/security_logger.py`
+
+**Structured Security Logger**:
+```python
+from amprenta_rag.utils.security_logger import log_security_event
+
+# Log authentication events
+log_security_event(
+    event_type="auth_failure",
+    user_id=user_id,
+    ip_address=client_ip,
+    details={"reason": "invalid_password", "endpoint": "/login"}
+)
+
+# Log access control violations
+log_security_event(
+    event_type="access_denied",
+    user_id=user_id,
+    resource="sensitive_endpoint",
+    details={"required_role": "admin", "user_role": "user"}
+)
+```
+
+**Monitored Events**:
 - Failed authentication attempts
 - Rate limit violations
 - Account lockouts
 - Unusual access patterns
 - Input validation failures
+- Authorization failures
+- Privilege escalation attempts
 
-**Implementation**:
-```python
-import logging
-security_logger = logging.getLogger("security")
-
-# Log security events
-security_logger.warning(f"Failed login attempt for user {user_id} from IP {client_ip}")
-```
+**Log Format**: Structured JSON with timestamp, event type, user context, and security-relevant details.
 
 ### Audit Trail
 
@@ -301,9 +349,27 @@ security_logger.warning(f"Failed login attempt for user {user_id} from IP {clien
 - Annual penetration testing
 - Code review security checklist
 
+## Security Audits
+
+### OWASP Top 10 Audit (2025-01-02)
+
+A comprehensive security audit was completed covering all OWASP Top 10 2021 categories. See `docs/OWASP_AUDIT_REPORT.md` for:
+
+- Detailed findings for each category
+- Test coverage summary (56 security tests)
+- Remediation roadmap and priorities
+- Compliance status and metrics
+
+**Key Outcomes**:
+- 7/10 categories fully compliant
+- 3/10 categories partial compliance with remediation plan
+- 56 security tests added (100% pass rate)
+- Security logging and SSRF protection implemented
+
 ## References
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 - [Pydantic Security](https://docs.pydantic.dev/latest/concepts/validators/)
 - [FastAPI Security](https://fastapi.tiangolo.com/tutorial/security/)
+- [OWASP Audit Report](docs/OWASP_AUDIT_REPORT.md)

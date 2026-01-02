@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers complete)
+**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
 
 Simple status legend:
 - ✅ DONE
@@ -750,7 +750,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 |----------|------|-------------|--------|--------------|
 | ✅ **P0** | **Secrets Management Overhaul** | Migrate 52 env vars from .env to AWS Secrets Manager. Wire ECS to fetch secrets at runtime. Remove secrets from Terraform state. Create `.env.example` template. | **COMPLETE** | 2025-01-01 |
 | ✅ **P0** | **GitHub Secrets Integration** | Configure GitHub Actions secrets for CI/CD. Add secret scanning to pre-commit hooks. Document secrets rotation procedure. | **COMPLETE** | 2025-01-02 |
-| **P1** | **OWASP Top 10 Audit** | Systematic review: injection, broken auth, sensitive data exposure, XXE, broken access control, security misconfiguration, XSS, insecure deserialization, vulnerable components, insufficient logging. | 2 weeks | None |
+| ✅ **P1** | **OWASP Top 10 Audit** | Systematic review: injection, broken auth, sensitive data exposure, XXE, broken access control, security misconfiguration, XSS, insecure deserialization, vulnerable components, insufficient logging. | **COMPLETE** | 2025-01-02 |
 | ✅ **P1** | **Input Validation Hardening** | Pydantic strict mode for all schemas. SQL parameterization audit. HTML/JS sanitization for user-generated content. | **COMPLETE** | 2025-01-02 |
 | ✅ **P1** | **Rate Limiting & Brute Force Protection** | Per-user/IP throttling on auth endpoints. Slowloris protection. Account lockout after failed attempts. | **COMPLETE** | 2025-01-02 |
 | ✅ **P2** | **Security Headers** | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy. Streamlit + FastAPI configuration. | **COMPLETE** | 2025-01-02 |
@@ -759,6 +759,14 @@ Items originally scoped out or identified as major future initiatives. These rep
 | **P3** | **Container Security** | Trivy image scanning in CI. Distroless/Alpine base images. Non-root container execution. | 1 week | Docker |
 | **P3** | **WAF & Network Hardening** | AWS WAF with OWASP rules. VPC private subnets audit. Security group least-privilege review. | 1-2 weeks | AWS |
 | **P3** | **Secret Rotation Automation** | Automatic rotation for DB passwords, API keys. Zero-downtime rotation strategy. | 1-2 weeks | Secrets Manager |
+
+### OWASP Audit Remediation (P1)
+
+| Priority | Item | Description | Effort | Dependencies |
+|----------|------|-------------|--------|--------------|
+| **P1** | **Auth Endpoint Remediation** | Review 230 flagged endpoints, categorize (public vs protected), add get_current_user to protected endpoints | 1-2 weeks | A01 Audit |
+| **P2** | **Security Logger Integration** | Integrate security_logger into auth flows, rate limiting, account lockout | 3-5 days | A09 Audit |
+| **P2** | **SSRF Protection Rollout** | Adopt safe_requests.py across 73 HTTP client files | 1 week | A03 Audit |
 
 **Current Security Debt:**
 - 4 CVEs in dependencies (biopython, nbconvert, pdfminer-six, py) - monitoring for patches
