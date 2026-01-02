@@ -143,13 +143,14 @@ PAGE_REGISTRY = {
     "Mapping Refresh": ("scripts.dashboard.pages.mapping_refresh", "render_mapping_refresh_page"),
     "SLA Dashboard": ("scripts.dashboard.pages.sla_dashboard", "render_sla_dashboard_page"),
     "Data Lifecycle": ("scripts.dashboard.pages.data_lifecycle", "render_data_lifecycle_page"),
+    "Retrosynthesis Advisor": ("scripts.dashboard.pages.retrosynthesis", "render_retrosynthesis_page"),
 }
 
 # Navigation groups for organized sidebar
 PAGE_GROUPS = {
     "Home": ["Overview", "Cockpit", "Getting Started"],
     "Discovery": ["Paper Search", "Datasets", "Experiments", "Programs", "Literature", "Review Queue", "Discovery Workflow", "Discovery", "Repositories", "Search", "Features", "Signatures", "Workspaces", "ENA Discovery", "Alignments"],
-    "Chemistry": ["Chemistry", "Chemical Sketcher", "Generative Chemistry", "Compound Portfolio", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network", "SAR What-If", "Candidate Selection"],
+    "Chemistry": ["Chemistry", "Chemical Sketcher", "Generative Chemistry", "Compound Portfolio", "ADMET Predictor", "Structural Alerts", "Compound Ranking", "Compound-Target Network", "SAR What-If", "Candidate Selection", "Retrosynthesis Advisor"],
     "HTS": ["HTS QC", "Dose-Response Explorer", "Screening"],
     "Structure": ["Protein Structures", "Binding Sites", "Docking Runs", "Docking Triage", "Molecule Viewer"],
     "Omics": ["Single-Cell Viewer", "CRISPR Analysis", "Variant Analysis", "Multi-Omics Integration", "Connectivity Map", "Biomarker Discovery", "Cross-Omics", "Cross-Omics Pathways", "Sphingolipid Imbalance"],
