@@ -688,8 +688,8 @@ Items originally scoped out or identified as major future initiatives. These rep
 
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
-| **P1** | **Neural Network Toxicity Models** | Deep learning ADMET (beyond rule-based), GNN for molecular properties | 3-4 weeks | GPU resources |
-| **P2** | **Active Learning Pipeline** | Human-in-the-loop model refinement, uncertainty sampling | 2-3 weeks | ML models |
+| ✅ **P1** | **Neural Network Toxicity Models** | Deep learning ADMET (beyond rule-based), GNN for molecular properties | **COMPLETE** | 2025-01-02 |
+| ✅ **P2** | **Active Learning Pipeline** | Human-in-the-loop model refinement, uncertainty sampling | **COMPLETE** | 2025-01-02 |
 | **P3** | **LLM Fine-tuning for Science** | MVP: Entity extraction from scientific literature only. General hypothesis generation deferred. | 8-12 weeks | GPU cluster |
 
 ### Discovery & Medicinal Chemistry

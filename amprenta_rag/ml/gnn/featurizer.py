@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 try:
     from torch_geometric.data import Data, Dataset
     from rdkit import Chem
-    from rdkit.Chem import rdchem
+    from rdkit.Chem import rdchem, Descriptors
     HAS_DEPS = True
 except ImportError:
     HAS_DEPS = False
@@ -229,7 +229,7 @@ def smiles_to_features(smiles: str) -> Optional[dict]:
         "num_atoms": mol.GetNumAtoms(),
         "num_bonds": mol.GetNumBonds(),
         "num_rings": mol.GetRingInfo().NumRings(),
-        "molecular_weight": Chem.rdMolDescriptors.CalcExactMolWt(mol),
+        "molecular_weight": Chem.Descriptors.ExactMolWt(mol),
         "num_aromatic_atoms": sum(1 for atom in mol.GetAtoms() if atom.GetIsAromatic()),
         "num_heteroatoms": sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() != 6)
     }
