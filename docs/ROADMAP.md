@@ -640,6 +640,16 @@ Non-blocking improvements identified during code reviews. Low priority but valua
   - Z' factor QC metrics and plate heatmaps
   - 4-tab dashboard (Upload/Segment/Features/Plate View)
   - 52 tests (10 schema + 14 CellPose + 10 API + 10 HTS integration + 8 E2E) - 100% pass rate
+- ✅ Active Learning Pipeline (2025-01-02)
+  - Human-in-the-loop model refinement with uncertainty sampling
+  - 4 sampling strategies: uncertainty, margin, entropy, hybrid (weighted combination)
+  - Database models: LabelQueueItem (workflow), ActiveLearningCycle (iteration tracking)
+  - ActiveLearningService with 10 functions for sample selection and labeling
+  - 9 API endpoints: queue management, labeling workflow, cycle tracking
+  - 4-tab dashboard: Label Queue, Labeling Interface, Cycle History, Sample Selection
+  - Workflow integration: Tab 1 → Tab 2 selection, cross-tab state management
+  - 24 tests (12 service + 12 API) covering sampling strategies and workflow
+  - Mock inference for MVP (ready for real model integration)
 
 ---
 
@@ -686,7 +696,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
-| **P1** | **Target Management** | Target validation tracking, assay linkage, druggability scores, competitive landscape per target | 3-4 weeks | None |
+| ✅ **P1** | **Target Management** | Target model, 9 API endpoints, 4-tab dashboard, UniProt/ChEMBL integration | **COMPLETE** | 2025-01-02 |
 | ✅ **P1** | **SAR Analysis Module** | Activity cliff detection, R-group decomposition tables, potency trend visualization, matched molecular pairs | **COMPLETE** | 2025-01-02 |
 | ✅ **P2** | **Retrosynthesis Advisor** | Mock service MVP, 4 API endpoints, Cytoscape tree viz, 20 tests | **COMPLETE** | 2025-01-02 |
 | **P2** | **Compound Inventory** | Physical sample tracking, storage locations, tube/plate barcodes, request/fulfillment workflow | 2-3 weeks | Compounds |
