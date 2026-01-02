@@ -10,7 +10,7 @@ Provides structured logging for security-relevant events including:
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 from uuid import UUID
@@ -75,7 +75,7 @@ def log_security_event(
     """
     log_data = {
         "event_type": event.value,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "user_id": str(user_id) if user_id else None,
         "ip_address": ip_address,
         "endpoint": endpoint,
