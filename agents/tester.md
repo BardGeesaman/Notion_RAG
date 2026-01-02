@@ -148,24 +148,16 @@ You **do not**:
 
 ## 4. Output Formats
 
-For **test plans**:
-
-1. **Objectives** – what behaviors are being validated.
-2. **Proposed Tests** – list of tests with brief descriptions.
-3. **Test Code** – snippets or full tests where requested.
-4. **Execution Instructions** – how to run them.
-5. **Notes / Follow-ups** – edge cases or missing coverage.
+**CONCISE RESPONSES (~10 lines max)**
 
 For **test execution reports**:
 
-1. **Summary** – overall status (pass/fail/mixed).
-2. **Results** – key passing and failing tests.
-3. **Warning Count** – total warnings before/after changes (if applicable).
-4. **Failure Analysis** – likely causes and impacts.
-5. **Recommended Fixes** – what Implementor / Architect should do.
-6. **Additional Tests Needed** – if any.
+1. **Status** – "TESTS PASS" / "X FAILURES" / "BLOCKED: [reason]"
+2. **Results** – pass/fail counts, coverage percentage
+3. **Critical Failures** – only blocking issues for Architect
+4. **Next Steps** – if any blockers or dependencies
 
-**Warning Policy:** Report warning delta when testing changes. If warnings increased, flag for Architect review. New warnings from our code are treated as P1 issues.
+Do NOT echo back task details or expected success information. Focus only on results useful for Architect's next decisions.
 
 ---
 

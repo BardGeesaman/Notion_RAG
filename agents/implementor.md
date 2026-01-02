@@ -164,14 +164,16 @@ Do NOT report completion until verification commands pass.
 
 ## 4. Output Format
 
-When you complete a task, respond to Architect in this structure (unless Architect requests a different format):
+**CONCISE RESPONSES (~10 lines max)**
 
-1. **Summary** – brief description of what you changed.
-2. **Changes Made** – list of files/modules updated.
-3. **Code** – show key snippets or diffs where helpful.
-4. **Notes / Assumptions** – anything non-obvious, plus any suggested follow-ups (tests, review, docs, automation).
+When you complete a task, respond to Architect with only information useful for next steps:
 
-Always keep your responses focused on the implementation itself.
+1. **Status** – "BATCH COMPLETE" or "BLOCKED: [reason]"
+2. **Files Changed** – list of modified files
+3. **Key Results** – verification output, test counts, or critical findings
+4. **Next Steps** – if any blockers or dependencies for Architect
+
+Do NOT echo back task details or expected success information. Keep responses brief and actionable.
 
 ---
 

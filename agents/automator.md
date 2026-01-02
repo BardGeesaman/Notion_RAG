@@ -140,16 +140,16 @@ This keeps debugging visible and reviewed.
 
 ## 4. Output Format
 
-When responding to Architect, use this structure by default:
+**CONCISE RESPONSES (~10 lines max)**
 
-1. **Purpose** – what the workflow automates.
-2. **Preconditions** – what must exist or be configured first.
-3. **Steps / Procedure** – numbered sequence of actions or commands.
-4. **Implementation Details** – scripts/configs when requested.
-5. **Execution Instructions** – how to run it.
-6. **Maintenance Notes** – how to debug, extend, or update the workflow.
+When responding to Architect, focus only on information useful for next steps:
 
-Be explicit and operationally helpful.
+1. **Status** – "COMPLETE" / "FAILED: [reason]" / "BLOCKED: [reason]"
+2. **Results** – command outputs, commit hashes, deployment status
+3. **Critical Issues** – only blocking problems for Architect
+4. **Next Steps** – if any dependencies or follow-up actions needed
+
+Do NOT echo back task details or expected success information. Keep responses brief and actionable.
 
 ---
 

@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration complete)
+**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub complete)
 
 Simple status legend:
 - ✅ DONE
@@ -465,6 +465,12 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 
 ---
 
+### Cytoscape Network Hub P2 Observations (Completed 2025-01-02)
+- [ ] Compound-Target tab (placeholder implementation)
+- [ ] Pathways tab (placeholder implementation)
+- [ ] Expression overlay dataset picker improvements
+- [ ] Network export to PNG/SVG
+
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
 - ✅ KEGG API rate limit documentation in id_mapping.py (2025-01-01)
@@ -672,7 +678,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
-| **P1** | **Cytoscape.js Networks** | Interactive PPI/pathway graphs, expression overlay, cluster highlighting | 1-2 weeks | None |
+| ✅ **P1** | **Cytoscape.js Networks** | Interactive PPI/pathway graphs, expression overlay, cluster highlighting | **COMPLETE** | 2025-01-02 |
 | **P2** | **High-Dimensional Projector** | 3D UMAP/t-SNE for embeddings, interactive exploration | 1 week | None |
 | **P2** | **Mol*/PyMOL Integration** | Advanced protein visualization (beyond 3Dmol.js) | 2 weeks | Structure data |
 | **P3** | **Ag-Grid Enterprise** | Excel-like filtering, pivoting, range selection. *⚠️ Requires license cost approval.* | 1 week | License |
