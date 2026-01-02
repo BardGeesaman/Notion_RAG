@@ -16,7 +16,6 @@ from amprenta_rag.backup.backup_engine import BackupEngine
 from amprenta_rag.backup.project_export import export_project
 from amprenta_rag.database.models import BackupRecord, ProjectExport
 from amprenta_rag.models.auth import User
-from amprenta_rag.jobs.tasks.backup import run_database_backup
 
 router = APIRouter(prefix="/backup", tags=["Backup"])
 

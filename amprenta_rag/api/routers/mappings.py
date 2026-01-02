@@ -16,7 +16,6 @@ from amprenta_rag.services.id_mapping_service import (
     get_mapping_stats,
     get_last_successful_refresh,
 )
-from amprenta_rag.jobs.tasks.mapping_refresh import refresh_uniprot_mappings_task
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)

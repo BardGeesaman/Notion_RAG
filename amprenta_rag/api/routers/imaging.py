@@ -39,7 +39,6 @@ from amprenta_rag.imaging.storage import ImageStorage
 from amprenta_rag.imaging.ome_parser import parse_ome_tiff
 from amprenta_rag.imaging.vendor_parsers import parse_vendor_export
 from amprenta_rag.imaging.image_qc import run_image_qc, generate_plate_qc_report
-from amprenta_rag.jobs.tasks.imaging import process_batch_segmentation
 from amprenta_rag.logging_utils import get_logger
 
 logger = get_logger(__name__)
