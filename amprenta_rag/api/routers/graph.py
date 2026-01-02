@@ -12,6 +12,12 @@ from amprenta_rag.graph.cytoscape import to_cytoscape_json
 from amprenta_rag.graph.edge_builder import EdgeBuilder, Direction
 from amprenta_rag.graph.analytics import compute_graph_analytics
 from amprenta_rag.graph.traversal import k_hop_subgraph, shortest_path
+from amprenta_rag.connectivity.string_client import (
+    get_interactions,
+    get_interaction_partners,
+    interactions_to_cytoscape,
+    DEFAULT_SPECIES,
+)
 
 
 router = APIRouter(prefix="/graph", tags=["Graph"])
@@ -168,6 +174,45 @@ def analytics(payload: GraphAnalyticsRequest) -> GraphAnalyticsResponse:
         )
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Graph analytics failed: {e}")
+
+
+# --- Protein-Protein Interaction Schemas ---
+
+class PPIRequest(BaseModel):
+    """Request for protein-protein interaction network."""
+    proteins: List[str]
+    species: int = DEFAULT_SPECIES
+    min_score: int = 400
+
+
+class PPIResponse(BaseModel):
+    """Response for protein-protein interaction network."""
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+    interaction_count: int
+
+
+# --- Protein-Protein Interaction Endpoints ---
+
+@router.get("/ppi/{gene_symbol}")
+def get_ppi_partners(
+    gene_symbol: str,
+    species: int = Query(DEFAULT_SPECIES),
+    limit: int = Query(50, ge=1, le=200),
+    min_score: int = Query(400, ge=0, le=1000),
+) -> PPIResponse:
+    """Get PPI network for a single gene."""
+    interactions = get_interaction_partners(gene_symbol, species, limit, min_score)
+    nodes, edges = interactions_to_cytoscape(interactions)
+    return PPIResponse(nodes=nodes, edges=edges, interaction_count=len(interactions))
+
+
+@router.post("/ppi/network")
+def get_ppi_network(request: PPIRequest) -> PPIResponse:
+    """Get PPI network for a list of genes."""
+    interactions = get_interactions(request.proteins, request.species, request.min_score)
+    nodes, edges = interactions_to_cytoscape(interactions)
+    return PPIResponse(nodes=nodes, edges=edges, interaction_count=len(interactions))
 
 
 __all__ = ["router"]
