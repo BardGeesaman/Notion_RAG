@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub complete)
+**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management complete)
 
 Simple status legend:
 - ✅ DONE
@@ -471,6 +471,11 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Expression overlay dataset picker improvements
 - [ ] Network export to PNG/SVG
 
+### Data Lifecycle Management P2 Observations (Completed 2025-01-02)
+- [ ] Rate limiting on bulk delete operations
+- [ ] Soft-delete grace period (30-day buffer before permanent deletion)
+- [ ] Dry-run flag for retention enforcement preview
+
 ### ID Mapping Enhancements (P2 - Future)
 - ✅ MappingRefreshLog model for sync timestamp tracking (2025-01-01)
 - ✅ KEGG API rate limit documentation in id_mapping.py (2025-01-01)
@@ -663,14 +668,14 @@ Items originally scoped out or identified as major future initiatives. These rep
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
 | **P1** | **Data Quarantine & Invalidation** | Mark entities as "quarantined" (hidden but recoverable), "invalid" (flagged but visible), "archived" (soft delete). Unified status field across all entities. | 1-2 weeks | None |
-| **P1** | **Bulk Deletion API** | `DELETE /entities/bulk` with list of IDs, dry-run mode, cascade preview, confirmation workflow | 1 week | Quarantine |
+| ✅ **P1** | **Bulk Deletion API** | `DELETE /entities/bulk` with list of IDs, dry-run mode, cascade preview, confirmation workflow | **COMPLETE** | 2025-01-02 |
 | **P1** | **Cascade Impact Preview** | `GET /entities/{id}/deletion-impact` showing all related entities (features, signatures, embeddings) that would be affected | 1 week | None |
 | **P2** | **Deletion Audit Trail** | Log all deletions to AuditLog with who/when/what/reason, integrate with Provenance Ledger | 3-5 days | Audit Trail |
-| **P2** | **Orphan Cleanup Job** | Scheduled Celery task to find and remove orphaned features, embeddings, vector entries | 1 week | None |
-| **P2** | **Retention Policies** | Auto-archive data older than configurable threshold, per-entity-type rules, exemption flags | 1-2 weeks | Quarantine |
+| ✅ **P2** | **Orphan Cleanup Job** | Scheduled Celery task to find and remove orphaned features, embeddings, vector entries | **COMPLETE** | 2025-01-02 |
+| ✅ **P2** | **Retention Policies** | Auto-archive data older than configurable threshold, per-entity-type rules, exemption flags | **COMPLETE** | 2025-01-02 |
 | **P3** | **Soft Delete Migration** | Migrate all hard deletes to soft delete with `deleted_at` timestamp, add undelete capability | 1 week | Quarantine |
 | **P3** | **Data Recovery Dashboard** | UI to browse quarantined/archived/deleted data, restore with audit trail, permanent purge option | 1 week | Soft Delete |
-| **P3** | **Data Export for Deletion** | GDPR "right to be forgotten" compliance - export user's data package before deletion, portable format (JSON/CSV), audit trail | 1-2 days | Bulk Deletion |
+| ✅ **P3** | **Data Export for Deletion** | GDPR "right to be forgotten" compliance - export user's data package before deletion, portable format (JSON/CSV), audit trail | **COMPLETE** | 2025-01-02 |
 
 *Note: Addresses data lifecycle from ingestion → validation → quarantine → archive → deletion, with full audit trail and recovery capabilities. GDPR-compliant data export included.*
 
