@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-01 (Provenance Ledger Dashboard, System Administration Dashboard, UniProt/KEGG Mapping Refresh, Notebook Review Threads + Diffs, Scheduled Review Cycles & SLAs, ADMET Model Training, Inline Annotations, Integration Tests with Real Database, Split requirements.txt, OOP Refactoring Review, Functional Testing Overhaul, User Experience Polish, Data Lifecycle Management P1, UI Feature Gaps Comprehensive Fix, AI Extraction Security, ENA/Genomics P1 Package, BAM/CRAM Alignment Viewing added)
+**Last Updated**: 2025-01-02 (IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration complete)
 
 Simple status legend:
 - ✅ DONE
@@ -441,6 +441,23 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Auto-index Celery task (pysam.index() if no index uploaded)
 - [ ] samtools flagstat for files >10GB (performance optimization)
 
+### IGV.js Genome Browser P2 Observations (2025-01-02)
+- [ ] Add Content-Type header (application/octet-stream) for better browser handling
+- [ ] Add ETag/Last-Modified headers for caching optimization
+- [ ] Index file Content-Type hints (.bai/.crai)
+- [ ] Error handling for missing index (graceful degradation)
+- [ ] Remove duplicate `re` imports in genomics.py (lines 506, 564)
+
+### Variant Annotation Pipeline P2 Observations (Completed 2025-01-02)
+- [ ] Add `assembly` field to VariantAnnotation model (GRCh37 vs GRCh38)
+- [ ] Add `raw_response` JSON field for debugging VEP parsing
+- [ ] Add unique constraint on (variant_id, source, source_version)
+- [ ] Consider caching frequent variants (common rs IDs)
+- [ ] Add VEP version detection via `GET /info/rest`
+- [ ] SnpEff local installation as VEP alternative
+- [ ] ClinVar direct integration
+- [ ] gnomAD allele frequency annotation
+
 ### Secrets Management P2 Observations
 - [ ] Startup secret validation function (check all required secrets at app start)
 - [ ] Verify Celery worker secrets match API container secrets
@@ -607,8 +624,8 @@ Items originally scoped out or identified as major future initiatives. These rep
 | ✅ **P1** | **VCF File Support** | VCF parser, upload API, variants UI tab | **COMPLETE** | 2025-01-01 |
 | ✅ **P1** | **ENA Data Discovery** | Search/browse/ingest dashboard | **COMPLETE** | 2025-01-01 |
 | ✅ **P2** | **BAM/CRAM alignment viewing** | Parser, API, 4-tab dashboard | **COMPLETE** | 2025-01-01 |
-| **P2** | **IGV.js Genome Browser** | Embedded genome visualization, BAM/VCF track support | 2 weeks | BAM/CRAM complete |
-| **P2** | **Variant annotation pipeline** | VEP/SnpEff integration | 2-3 weeks | VCF complete |
+| ✅ **P2** | **IGV.js Genome Browser** | Byte-range streaming, alignment integration, CRAM reference | **COMPLETE** | 2025-01-02 |
+| ✅ **P2** | **Variant annotation pipeline** | VEP/SnpEff integration | **COMPLETE** | 2025-01-02 |
 | **P3** | **GWAS Integration** | GWAS Catalog import, LD analysis, PRS calculation | 3-4 weeks | Variant pipeline |
 
 ### Advanced ML & AI
