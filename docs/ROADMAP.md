@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-02 (Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
+**Last Updated**: 2025-01-03 (Compound Inventory System, Custom Report Builder, Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
 
 Simple status legend:
 - ✅ DONE
@@ -42,6 +42,21 @@ Simple status legend:
 - ✅ Compound registration (dedupe, properties, corporate IDs)
 - ✅ Structure search + SAR tooling
 - ✅ HTS campaign ingestion + querying (Postgres-backed)
+- ✅ Compound Inventory System (2025-01-03)
+  - Physical sample tracking with CompoundPlate and CompoundRequest models
+  - Request/fulfillment workflow with quantity validation and approval process
+  - 5-tab dashboard (Stocks, Plates, Requests, Fulfillment, Audit Trail)
+  - Integration with existing Sample model for consistency
+  - Barcode support and storage location management
+  - 27 tests (21 service + 6 E2E)
+- ✅ Custom Report Builder (2025-01-03)
+  - Modular report generation with 14 section types (title page, compound profile, activity charts, etc.)
+  - Template CRUD operations with save/load/clone functionality
+  - Live HTML preview and PDF/HTML export via WeasyPrint
+  - Drag-and-drop style section building with reorder capabilities
+  - Section validation with SECTION_SCHEMAS for data integrity
+  - 5-tab dashboard interface (builder, templates, preview, export, help)
+  - 50 tests (43 service + 7 E2E)
 
 ### Discovery / Repositories
 - ✅ Automated discovery workflow + scheduled harvesting
