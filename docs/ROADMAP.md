@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-03 (Data Catalog System, Compound Inventory System, Custom Report Builder, Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
+**Last Updated**: 2025-01-03 (AI Expert Agents System, Data Catalog System, Compound Inventory System, Custom Report Builder, Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
 
 Simple status legend:
 - ✅ DONE
@@ -731,6 +731,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
+| ✅ **P1** | **AI Expert Agents** | Domain expert simulation with panel orchestration, training console, 4 personas (Med Chemist, Comp Biologist, Clinician, Statistician) | **COMPLETE** | 2025-01-03 |
 | ✅ **P1** | **Neural Network Toxicity Models** | Deep learning ADMET (beyond rule-based), GNN for molecular properties | **COMPLETE** | 2025-01-02 |
 | ✅ **P2** | **Active Learning Pipeline** | Human-in-the-loop model refinement, uncertainty sampling | **COMPLETE** | 2025-01-02 |
 | **P3** | **LLM Fine-tuning for Science** | MVP: Entity extraction from scientific literature only. General hypothesis generation deferred. | 8-12 weeks | GPU cluster |
@@ -1408,6 +1409,23 @@ Implementation:
   - Storage: PoseQuality + PoseInteraction tables
   - API: 3 endpoints (analyze, quality, interactions)
   - Tests: 3 passed (PLIP runner/parser, E2E)
+
+### AI Expert Agents P2 Observations (2025-01-03)
+
+**Framework Integration:**
+- CrewAI integration deferred due to numpy 2.0 compatibility conflict
+- Future: Revisit when CrewAI updates to support numpy 2.0+
+- Alternative: Explore LangGraph or custom multi-agent orchestration
+
+**Enhanced Communication:**
+- Inter-expert dialogue for collaborative problem solving
+- Expert-to-expert conversation threads
+- Consensus refinement through expert debate
+
+**Platform Agents:**
+- Technical/Platform agents for CTO-style platform development guidance
+- Infrastructure decision support agents
+- Code review and architecture recommendation agents
 
 ---
 
