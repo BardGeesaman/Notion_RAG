@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, relationship
 
@@ -14,6 +14,8 @@ from amprenta_rag.database.base import Base
 
 if TYPE_CHECKING:
     from amprenta_rag.database.models import Experiment, User
+    from amprenta_rag.models.chemistry import Compound
+    from amprenta_rag.models.inventory import CompoundPlate
 
 
 def generate_uuid() -> uuid.UUID:
@@ -58,6 +60,17 @@ class Sample(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text, nullable=True)
+    
+    # Compound-specific fields (all nullable for backward compatibility)
+    compound_id = Column(UUID(as_uuid=True), ForeignKey("compounds.id"), nullable=True, index=True)
+    concentration = Column(Float, nullable=True)  # e.g., 10.0
+    concentration_unit = Column(String(20), nullable=True)  # mM, µM, mg/mL
+    solvent = Column(String(50), nullable=True)  # DMSO, water, PBS
+    format = Column(String(20), nullable=True)  # tube, vial, plate_well
+    batch_lot = Column(String(100), nullable=True)  # Batch/lot tracking
+    expiry_date = Column(Date, nullable=True)
+    plate_id = Column(UUID(as_uuid=True), ForeignKey("compound_plates.id"), nullable=True, index=True)
+    well_position = Column(String(10), nullable=True)  # A01, B12, etc.
 
     storage_location: Mapped[Optional["StorageLocation"]] = relationship("StorageLocation", backref="samples")
     parent_sample: Mapped[Optional["Sample"]] = relationship(
@@ -65,6 +78,10 @@ class Sample(Base):
     )
     experiment: Mapped[Optional["Experiment"]] = relationship("Experiment", backref="samples")
     created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+    
+    # Compound inventory relationships
+    compound: Mapped[Optional["Compound"]] = relationship("Compound", backref="samples")
+    plate: Mapped[Optional["CompoundPlate"]] = relationship("CompoundPlate", backref="well_samples")
 
 
 class SampleTransfer(Base):

@@ -2271,3 +2271,10 @@ class ActiveLearningCycle(Base):
         UniqueConstraint("model_id", "cycle_number", name="uq_al_cycle_model_number"),
         Index("ix_al_cycles_model_status", "model_id", "status"),
     )
+
+
+# Import inventory models for re-export
+from amprenta_rag.models.inventory import (  # noqa: F401
+    CompoundPlate,
+    CompoundRequest,
+)
