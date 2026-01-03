@@ -8,15 +8,7 @@ import pandas as pd
 from datetime import datetime
 from uuid import UUID
 
-st.set_page_config(page_title="AI Expert Training", page_icon="🎓", layout="wide")
-
 API_BASE = "http://localhost:8000/api/v1/experts"
-
-# Initialize session state
-if "selected_expert_id" not in st.session_state:
-    st.session_state.selected_expert_id = None
-if "selected_expert" not in st.session_state:
-    st.session_state.selected_expert = None
 
 
 # ============================================================================
@@ -32,416 +24,505 @@ def get_experts():
         return []
 
 
-def get_training_examples(expert_id, approved_only=False):
-    """Fetch expert's training examples."""
+def get_training_examples(expert_id=None):
+    """Fetch training examples."""
     try:
-        params = {"approved_only": approved_only} if approved_only else {}
-        resp = requests.get(f"{API_BASE}/experts/{expert_id}/training-examples", params=params)
+        params = {"expert_id": expert_id} if expert_id else {}
+        resp = requests.get(f"{API_BASE}/training/examples", params=params)
         return resp.json() if resp.ok else []
     except:
         return []
 
 
-def get_feedback_summary(expert_id):
-    """Fetch expert's feedback summary."""
+def create_training_example(data):
+    """Create new training example."""
     try:
-        resp = requests.get(f"{API_BASE}/experts/{expert_id}/feedback-summary")
+        resp = requests.post(f"{API_BASE}/training/examples", json=data)
+        return resp.json() if resp.ok else None
+    except:
+        return None
+
+
+def get_knowledge_docs(expert_id=None):
+    """Fetch knowledge documents."""
+    try:
+        params = {"expert_id": expert_id} if expert_id else {}
+        resp = requests.get(f"{API_BASE}/knowledge", params=params)
+        return resp.json() if resp.ok else []
+    except:
+        return []
+
+
+def upload_knowledge_doc(data):
+    """Upload knowledge document."""
+    try:
+        resp = requests.post(f"{API_BASE}/knowledge", json=data)
+        return resp.json() if resp.ok else None
+    except:
+        return None
+
+
+def get_feedback_summary(expert_id=None):
+    """Get feedback summary."""
+    try:
+        params = {"expert_id": expert_id} if expert_id else {}
+        resp = requests.get(f"{API_BASE}/feedback/summary", params=params)
         return resp.json() if resp.ok else {}
     except:
         return {}
 
 
-def export_training_data(expert_id):
-    """Export training data for expert."""
+def update_expert_config(expert_id, config):
+    """Update expert configuration."""
     try:
-        resp = requests.post(f"{API_BASE}/experts/{expert_id}/export-training")
-        return resp.json() if resp.ok else {}
+        resp = requests.put(f"{API_BASE}/{expert_id}/config", json=config)
+        return resp.ok
     except:
-        return {}
+        return False
 
 
-# ============================================================================
-# MAIN LAYOUT
-# ============================================================================
-
-st.title("🎓 AI Expert Training Console")
-st.markdown("Admin interface for managing expert training, knowledge, and configuration.")
-
-# Expert selection
-experts = get_experts()
-if experts:
-    expert_options = {expert["id"]: f"{expert['name']} ({expert['role']})" for expert in experts}
-    
-    selected_expert_id = st.selectbox(
-        "Select Expert to Manage",
-        options=list(expert_options.keys()),
-        format_func=lambda x: expert_options.get(x, x),
-        index=0 if expert_options else None,
-        key="expert_selector"
-    )
-    
-    if selected_expert_id:
-        st.session_state.selected_expert_id = selected_expert_id
-        st.session_state.selected_expert = next(e for e in experts if e["id"] == selected_expert_id)
-        
-        # Show selected expert info
-        expert = st.session_state.selected_expert
-        col1, col2, col3, col4 = st.columns(4)
-        
-        col1.metric("Expert", expert["name"])
-        col2.metric("Role", expert["role"])
-        col3.metric("Version", expert["prompt_version"])
-        col4.metric("Status", "Active" if expert["is_active"] else "Inactive")
-else:
-    st.error("No experts available. Check API connection.")
-    st.stop()
-
-
-# ============================================================================
-# TABS
-# ============================================================================
-
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📝 Training Examples",
-    "📚 Knowledge Docs", 
-    "📊 Feedback Review",
-    "⚙️ Expert Config"
-])
-
-
-# ============================================================================
-# TAB 1: TRAINING EXAMPLES
-# ============================================================================
-
-with tab1:
-    st.subheader("Training Examples")
-    
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        show_approved_only = st.checkbox("Show approved only")
-    with col2:
-        if st.button("📥 Export Training Data", type="primary"):
-            export_data = export_training_data(st.session_state.selected_expert_id)
-            if export_data:
-                st.success(f"Exported {export_data.get('example_count', 0)} examples")
-                
-                # Provide download
-                import json
-                jsonl_content = "\n".join([json.dumps(item) for item in export_data.get("data", [])])
-                st.download_button(
-                    "⬇️ Download JSONL",
-                    data=jsonl_content,
-                    file_name=f"expert_{st.session_state.selected_expert['name']}_training.jsonl",
-                    mime="application/jsonl"
-                )
-    
-    # Add new training example
-    with st.expander("➕ Add Training Example"):
-        with st.form("add_training_example"):
-            input_text = st.text_area("Input (Question)", placeholder="What is the best approach for...")
-            ideal_output = st.text_area("Ideal Output (Answer)", placeholder="The best approach is...")
-            context = st.text_input("Context (optional)", placeholder="Background information")
-            tags = st.text_input("Tags (comma-separated)", placeholder="SAR, optimization, ADMET")
-            
-            if st.form_submit_button("Add Example", type="primary"):
-                if input_text and ideal_output:
-                    try:
-                        payload = {
-                            "expert_id": st.session_state.selected_expert_id,
-                            "input_text": input_text,
-                            "ideal_output": ideal_output,
-                            "context": context if context else None,
-                            "tags": [t.strip() for t in tags.split(",") if t.strip()] if tags else None
-                        }
-                        resp = requests.post(f"{API_BASE}/experts/{st.session_state.selected_expert_id}/training-examples", json=payload)
-                        if resp.ok:
-                            st.success("Training example added!")
-                            st.rerun()
-                        else:
-                            st.error(f"Failed: {resp.json().get('detail', 'Unknown error')}")
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-                else:
-                    st.error("Input and ideal output are required")
-    
-    # List existing examples
-    examples = get_training_examples(st.session_state.selected_expert_id, approved_only=show_approved_only)
-    
-    if examples:
-        for example in examples:
-            with st.container(border=True):
-                col1, col2 = st.columns([4, 1])
-                
-                with col1:
-                    st.markdown(f"**Question:** {example['question']}")
-                    st.markdown(f"**Answer:** {example['ideal_answer']}")
-                    
-                    status = "✅ Approved" if example['is_approved'] else "⏳ Pending"
-                    st.caption(f"Status: {status} | Version: {example['prompt_version']} | Created: {example['created_at'][:10]}")
-                
-                with col2:
-                    if not example['is_approved']:
-                        if st.button("✅ Approve", key=f"approve_{example['id']}"):
-                            # Note: Approve function would need to be added to service
-                            st.success("Approved!")
-                    
-                    if st.button("🗑️ Delete", key=f"delete_ex_{example['id']}"):
-                        st.warning("Delete functionality not implemented")
-    else:
-        st.info("No training examples found. Add examples above to improve expert performance.")
-
-
-# ============================================================================
-# TAB 2: KNOWLEDGE DOCS
-# ============================================================================
-
-with tab2:
-    st.subheader("Knowledge Documents")
-    
-    # Upload new knowledge document
-    with st.expander("📤 Upload Knowledge Document"):
-        with st.form("upload_knowledge"):
-            doc_title = st.text_input("Document Title *")
-            doc_content = st.text_area("Content *", height=200, placeholder="Paste document content here...")
-            doc_source_type = st.selectbox("Source Type", ["manual", "paper", "web", "internal"])
-            doc_source_url = st.text_input("Source URL (optional)")
-            
-            if st.form_submit_button("Upload Document", type="primary"):
-                if doc_title and doc_content:
-                    try:
-                        payload = {
-                            "expert_id": st.session_state.selected_expert_id,
-                            "title": doc_title,
-                            "content": doc_content,
-                            "source_type": doc_source_type,
-                            "source_url": doc_source_url if doc_source_url else None
-                        }
-                        resp = requests.post(f"{API_BASE}/experts/{st.session_state.selected_expert_id}/knowledge", json=payload)
-                        if resp.ok:
-                            st.success("Knowledge document uploaded and embedded!")
-                            st.rerun()
-                        else:
-                            st.error(f"Upload failed: {resp.json().get('detail', 'Unknown error')}")
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-                else:
-                    st.error("Title and content are required")
-    
-    # List existing knowledge docs (placeholder - would need API endpoint)
-    st.info("Knowledge document listing requires additional API endpoint implementation.")
-    
-    # Show knowledge stats
+def export_training_data(expert_id=None, format_type="jsonl"):
+    """Export training data."""
     try:
-        resp = requests.get(f"{API_BASE}/{st.session_state.selected_expert_id}/stats")
-        if resp.ok:
-            stats = resp.json()
-            st.metric("Knowledge Documents", stats.get("knowledge_doc_count", 0))
+        params = {
+            "expert_id": expert_id,
+            "format": format_type
+        }
+        resp = requests.get(f"{API_BASE}/training/export", params=params)
+        return resp.text if resp.ok else None
     except:
-        pass
+        return None
 
-
-# ============================================================================
-# TAB 3: FEEDBACK REVIEW
-# ============================================================================
-
-with tab3:
-    st.subheader("Feedback Analysis")
-    
-    feedback_summary = get_feedback_summary(st.session_state.selected_expert_id)
-    
-    if feedback_summary and feedback_summary.get("feedback_count", 0) > 0:
-        # Key metrics
-        col1, col2, col3 = st.columns(3)
-        
-        avg_rating = feedback_summary.get("avg_rating")
-        col1.metric("Average Rating", f"{avg_rating:.1f}/5.0" if avg_rating else "N/A")
-        col2.metric("Total Feedback", feedback_summary.get("feedback_count", 0))
-        col3.metric("Recent Corrections", len(feedback_summary.get("recent_corrections", [])))
-        
-        # Rating distribution
-        st.markdown("### Rating Distribution")
-        rating_dist = feedback_summary.get("rating_distribution", {})
-        if rating_dist:
-            # Convert to DataFrame for chart
-            df = pd.DataFrame([
-                {"Rating": f"{rating} ⭐", "Count": count}
-                for rating, count in rating_dist.items()
-            ])
-            st.bar_chart(df.set_index("Rating"))
-        
-        # Recent corrections
-        st.markdown("### Recent User Corrections")
-        corrections = feedback_summary.get("recent_corrections", [])
-        if corrections:
-            for i, correction in enumerate(corrections[-5:]):  # Last 5
-                with st.container(border=True):
-                    st.write(correction)
-                    if st.button("💡 Convert to Training", key=f"convert_{i}"):
-                        st.info("Conversion to training example requires manual review")
-        else:
-            st.info("No recent corrections")
-    else:
-        st.info("No feedback data available for this expert yet.")
-
-
-# ============================================================================
-# TAB 4: EXPERT CONFIG
-# ============================================================================
-
-with tab4:
-    st.subheader("Expert Configuration")
-    
-    expert = st.session_state.selected_expert
-    
-    # Current configuration display
-    st.markdown("### Current Configuration")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.text_input("Name", value=expert["name"], disabled=True)
-        st.text_input("Role", value=expert["role"], disabled=True)
-        st.text_input("Prompt Version", value=expert["prompt_version"], disabled=True)
-    
-    with col2:
-        st.selectbox("Status", ["Active", "Inactive"], index=0 if expert["is_active"] else 1, disabled=True)
-        specializations = ", ".join(expert.get("specializations", []))
-        st.text_area("Specializations", value=specializations, disabled=True, height=100)
-    
-    # System prompt editor
-    st.markdown("### System Prompt")
-    
-    # Get current prompt (would need to fetch full details)
-    current_prompt = "System prompt would be loaded from API..."
-    
-    with st.form("update_expert"):
-        new_prompt = st.text_area(
-            "System Prompt",
-            value=current_prompt,
-            height=300,
-            help="Define the expert's personality, knowledge, and response style"
-        )
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            new_specializations = st.text_input(
-                "Specializations (comma-separated)",
-                value=", ".join(expert.get("specializations", []))
-            )
-        with col2:
-            is_active = st.checkbox("Active", value=expert["is_active"])
-        with col3:
-            bump_version = st.checkbox("Bump Version", help="Increment prompt version")
-        
-        if st.form_submit_button("Update Expert", type="primary"):
-            try:
-                payload = {
-                    "system_prompt": new_prompt,
-                    "specializations": [s.strip() for s in new_specializations.split(",") if s.strip()],
-                    "is_active": is_active,
-                    "bump_version": bump_version
-                }
-                resp = requests.patch(f"{API_BASE}/experts/{st.session_state.selected_expert_id}", json=payload)
-                if resp.ok:
-                    st.success("Expert updated successfully!")
-                    if bump_version:
-                        st.info("Prompt version incremented")
-                    st.rerun()
-                else:
-                    st.error(f"Update failed: {resp.json().get('detail', 'Unknown error')}")
-            except Exception as e:
-                st.error(f"Error: {e}")
-    
-    # Expert statistics
-    st.markdown("### Performance Metrics")
-    try:
-        resp = requests.get(f"{API_BASE}/{st.session_state.selected_expert_id}/stats")
-        if resp.ok:
-            stats = resp.json()
-            
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Messages", stats.get("message_count", 0))
-            col2.metric("Knowledge Docs", stats.get("knowledge_doc_count", 0))
-            col3.metric("Training Examples", stats.get("training_example_count", 0))
-            
-            avg_rating = stats.get("average_rating")
-            col4.metric("Avg Rating", f"{avg_rating:.1f}/5.0" if avg_rating else "N/A")
-    except:
-        st.error("Failed to load expert statistics")
-
-
-# ============================================================================
-# ADMIN TOOLS
-# ============================================================================
-
-st.markdown("---")
-st.markdown("### 🛠️ Admin Tools")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("🔄 Refresh Expert Data"):
-        # Reload expert data
-        experts = get_experts()
-        if experts:
-            st.session_state.selected_expert = next(e for e in experts if e["id"] == st.session_state.selected_expert_id)
-            st.success("Data refreshed!")
-            st.rerun()
-
-with col2:
-    if st.button("📊 Generate Report"):
-        st.info("Expert performance report generation not yet implemented")
-
-with col3:
-    if st.button("🔧 System Diagnostics"):
-        # Basic API health check
-        try:
-            resp = requests.get(f"{API_BASE}/")
-            if resp.ok:
-                st.success(f"API OK - {len(resp.json())} experts available")
-            else:
-                st.error(f"API Error: {resp.status_code}")
-        except Exception as e:
-            st.error(f"API Connection Failed: {e}")
-
-
-# ============================================================================
-# USAGE TIPS
-# ============================================================================
-
-with st.expander("💡 Training Console Guide"):
-    st.markdown("""
-    **Training Examples:**
-    - Add high-quality question-answer pairs for fine-tuning
-    - Review and approve examples before export
-    - Export approved examples in JSONL format for OpenAI fine-tuning
-    
-    **Knowledge Documents:**
-    - Upload domain-specific documents for RAG retrieval
-    - Documents are automatically chunked and embedded
-    - Experts use this knowledge to enhance responses
-    
-    **Feedback Review:**
-    - Monitor user satisfaction with expert responses
-    - Convert negative feedback into training improvements
-    - Track rating trends over time
-    
-    **Expert Configuration:**
-    - Update system prompts to refine expert behavior
-    - Manage specializations and active status
-    - Version control for prompt changes
-    
-    **Best Practices:**
-    - Regularly review feedback and update prompts
-    - Add diverse training examples covering edge cases
-    - Keep knowledge base current with latest research
-    - Test changes with sample questions before deployment
-    """)
-
-
-# ============================================================================
-# REGISTER IN PAGE_REGISTRY
-# ============================================================================
 
 def main():
     """Entry point for page registry."""
-    return  # Page renders on import
+    st.set_page_config(page_title="AI Expert Training", page_icon="🎓", layout="wide")
+
+    # Initialize session state
+    if "selected_expert_id" not in st.session_state:
+        st.session_state.selected_expert_id = None
+    if "selected_expert" not in st.session_state:
+        st.session_state.selected_expert = None
+
+    st.title("🎓 AI Expert Training Console")
+    st.markdown("Admin interface for managing expert training data, knowledge base, and performance.")
+
+    # ============================================================================
+    # EXPERT SELECTOR
+    # ============================================================================
+
+    experts = get_experts()
+
+    if not experts:
+        st.error("No experts available. Please check the API connection.")
+        return
+
+    # Expert selection
+    col1, col2 = st.columns([1, 3])
+
+    with col1:
+        expert_options = {f"{exp['name']} ({', '.join(exp['specializations'][:2])})": exp for exp in experts}
+        selected_expert_name = st.selectbox(
+            "Select Expert",
+            options=["All Experts"] + list(expert_options.keys()),
+            index=0
+        )
+        
+        if selected_expert_name != "All Experts":
+            st.session_state.selected_expert = expert_options[selected_expert_name]
+            st.session_state.selected_expert_id = st.session_state.selected_expert['id']
+        else:
+            st.session_state.selected_expert = None
+            st.session_state.selected_expert_id = None
+
+    with col2:
+        if st.session_state.selected_expert:
+            expert = st.session_state.selected_expert
+            st.info(f"**{expert['name']}** - {', '.join(expert['specializations'])}")
+            st.write(expert.get('description', 'No description available'))
+        else:
+            st.info("View training data across all experts")
+
+    # ============================================================================
+    # TAB LAYOUT
+    # ============================================================================
+
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📚 Training Examples",
+        "📖 Knowledge Base",
+        "📊 Feedback Review",
+        "⚙️ Expert Configuration"
+    ])
+
+    # ============================================================================
+    # TAB 1: TRAINING EXAMPLES
+    # ============================================================================
+
+    with tab1:
+        st.header("Training Examples Management")
+        
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            st.subheader("Add Training Example")
+            
+            with st.form("add_example"):
+                input_text = st.text_area("User Input", placeholder="Enter user question or prompt...")
+                output_text = st.text_area("Expected Output", placeholder="Enter expert response...")
+                
+                expert_id_for_example = st.selectbox(
+                    "Target Expert",
+                    options=[exp['id'] for exp in experts],
+                    format_func=lambda x: next(exp['name'] for exp in experts if exp['id'] == x),
+                    index=0
+                )
+                
+                category = st.selectbox(
+                    "Category",
+                    options=["General", "Chemistry", "Biology", "Data Analysis", "Safety", "Regulatory"]
+                )
+                
+                difficulty = st.selectbox("Difficulty", options=["Easy", "Medium", "Hard"])
+                
+                tags = st.text_input("Tags (comma-separated)", placeholder="molecular-design, toxicity, etc.")
+                
+                if st.form_submit_button("Add Example"):
+                    if input_text and output_text:
+                        example_data = {
+                            "expert_id": expert_id_for_example,
+                            "input_text": input_text,
+                            "output_text": output_text,
+                            "category": category,
+                            "difficulty": difficulty.lower(),
+                            "tags": [tag.strip() for tag in tags.split(",") if tag.strip()],
+                            "is_approved": True  # Auto-approve admin-created examples
+                        }
+                        
+                        result = create_training_example(example_data)
+                        if result:
+                            st.success("Training example added successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to add training example")
+                    else:
+                        st.error("Please provide both input and output text")
+        
+        with col2:
+            st.subheader("Existing Training Examples")
+            
+            examples = get_training_examples(st.session_state.selected_expert_id)
+            
+            if examples:
+                # Filter and search
+                search_term = st.text_input("Search examples", placeholder="Search by input text...")
+                category_filter = st.selectbox(
+                    "Filter by Category",
+                    options=["All"] + list(set(ex.get('category', 'General') for ex in examples))
+                )
+                
+                filtered_examples = examples
+                if search_term:
+                    filtered_examples = [ex for ex in filtered_examples 
+                                       if search_term.lower() in ex.get('input_text', '').lower()]
+                if category_filter != "All":
+                    filtered_examples = [ex for ex in filtered_examples 
+                                       if ex.get('category') == category_filter]
+                
+                st.write(f"Showing {len(filtered_examples)} of {len(examples)} examples")
+                
+                for i, example in enumerate(filtered_examples[:20]):  # Limit display
+                    with st.expander(f"Example {i+1}: {example.get('category', 'General')}"):
+                        st.write("**Input:**")
+                        st.write(example.get('input_text', ''))
+                        
+                        st.write("**Expected Output:**")
+                        st.write(example.get('output_text', ''))
+                        
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.write(f"**Difficulty:** {example.get('difficulty', 'Unknown')}")
+                        with col2:
+                            approval_status = "✅ Approved" if example.get('is_approved') else "⏳ Pending"
+                            st.write(f"**Status:** {approval_status}")
+                        with col3:
+                            if example.get('tags'):
+                                st.write(f"**Tags:** {', '.join(example['tags'])}")
+                        
+                        st.write(f"**Created:** {example.get('created_at', 'Unknown')}")
+            else:
+                st.info("No training examples found")
+
+    # ============================================================================
+    # TAB 2: KNOWLEDGE BASE
+    # ============================================================================
+
+    with tab2:
+        st.header("Knowledge Base Management")
+        
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            st.subheader("Upload Knowledge Document")
+            
+            with st.form("upload_doc"):
+                doc_title = st.text_input("Document Title")
+                doc_content = st.text_area("Content", height=200, placeholder="Enter document content or paste text...")
+                
+                doc_expert_id = st.selectbox(
+                    "Target Expert",
+                    options=[exp['id'] for exp in experts],
+                    format_func=lambda x: next(exp['name'] for exp in experts if exp['id'] == x),
+                    index=0
+                )
+                
+                doc_type = st.selectbox(
+                    "Document Type",
+                    options=["Reference", "Protocol", "Guidelines", "Research", "FAQ"]
+                )
+                
+                doc_tags = st.text_input("Tags (comma-separated)")
+                
+                if st.form_submit_button("Upload Document"):
+                    if doc_title and doc_content:
+                        doc_data = {
+                            "expert_id": doc_expert_id,
+                            "title": doc_title,
+                            "content": doc_content,
+                            "doc_type": doc_type.lower(),
+                            "tags": [tag.strip() for tag in doc_tags.split(",") if tag.strip()]
+                        }
+                        
+                        result = upload_knowledge_doc(doc_data)
+                        if result:
+                            st.success("Document uploaded successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to upload document")
+                    else:
+                        st.error("Please provide title and content")
+        
+        with col2:
+            st.subheader("Knowledge Documents")
+            
+            docs = get_knowledge_docs(st.session_state.selected_expert_id)
+            
+            if docs:
+                doc_search = st.text_input("Search documents", placeholder="Search by title or content...")
+                doc_type_filter = st.selectbox(
+                    "Filter by Type",
+                    options=["All"] + list(set(doc.get('doc_type', 'reference') for doc in docs))
+                )
+                
+                filtered_docs = docs
+                if doc_search:
+                    filtered_docs = [doc for doc in filtered_docs 
+                                   if doc_search.lower() in doc.get('title', '').lower() or
+                                      doc_search.lower() in doc.get('content', '').lower()]
+                if doc_type_filter != "All":
+                    filtered_docs = [doc for doc in filtered_docs 
+                                   if doc.get('doc_type') == doc_type_filter]
+                
+                st.write(f"Showing {len(filtered_docs)} of {len(docs)} documents")
+                
+                for doc in filtered_docs[:15]:  # Limit display
+                    with st.expander(f"{doc.get('title', 'Untitled')} ({doc.get('doc_type', 'reference')})"):
+                        content_preview = doc.get('content', '')[:300]
+                        if len(doc.get('content', '')) > 300:
+                            content_preview += "..."
+                        st.write(content_preview)
+                        
+                        if doc.get('tags'):
+                            st.write(f"**Tags:** {', '.join(doc['tags'])}")
+                        
+                        st.write(f"**Uploaded:** {doc.get('created_at', 'Unknown')}")
+            else:
+                st.info("No knowledge documents found")
+
+    # ============================================================================
+    # TAB 3: FEEDBACK REVIEW
+    # ============================================================================
+
+    with tab3:
+        st.header("Feedback Analysis")
+        
+        feedback_data = get_feedback_summary(st.session_state.selected_expert_id)
+        
+        if feedback_data:
+            # Summary metrics
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("Total Feedback", feedback_data.get('total_feedback', 0))
+            
+            with col2:
+                avg_rating = feedback_data.get('avg_rating', 0)
+                st.metric("Average Rating", f"{avg_rating:.1f}/5.0")
+            
+            with col3:
+                st.metric("Recent Corrections", len(feedback_data.get('recent_corrections', [])))
+            
+            with col4:
+                improvement_trend = feedback_data.get('improvement_trend', 0)
+                st.metric("Trend", f"{improvement_trend:+.1f}%")
+            
+            # Detailed feedback
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Top Feedback Tags")
+                top_tags = feedback_data.get('top_tags', {})
+                if top_tags:
+                    for tag, count in list(top_tags.items())[:10]:
+                        st.write(f"• {tag}: {count} mentions")
+                else:
+                    st.info("No feedback tags available")
+            
+            with col2:
+                st.subheader("Recent Corrections")
+                corrections = feedback_data.get('recent_corrections', [])
+                if corrections:
+                    for correction in corrections[:10]:
+                        st.write(f"• {correction}")
+                else:
+                    st.info("No recent corrections")
+            
+            # Rating distribution
+            if 'rating_distribution' in feedback_data:
+                st.subheader("Rating Distribution")
+                rating_dist = feedback_data['rating_distribution']
+                
+                # Simple bar chart using columns
+                for rating in [5, 4, 3, 2, 1]:
+                    count = rating_dist.get(str(rating), 0)
+                    percentage = (count / feedback_data.get('total_feedback', 1)) * 100
+                    st.write(f"⭐ {rating}: {count} ({percentage:.1f}%)")
+        else:
+            st.info("No feedback data available")
+
+    # ============================================================================
+    # TAB 4: EXPERT CONFIGURATION
+    # ============================================================================
+
+    with tab4:
+        st.header("Expert Configuration")
+        
+        if st.session_state.selected_expert:
+            expert = st.session_state.selected_expert
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Basic Configuration")
+                
+                with st.form("expert_config"):
+                    model_name = st.selectbox(
+                        "Base Model",
+                        options=["gpt-4", "gpt-3.5-turbo", "claude-3-sonnet", "claude-3-haiku"],
+                        index=0
+                    )
+                    
+                    temperature = st.slider("Temperature", 0.0, 2.0, 0.7, 0.1)
+                    max_tokens = st.number_input("Max Tokens", 100, 4000, 1000, 100)
+                    
+                    system_prompt = st.text_area(
+                        "System Prompt",
+                        value=expert.get('system_prompt', ''),
+                        height=150,
+                        placeholder="Enter the system prompt for this expert..."
+                    )
+                    
+                    is_active = st.checkbox("Expert Active", value=expert.get('is_active', True))
+                    
+                    if st.form_submit_button("Update Configuration"):
+                        config_data = {
+                            "model_name": model_name,
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                            "system_prompt": system_prompt,
+                            "is_active": is_active
+                        }
+                        
+                        if update_expert_config(expert['id'], config_data):
+                            st.success("Configuration updated successfully!")
+                            st.rerun()
+                        else:
+                            st.error("Failed to update configuration")
+            
+            with col2:
+                st.subheader("Training Data Export")
+                
+                export_format = st.selectbox(
+                    "Export Format",
+                    options=["jsonl", "csv", "json"],
+                    index=0
+                )
+                
+                if st.button("Export Training Data"):
+                    with st.spinner("Exporting data..."):
+                        export_data = export_training_data(expert['id'], export_format)
+                        
+                        if export_data:
+                            st.download_button(
+                                label=f"Download {export_format.upper()}",
+                                data=export_data,
+                                file_name=f"{expert['name']}_training_data.{export_format}",
+                                mime=f"application/{export_format}"
+                            )
+                        else:
+                            st.error("Failed to export training data")
+                
+                st.subheader("Expert Statistics")
+                
+                # Get expert-specific stats
+                examples = get_training_examples(expert['id'])
+                docs = get_knowledge_docs(expert['id'])
+                feedback = get_feedback_summary(expert['id'])
+                
+                st.metric("Training Examples", len(examples))
+                st.metric("Knowledge Documents", len(docs))
+                st.metric("Total Feedback", feedback.get('total_feedback', 0))
+                
+                if feedback.get('avg_rating'):
+                    st.metric("Average Rating", f"{feedback['avg_rating']:.1f}/5.0")
+        else:
+            st.info("Select a specific expert to configure settings")
+            
+            # Global statistics when "All Experts" is selected
+            st.subheader("Global Statistics")
+            
+            total_examples = len(get_training_examples())
+            total_docs = len(get_knowledge_docs())
+            global_feedback = get_feedback_summary()
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Total Training Examples", total_examples)
+            
+            with col2:
+                st.metric("Total Knowledge Documents", total_docs)
+            
+            with col3:
+                st.metric("Total Feedback", global_feedback.get('total_feedback', 0))
+            
+            # Expert summary table
+            if experts:
+                st.subheader("Expert Overview")
+                
+                expert_summary = []
+                for expert in experts:
+                    examples_count = len(get_training_examples(expert['id']))
+                    docs_count = len(get_knowledge_docs(expert['id']))
+                    feedback_summary = get_feedback_summary(expert['id'])
+                    
+                    expert_summary.append({
+                        "Name": expert['name'],
+                        "Specializations": ', '.join(expert['specializations']),
+                        "Active": "✅" if expert.get('is_active', True) else "❌",
+                        "Training Examples": examples_count,
+                        "Knowledge Docs": docs_count,
+                        "Avg Rating": f"{feedback_summary.get('avg_rating', 0):.1f}/5.0" if feedback_summary.get('avg_rating') else "N/A"
+                    })
+                
+                df = pd.DataFrame(expert_summary)
+                st.dataframe(df, use_container_width=True)

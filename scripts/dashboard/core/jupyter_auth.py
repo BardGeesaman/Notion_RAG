@@ -6,6 +6,11 @@ from datetime import datetime, timedelta, timezone
 def generate_jupyter_token(username: str, expires_hours: int = 1) -> str:
     """Generate JWT token for JupyterHub authentication."""
     secret = os.environ.get("JWT_SECRET_KEY")
+    
+    # In dev mode, use a placeholder secret
+    if not secret and os.environ.get("DISABLE_AUTH", "").lower() in ("1", "true"):
+        secret = "dev-jwt-secret-not-for-production"
+    
     if not secret:
         raise RuntimeError(
             "JWT_SECRET_KEY not configured. "

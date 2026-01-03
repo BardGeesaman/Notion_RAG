@@ -2,13 +2,16 @@
 
 ## January 3, 2025 - AI Expert Agents & Data Governance Complete
 
-* [2025-01-03] – **Secrets Management P0 Fix** (Infrastructure):
-  - **Root Cause**: API crash on missing secrets blocked E2E tests
-  - **Phase 1**: Modified `config_check.py` to skip validation when `DISABLE_AUTH=true`
-  - **Phase 2**: New unified `get_secret()` in `amprenta_rag/config_secrets/secrets.py`
-  - **P1 Fix**: Production safety guard (RuntimeError if DISABLE_AUTH in production)
-  - **Files Modified**: config_check.py, config_secrets/secrets.py
-  - **Result**: E2E tests now run successfully in dev environment with auth disabled
+* [2025-01-03] – **Secrets Management P0 Fix & Dashboard Rendering** (Infrastructure):
+  - **Root Cause**: FastAPI startup failing due to mandatory secret validation blocking dashboard access
+  - **Secrets Fix**: Added `DISABLE_AUTH=true` bypass in `config_check.py` + unified `get_secret()` abstraction
+  - **Dashboard Fixes**: 
+    - Fixed sidebar navigation (render inside `st.sidebar` block)
+    - Fixed Report Builder (`main()` wrapper, `list_templates` param, `get_section_registry`)
+    - Fixed Data Catalog (`entity['name']` → `entity['display_name']`)
+    - Fixed AI Expert Chat/Training (`specialization` → `specializations`)
+  - **Verification**: All 4 dashboard pages render correctly, both FastAPI and Streamlit servers start successfully
+  - **Files Modified**: config_check.py, config_secrets/secrets.py, dashboard pages
   - **Documentation**: Created `docs/SECRETS_MANAGEMENT.md` with usage patterns
   - **Future Work**: AWS Secrets Manager Terraform integration (Phase 3 deferred)
 

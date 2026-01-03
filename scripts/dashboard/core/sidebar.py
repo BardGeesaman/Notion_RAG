@@ -512,23 +512,25 @@ def render_sidebar(user: Dict[str, Any] | None, visible_pages: Iterable[str], gr
     # Use enhanced grouped navigation with responsive adjustments
     current_page = st.session_state.get("selected_page", "Overview")
     
-    # Add main navigation landmark
-    st.markdown(
-        f"""
-        <div id="main-navigation" role="navigation" aria-label="Main page navigation" aria-current="page">
-            <p class="sr-only">Current page: {current_page}</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    # Import here to avoid circular import
-    from scripts.dashboard.components.sidebar_nav import render_grouped_sidebar
-    selected = render_grouped_sidebar(
-        current_page=current_page,
-        touch_friendly=is_mobile,
-        compact_mode=screen_size == "xs"
-    )
+    # Navigation must be inside sidebar context
+    with st.sidebar:
+        # Add main navigation landmark
+        st.markdown(
+            f"""
+            <div id="main-navigation" role="navigation" aria-label="Main page navigation" aria-current="page">
+                <p class="sr-only">Current page: {current_page}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Import here to avoid circular import
+        from scripts.dashboard.components.sidebar_nav import render_grouped_sidebar
+        selected = render_grouped_sidebar(
+            current_page=current_page,
+            touch_friendly=is_mobile,
+            compact_mode=screen_size == "xs"
+        )
     
     if selected:
         page = selected

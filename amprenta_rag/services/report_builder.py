@@ -150,6 +150,11 @@ SECTION_REGISTRY: List[Dict[str, Any]] = [
 SECTION_TYPE_MAP = {s["type"]: s for s in SECTION_REGISTRY}
 
 
+def get_section_registry() -> Dict[str, Dict[str, Any]]:
+    """Get section registry as a dict keyed by section type."""
+    return SECTION_TYPE_MAP
+
+
 # ============================================================================
 # SECTION SCHEMAS - P1 FIX: Validation schemas for section configs
 # ============================================================================

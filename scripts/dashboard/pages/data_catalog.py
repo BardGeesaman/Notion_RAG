@@ -7,403 +7,373 @@ from uuid import UUID
 import requests
 import pandas as pd
 
-st.set_page_config(page_title="Data Catalog", page_icon="📚", layout="wide")
-st.title("📚 Data Catalog")
-
 API_BASE = "http://localhost:8000/api/v1/catalog"
 
-# Initialize session state
-if "selected_entity" not in st.session_state:
-    st.session_state.selected_entity = None
-
-# ============================================================================
-# TAB LAYOUT
-# ============================================================================
-
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Browse Entities",
-    "🔍 Column Search", 
-    "🌳 Data Lineage",
-    "📖 Business Glossary"
-])
-
-
-# ============================================================================
-# TAB 1: BROWSE ENTITIES
-# ============================================================================
-
-with tab1:
-    st.subheader("Entity Types")
-    
-    # Filters
-    col1, col2, col3 = st.columns([2, 2, 1])
-    with col1:
-        category_filter = st.selectbox(
-            "Category",
-            ["All", "Core", "Chemistry", "Omics", "Admin", "Other"],
-            index=0
-        )
-    with col2:
-        search_filter = st.text_input("Search entities", placeholder="e.g., Compound")
-    with col3:
-        if st.button("🔄 Refresh Catalog", help="Discover new models"):
-            # Call refresh endpoint
-            try:
-                resp = requests.post(f"{API_BASE}/refresh")
-                if resp.ok:
-                    result = resp.json()
-                    st.success(f"Refreshed! {result.get('entries_updated', 0)} entries updated, {result.get('lineage_edges_created', 0)} edges created")
-                    st.rerun()
-                else:
-                    st.error(f"Refresh failed: {resp.status_code}")
-            except Exception as e:
-                st.error(f"Refresh failed: {e}")
-    
-    # Fetch entries
-    params = {}
-    if category_filter != "All":
-        params["category"] = category_filter
-    if search_filter:
-        params["search"] = search_filter
-    
-    try:
-        resp = requests.get(f"{API_BASE}/entries", params=params, timeout=10)
-        if resp.ok:
-            entries = resp.json()
-        else:
-            st.error(f"API error: {resp.status_code} - {resp.text[:200]}")
-            entries = []
-    except requests.exceptions.ConnectionError:
-        st.warning("⚠️ Cannot connect to API server. Make sure FastAPI is running on port 8000.")
-        entries = []
-    except Exception as e:
-        st.error(f"Failed to fetch entries: {e}")
-        entries = []
-    
-    # Display as cards grouped by category
-    if entries:
-        # Group by category
-        by_category = {}
-        for e in entries:
-            cat = e.get("category", "Other")
-            by_category.setdefault(cat, []).append(e)
-        
-        for cat, items in sorted(by_category.items()):
-            st.markdown(f"### {cat}")
-            cols = st.columns(3)
-            for i, entry in enumerate(items):
-                with cols[i % 3]:
-                    with st.container(border=True):
-                        st.markdown(f"**{entry['display_name']}**")
-                        st.caption(f"`{entry['table_name']}`")
-                        if entry.get('description'):
-                            desc = entry.get('description', '')
-                            st.write(desc[:100] + "..." if len(desc) > 100 else desc)
-                        
-                        col_a, col_b = st.columns(2)
-                        row_count = entry.get('row_count')
-                        col_a.metric("Rows", f"{row_count:,}" if row_count else "N/A")
-                        # Calculate column count from API response
-                        col_b.metric("Columns", "?")  # Will be updated when viewing details
-                        
-                        if st.button("View Columns", key=f"view_{entry['entity_type']}"):
-                            st.session_state.selected_entity = entry['entity_type']
-                            st.rerun()
-        
-        # Show columns for selected entity
-        if st.session_state.get('selected_entity'):
-            st.markdown("---")
-            entity_type = st.session_state.selected_entity
-            st.subheader(f"Columns: {entity_type}")
-            
-            try:
-                resp = requests.get(f"{API_BASE}/entries/{entity_type}")
-                if resp.ok:
-                    detail = resp.json()
-                    columns = detail.get('columns', [])
-                    
-                    # Display as table
-                    if columns:
-                        df = pd.DataFrame([{
-                            "Column": c['column_name'],
-                            "Type": c['data_type'],
-                            "Nullable": "✓" if c['is_nullable'] else "✗",
-                            "PK": "🔑" if c['is_primary_key'] else "",
-                            "FK": f"→ {c['foreign_key_target']}" if c['is_foreign_key'] else "",
-                            "Description": c.get('description', '')[:50] or "-"
-                        } for c in columns])
-                        
-                        st.dataframe(df, use_container_width=True, hide_index=True)
-                        st.caption(f"Total columns: {len(columns)}")
-                    else:
-                        st.info("No columns found")
-                    
-                    if st.button("Close"):
-                        st.session_state.selected_entity = None
-                        st.rerun()
-                else:
-                    st.error(f"Failed to load columns: {resp.status_code}")
-            except Exception as e:
-                st.error(f"Failed to load columns: {e}")
-    else:
-        st.info("No entities found. Click 'Refresh Catalog' to discover models.")
-
-
-# ============================================================================
-# TAB 2: COLUMN SEARCH
-# ============================================================================
-
-with tab2:
-    st.subheader("Search Columns Across All Entities")
-    
-    search_query = st.text_input(
-        "Search",
-        placeholder="e.g., patient_id, ic50, created_at",
-        help="Search by column name or description"
-    )
-    
-    if search_query and len(search_query) >= 2:
-        try:
-            resp = requests.get(f"{API_BASE}/columns/search", params={"q": search_query, "limit": 100})
-            results = resp.json() if resp.ok else []
-        except Exception as e:
-            st.error(f"Search failed: {e}")
-            results = []
-        
-        if results:
-            st.success(f"Found {len(results)} columns matching '{search_query}'")
-            
-            df = pd.DataFrame([{
-                "Entity": r['entity_type'],
-                "Column": r['column_name'],
-                "Type": r['data_type'],
-                "Description": r.get('description', '-')[:80]
-            } for r in results])
-            
-            st.dataframe(df, use_container_width=True, hide_index=True)
-            
-            # Quick stats
-            st.markdown("### Usage Summary")
-            entity_counts = df['Entity'].value_counts()
-            st.bar_chart(entity_counts)
-        else:
-            st.warning(f"No columns found matching '{search_query}'")
-    elif search_query:
-        st.info("Enter at least 2 characters to search")
-    else:
-        st.info("Enter a search term to find columns across all entities")
-
-
-# ============================================================================
-# TAB 3: DATA LINEAGE
-# ============================================================================
-
-with tab3:
-    st.subheader("Data Lineage Graph")
-    
-    col1, col2, col3 = st.columns([2, 2, 1])
-    with col1:
-        entity_type = st.text_input("Entity Type", placeholder="e.g., Dataset")
-    with col2:
-        entity_id = st.text_input("Entity ID", placeholder="UUID")
-    with col3:
-        depth = st.slider("Depth", 1, 5, 3)
-    
-    direction = st.radio("Direction", ["both", "upstream", "downstream"], horizontal=True)
-    
-    if st.button("Generate Lineage Graph") and entity_type and entity_id:
-        try:
-            resp = requests.get(
-                f"{API_BASE}/lineage/{entity_type}/{entity_id}",
-                params={"depth": depth, "direction": direction}
-            )
-            if resp.ok:
-                graph = resp.json()
-                nodes = graph.get('nodes', [])
-                edges = graph.get('edges', [])
-                
-                if nodes:
-                    st.success(f"Found {len(nodes)} nodes, {len(edges)} edges")
-                    
-                    # Simple visualization using graphviz
-                    try:
-                        import graphviz
-                        dot = graphviz.Digraph()
-                        dot.attr(rankdir='LR')
-                        
-                        # Color coding by category
-                        colors = {
-                            'Core': '#4CAF50',
-                            'Chemistry': '#2196F3', 
-                            'Omics': '#9C27B0',
-                            'Admin': '#FF9800',
-                            'Other': '#607D8B'
-                        }
-                        
-                        for node in nodes:
-                            node_data = node.get('data', {})
-                            node_id = node_data.get('id', '')
-                            label = node_data.get('label', node_id)
-                            is_center = node_data.get('is_center', False)
-                            
-                            # Highlight center node
-                            if is_center:
-                                dot.node(node_id, label, style='filled', fillcolor='#FFD700', fontcolor='black')
-                            else:
-                                dot.node(node_id, label, style='filled', fillcolor='#E3F2FD', fontcolor='black')
-                        
-                        for edge in edges:
-                            edge_data = edge.get('data', {})
-                            source = edge_data.get('source', '')
-                            target = edge_data.get('target', '')
-                            rel = edge_data.get('relationship', '')
-                            dot.edge(source, target, label=rel)
-                        
-                        st.graphviz_chart(dot)
-                        
-                        # Node list
-                        with st.expander("Node Details"):
-                            for node in nodes:
-                                data = node.get('data', {})
-                                st.write(f"- **{data.get('label')}** (Type: {data.get('type', 'N/A')})")
-                    
-                    except ImportError:
-                        st.warning("Graphviz not available. Showing node/edge data:")
-                        
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.markdown("**Nodes:**")
-                            for node in nodes:
-                                data = node.get('data', {})
-                                st.write(f"- {data.get('label')} ({data.get('type')})")
-                        
-                        with col2:
-                            st.markdown("**Edges:**")
-                            for edge in edges:
-                                data = edge.get('data', {})
-                                st.write(f"- {data.get('source')} → {data.get('target')} ({data.get('relationship')})")
-                else:
-                    st.info("No lineage data found for this entity")
-            else:
-                st.error(f"API error: {resp.status_code} - {resp.text}")
-        except Exception as e:
-            st.error(f"Failed to fetch lineage: {e}")
-    else:
-        st.info("Enter entity type and ID to view lineage graph")
-        
-        # Help text
-        with st.expander("ℹ️ How to use"):
-            st.markdown("""
-            1. Enter the **entity type** (e.g., `Dataset`, `Experiment`, `Compound`)
-            2. Enter the **entity ID** (UUID from the database)
-            3. Adjust **depth** (how many hops to traverse)
-            4. Select **direction**:
-               - `upstream`: Where did this data come from?
-               - `downstream`: Where does this data flow to?
-               - `both`: Full lineage in both directions
-            """)
-
-
-# ============================================================================
-# TAB 4: BUSINESS GLOSSARY
-# ============================================================================
-
-with tab4:
-    st.subheader("Business Glossary")
-    
-    # Search and filter
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        glossary_search = st.text_input("Search terms", placeholder="e.g., IC50")
-    with col2:
-        glossary_category = st.selectbox(
-            "Category",
-            ["All", "Chemistry", "Biology", "Statistics", "Other"]
-        )
-    
-    # Fetch terms
-    params = {}
-    if glossary_search:
-        params["search"] = glossary_search
-    if glossary_category != "All":
-        params["category"] = glossary_category
-    
-    try:
-        resp = requests.get(f"{API_BASE}/glossary", params=params)
-        terms = resp.json() if resp.ok else []
-    except Exception as e:
-        st.error(f"Failed to fetch glossary: {e}")
-        terms = []
-    
-    # Add new term form
-    with st.expander("➕ Add New Term"):
-        with st.form("add_term"):
-            new_term = st.text_input("Term *")
-            new_definition = st.text_area("Definition *")
-            new_category = st.selectbox("Category", ["Chemistry", "Biology", "Statistics", "Other"])
-            new_synonyms = st.text_input("Synonyms (comma-separated)")
-            
-            if st.form_submit_button("Create Term"):
-                if new_term and new_definition:
-                    payload = {
-                        "term": new_term,
-                        "definition": new_definition,
-                        "category": new_category,
-                        "synonyms": [s.strip() for s in new_synonyms.split(",") if s.strip()] if new_synonyms else []
-                    }
-                    try:
-                        resp = requests.post(f"{API_BASE}/glossary", json=payload)
-                        if resp.ok:
-                            st.success(f"Created term: {new_term}")
-                            st.rerun()
-                        else:
-                            error_detail = resp.json().get('detail', 'Unknown error') if resp.headers.get('content-type', '').startswith('application/json') else resp.text
-                            st.error(f"Failed: {error_detail}")
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-                else:
-                    st.warning("Term and definition are required")
-    
-    # Display terms
-    if terms:
-        st.markdown(f"### Found {len(terms)} terms")
-        
-        for term in terms:
-            with st.container(border=True):
-                col1, col2 = st.columns([4, 1])
-                with col1:
-                    st.markdown(f"### {term['term']}")
-                    st.write(term['definition'])
-                    
-                    if term.get('synonyms'):
-                        st.caption(f"**Synonyms:** {', '.join(term['synonyms'])}")
-                    if term.get('category'):
-                        st.caption(f"**Category:** {term['category']}")
-                    if term.get('created_at'):
-                        st.caption(f"**Created:** {term['created_at'][:10]}")
-                
-                with col2:
-                    if st.button("🗑️", key=f"del_{term['id']}", help="Delete term"):
-                        try:
-                            resp = requests.delete(f"{API_BASE}/glossary/{term['id']}")
-                            if resp.ok:
-                                st.success("Deleted")
-                                st.rerun()
-                            else:
-                                st.error(f"Delete failed: {resp.status_code}")
-                        except Exception as e:
-                            st.error(f"Delete failed: {e}")
-    else:
-        if glossary_search or glossary_category != "All":
-            st.info("No terms found matching your filters")
-        else:
-            st.info("No glossary terms found. Add your first term above!")
-
-
-# ============================================================================
-# REGISTER IN PAGE_REGISTRY
-# ============================================================================
 
 def main():
     """Entry point for page registry."""
-    return  # Page renders on import
+    st.set_page_config(page_title="Data Catalog", page_icon="📚", layout="wide")
+    st.title("📚 Data Catalog")
+
+    # Initialize session state
+    if "selected_entity" not in st.session_state:
+        st.session_state.selected_entity = None
+
+    # ============================================================================
+    # TAB LAYOUT
+    # ============================================================================
+
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Browse Entities",
+        "🔍 Column Search", 
+        "🌳 Data Lineage",
+        "📖 Business Glossary"
+    ])
+
+
+    # ============================================================================
+    # TAB 1: BROWSE ENTITIES
+    # ============================================================================
+
+    with tab1:
+        st.header("Browse Data Entities")
+        
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            # Filter controls
+            st.subheader("Filters")
+            
+            entity_type = st.selectbox(
+                "Entity Type",
+                options=["All", "Table", "View", "Dataset", "Model"],
+                index=0
+            )
+            
+            program_filter = st.text_input("Program Filter", placeholder="e.g., compound-discovery")
+            
+            search_term = st.text_input("Search", placeholder="Search entity names...")
+            
+            if st.button("Refresh Catalog"):
+                try:
+                    response = requests.post(f"{API_BASE}/refresh")
+                    if response.status_code == 200:
+                        st.success("Catalog refreshed successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to refresh: {response.status_code}")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+        
+        with col2:
+            # Entity list
+            st.subheader("Entities")
+            
+            try:
+                # Build query parameters
+                params = {}
+                if entity_type != "All":
+                    params["entity_type"] = entity_type.lower()
+                if program_filter:
+                    params["program"] = program_filter
+                if search_term:
+                    params["search"] = search_term
+                
+                response = requests.get(f"{API_BASE}/entries", params=params)
+                
+                if response.status_code == 200:
+                    entities = response.json()
+                    
+                    if entities:
+                        for entity in entities[:20]:  # Limit to 20 for performance
+                            with st.expander(f"{entity['display_name']} ({entity['entity_type']})"):
+                                st.write(f"**Schema:** {entity.get('schema_name', 'N/A')}")
+                                st.write(f"**Description:** {entity.get('description', 'No description')}")
+                                st.write(f"**Last Updated:** {entity.get('last_updated', 'Unknown')}")
+                                
+                                if entity.get('tags'):
+                                    st.write(f"**Tags:** {', '.join(entity['tags'])}")
+                                
+                                if st.button(f"View Details", key=f"details_{entity['id']}"):
+                                    st.session_state.selected_entity = entity
+                                    st.rerun()
+                    else:
+                        st.info("No entities found matching your criteria")
+                else:
+                    st.error(f"Failed to load entities: {response.status_code}")
+                    
+            except Exception as e:
+                st.error(f"Error loading entities: {e}")
+        
+        # Selected entity details
+        if st.session_state.selected_entity:
+            st.subheader(f"Entity Details: {st.session_state.selected_entity['display_name']}")
+            
+            entity = st.session_state.selected_entity
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f"**Type:** {entity['entity_type']}")
+                st.write(f"**Schema:** {entity.get('schema_name', 'N/A')}")
+                st.write(f"**Created:** {entity.get('created_at', 'Unknown')}")
+            
+            with col2:
+                st.write(f"**Program:** {entity.get('program', 'N/A')}")
+                st.write(f"**Owner:** {entity.get('owner', 'Unknown')}")
+                st.write(f"**Last Updated:** {entity.get('last_updated', 'Unknown')}")
+            
+            if entity.get('description'):
+                st.write(f"**Description:** {entity['description']}")
+            
+            # Show columns
+            try:
+                response = requests.get(f"{API_BASE}/entries/{entity['id']}/columns")
+                if response.status_code == 200:
+                    columns = response.json()
+                    if columns:
+                        st.subheader("Columns")
+                        df = pd.DataFrame(columns)
+                        st.dataframe(df, use_container_width=True)
+                    else:
+                        st.info("No column metadata available")
+            except Exception as e:
+                st.error(f"Error loading columns: {e}")
+
+
+    # ============================================================================
+    # TAB 2: COLUMN SEARCH
+    # ============================================================================
+
+    with tab2:
+        st.header("Column Search")
+        
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            st.subheader("Search Filters")
+            
+            column_name = st.text_input("Column Name", placeholder="e.g., compound_id")
+            data_type = st.selectbox(
+                "Data Type",
+                options=["All", "text", "integer", "float", "boolean", "date", "json"],
+                index=0
+            )
+            has_description = st.checkbox("Has Description")
+            
+        with col2:
+            st.subheader("Search Results")
+            
+            # Perform search when filters change
+            try:
+                params = {}
+                if column_name:
+                    params["name"] = column_name
+                if data_type != "All":
+                    params["data_type"] = data_type
+                if has_description:
+                    params["has_description"] = "true"
+                
+                if params:  # Only search if there are filters
+                    response = requests.get(f"{API_BASE}/columns/search", params=params)
+                    
+                    if response.status_code == 200:
+                        results = response.json()
+                        
+                        if results:
+                            for result in results[:50]:  # Limit results
+                                with st.expander(f"{result['entity_name']}.{result['column_name']}"):
+                                    st.write(f"**Type:** {result['data_type']}")
+                                    st.write(f"**Entity:** {result['entity_name']} ({result['entity_type']})")
+                                    
+                                    if result.get('description'):
+                                        st.write(f"**Description:** {result['description']}")
+                                    
+                                    if result.get('sample_values'):
+                                        st.write(f"**Sample Values:** {', '.join(map(str, result['sample_values'][:5]))}")
+                                    
+                                    # Update column metadata
+                                    new_desc = st.text_area(
+                                        "Update Description",
+                                        value=result.get('description', ''),
+                                        key=f"desc_{result['id']}"
+                                    )
+                                    
+                                    if st.button(f"Update", key=f"update_{result['id']}"):
+                                        try:
+                                            update_data = {"description": new_desc}
+                                            update_response = requests.put(
+                                                f"{API_BASE}/columns/{result['id']}", 
+                                                json=update_data
+                                            )
+                                            if update_response.status_code == 200:
+                                                st.success("Description updated!")
+                                                st.rerun()
+                                            else:
+                                                st.error("Failed to update description")
+                                        except Exception as e:
+                                            st.error(f"Error updating: {e}")
+                        else:
+                            st.info("No columns found matching your criteria")
+                    else:
+                        st.error(f"Search failed: {response.status_code}")
+                else:
+                    st.info("Enter search criteria to find columns")
+                    
+            except Exception as e:
+                st.error(f"Error performing search: {e}")
+
+
+    # ============================================================================
+    # TAB 3: DATA LINEAGE
+    # ============================================================================
+
+    with tab3:
+        st.header("Data Lineage")
+        
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            st.subheader("Lineage Options")
+            
+            # Entity selector for lineage
+            entity_name = st.text_input("Entity Name", placeholder="e.g., experiments")
+            
+            if st.button("Detect Lineage"):
+                try:
+                    response = requests.post(f"{API_BASE}/lineage/detect")
+                    if response.status_code == 200:
+                        st.success("Lineage detection completed!")
+                        st.rerun()
+                    else:
+                        st.error("Failed to detect lineage")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+        
+        with col2:
+            st.subheader("Lineage Graph")
+            
+            if entity_name:
+                try:
+                    params = {"entity_name": entity_name}
+                    response = requests.get(f"{API_BASE}/lineage", params=params)
+                    
+                    if response.status_code == 200:
+                        lineage_data = response.json()
+                        
+                        if lineage_data.get("nodes"):
+                            # Display lineage information
+                            st.write("**Entities in Lineage:**")
+                            for node in lineage_data["nodes"]:
+                                st.write(f"- {node['name']} ({node['type']})")
+                            
+                            st.write("**Relationships:**")
+                            for edge in lineage_data.get("edges", []):
+                                st.write(f"- {edge['source']} → {edge['target']} ({edge['relationship_type']})")
+                            
+                            # Simple visualization using text
+                            st.subheader("Lineage Visualization")
+                            st.text("Upstream ← [Current Entity] → Downstream")
+                            
+                            # You could integrate graphviz here for better visualization
+                            # For now, showing a simple text representation
+                            
+                        else:
+                            st.info("No lineage data found for this entity")
+                    else:
+                        st.error(f"Failed to get lineage: {response.status_code}")
+                        
+                except Exception as e:
+                    st.error(f"Error loading lineage: {e}")
+            else:
+                st.info("Enter an entity name to view its lineage")
+
+
+    # ============================================================================
+    # TAB 4: BUSINESS GLOSSARY
+    # ============================================================================
+
+    with tab4:
+        st.header("Business Glossary")
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.subheader("Add New Term")
+            
+            with st.form("add_term"):
+                term_name = st.text_input("Term")
+                definition = st.text_area("Definition")
+                category = st.selectbox(
+                    "Category",
+                    options=["General", "Chemistry", "Biology", "Data Science", "Business"]
+                )
+                synonyms = st.text_input("Synonyms (comma-separated)")
+                
+                if st.form_submit_button("Add Term"):
+                    try:
+                        term_data = {
+                            "term": term_name,
+                            "definition": definition,
+                            "category": category,
+                            "synonyms": [s.strip() for s in synonyms.split(",") if s.strip()]
+                        }
+                        
+                        response = requests.post(f"{API_BASE}/glossary", json=term_data)
+                        
+                        if response.status_code == 201:
+                            st.success(f"Term '{term_name}' added successfully!")
+                            st.rerun()
+                        else:
+                            st.error(f"Failed to add term: {response.status_code}")
+                            
+                    except Exception as e:
+                        st.error(f"Error adding term: {e}")
+        
+        with col2:
+            st.subheader("Search Terms")
+            
+            search_query = st.text_input("Search glossary", placeholder="Enter term or definition...")
+            
+            try:
+                params = {"search": search_query} if search_query else {}
+                response = requests.get(f"{API_BASE}/glossary", params=params)
+                
+                if response.status_code == 200:
+                    terms = response.json()
+                    
+                    if terms:
+                        for term in terms:
+                            with st.expander(f"{term['term']} ({term['category']})"):
+                                st.write(f"**Definition:** {term['definition']}")
+                                
+                                if term.get('synonyms'):
+                                    st.write(f"**Synonyms:** {', '.join(term['synonyms'])}")
+                                
+                                st.write(f"**Created:** {term.get('created_at', 'Unknown')}")
+                                
+                                # Update/Delete options
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    if st.button(f"Edit", key=f"edit_{term['id']}"):
+                                        # Could implement inline editing
+                                        st.info("Edit functionality could be implemented here")
+                                
+                                with col2:
+                                    if st.button(f"Delete", key=f"delete_{term['id']}"):
+                                        try:
+                                            delete_response = requests.delete(f"{API_BASE}/glossary/{term['id']}")
+                                            if delete_response.status_code == 204:
+                                                st.success("Term deleted!")
+                                                st.rerun()
+                                            else:
+                                                st.error("Failed to delete term")
+                                        except Exception as e:
+                                            st.error(f"Error deleting: {e}")
+                    else:
+                        st.info("No terms found" if search_query else "No terms in glossary yet")
+                else:
+                    st.error(f"Failed to load glossary: {response.status_code}")
+                    
+            except Exception as e:
+                st.error(f"Error loading glossary: {e}")

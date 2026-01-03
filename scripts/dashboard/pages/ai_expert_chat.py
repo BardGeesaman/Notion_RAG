@@ -8,19 +8,7 @@ from datetime import datetime
 from uuid import UUID
 import time
 
-st.set_page_config(page_title="AI Expert Chat", page_icon="🧠", layout="wide")
-
 API_BASE = "http://localhost:8000/api/v1/experts"
-
-# Initialize session state
-if "current_conversation_id" not in st.session_state:
-    st.session_state.current_conversation_id = None
-if "selected_experts" not in st.session_state:
-    st.session_state.selected_experts = []
-if "chat_messages" not in st.session_state:
-    st.session_state.chat_messages = []
-if "entity_context" not in st.session_state:
-    st.session_state.entity_context = None
 
 
 # ============================================================================
@@ -78,399 +66,306 @@ def send_message(conversation_id, message):
     return None
 
 
-def get_panel_response(expert_ids, question):
-    """Get panel discussion response."""
+def get_conversation_messages(conversation_id):
+    """Fetch messages for a conversation."""
+    try:
+        resp = requests.get(f"{API_BASE}/conversations/{conversation_id}/messages")
+        return resp.json() if resp.ok else []
+    except:
+        return []
+
+
+def record_feedback(message_id, rating, correction=None, tags=None):
+    """Record user feedback on expert response."""
     try:
         payload = {
-            "expert_ids": expert_ids,
-            "question": question,
+            "rating": rating,
+            "correction": correction,
+            "tags": tags or []
         }
-        if st.session_state.entity_context:
-            payload["entity_context"] = st.session_state.entity_context
-        
-        resp = requests.post(f"{API_BASE}/panel", json=payload)
-        if resp.ok:
-            return resp.json()
-    except Exception as e:
-        st.error(f"Panel discussion failed: {e}")
-    return None
-
-
-def submit_feedback(message_id, rating, correction=None):
-    """Submit feedback on expert response."""
-    try:
-        payload = {"rating": rating}
-        if correction:
-            payload["correction"] = correction
-        
-        resp = requests.post(f"{API_BASE}/messages/{message_id}/feedback", json=payload)
+        resp = requests.post(f"{API_BASE}/feedback/{message_id}", json=payload)
         return resp.ok
     except:
         return False
 
 
-# ============================================================================
-# MAIN LAYOUT
-# ============================================================================
-
-st.title("🧠 AI Expert Chat")
-st.markdown("Chat with domain experts: medicinal chemists, computational biologists, clinicians, and biostatisticians.")
-
-# Sidebar for expert selection and conversation history
-with st.sidebar:
-    st.header("🎯 Select Experts")
+def display_message(msg, show_feedback=True):
+    """Display a chat message with optional feedback controls."""
+    timestamp = datetime.fromisoformat(msg.get("timestamp", "").replace("Z", "+00:00"))
     
-    experts = get_experts()
-    expert_options = {}
-    
-    if experts:
-        for expert in experts:
-            # Create expert display with emoji and specializations
-            emoji = expert.get("avatar_emoji", "👨‍🔬")
-            display_name = f"{emoji} {expert['name']}"
-            specializations = ", ".join(expert.get("specializations", [])[:2])
-            
-            is_selected = st.checkbox(
-                display_name,
-                key=f"expert_{expert['id']}",
-                help=f"{expert['role']} - {specializations}"
-            )
-            
-            if is_selected:
-                expert_options[expert['id']] = expert
-        
-        st.session_state.selected_experts = list(expert_options.keys())
+    if msg["role"] == "user":
+        with st.chat_message("user"):
+            st.write(msg["content"])
+            st.caption(f"You • {timestamp.strftime('%H:%M')}")
     else:
-        st.warning("No experts available. Check API connection.")
-    
-    # Panel mode indicator
-    if len(st.session_state.selected_experts) > 1:
-        st.info(f"🎭 Panel Mode: {len(st.session_state.selected_experts)} experts")
-    elif len(st.session_state.selected_experts) == 1:
-        selected_expert = expert_options[st.session_state.selected_experts[0]]
-        st.success(f"💬 Chat with {selected_expert['name']}")
-    else:
-        st.info("Select expert(s) to start chatting")
-    
-    st.markdown("---")
-    
-    # Entity context selector
-    st.header("🔗 Entity Context")
-    entity_type = st.selectbox(
-        "Link to entity (optional)",
-        ["None", "Compound", "Dataset", "Experiment"],
-        index=0
-    )
-    
-    if entity_type != "None":
-        entity_id = st.text_input("Entity ID (UUID)", placeholder="e.g., 123e4567-...")
-        if entity_id:
-            try:
-                st.session_state.entity_context = {
-                    "entity_type": entity_type,
-                    "entity_id": entity_id
-                }
-                st.success(f"Context: {entity_type}")
-            except:
-                st.error("Invalid UUID format")
-        else:
-            st.session_state.entity_context = None
-    else:
-        st.session_state.entity_context = None
-    
-    st.markdown("---")
-    
-    # Conversation history
-    st.header("📚 Recent Conversations")
-    conversations = get_user_conversations()
-    
-    if conversations:
-        for conv in conversations[:10]:  # Show last 10
-            expert_names = ", ".join(conv.get("expert_names", []))
-            title = conv["title"][:30] + "..." if len(conv["title"]) > 30 else conv["title"]
+        with st.chat_message("assistant", avatar="🧠"):
+            st.write(msg["content"])
             
-            if st.button(f"💬 {title}", key=f"conv_{conv['id']}", help=f"Experts: {expert_names}"):
-                st.session_state.current_conversation_id = conv["id"]
-                st.rerun()
-    else:
-        st.info("No previous conversations")
-    
-    # New conversation button
-    if st.button("➕ New Conversation", type="primary", disabled=not st.session_state.selected_experts):
-        if st.session_state.selected_experts:
-            conv = create_new_conversation(st.session_state.selected_experts)
-            if conv:
-                st.session_state.current_conversation_id = conv["id"]
-                st.session_state.chat_messages = []
-                st.success("New conversation started!")
-                st.rerun()
-
-
-# ============================================================================
-# MAIN CHAT AREA
-# ============================================================================
-
-# Load current conversation if selected
-if st.session_state.current_conversation_id:
-    try:
-        resp = requests.get(f"{API_BASE}/conversations/{st.session_state.current_conversation_id}")
-        if resp.ok:
-            conversation = resp.json()
-            st.session_state.chat_messages = conversation.get("messages", [])
+            # Expert info
+            expert_name = msg.get("expert_name", "Expert")
+            st.caption(f"{expert_name} • {timestamp.strftime('%H:%M')}")
             
-            # Display conversation header
-            expert_names = [expert["name"] for expert in conversation.get("experts", [])]
-            st.subheader(f"💬 {conversation['title']}")
-            st.caption(f"Experts: {', '.join(expert_names)}")
-            
-            if conversation.get("context_entity_type"):
-                st.info(f"Context: {conversation['context_entity_type']} - {conversation.get('context_entity_id', '')}")
-        else:
-            st.error("Failed to load conversation")
-            st.session_state.current_conversation_id = None
-    except Exception as e:
-        st.error(f"Error loading conversation: {e}")
-        st.session_state.current_conversation_id = None
-
-# Chat interface
-if st.session_state.selected_experts:
-    # Display chat messages
-    chat_container = st.container()
-    
-    with chat_container:
-        if st.session_state.chat_messages:
-            for msg in st.session_state.chat_messages:
-                role = msg["role"]
-                content = msg["content"]
-                expert_name = msg.get("expert_name", "Expert")
-                
-                if role == "user":
-                    # User message
-                    with st.chat_message("user", avatar="👤"):
-                        st.write(content)
-                
-                elif role == "assistant":
-                    # Expert response
-                    avatar = "🧪" if "chemist" in expert_name.lower() else "🧠"
-                    with st.chat_message("assistant", avatar=avatar):
-                        st.write(f"**{expert_name}:**")
-                        st.write(content)
-                        
-                        # Reasoning if available
-                        if msg.get("reasoning"):
-                            with st.expander("🤔 Reasoning"):
-                                st.write(msg["reasoning"])
-                        
-                        # Token count
-                        if msg.get("token_count"):
-                            st.caption(f"Tokens: {msg['token_count']}")
-                        
-                        # Feedback interface
-                        msg_id = msg["id"]
-                        col1, col2, col3 = st.columns([1, 2, 1])
-                        
-                        with col1:
-                            if st.button("👍", key=f"up_{msg_id}", help="Helpful"):
-                                if submit_feedback(msg_id, 5):
-                                    st.success("Feedback sent!")
-                        
-                        with col2:
-                            rating = st.select_slider(
-                                "Rate response",
-                                options=[1, 2, 3, 4, 5],
-                                value=3,
-                                format_func=lambda x: "⭐" * x,
-                                key=f"rating_{msg_id}"
-                            )
-                            if st.button("Submit Rating", key=f"submit_{msg_id}"):
-                                if submit_feedback(msg_id, rating):
-                                    st.success(f"Rated {rating} stars!")
-                        
-                        with col3:
-                            if st.button("👎", key=f"down_{msg_id}", help="Not helpful"):
-                                if submit_feedback(msg_id, 1):
-                                    st.success("Feedback sent!")
-        else:
-            st.info("Start a conversation by typing a message below")
-    
-    # Message input
-    st.markdown("---")
-    
-    # Panel vs Single expert mode
-    if len(st.session_state.selected_experts) > 1:
-        # Panel mode
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            user_input = st.text_area(
-                "Ask the expert panel:",
-                placeholder="e.g., What's the best approach for optimizing this compound's ADMET properties?",
-                height=100,
-                key="panel_input"
-            )
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🎭 Ask Panel", type="primary", disabled=not user_input):
-                if user_input:
-                    with st.spinner("Getting panel response..."):
-                        panel_result = get_panel_response(st.session_state.selected_experts, user_input)
-                        
-                        if panel_result:
-                            # Display panel summary
-                            st.success(f"Panel Response (Confidence: {panel_result['confidence_score']:.1%})")
-                            
-                            # Show primary recommendation
-                            with st.chat_message("assistant", avatar="🎭"):
-                                st.write("**Panel Consensus:**")
-                                st.write(panel_result["primary_recommendation"])
-                            
-                            # Show individual expert responses
-                            with st.expander("Individual Expert Responses"):
-                                for resp in panel_result["expert_responses"]:
-                                    st.markdown(f"**{resp['expert_name']} ({resp['expert_role']}):**")
-                                    st.write(resp["content"])
-                                    st.markdown("---")
-                            
-                            st.rerun()
-    else:
-        # Single expert mode
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            user_input = st.text_area(
-                "Your message:",
-                placeholder="Ask your question...",
-                height=100,
-                key="single_input"
-            )
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("💬 Send", type="primary", disabled=not user_input):
-                if user_input and st.session_state.current_conversation_id:
-                    with st.spinner("Getting expert response..."):
-                        response = send_message(st.session_state.current_conversation_id, user_input)
-                        
-                        if response:
-                            st.success("Response received!")
-                            st.rerun()
+            # Inline feedback
+            if show_feedback and msg.get("id"):
+                with st.expander("💬 Feedback", expanded=False):
+                    col1, col2 = st.columns([1, 2])
+                    
+                    with col1:
+                        rating = st.select_slider(
+                            "Rating",
+                            options=[1, 2, 3, 4, 5],
+                            value=3,
+                            key=f"rating_{msg['id']}"
+                        )
+                    
+                    with col2:
+                        correction = st.text_area(
+                            "Correction/Comment",
+                            placeholder="Optional feedback...",
+                            key=f"correction_{msg['id']}",
+                            height=60
+                        )
+                    
+                    tags = st.multiselect(
+                        "Tags",
+                        options=["accuracy", "relevance", "clarity", "completeness", "conciseness"],
+                        key=f"tags_{msg['id']}"
+                    )
+                    
+                    if st.button("Submit Feedback", key=f"feedback_{msg['id']}"):
+                        if record_feedback(msg["id"], rating, correction, tags):
+                            st.success("Feedback recorded!")
                         else:
-                            st.error("Failed to get response")
-                elif user_input and not st.session_state.current_conversation_id:
-                    # Create new conversation
-                    conv = create_new_conversation(st.session_state.selected_experts, "New Chat")
-                    if conv:
-                        st.session_state.current_conversation_id = conv["id"]
-                        with st.spinner("Getting expert response..."):
-                            response = send_message(st.session_state.current_conversation_id, user_input)
-                            if response:
-                                st.success("Conversation started!")
-                                st.rerun()
+                            st.error("Failed to record feedback")
 
-else:
-    # No experts selected
-    st.info("👈 Select one or more experts from the sidebar to start chatting")
-    
-    # Show expert showcase
-    experts = get_experts()
-    if experts:
-        st.markdown("### Available Experts")
-        
-        cols = st.columns(2)
-        for i, expert in enumerate(experts):
-            with cols[i % 2]:
-                with st.container(border=True):
-                    emoji = expert.get("avatar_emoji", "👨‍🔬")
-                    st.markdown(f"## {emoji} {expert['name']}")
-                    st.markdown(f"**{expert['role']}**")
-                    
-                    specializations = expert.get("specializations", [])
-                    if specializations:
-                        st.write("**Specializations:**")
-                        for spec in specializations[:4]:  # Show first 4
-                            st.write(f"• {spec}")
-                    
-                    st.caption(f"Version: {expert.get('prompt_version', '1.0')}")
-
-
-# ============================================================================
-# CONVERSATION MANAGEMENT
-# ============================================================================
-
-# Conversation controls (if active conversation)
-if st.session_state.current_conversation_id:
-    st.markdown("---")
-    col1, col2, col3 = st.columns([2, 2, 1])
-    
-    with col1:
-        if st.button("🔄 Refresh Messages"):
-            # Reload conversation
-            try:
-                resp = requests.get(f"{API_BASE}/conversations/{st.session_state.current_conversation_id}")
-                if resp.ok:
-                    conversation = resp.json()
-                    st.session_state.chat_messages = conversation.get("messages", [])
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Failed to refresh: {e}")
-    
-    with col2:
-        if st.button("📊 Expert Stats"):
-            # Show expert statistics
-            if st.session_state.selected_experts:
-                expert_id = st.session_state.selected_experts[0]
-                try:
-                    resp = requests.get(f"{API_BASE}/{expert_id}/stats")
-                    if resp.ok:
-                        stats = resp.json()
-                        with st.expander("Expert Performance"):
-                            st.metric("Messages", stats.get("message_count", 0))
-                            st.metric("Avg Rating", f"{stats.get('average_rating', 0):.1f}/5.0" if stats.get('average_rating') else "N/A")
-                            st.metric("Knowledge Docs", stats.get("knowledge_doc_count", 0))
-                except:
-                    st.error("Failed to load stats")
-    
-    with col3:
-        if st.button("🗑️ End Chat"):
-            if st.session_state.current_conversation_id:
-                try:
-                    resp = requests.delete(f"{API_BASE}/conversations/{st.session_state.current_conversation_id}")
-                    if resp.ok:
-                        st.session_state.current_conversation_id = None
-                        st.session_state.chat_messages = []
-                        st.success("Conversation ended")
-                        st.rerun()
-                except:
-                    st.error("Failed to end conversation")
-
-
-# ============================================================================
-# TIPS AND HELP
-# ============================================================================
-
-with st.expander("💡 Tips for Better Conversations"):
-    st.markdown("""
-    **Getting the best responses:**
-    - Be specific about your question or problem
-    - Provide context about your research area
-    - Link to specific compounds/datasets for targeted advice
-    - Use panel mode for complex questions requiring multiple perspectives
-    
-    **Expert Specializations:**
-    - **Med Chemist**: SAR analysis, ADMET optimization, lead design
-    - **Comp Biologist**: Multi-omics, pathway analysis, target validation  
-    - **Clinician**: Trial design, biomarkers, translational medicine
-    - **Biostatistician**: Power analysis, dose-response, experimental design
-    
-    **Panel Discussions:**
-    - Select 2+ experts for collaborative responses
-    - Great for complex questions with multiple angles
-    - Experts can build on each other's insights
-    - Consensus scoring shows agreement level
-    """)
-
-
-# ============================================================================
-# REGISTER IN PAGE_REGISTRY
-# ============================================================================
 
 def main():
     """Entry point for page registry."""
-    return  # Page renders on import
+    st.set_page_config(page_title="AI Expert Chat", page_icon="🧠", layout="wide")
+
+    # Initialize session state
+    if "current_conversation_id" not in st.session_state:
+        st.session_state.current_conversation_id = None
+    if "selected_experts" not in st.session_state:
+        st.session_state.selected_experts = []
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = []
+    if "entity_context" not in st.session_state:
+        st.session_state.entity_context = None
+
+    st.title("🧠 AI Expert Chat")
+    st.markdown("Chat with specialized AI experts for domain-specific guidance and insights.")
+
+    # ============================================================================
+    # SIDEBAR: EXPERT SELECTION & CONVERSATION HISTORY
+    # ============================================================================
+
+    with st.sidebar:
+        st.header("🎯 Expert Selection")
+        
+        # Load available experts
+        experts = get_experts()
+        
+        if experts:
+            expert_options = {f"{exp['name']} ({', '.join(exp['specializations'][:2])})": exp['id'] for exp in experts}
+            
+            selected_expert_names = st.multiselect(
+                "Choose Experts",
+                options=list(expert_options.keys()),
+                default=[],
+                help="Select one or more experts for your conversation"
+            )
+            
+            st.session_state.selected_experts = [expert_options[name] for name in selected_expert_names]
+            
+            # Show expert details
+            if st.session_state.selected_experts:
+                st.subheader("Selected Experts")
+                for expert in experts:
+                    if expert['id'] in st.session_state.selected_experts:
+                        with st.expander(expert['name']):
+                            st.write(f"**Specializations:** {', '.join(expert['specializations'])}")
+                            st.write(f"**Description:** {expert.get('description', 'No description')}")
+                            if expert.get('expertise_areas'):
+                                st.write(f"**Expertise:** {', '.join(expert['expertise_areas'])}")
+        else:
+            st.warning("No experts available. Please check the API connection.")
+        
+        st.divider()
+        
+        # Entity Context
+        st.header("🔗 Entity Context")
+        
+        entity_type = st.selectbox(
+            "Entity Type",
+            options=["None", "Compound", "Experiment", "Dataset", "Target"],
+            index=0
+        )
+        
+        if entity_type != "None":
+            entity_id = st.text_input("Entity ID", placeholder="Enter entity ID...")
+            
+            if st.button("Set Context"):
+                if entity_id:
+                    st.session_state.entity_context = {
+                        "entity_type": entity_type.lower(),
+                        "entity_id": entity_id
+                    }
+                    st.success(f"Context set: {entity_type} {entity_id}")
+                else:
+                    st.session_state.entity_context = None
+        else:
+            st.session_state.entity_context = None
+        
+        if st.session_state.entity_context:
+            st.info(f"Context: {st.session_state.entity_context['entity_type']} {st.session_state.entity_context['entity_id']}")
+        
+        st.divider()
+        
+        # Conversation History
+        st.header("💬 Recent Conversations")
+        
+        conversations = get_user_conversations()
+        
+        if conversations:
+            for conv in conversations[:10]:  # Show last 10
+                conv_title = conv.get('title', f"Conversation {conv['id']}")
+                if st.button(conv_title, key=f"conv_{conv['id']}", use_container_width=True):
+                    st.session_state.current_conversation_id = conv['id']
+                    st.session_state.chat_messages = get_conversation_messages(conv['id'])
+                    st.rerun()
+        else:
+            st.info("No previous conversations")
+        
+        # New conversation button
+        if st.button("🆕 New Conversation", type="primary", use_container_width=True):
+            if st.session_state.selected_experts:
+                new_conv = create_new_conversation(st.session_state.selected_experts)
+                if new_conv:
+                    st.session_state.current_conversation_id = new_conv['id']
+                    st.session_state.chat_messages = []
+                    st.success("New conversation started!")
+                    st.rerun()
+            else:
+                st.warning("Please select at least one expert first")
+
+    # ============================================================================
+    # MAIN CHAT INTERFACE
+    # ============================================================================
+
+    if not st.session_state.current_conversation_id:
+        # Welcome screen
+        st.info("👋 Welcome! Select experts from the sidebar and start a new conversation.")
+        
+        if experts:
+            st.subheader("Available Experts")
+            
+            cols = st.columns(3)
+            for i, expert in enumerate(experts[:6]):  # Show first 6
+                with cols[i % 3]:
+                    with st.container():
+                        st.write(f"**{expert['name']}**")
+                        st.write(f"*{', '.join(expert['specializations'][:2])}*")
+                        st.write(expert.get('description', '')[:100] + "..." if len(expert.get('description', '')) > 100 else expert.get('description', ''))
+                        
+                        if expert.get('expertise_areas'):
+                            st.caption(f"Expertise: {', '.join(expert['expertise_areas'][:3])}")
+    else:
+        # Active conversation
+        st.subheader(f"💬 Conversation")
+        
+        # Display expert participants
+        if st.session_state.selected_experts:
+            expert_names = []
+            for expert in experts:
+                if expert['id'] in st.session_state.selected_experts:
+                    expert_names.append(expert['name'])
+            
+            if expert_names:
+                st.caption(f"Chatting with: {', '.join(expert_names)}")
+        
+        # Context indicator
+        if st.session_state.entity_context:
+            st.info(f"🔗 Context: {st.session_state.entity_context['entity_type']} {st.session_state.entity_context['entity_id']}")
+        
+        # Chat messages container
+        chat_container = st.container()
+        
+        with chat_container:
+            # Display conversation history
+            for msg in st.session_state.chat_messages:
+                display_message(msg)
+        
+        # Chat input
+        if prompt := st.chat_input("Ask your experts anything..."):
+            # Add user message to display
+            user_msg = {
+                "role": "user",
+                "content": prompt,
+                "timestamp": datetime.now().isoformat()
+            }
+            st.session_state.chat_messages.append(user_msg)
+            
+            # Display user message immediately
+            with chat_container:
+                display_message(user_msg, show_feedback=False)
+            
+            # Send message and get response
+            with st.spinner("Experts are thinking..."):
+                response = send_message(st.session_state.current_conversation_id, prompt)
+                
+                if response:
+                    # Add expert response to display
+                    expert_msg = {
+                        "id": response.get("id"),
+                        "role": "assistant", 
+                        "content": response.get("content", ""),
+                        "expert_name": response.get("expert_name", "Expert"),
+                        "timestamp": response.get("timestamp", datetime.now().isoformat())
+                    }
+                    st.session_state.chat_messages.append(expert_msg)
+                    
+                    # Display expert response
+                    with chat_container:
+                        display_message(expert_msg)
+                else:
+                    st.error("Failed to get response from experts")
+            
+            # Rerun to update the chat
+            st.rerun()
+
+    # ============================================================================
+    # FOOTER
+    # ============================================================================
+
+    st.divider()
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.session_state.current_conversation_id:
+            if st.button("🔄 Refresh Messages"):
+                st.session_state.chat_messages = get_conversation_messages(st.session_state.current_conversation_id)
+                st.rerun()
+    
+    with col2:
+        if st.session_state.current_conversation_id:
+            if st.button("🗑️ Clear Chat"):
+                st.session_state.chat_messages = []
+                st.rerun()
+    
+    with col3:
+        if st.button("ℹ️ Help"):
+            st.info("""
+            **How to use AI Expert Chat:**
+            1. Select one or more experts from the sidebar
+            2. Optionally set entity context for domain-specific questions
+            3. Start a new conversation or continue an existing one
+            4. Ask questions and get expert responses
+            5. Provide feedback to help improve expert responses
+            
+            **Tips:**
+            - Use entity context for questions about specific compounds, experiments, etc.
+            - Select multiple experts for different perspectives
+            - Use the feedback system to improve future responses
+            """)

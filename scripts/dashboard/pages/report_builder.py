@@ -12,16 +12,6 @@ from amprenta_rag.services import report_builder as service
 from amprenta_rag.auth.session import get_current_user
 
 
-st.set_page_config(page_title="Report Builder", page_icon="📄", layout="wide")
-st.title("📄 Custom Report Builder")
-
-# Initialize session state
-if "report_sections" not in st.session_state:
-    st.session_state.report_sections = []
-if "preview_html" not in st.session_state:
-    st.session_state.preview_html = None
-
-
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
@@ -61,12 +51,12 @@ def get_programs(limit: int = 50):
         return [(str(p.id), p.name) for p in programs]
 
 
-def add_section(section_type: str):
+def add_section(section_type: str, config: dict = None):
     """Add a section to the report."""
     section_info = service.SECTION_TYPE_MAP.get(section_type, {})
     st.session_state.report_sections.append({
         "type": section_type,
-        "config": {},
+        "config": config or {},
         "order": len(st.session_state.report_sections),
         "name": section_info.get("name", section_type),
     })
@@ -88,378 +78,110 @@ def move_section(from_idx: int, to_idx: int):
         s["order"] = i
 
 
-def render_section_config(section: dict, index: int):
-    """Render configuration form for a section."""
-    section_type = section["type"]
-    config = section.get("config", {})
-    
-    if section_type == "title_page":
-        config["title"] = st.text_input("Report Title", value=config.get("title", ""), key=f"title_{index}")
-        config["subtitle"] = st.text_input("Subtitle", value=config.get("subtitle", ""), key=f"subtitle_{index}")
-        config["show_date"] = st.checkbox("Show Date", value=config.get("show_date", True), key=f"date_{index}")
-    
-    elif section_type == "executive_summary":
-        config["content"] = st.text_area("Summary Content (Markdown)", value=config.get("content", ""), key=f"summary_{index}", height=150)
-    
-    elif section_type == "compound_profile":
-        compounds = get_compounds()
-        options = [("", "-- Select Compound --")] + compounds
-        selected = st.selectbox(
-            "Compound",
-            options=[c[0] for c in options],
-            format_func=lambda x: dict(options).get(x, x),
-            key=f"compound_{index}"
-        )
-        if selected:
-            config["compound_id"] = selected
-        config["show_structure"] = st.checkbox("Show Structure", value=config.get("show_structure", True), key=f"struct_{index}")
-        config["show_properties"] = st.checkbox("Show Properties", value=config.get("show_properties", True), key=f"props_{index}")
-    
-    elif section_type == "compound_table":
-        compounds = get_compounds()
-        options = [c[0] for c in compounds]
-        labels = {c[0]: c[1] for c in compounds}
-        selected = st.multiselect(
-            "Select Compounds",
-            options=options,
-            format_func=lambda x: labels.get(x, x),
-            key=f"compounds_{index}"
-        )
-        config["compound_ids"] = selected
-    
-    elif section_type == "experiment_summary":
-        experiments = get_experiments()
-        options = [("", "-- Select Experiment --")] + experiments
-        selected = st.selectbox(
-            "Experiment",
-            options=[e[0] for e in options],
-            format_func=lambda x: dict(options).get(x, x),
-            key=f"experiment_{index}"
-        )
-        if selected:
-            config["experiment_id"] = selected
-        config["show_datasets"] = st.checkbox("Show Datasets", value=config.get("show_datasets", True), key=f"datasets_{index}")
-    
-    elif section_type == "dataset_stats":
-        datasets = get_datasets()
-        options = [("", "-- Select Dataset --")] + datasets
-        selected = st.selectbox(
-            "Dataset",
-            options=[d[0] for d in options],
-            format_func=lambda x: dict(options).get(x, x),
-            key=f"dataset_{index}"
-        )
-        if selected:
-            config["dataset_id"] = selected
-    
-    elif section_type in ("signature_heatmap", "pathway_enrichment"):
-        signatures = get_signatures()
-        options = [("", "-- Select Signature --")] + signatures
-        selected = st.selectbox(
-            "Signature",
-            options=[s[0] for s in options],
-            format_func=lambda x: dict(options).get(x, x),
-            key=f"signature_{index}"
-        )
-        if selected:
-            config["signature_id"] = selected
-        if section_type == "signature_heatmap":
-            config["top_n"] = st.number_input("Top N Features", value=config.get("top_n", 20), min_value=5, max_value=100, key=f"topn_{index}")
-    
-    elif section_type in ("activity_chart", "admet_radar"):
-        compounds = get_compounds()
-        options = [("", "-- Select Compound --")] + compounds
-        selected = st.selectbox(
-            "Compound",
-            options=[c[0] for c in options],
-            format_func=lambda x: dict(options).get(x, x),
-            key=f"viz_compound_{index}"
-        )
-        if selected:
-            config["compound_id"] = selected
-    
-    elif section_type == "free_text":
-        config["content"] = st.text_area("Content (Markdown)", value=config.get("content", ""), key=f"text_{index}", height=200)
-    
-    elif section_type == "image":
-        config["image_url"] = st.text_input("Image URL", value=config.get("image_url", ""), key=f"url_{index}")
-        config["caption"] = st.text_input("Caption", value=config.get("caption", ""), key=f"caption_{index}")
-    
-    elif section_type == "appendix":
-        config["content"] = st.text_area("Appendix Content (Markdown)", value=config.get("content", ""), key=f"appendix_{index}", height=150)
-    
-    # Update config
-    section["config"] = config
-
-
-# ============================================================================
-# TABS
-# ============================================================================
-
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🔨 Build Report",
-    "📁 My Templates", 
-    "👁️ Preview",
-    "📥 Export",
-    "📚 Section Library"
-])
-
-
-# ============================================================================
-# TAB 1: BUILD REPORT
-# ============================================================================
-
-with tab1:
-    col_library, col_canvas = st.columns([1, 2])
-    
-    with col_library:
-        st.subheader("➕ Add Sections")
+def save_template(name: str, description: str, is_public: bool):
+    """Save current report as template."""
+    try:
+        user = get_current_user()
+        template_data = {
+            "name": name,
+            "description": description,
+            "sections": st.session_state.report_sections,
+            "is_public": is_public,
+            "program_id": user.get("program_id") if user else None,
+            "created_by_id": user.get("id") if user else None
+        }
         
-        # Group sections by type
-        content_sections = ["title_page", "executive_summary", "free_text", "image", "appendix", "table_of_contents"]
-        data_sections = ["compound_profile", "compound_table", "experiment_summary", "dataset_stats"]
-        viz_sections = ["activity_chart", "admet_radar", "signature_heatmap", "pathway_enrichment"]
-        
-        st.markdown("**Content**")
-        for section_type in content_sections:
-            info = service.SECTION_TYPE_MAP.get(section_type, {})
-            if st.button(f"{info.get('icon', '📄')} {info.get('name', section_type)}", key=f"add_{section_type}", use_container_width=True):
-                add_section(section_type)
-                st.rerun()
-        
-        st.markdown("**Data**")
-        for section_type in data_sections:
-            info = service.SECTION_TYPE_MAP.get(section_type, {})
-            if st.button(f"{info.get('icon', '📊')} {info.get('name', section_type)}", key=f"add_{section_type}", use_container_width=True):
-                add_section(section_type)
-                st.rerun()
-        
-        st.markdown("**Visualizations**")
-        for section_type in viz_sections:
-            info = service.SECTION_TYPE_MAP.get(section_type, {})
-            if st.button(f"{info.get('icon', '📈')} {info.get('name', section_type)}", key=f"add_{section_type}", use_container_width=True):
-                add_section(section_type)
-                st.rerun()
-    
-    with col_canvas:
-        st.subheader("📋 Report Sections")
-        
-        if not st.session_state.report_sections:
-            st.info("Add sections from the left panel to build your report.")
-        else:
-            for i, section in enumerate(st.session_state.report_sections):
-                section_info = service.SECTION_TYPE_MAP.get(section["type"], {})
-                
-                with st.expander(f"{i+1}. {section_info.get('icon', '📄')} {section_info.get('name', section['type'])}", expanded=True):
-                    # Section config based on type
-                    render_section_config(section, i)
-                    
-                    # Actions
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
-                        if st.button("⬆️", key=f"up_{i}", disabled=i==0):
-                            move_section(i, i-1)
-                            st.rerun()
-                    with col2:
-                        if st.button("⬇️", key=f"down_{i}", disabled=i==len(st.session_state.report_sections)-1):
-                            move_section(i, i+1)
-                            st.rerun()
-                    with col3:
-                        if st.button("🗑️", key=f"del_{i}"):
-                            remove_section(i)
-                            st.rerun()
-            
-            st.markdown("---")
-            st.caption(f"Total sections: {len(st.session_state.report_sections)}")
-
-
-# ============================================================================
-# TAB 2: MY TEMPLATES
-# ============================================================================
-
-with tab2:
-    st.subheader("📁 Saved Templates")
-    
-    user = get_current_user()
-    user_id = user.get("id") if user else None
-    
-    col1, col2 = st.columns([3, 1])
-    with col2:
-        if st.button("💾 Save Current as Template", type="primary", disabled=not st.session_state.report_sections):
-            st.session_state.show_save_dialog = True
-    
-    # Save dialog
-    if st.session_state.get("show_save_dialog"):
-        with st.form("save_template_form"):
-            st.subheader("Save Template")
-            template_name = st.text_input("Template Name *")
-            template_desc = st.text_area("Description")
-            is_public = st.checkbox("Make public (visible to team)")
-            
-            programs = get_programs()
-            prog_options = [("", "-- No Program --")] + programs
-            program_id = st.selectbox(
-                "Associate with Program",
-                options=[p[0] for p in prog_options],
-                format_func=lambda x: dict(prog_options).get(x, x)
-            )
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.form_submit_button("Save", type="primary"):
-                    if template_name:
-                        try:
-                            with db_session() as db:
-                                service.create_template(
-                                    db=db,
-                                    name=template_name,
-                                    description=template_desc if template_desc else None,
-                                    sections=st.session_state.report_sections,
-                                    is_public=is_public,
-                                    program_id=UUID(program_id) if program_id else None,
-                                    created_by_id=UUID(user_id) if user_id else None,
-                                )
-                            st.success(f"✅ Template '{template_name}' saved!")
-                            st.session_state.show_save_dialog = False
-                            st.rerun()
-                        except ValueError as e:
-                            st.error(str(e))
-                    else:
-                        st.error("Template name is required")
-            with col2:
-                if st.form_submit_button("Cancel"):
-                    st.session_state.show_save_dialog = False
-                    st.rerun()
-    
-    # List templates
-    with db_session() as db:
-        templates = service.list_templates(
-            db=db,
-            created_by_id=UUID(user_id) if user_id else None,
-            include_public=True,
-            limit=50,
-        )
-        
-        if templates:
-            for template in templates:
-                with st.expander(f"{'🌐' if template.is_public else '🔒'} {template.name}"):
-                    st.write(template.description or "_No description_")
-                    st.caption(f"Sections: {len(template.sections)} | Created: {template.created_at.strftime('%Y-%m-%d') if template.created_at else '-'}")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        if st.button("📂 Load", key=f"load_{template.id}"):
-                            st.session_state.report_sections = template.sections.copy()
-                            st.success(f"Loaded '{template.name}'")
-                            st.rerun()
-                    with col2:
-                        if st.button("📋 Clone", key=f"clone_{template.id}"):
-                            try:
-                                with db_session() as db2:
-                                    service.clone_template(
-                                        db=db2,
-                                        template_id=template.id,
-                                        new_name=f"{template.name} (Copy)",
-                                        created_by_id=UUID(user_id) if user_id else None,
-                                    )
-                                st.success("Template cloned!")
-                                st.rerun()
-                            except ValueError as e:
-                                st.error(str(e))
-                    with col3:
-                        if st.button("🗑️ Delete", key=f"delete_{template.id}"):
-                            with db_session() as db2:
-                                service.delete_template(db2, template.id)
-                            st.success("Template deleted")
-                            st.rerun()
-        else:
-            st.info("No templates yet. Build a report and save it as a template!")
-
-
-# ============================================================================
-# TAB 3: PREVIEW
-# ============================================================================
-
-with tab3:
-    st.subheader("👁️ Report Preview")
-    
-    if st.button("🔄 Generate Preview", type="primary", disabled=not st.session_state.report_sections):
         with db_session() as db:
-            html = service.build_report(
-                st.session_state.report_sections,
-                db,
-                title="Report Preview"
-            )
-            st.session_state.preview_html = html
-    
-    if st.session_state.preview_html:
-        st.components.v1.html(st.session_state.preview_html, height=800, scrolling=True)
-    else:
-        st.info("Click 'Generate Preview' to see your report.")
+            template = service.create_template(db, template_data)
+            st.success(f"Template saved with ID: {template.id}")
+    except Exception as e:
+        st.error(f"Error saving template: {e}")
 
 
-# ============================================================================
-# TAB 4: EXPORT
-# ============================================================================
-
-with tab4:
-    st.subheader("📥 Export Report")
-    
-    if not st.session_state.report_sections:
-        st.warning("Add sections to your report before exporting.")
-    else:
-        export_title = st.text_input("Report Title", value="Custom Report")
-        export_format = st.radio("Format", ["HTML", "PDF"], horizontal=True)
-        
-        if st.button("📥 Generate & Download", type="primary"):
-            with db_session() as db:
-                html = service.build_report(
-                    st.session_state.report_sections,
-                    db,
-                    title=export_title
-                )
-                
-                if export_format == "HTML":
-                    st.download_button(
-                        "⬇️ Download HTML",
-                        data=html,
-                        file_name=f"{export_title.replace(' ', '_')}.html",
-                        mime="text/html",
-                    )
-                else:
-                    try:
-                        pdf_bytes = service.export_to_pdf(html)
-                        st.download_button(
-                            "⬇️ Download PDF",
-                            data=pdf_bytes,
-                            file_name=f"{export_title.replace(' ', '_')}.pdf",
-                            mime="application/pdf",
-                        )
-                    except Exception as e:
-                        st.error(f"PDF export failed: {e}")
-                        st.info("Try downloading as HTML instead.")
-
-
-# ============================================================================
-# TAB 5: SECTION LIBRARY
-# ============================================================================
-
-with tab5:
-    st.subheader("📚 Available Section Types")
-    st.markdown("Browse all available section types you can add to your reports.")
-    
-    for section in service.SECTION_REGISTRY:
-        with st.expander(f"{section['icon']} {section['name']}"):
-            st.write(section["description"])
-            if section["requires_entity"]:
-                st.caption(f"📌 Requires: {section.get('entity_type', 'entity')}")
+def load_template(template_id: str):
+    """Load template into current report."""
+    try:
+        with db_session() as db:
+            template = service.get_template(db, UUID(template_id))
+            if template:
+                st.session_state.report_sections = template.sections
+                st.success(f"Loaded template: {template.name}")
             else:
-                st.caption("📌 No entity required")
-            
-            if st.button("➕ Add to Report", key=f"lib_add_{section['type']}"):
-                add_section(section["type"])
-                st.success(f"Added {section['name']} to report")
-                st.rerun()
+                st.error("Template not found")
+    except Exception as e:
+        st.error(f"Error loading template: {e}")
+
+
+def delete_template(template_id: str):
+    """Delete a template."""
+    try:
+        with db_session() as db:
+            service.delete_template(db, UUID(template_id))
+            st.success("Template deleted")
+    except Exception as e:
+        st.error(f"Error deleting template: {e}")
+
+
+def get_templates():
+    """Get user's templates."""
+    try:
+        user = get_current_user()
+        with db_session() as db:
+            templates = service.list_templates(db, created_by_id=UUID(user["id"]) if user else None)
+            return [(t.id, t.name, t.description, t.is_public, t.created_at) for t in templates]
+    except Exception as e:
+        st.error(f"Error loading templates: {e}")
+        return []
+
+
+def generate_preview():
+    """Generate HTML preview of current report."""
+    try:
+        with db_session() as db:
+            html = service.generate_report(db, st.session_state.report_sections)
+            st.session_state.preview_html = html
+    except Exception as e:
+        st.error(f"Error generating preview: {e}")
+
+
+def export_html():
+    """Export report as HTML file."""
+    try:
+        with db_session() as db:
+            html = service.generate_report(db, st.session_state.report_sections)
+            st.download_button(
+                label="Download HTML",
+                data=html,
+                file_name="report.html",
+                mime="text/html"
+            )
+    except Exception as e:
+        st.error(f"Error exporting HTML: {e}")
+
+
+def export_pdf():
+    """Export report as PDF file."""
+    try:
+        with db_session() as db:
+            pdf_bytes = service.generate_pdf_report(db, st.session_state.report_sections)
+            st.download_button(
+                label="Download PDF",
+                data=pdf_bytes,
+                file_name="report.pdf",
+                mime="application/pdf"
+            )
+    except Exception as e:
+        st.error(f"Error exporting PDF: {e}")
+
+
+def preview_section(section_type: str):
+    """Preview a single section."""
+    try:
+        with db_session() as db:
+            html = service.render_section(db, section_type, {})
+            st.components.v1.html(html, height=300, scrolling=True)
+    except Exception as e:
+        st.error(f"Error previewing section: {e}")
 
 
 # ============================================================================
@@ -468,7 +190,246 @@ with tab5:
 
 def main():
     """Entry point for page registry."""
-    return  # Page renders on import
+    st.set_page_config(page_title="Report Builder", page_icon="📄", layout="wide")
+    st.title("📄 Custom Report Builder")
+
+    # Initialize session state
+    if "report_sections" not in st.session_state:
+        st.session_state.report_sections = []
+    if "preview_html" not in st.session_state:
+        st.session_state.preview_html = None
+
+    # ============================================================================
+    # TABS
+    # ============================================================================
+
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "🔧 Build Report",
+        "📁 My Templates", 
+        "👀 Preview",
+        "📤 Export",
+        "📚 Section Library"
+    ])
+
+    # ============================================================================
+    # TAB 1: BUILD REPORT
+    # ============================================================================
+
+    with tab1:
+        st.header("Build Report")
+        
+        # Section configuration
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            section_type = st.selectbox(
+                "Section Type",
+                options=list(service.get_section_registry().keys()),
+                help="Choose the type of section to add"
+            )
+            
+        with col2:
+            if section_type:
+                registry = service.get_section_registry()
+                section_info = registry[section_type]
+                st.info(f"**{section_info['name']}**: {section_info['description']}")
+        
+        # Section configuration based on type
+        config = {}
+        
+        if section_type == "compound_table":
+            compound_options = get_compounds()
+            selected_compounds = st.multiselect(
+                "Select Compounds",
+                options=[opt[0] for opt in compound_options],
+                format_func=lambda x: next(opt[1] for opt in compound_options if opt[0] == x)
+            )
+            config = {"compound_ids": selected_compounds}
+            
+        elif section_type == "experiment_summary":
+            experiment_options = get_experiments()
+            selected_experiment = st.selectbox(
+                "Select Experiment",
+                options=[opt[0] for opt in experiment_options] if experiment_options else [],
+                format_func=lambda x: next(opt[1] for opt in experiment_options if opt[0] == x) if experiment_options else ""
+            )
+            if selected_experiment:
+                config = {"experiment_id": selected_experiment}
+                
+        elif section_type == "dataset_stats":
+            dataset_options = get_datasets()
+            selected_dataset = st.selectbox(
+                "Select Dataset", 
+                options=[opt[0] for opt in dataset_options] if dataset_options else [],
+                format_func=lambda x: next(opt[1] for opt in dataset_options if opt[0] == x) if dataset_options else ""
+            )
+            if selected_dataset:
+                config = {"dataset_id": selected_dataset}
+                
+        elif section_type == "signature_heatmap":
+            signature_options = get_signatures()
+            selected_signature = st.selectbox(
+                "Select Signature",
+                options=[opt[0] for opt in signature_options] if signature_options else [],
+                format_func=lambda x: next(opt[1] for opt in signature_options if opt[0] == x) if signature_options else ""
+            )
+            if selected_signature:
+                config = {"signature_id": selected_signature}
+        
+        # Add section button
+        if st.button("Add Section", type="primary"):
+            add_section(section_type, config)
+            st.success(f"Added {section_type} section")
+            st.rerun()
+        
+        # Current sections
+        st.subheader("Current Sections")
+        if st.session_state.report_sections:
+            for i, section in enumerate(st.session_state.report_sections):
+                col1, col2, col3 = st.columns([3, 1, 1])
+                with col1:
+                    st.write(f"{i+1}. {section['name']}")
+                with col2:
+                    if st.button("↑", key=f"up_{i}", disabled=i==0):
+                        move_section(i, i-1)
+                        st.rerun()
+                    if st.button("↓", key=f"down_{i}", disabled=i==len(st.session_state.report_sections)-1):
+                        move_section(i, i+1)
+                        st.rerun()
+                with col3:
+                    if st.button("🗑️", key=f"delete_{i}"):
+                        remove_section(i)
+                        st.rerun()
+        else:
+            st.info("No sections added yet. Add sections above to build your report.")
+
+    # ============================================================================
+    # TAB 2: MY TEMPLATES
+    # ============================================================================
+
+    with tab2:
+        st.header("My Templates")
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            # Save current report as template
+            if st.session_state.report_sections:
+                st.subheader("Save Current Report")
+                template_name = st.text_input("Template Name")
+                template_description = st.text_area("Description")
+                is_public = st.checkbox("Make Public", help="Allow other users to use this template")
+                
+                if st.button("Save Template"):
+                    if template_name:
+                        save_template(template_name, template_description, is_public)
+                        st.success(f"Template '{template_name}' saved!")
+                        st.rerun()
+                    else:
+                        st.error("Please enter a template name")
+            else:
+                st.info("Add sections to your report first, then save as template")
+        
+        with col2:
+            # Load template
+            st.subheader("Load Template")
+            templates = get_templates()
+            
+            if templates:
+                template_options = [(str(t[0]), f"{t[1]} ({'Public' if t[3] else 'Private'})") for t in templates]
+                selected_template = st.selectbox(
+                    "Choose Template",
+                    options=[opt[0] for opt in template_options],
+                    format_func=lambda x: next(opt[1] for opt in template_options if opt[0] == x)
+                )
+                
+                if st.button("Load Template"):
+                    load_template(selected_template)
+                    st.success("Template loaded!")
+                    st.rerun()
+            else:
+                st.info("No templates available")
+        
+        # Template management
+        st.subheader("Manage Templates")
+        templates = get_templates()
+        if templates:
+            for template_id, name, description, is_public, created_at in templates:
+                with st.expander(f"{name} ({'Public' if is_public else 'Private'})"):
+                    st.write(f"**Description:** {description or 'No description'}")
+                    st.write(f"**Created:** {created_at}")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button(f"Load", key=f"load_{template_id}"):
+                            load_template(str(template_id))
+                            st.success("Template loaded!")
+                            st.rerun()
+                    with col2:
+                        if st.button(f"Delete", key=f"delete_{template_id}"):
+                            delete_template(str(template_id))
+                            st.success("Template deleted!")
+                            st.rerun()
+
+    # ============================================================================
+    # TAB 3: PREVIEW
+    # ============================================================================
+
+    with tab3:
+        st.header("Report Preview")
+        
+        if st.session_state.report_sections:
+            if st.button("Generate Preview"):
+                generate_preview()
+                
+            if st.session_state.preview_html:
+                st.components.v1.html(st.session_state.preview_html, height=600, scrolling=True)
+        else:
+            st.info("Add sections to preview the report")
+
+    # ============================================================================
+    # TAB 4: EXPORT
+    # ============================================================================
+
+    with tab4:
+        st.header("Export Report")
+        
+        if st.session_state.report_sections:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("Export as HTML"):
+                    export_html()
+                    
+            with col2:
+                if st.button("Export as PDF"):
+                    export_pdf()
+        else:
+            st.info("Add sections to export the report")
+
+    # ============================================================================
+    # TAB 5: SECTION LIBRARY
+    # ============================================================================
+
+    with tab5:
+        st.header("Section Library")
+        
+        registry = service.get_section_registry()
+        
+        for section_type, section_info in registry.items():
+            with st.expander(f"{section_info['name']} ({section_type})"):
+                st.write(f"**Description:** {section_info['description']}")
+                st.write(f"**Category:** {section_info.get('category', 'General')}")
+                
+                # Show preview
+                if st.button(f"Preview {section_info['name']}", key=f"preview_{section_type}"):
+                    preview_section(section_type)
+                    
+                # Quick add button
+                if st.button(f"Add {section_info['name']}", key=f"add_{section_type}"):
+                    add_section(section_type)
+                    st.success(f"Added {section_info['name']} to report")
+                    st.rerun()
 
 
 # Add to PAGE_REGISTRY in scripts/dashboard/core/__init__.py:
