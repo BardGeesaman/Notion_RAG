@@ -472,6 +472,27 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [ ] Verify Celery worker secrets match API container secrets
 - [ ] Secret rotation documentation and runbook
 
+### Import-Time Configuration Debt (Tech Debt - P1) ✅ COMPLETE (2026-01-02)
+- [x] **Import-time config checks cause test failures** - Modules raise RuntimeError at import if env vars missing
+- [x] Create `amprenta_rag/test_config.py` with test defaults
+- [x] Convert all import-time checks to lazy init (`@lru_cache` pattern)
+- [x] Update conftest.py to use test_config (remove env var bandaid)
+- [x] Add lifespan validation test (5 tests)
+- [x] Fixed: `signatures.py`, `notebook_review.py`
+- [x] GNN API numpy serialization fix
+- **Result:** 560+ API tests now pass, clean lazy loading pattern established
+
+### AWS Secrets Management (P1 - Architecture)
+- [ ] **Unified secrets management for dev and prod** - Single `get_secret()` abstraction
+- [ ] **Option A: AWS Secrets Manager everywhere** (no offline/env var fallback)
+- [ ] Developers must configure AWS credentials locally (`aws configure`)
+- [ ] Implementation: `amprenta_rag/config/secrets.py` with `@lru_cache` + boto3
+- [ ] Naming convention: `amprenta/<service>/<key>` (e.g., `amprenta/api/jwt_secret`)
+- [ ] Migration path: Week 1 (implement) → Week 2 (populate AWS + update devs) → Week 3 (deploy)
+- [ ] Tests use `test_config.py` with mock secrets (patch `get_secret()`, NEVER hit real AWS)
+- [ ] Cost: ~$5/month for 5-10 secrets
+- [ ] Effort: 1-2 days implementation + 1 week migration
+
 ---
 
 ### Cytoscape Network Hub P2 Observations (Completed 2025-01-02)

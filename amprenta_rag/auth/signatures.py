@@ -12,18 +12,30 @@ from sqlalchemy.orm import Session
 from amprenta_rag.auth.password import verify_password
 from amprenta_rag.models.auth import ElectronicSignature, User
 from amprenta_rag.logging_utils import get_logger
-from amprenta_rag.utils.secrets import get_auth_secret
 
 logger = get_logger(__name__)
 
-# Secret key for HMAC - REQUIRED for electronic signatures
-_signature_secret = get_auth_secret("signature_key")
-if not _signature_secret:
-    raise RuntimeError(
-        "SIGNATURE_SECRET_KEY not configured. "
-        "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
-    )
-SECRET_KEY = _signature_secret.encode()
+# Lazy-loaded secret key (avoid import-time RuntimeError in tests)
+_secret_key_cache: Optional[bytes] = None
+
+
+def _get_secret_key() -> bytes:
+    """Get signature secret key (lazy loaded, cached).
+    
+    Raises:
+        RuntimeError: If SIGNATURE_SECRET_KEY not configured
+    """
+    global _secret_key_cache
+    if _secret_key_cache is None:
+        from amprenta_rag.utils.secrets import get_auth_secret
+        _signature_secret = get_auth_secret("signature_key")
+        if not _signature_secret:
+            raise RuntimeError(
+                "SIGNATURE_SECRET_KEY not configured. "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        _secret_key_cache = _signature_secret.encode()
+    return _secret_key_cache
 
 
 def create_signature(
@@ -73,7 +85,7 @@ def create_signature(
     }
     
     data_str = json.dumps(signing_data, sort_keys=True)
-    signature_hash = hmac.new(SECRET_KEY, data_str.encode(), hashlib.sha256).hexdigest()
+    signature_hash = hmac.new(_get_secret_key(), data_str.encode(), hashlib.sha256).hexdigest()
     
     # Create signature record
     signature = ElectronicSignature(
@@ -121,7 +133,7 @@ def verify_signature(signature_id: str, db: Session) -> bool:
     }
     
     data_str = json.dumps(signing_data, sort_keys=True)
-    expected_hash = hmac.new(SECRET_KEY, data_str.encode(), hashlib.sha256).hexdigest()
+    expected_hash = hmac.new(_get_secret_key(), data_str.encode(), hashlib.sha256).hexdigest()
     
     is_valid = hmac.compare_digest(signature.signature_hash, expected_hash)
     

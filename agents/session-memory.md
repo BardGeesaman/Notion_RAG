@@ -2,6 +2,23 @@
 
 ## January 2, 2025 - Multi-Platform Feature Completion
 
+* [2025-01-02] – **Import-Time Configuration Fix + GNN API Serialization** (Tech Debt):
+  - **Feature**: Fixed import-time configuration issues and GNN API numpy serialization
+  - **Batches**: 2 (configuration fix, GNN API fix)
+  - **Tests Added**: 5 (startup validation tests)
+  - **Commits**: 2 (f74fcc2, 29d7563)
+  - **Key Components**:
+    - Fixed lazy loading pattern for secrets (signatures.py, notebook_review.py)
+    - Created `amprenta_rag/test_config.py` with centralized test defaults
+    - Updated `conftest.py` to use test_config (removed bandaid env vars)
+    - Added `_to_python()` and `_sanitize_prediction_result()` helpers in admet.py
+  - **Key Decisions**:
+    - AWS Secrets Management: Option A chosen (AWS everywhere, no offline fallback)
+    - Lazy Loading Pattern: `@lru_cache` for secrets instead of import-time checks
+    - Test Config Module: Centralized test defaults approach
+  - **Test Results**: 560+ API tests passing, GNN API 14/14, Retrosynthesis API 7/7
+  - All fixes validated and working
+
 * [2025-01-02] – **Retrosynthesis Advisor MVP** (P2 Discovery & Med Chem):
   - **Feature**: Mock retrosynthesis service with pluggable architecture for future API integration
   - **Batches**: 5 (service, models, API, dashboard, tests)
@@ -1941,8 +1958,8 @@ The system has reached **production maturity** with **65+ features**, **1905+ un
    ```
 
 **Quick context for next session:**
-- 2071+ tests, ~92% coverage, 107+ commits (sessions 2025-01-02/01/12-30/31), 947 tests added
-- Session 2025-01-02: Retrosynthesis Advisor MVP + IGV.js Genome Browser + Variant Annotation Pipeline (VEP) + Cytoscape Network Hub + Data Lifecycle Completion + GitHub Secrets Integration + Rate Limiting & Brute Force Protection + Input Validation Hardening + Security Headers + OWASP Top 10 Security Audit complete
+- 2076+ tests, ~92% coverage, 109+ commits (sessions 2025-01-02/01/12-30/31), 952 tests added
+- Session 2025-01-02: Import-Time Configuration Fix + GNN API Serialization + Retrosynthesis Advisor MVP + IGV.js Genome Browser + Variant Annotation Pipeline (VEP) + Cytoscape Network Hub + Data Lifecycle Completion + GitHub Secrets Integration + Rate Limiting & Brute Force Protection + Input Validation Hardening + Security Headers + OWASP Top 10 Security Audit complete
 - Session 2025-01-01: BAM/CRAM Alignment Viewing + Strategic Planning + Secrets Management + Activity Feed + Tech Debt Cleanup complete
 - Session 2025-12-31: 5 features (Collaborative Notebook Editing RTC, GEO Incremental Harvester, Provenance Ledger Enhancement, Enhanced System Administration Tools, Automated Backup & Disaster Recovery complete)
 - Session 2025-12-30: 11 features (Async SQLAlchemy Infrastructure Phase 4, Async Compute APIs Phase 3, Async External APIs Phase 2, Async LLM Endpoints Phase 1, Job Queue Test Suite, Imaging Metadata & HCS, Biophysical Assays, Flow Cytometry, Generative Chemistry, Navigation UI, Image Analysis) + Context Policy Update
