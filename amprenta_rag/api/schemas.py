@@ -597,6 +597,113 @@ class TemplateCloneRequest(BaseSchema):
     new_name: str
 
 
+# ============================================================================
+# DATA CATALOG SCHEMAS
+# ============================================================================
+
+class CatalogEntryResponse(BaseSchema):
+    """Catalog entry response."""
+    id: UUID
+    entity_type: str
+    table_name: str
+    display_name: str
+    description: Optional[str]
+    category: str
+    row_count: Optional[int]
+    last_refreshed: Optional[datetime]
+    
+    @property
+    def column_count(self) -> int:
+        """Calculate column count from columns relationship."""
+        return len(getattr(self, 'columns', []))
+
+
+class ColumnMetadataResponse(BaseSchema):
+    """Column metadata response."""
+    id: UUID
+    column_name: str
+    display_name: Optional[str]
+    data_type: str
+    description: Optional[str]
+    is_nullable: bool
+    is_primary_key: bool
+    is_foreign_key: bool
+    foreign_key_target: Optional[str]
+    example_values: Optional[List[str]]
+    glossary_term_id: Optional[UUID]
+
+
+class CatalogEntryDetailResponse(CatalogEntryResponse):
+    """Catalog entry with columns."""
+    columns: List[ColumnMetadataResponse]
+
+
+class CatalogEntryUpdate(BaseSchema):
+    """Update catalog entry."""
+    description: Optional[str] = None
+    category: Optional[str] = None
+
+
+class ColumnMetadataUpdate(BaseSchema):
+    """Update column metadata."""
+    display_name: Optional[str] = None
+    description: Optional[str] = None
+    glossary_term_id: Optional[UUID] = None
+
+
+class ColumnSearchResult(BaseSchema):
+    """Column search result."""
+    entity_type: str
+    column_name: str
+    display_name: Optional[str]
+    data_type: str
+    description: Optional[str]
+
+
+class GlossaryTermCreate(BaseSchema):
+    """Create glossary term."""
+    term: str
+    definition: str
+    category: Optional[str] = None
+    synonyms: Optional[List[str]] = None
+
+
+class GlossaryTermUpdate(BaseSchema):
+    """Update glossary term."""
+    definition: Optional[str] = None
+    category: Optional[str] = None
+    synonyms: Optional[List[str]] = None
+
+
+class GlossaryTermResponse(BaseSchema):
+    """Glossary term response."""
+    id: UUID
+    term: str
+    definition: str
+    category: Optional[str]
+    synonyms: Optional[List[str]]
+    related_terms: Optional[List[str]]
+    source: Optional[str]
+    created_at: datetime
+
+
+class LineageEdgeCreate(BaseSchema):
+    """Create lineage edge."""
+    source_type: str
+    source_id: UUID
+    target_type: str
+    target_id: UUID
+    relationship_type: str
+    transformation: Optional[str] = None
+
+
+class LineageGraphResponse(BaseSchema):
+    """Lineage graph response."""
+    nodes: List[dict]
+    edges: List[dict]
+    center_entity: dict
+
+
 class AnnotationCreate(BaseSchema):
     """Schema for creating an annotation/note on an entity."""
 
