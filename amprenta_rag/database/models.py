@@ -2279,3 +2279,4 @@ from amprenta_rag.models.inventory import (  # noqa: F401
     CompoundRequest,
 )
 from amprenta_rag.models.reports import ReportTemplate  # noqa: F401
+from amprenta_rag.models.catalog import CatalogEntry, ColumnMetadata, GlossaryTerm, DataLineageEdge  # noqa: F401
