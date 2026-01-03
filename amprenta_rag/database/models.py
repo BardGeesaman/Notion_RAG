@@ -2280,3 +2280,12 @@ from amprenta_rag.models.inventory import (  # noqa: F401
 )
 from amprenta_rag.models.reports import ReportTemplate  # noqa: F401
 from amprenta_rag.models.catalog import CatalogEntry, ColumnMetadata, GlossaryTerm, DataLineageEdge  # noqa: F401
+from amprenta_rag.models.experts import (  # noqa: F401
+    ExpertAgent,
+    ExpertConversation,
+    ExpertMessage,
+    ExpertFeedback,
+    ExpertTrainingExample,
+    ExpertKnowledgeDoc,
+    expert_conversation_participants,
+)
