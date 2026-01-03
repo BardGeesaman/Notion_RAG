@@ -546,6 +546,132 @@ def search_glossary(db: Session, query: str, limit: int = 20) -> List[dict]:
 
 
 # ============================================================================
+# ADDITIONAL COLUMN OPERATIONS
+# ============================================================================
+
+def get_column_metadata(db: Session, entity_type: str, column_name: str) -> Optional[ColumnMetadata]:
+    """Get column metadata by entity type and column name."""
+    return db.query(ColumnMetadata).join(CatalogEntry).filter(
+        CatalogEntry.entity_type == entity_type,
+        ColumnMetadata.column_name == column_name,
+    ).first()
+
+
+def update_column_metadata(
+    db: Session,
+    column_id: UUID,
+    display_name: Optional[str] = None,
+    description: Optional[str] = None,
+    glossary_term_id: Optional[UUID] = None,
+) -> Optional[ColumnMetadata]:
+    """Update column metadata."""
+    column = db.query(ColumnMetadata).filter(ColumnMetadata.id == column_id).first()
+    if not column:
+        return None
+    
+    if display_name is not None:
+        column.display_name = display_name
+    if description is not None:
+        column.description = description
+    if glossary_term_id is not None:
+        column.glossary_term_id = glossary_term_id
+    
+    db.commit()
+    db.refresh(column)
+    return column
+
+
+def get_glossary_term(db: Session, term_id: UUID) -> Optional[GlossaryTerm]:
+    """Get single glossary term by ID."""
+    return db.query(GlossaryTerm).filter(GlossaryTerm.id == term_id).first()
+
+
+def get_lineage_graph(
+    db: Session,
+    entity_type: str,
+    entity_id: UUID,
+    depth: int = 3,
+    direction: str = "both",
+) -> dict:
+    """
+    Get lineage graph for visualization.
+    
+    Returns Cytoscape.js compatible format.
+    Max 500 nodes for performance.
+    """
+    # For now, return immediate lineage only
+    lineage = get_entity_lineage(db, entity_type, entity_id)
+    
+    # Build nodes and edges for Cytoscape.js
+    nodes = [
+        {
+            "data": {
+                "id": f"{entity_type}:{entity_id}",
+                "label": f"{entity_type}",
+                "type": entity_type,
+                "entity_id": str(entity_id),
+                "is_center": True,
+            }
+        }
+    ]
+    
+    edges = []
+    
+    # Add parent nodes and edges
+    for parent in lineage["parents"]:
+        node_id = f"{parent['type']}:{parent['id']}"
+        nodes.append({
+            "data": {
+                "id": node_id,
+                "label": parent["type"],
+                "type": parent["type"],
+                "entity_id": parent["id"],
+                "is_center": False,
+            }
+        })
+        edges.append({
+            "data": {
+                "id": f"{node_id}->{entity_type}:{entity_id}",
+                "source": node_id,
+                "target": f"{entity_type}:{entity_id}",
+                "relationship": parent["relationship"],
+                "transformation": parent.get("transformation"),
+            }
+        })
+    
+    # Add child nodes and edges
+    for child in lineage["children"]:
+        node_id = f"{child['type']}:{child['id']}"
+        nodes.append({
+            "data": {
+                "id": node_id,
+                "label": child["type"],
+                "type": child["type"],
+                "entity_id": child["id"],
+                "is_center": False,
+            }
+        })
+        edges.append({
+            "data": {
+                "id": f"{entity_type}:{entity_id}->{node_id}",
+                "source": f"{entity_type}:{entity_id}",
+                "target": node_id,
+                "relationship": child["relationship"],
+                "transformation": child.get("transformation"),
+            }
+        })
+    
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "center_entity": {
+            "type": entity_type,
+            "id": str(entity_id),
+        },
+    }
+
+
+# ============================================================================
 # AUTO-DISCOVERY ENGINE
 # ============================================================================
 
