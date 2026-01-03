@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-03 (Compound Inventory System, Custom Report Builder, Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
+**Last Updated**: 2025-01-03 (Data Catalog System, Compound Inventory System, Custom Report Builder, Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
 
 Simple status legend:
 - ✅ DONE
@@ -32,6 +32,13 @@ Simple status legend:
   - environment.yml with conda-forge for RDKit/OpenMM
   - requirements-pip.txt for pip-only packages
   - README updated with conda setup instructions
+- ✅ Data Catalog (2025-01-03)
+  - Entity dictionary with auto-discovery of 154 SQLAlchemy models
+  - Column-level metadata with type, FK, PK information
+  - Data lineage graphs with Graphviz visualization
+  - Business glossary for domain terminology
+  - 4-tab dashboard (Browse, Search, Lineage, Glossary)
+  - 12 API endpoints, 37 tests
 
 ### RAG Maturity
 - ✅ Hybrid retrieval (dense + structured search patterns)
@@ -741,7 +748,7 @@ Items originally scoped out or identified as major future initiatives. These rep
 
 | Priority | Item | Description | Effort | Dependencies |
 |----------|------|-------------|--------|--------------|
-| **P1** | **Data Catalog** | Entity dictionary, column-level metadata, data lineage graphs, glossary integration | 3-4 weeks | None |
+| ✅ **P1** | **Data Catalog** | Entity dictionary, column-level metadata, data lineage graphs, glossary integration | **COMPLETE** | 2025-01-03 |
 | **P2** | **Data Quality Engine** | Validation rule builder, completeness scoring, anomaly detection, data health dashboard | 2-3 weeks | Data Catalog |
 
 ### Data Lifecycle Management

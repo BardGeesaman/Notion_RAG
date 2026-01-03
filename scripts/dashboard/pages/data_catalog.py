@@ -67,8 +67,15 @@ with tab1:
         params["search"] = search_filter
     
     try:
-        resp = requests.get(f"{API_BASE}/entries", params=params)
-        entries = resp.json() if resp.ok else []
+        resp = requests.get(f"{API_BASE}/entries", params=params, timeout=10)
+        if resp.ok:
+            entries = resp.json()
+        else:
+            st.error(f"API error: {resp.status_code} - {resp.text[:200]}")
+            entries = []
+    except requests.exceptions.ConnectionError:
+        st.warning("⚠️ Cannot connect to API server. Make sure FastAPI is running on port 8000.")
+        entries = []
     except Exception as e:
         st.error(f"Failed to fetch entries: {e}")
         entries = []
