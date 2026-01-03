@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import and_, or_, text
+from sqlalchemy import and_, or_, text, inspect, func
 from sqlalchemy.orm import Session
 
 from amprenta_rag.database.models import CatalogEntry, ColumnMetadata, GlossaryTerm, DataLineageEdge
@@ -543,3 +543,232 @@ def search_glossary(db: Session, query: str, limit: int = 20) -> List[dict]:
         })
     
     return results
+
+
+# ============================================================================
+# AUTO-DISCOVERY ENGINE
+# ============================================================================
+
+# Entity category mapping
+ENTITY_CATEGORIES = {
+    # Core
+    "Dataset": "Core",
+    "Experiment": "Core",
+    "Program": "Core",
+    "Feature": "Core",
+    "Signature": "Core",
+    # Chemistry
+    "Compound": "Chemistry",
+    "Sample": "Chemistry",
+    "HTSCampaign": "Chemistry",
+    "HTSPlate": "Chemistry",
+    "HTSWell": "Chemistry",
+    "HTSResult": "Chemistry",
+    "CompoundPlate": "Chemistry",
+    "CompoundRequest": "Chemistry",
+    # Omics
+    "SingleCellDataset": "Omics",
+    "LINCSSignature": "Omics",
+    "Variant": "Omics",
+    # Admin
+    "User": "Admin",
+    "Company": "Admin",
+    "Team": "Admin",
+    "AuditLog": "Admin",
+    # Default
+    "_default": "Other",
+}
+
+
+def refresh_catalog(db: Session) -> int:
+    """
+    Auto-discover tables and columns from SQLAlchemy models.
+    
+    Returns count of catalog entries created/updated.
+    
+    Uses SQLAlchemy's inspect() to introspect:
+    - Table names
+    - Column names, types, nullable, PKs, FKs
+    - Row counts (cached)
+    """
+    from amprenta_rag.database.base import Base
+    
+    count = 0
+    mapper_registry = Base.registry.mappers
+    
+    for mapper in mapper_registry:
+        model_class = mapper.class_
+        table = mapper.local_table
+        
+        if table is None:
+            continue
+            
+        entity_type = model_class.__name__
+        table_name = table.name
+        
+        # Skip internal tables
+        if table_name.startswith('_') or table_name in ('alembic_version',):
+            continue
+        
+        # Get or create catalog entry
+        entry = db.query(CatalogEntry).filter(CatalogEntry.entity_type == entity_type).first()
+        
+        if not entry:
+            entry = CatalogEntry(
+                entity_type=entity_type,
+                table_name=table_name,
+                display_name=_humanize(entity_type),
+                category=ENTITY_CATEGORIES.get(entity_type, ENTITY_CATEGORIES["_default"]),
+            )
+            db.add(entry)
+            db.flush()
+        
+        # Update row count
+        try:
+            entry.row_count = db.query(model_class).count()
+        except Exception:
+            entry.row_count = None
+        
+        entry.last_refreshed = func.now()
+        
+        # Discover columns
+        inspector = inspect(model_class)
+        existing_columns = {c.column_name for c in entry.columns}
+        
+        for column in inspector.columns:
+            if column.name in existing_columns:
+                continue
+                
+            col_meta = ColumnMetadata(
+                catalog_entry_id=entry.id,
+                column_name=column.name,
+                display_name=_humanize(column.name),
+                data_type=_extract_column_type(column.type),
+                is_nullable=column.nullable or False,
+                is_primary_key=column.primary_key,
+                is_foreign_key=len(column.foreign_keys) > 0,
+                foreign_key_target=_get_fk_target(column) if column.foreign_keys else None,
+            )
+            db.add(col_meta)
+        
+        count += 1
+    
+    db.commit()
+    return count
+
+
+def _humanize(name: str) -> str:
+    """Convert CamelCase or snake_case to human readable."""
+    import re
+    # CamelCase to spaces
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1 \2', name)
+    # snake_case to spaces
+    s2 = re.sub('([a-z0-9])([A-Z])', r'\1 \2', s1)
+    return s2.replace('_', ' ').title()
+
+
+def _extract_column_type(sa_type) -> str:
+    """Convert SQLAlchemy type to catalog type string."""
+    type_name = type(sa_type).__name__.lower()
+    
+    type_map = {
+        'uuid': 'uuid',
+        'string': 'string',
+        'varchar': 'string',
+        'text': 'text',
+        'integer': 'integer',
+        'biginteger': 'integer',
+        'smallinteger': 'integer',
+        'float': 'float',
+        'numeric': 'decimal',
+        'boolean': 'boolean',
+        'datetime': 'datetime',
+        'date': 'date',
+        'time': 'time',
+        'json': 'json',
+        'jsonb': 'json',
+        'array': 'array',
+        'enum': 'enum',
+    }
+    
+    return type_map.get(type_name, 'unknown')
+
+
+def _get_fk_target(column) -> Optional[str]:
+    """Get foreign key target as 'table.column' string."""
+    if not column.foreign_keys:
+        return None
+    fk = list(column.foreign_keys)[0]
+    return str(fk.target_fullname)
+
+
+def get_sample_values(db: Session, table_name: str, column_name: str, limit: int = 5) -> List[str]:
+    """
+    Get sample values for a column.
+    
+    Safety: Uses parameterized query and LIMIT at DB level.
+    """
+    # Safety: validate table/column names (alphanumeric + underscore only)
+    import re
+    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', table_name):
+        return []
+    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', column_name):
+        return []
+    
+    try:
+        query = text(f"""
+            SELECT DISTINCT "{column_name}"::text 
+            FROM "{table_name}" 
+            WHERE "{column_name}" IS NOT NULL 
+            LIMIT :limit
+        """)
+        result = db.execute(query, {"limit": limit})
+        return [str(row[0]) for row in result if row[0] is not None]
+    except Exception:
+        return []
+
+
+def detect_lineage_from_fks(db: Session) -> int:
+    """
+    Auto-detect lineage edges from foreign key relationships.
+    
+    Creates 'references' relationship type edges.
+    Returns count of edges created.
+    """
+    count = 0
+    
+    for entry in db.query(CatalogEntry).all():
+        for col in entry.columns:
+            if col.is_foreign_key and col.foreign_key_target:
+                # Parse target: "table.column" or "schema.table.column"
+                parts = col.foreign_key_target.split('.')
+                target_table = parts[-2] if len(parts) >= 2 else parts[0]
+                
+                # Find target catalog entry
+                target_entry = db.query(CatalogEntry).filter(
+                    CatalogEntry.table_name == target_table
+                ).first()
+                
+                if target_entry:
+                    # Check if edge exists
+                    existing = db.query(DataLineageEdge).filter(
+                        DataLineageEdge.source_type == entry.entity_type,
+                        DataLineageEdge.target_type == target_entry.entity_type,
+                        DataLineageEdge.relationship_type == "references"
+                    ).first()
+                    
+                    if not existing:
+                        # Create edge (source references target)
+                        edge = DataLineageEdge(
+                            source_type=entry.entity_type,
+                            source_id=entry.id,  # Use catalog entry ID for schema-level lineage
+                            target_type=target_entry.entity_type,
+                            target_id=target_entry.id,
+                            relationship_type="references",
+                            transformation=f"FK: {col.column_name}",
+                        )
+                        db.add(edge)
+                        count += 1
+    
+    db.commit()
+    return count
