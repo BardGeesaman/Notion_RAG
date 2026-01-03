@@ -150,6 +150,7 @@ PAGE_REGISTRY = {
     "Data Lifecycle": ("scripts.dashboard.pages.data_lifecycle", "render_data_lifecycle_page"),
     "Retrosynthesis Advisor": ("scripts.dashboard.pages.retrosynthesis", "render_retrosynthesis_page"),
     "Data Catalog": ("scripts.dashboard.pages.data_catalog", "main"),
+    "AI Expert Chat": ("scripts.dashboard.pages.ai_expert_chat", "main"),
 }
 
 # Navigation groups for organized sidebar
@@ -165,7 +166,7 @@ PAGE_GROUPS = {
     "Notebooks": ["Notebook Co-Pilot", "Notebook Generator", "Notebook Gallery", "Notebooks"],
     "Pipelines": ["Nextflow Orchestrator", "Pipeline Runner", "Sync Monitor", "AI Extraction", "Batch Correction"],
     "Analysis": ["Analysis Tools", "Experiment Planner", "RAG Query", "Statistical Analysis", "Quality Checks", "Literature Analysis", "Compare", "Timeline", "Data Quality", "Coverage Map", "Feature Recurrence", "Evidence Report", "Image Analysis", "Flow Cytometry", "Biophysical Assays", "Imaging Browser"],
-    "Collaboration": ["Activity Feed", "Teams & Projects", "Share Links", "Variant Tracking"],
+    "Collaboration": ["Activity Feed", "Teams & Projects", "Share Links", "Variant Tracking", "AI Expert Chat"],
     "Reports": ["Executive Digests", "Spectral Matching", "Report History"],
     "Admin": ["Company Settings", "Job Queue", "Audit Logs", "Audit Trail", "Provenance Ledger", "System Admin", "Mapping Refresh", "Data Lifecycle", "IP Portfolio", "Data Export", "Import Data", "Data Management", "System Health", "Workflows", "Feature Permissions", "Data Retention", "Backup Admin", "Ontology Management", "Cost Tracking", "Schedule", "Email Settings", "Data Lineage", "Feedback", "Data Ingestion", "SLA Dashboard", "Data Catalog"],
     "Other": ["Lab Notebook", "Sample Inventory", "Chat", "Evaluation Wizard", "Emails", "RAG Chunks", "Protocols", "Q&A Tracker", "Relationships", "Generic Assays"],
