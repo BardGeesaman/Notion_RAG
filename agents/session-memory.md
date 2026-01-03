@@ -2,6 +2,32 @@
 
 ## January 2, 2025 - Multi-Platform Feature Completion
 
+* [2025-01-02] – **Custom Report Builder** (P2 Discovery & Med Chem):
+  - **Feature**: Modular report generation system with 14 section types and template management
+  - **Batches**: 5 (models, section renderers, API, dashboard, tests)
+  - **Tests Added**: 50 (43 service + 7 E2E) - 43/44 service tests passed (1 WeasyPrint skip)
+  - **Commits**: 5 (939935c, d70971a, ba7d5b7, bb39211, 6212499)
+  - **Key Components**:
+    - ReportTemplate model with JSON sections array (reports.py)
+    - 14 section renderers (title page, compound profile, activity charts, etc.)
+    - 9 API endpoints at /api/v1/report-builder
+    - 5-tab dashboard UI (builder, templates, preview, export, help)
+    - 11 new Pydantic schemas for report operations
+    - Section validation with SECTION_SCHEMAS
+  - **Key Features**:
+    - Drag-and-drop style section building with reorder buttons
+    - Template save/load/clone functionality
+    - Live HTML preview with error handling
+    - PDF/HTML export via WeasyPrint
+    - Section validation and error handling in renderers
+  - **Key Decisions**:
+    - JSON sections array in ReportTemplate (vs normalized tables)
+    - Section renderers return HTML strings for modularity
+    - WeasyPrint for PDF export (already in codebase)
+    - Session state for report builder canvas
+  - **Migration**: Alembic migration cf71ba2db1bd
+  - Feature production-ready with comprehensive testing
+
 * [2025-01-02] – **Compound Inventory System** (P2 Discovery & Med Chem):
   - **Feature**: Physical sample tracking with storage locations, barcodes, and request/fulfillment workflow
   - **Batches**: 5 (models, service layer, API, dashboard, tests)
@@ -1977,8 +2003,8 @@ The system has reached **production maturity** with **65+ features**, **1905+ un
    ```
 
 **Quick context for next session:**
-- 2103+ tests, ~92% coverage, 114+ commits (sessions 2025-01-02/01/12-30/31), 979 tests added
-- Session 2025-01-02: Compound Inventory System + Import-Time Configuration Fix + GNN API Serialization + Retrosynthesis Advisor MVP + IGV.js Genome Browser + Variant Annotation Pipeline (VEP) + Cytoscape Network Hub + Data Lifecycle Completion + GitHub Secrets Integration + Rate Limiting & Brute Force Protection + Input Validation Hardening + Security Headers + OWASP Top 10 Security Audit complete
+- 2153+ tests, ~92% coverage, 119+ commits (sessions 2025-01-02/01/12-30/31), 1029 tests added
+- Session 2025-01-02: Custom Report Builder + Compound Inventory System + Import-Time Configuration Fix + GNN API Serialization + Retrosynthesis Advisor MVP + IGV.js Genome Browser + Variant Annotation Pipeline (VEP) + Cytoscape Network Hub + Data Lifecycle Completion + GitHub Secrets Integration + Rate Limiting & Brute Force Protection + Input Validation Hardening + Security Headers + OWASP Top 10 Security Audit complete
 - Session 2025-01-01: BAM/CRAM Alignment Viewing + Strategic Planning + Secrets Management + Activity Feed + Tech Debt Cleanup complete
 - Session 2025-12-31: 5 features (Collaborative Notebook Editing RTC, GEO Incremental Harvester, Provenance Ledger Enhancement, Enhanced System Administration Tools, Automated Backup & Disaster Recovery complete)
 - Session 2025-12-30: 11 features (Async SQLAlchemy Infrastructure Phase 4, Async Compute APIs Phase 3, Async External APIs Phase 2, Async LLM Endpoints Phase 1, Job Queue Test Suite, Imaging Metadata & HCS, Biophysical Assays, Flow Cytometry, Generative Chemistry, Navigation UI, Image Analysis) + Context Policy Update
