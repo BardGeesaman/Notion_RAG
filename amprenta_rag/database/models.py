@@ -2278,3 +2278,4 @@ from amprenta_rag.models.inventory import (  # noqa: F401
     CompoundPlate,
     CompoundRequest,
 )
+from amprenta_rag.models.reports import ReportTemplate  # noqa: F401
