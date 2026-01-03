@@ -6,7 +6,6 @@ aiohttp==3.13.2
 aiohttp-retry==2.9.1
 aioitertools==0.13.0
 aiosignal==1.4.0
-aiosqlite==0.21.0
 alembic==1.17.2
 alive-progress==3.3.0
 altair==6.0.0
@@ -26,7 +25,6 @@ asgiref==3.11.0
 asteval==1.0.8
 asttokens==3.0.1
 async-timeout==4.0.3
-asyncpg==0.31.0
 asyncssh==2.22.0
 atpublic==7.0.0
 attrs==25.4.0
@@ -61,7 +59,7 @@ chardet==5.2.0
 charset-normalizer @ file:///home/conda/feedstock_root/build_artifacts/charset-normalizer_1760437218288/work
 ChatterBot==1.2.10
 chroma-hnswlib==0.7.3
-chromadb==1.1.1
+chromadb==0.4.24
 clarifai==10.11.1
 clarifai-grpc==11.11.8
 clarifai-protocol==0.0.14
@@ -83,7 +81,7 @@ cons==0.4.7
 contextlib2==21.6.0
 contourpy @ file:///Users/runner/miniforge3/conda-bld/contourpy_1744743163818/work
 coverage==7.13.0
-crewai==1.7.2
+crewai==0.30.0
 crewai-tools==0.2.0
 cryptography==46.0.3
 cssselect==1.3.0
@@ -105,7 +103,7 @@ dill==0.3.8
 diskcache==5.6.3
 distlib==0.4.0
 distro==1.9.0
-docstring_parser==0.17.0
+docstring-parser==0.15
 dpath==2.2.0
 dulwich==0.25.0
 durationpy==0.10
@@ -168,7 +166,6 @@ hf-xet==1.2.0
 httpcore==1.0.9
 httptools==0.7.1
 httpx==0.28.1
-httpx-sse==0.4.3
 huggingface-hub==0.36.0
 humanfriendly==10.0
 hydra-core==1.3.2
@@ -179,7 +176,7 @@ importlib_metadata==8.7.1
 importlib_resources==6.5.2
 iniconfig==2.3.0
 inquirerpy==0.3.4
-instructor==1.12.0
+instructor==0.5.2
 interrogate==1.7.0
 ipycytoscape==1.3.3
 ipykernel==7.1.0
@@ -191,14 +188,11 @@ jaxtyping==0.3.4
 jedi==0.19.2
 jellyfish==1.2.1
 Jinja2==3.1.6
-jiter==0.10.0
+jiter==0.12.0
 jmespath==1.0.1
 joblib==1.5.3
-json5==0.10.0
-json_repair==0.25.3
 jsonpatch==1.33
 jsonpointer==3.0.0
-jsonref==1.1.0
 jsonschema==4.25.1
 jsonschema-specifications==2025.9.1
 jupyter_client==8.7.0
@@ -235,7 +229,6 @@ marshmallow==3.26.2
 mathparse==0.2.7
 matplotlib==3.10.0
 matplotlib-inline==0.2.1
-mcp==1.16.0
 mdurl==0.1.2
 miniKanren==1.0.5
 mistune==3.1.4
@@ -269,18 +262,18 @@ oauthlib==3.3.1
 ome-types==0.6.3
 omegaconf==2.3.0
 onnxruntime==1.23.2
-openai==1.83.0
+openai==1.109.1
 openpyxl==3.1.5
-opentelemetry-api==1.34.1
-opentelemetry-exporter-otlp-proto-common==1.34.1
-opentelemetry-exporter-otlp-proto-grpc==1.34.1
-opentelemetry-exporter-otlp-proto-http==1.34.1
+opentelemetry-api==1.39.1
+opentelemetry-exporter-otlp-proto-common==1.39.1
+opentelemetry-exporter-otlp-proto-grpc==1.39.1
+opentelemetry-exporter-otlp-proto-http==1.39.1
 opentelemetry-instrumentation==0.60b1
 opentelemetry-instrumentation-asgi==0.60b1
 opentelemetry-instrumentation-fastapi==0.60b1
-opentelemetry-proto==1.34.1
-opentelemetry-sdk==1.34.1
-opentelemetry-semantic-conventions==0.55b1
+opentelemetry-proto==1.39.1
+opentelemetry-sdk==1.39.1
+opentelemetry-semantic-conventions==0.60b1
 opentelemetry-util-http==0.60b1
 opt_einsum==3.4.0
 orjson==3.11.4
@@ -295,7 +288,7 @@ parso==0.8.5
 pathspec==0.12.1
 patsy==1.0.2
 pdf2image==1.17.0
-pdfminer.six==20251107
+pdfminer.six==20251230
 pdfplumber==0.11.8
 pexpect==4.9.0
 pfzy==0.3.4
@@ -310,14 +303,13 @@ platformdirs==4.5.1
 playwright==1.57.0
 plotly==6.5.0
 pluggy==1.6.0
-portalocker==2.7.0
 posthog==3.25.0
 pre_commit==4.5.1
 preshed==3.0.12
 prompt_toolkit==3.0.52
 propcache==0.4.1
 proto-plus==1.27.0
-protobuf==5.29.5
+protobuf==6.33.2
 psutil==7.1.3
 psycopg2-binary==2.9.11
 ptyprocess==0.7.0
@@ -329,14 +321,13 @@ pyarrow==12.0.1
 pyarrow-hotfix==0.7
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
-pybase64==1.4.3
 pycairo==1.29.0
 pycparser==2.23
 pycryptodomex==3.23.0
-pydantic==2.11.10
+pydantic==2.12.5
 pydantic-extra-types==2.10.6
-pydantic-settings==2.10.1
-pydantic_core==2.33.2
+pydantic-settings==2.12.0
+pydantic_core==2.41.5
 pydeck==0.9.1
 pydot==4.0.1
 pydyf==0.12.1
@@ -345,7 +336,7 @@ pygit2==1.18.2
 PyGithub==1.59.1
 Pygments==2.19.2
 pygtrie==2.5.0
-PyJWT==2.9.0
+PyJWT==2.10.1
 pylance==0.9.18
 pymc==5.25.1
 pymoo==0.6.1.6
@@ -361,7 +352,6 @@ pyre-extensions==0.0.32
 pyright==1.1.407
 pyro-api==0.1.2
 pyro-ppl==1.9.1
-pysam==0.23.3
 pysbd==0.3.4
 pyserial==3.5
 PySocks==1.7.1
@@ -376,7 +366,7 @@ pytest-playwright==0.7.2
 python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_python-dateutil_1751104122/work
 python-decouple==3.8
 python-docx==1.2.0
-python-dotenv==1.1.1
+python-dotenv==1.2.1
 python-multipart==0.0.21
 python-pptx==1.0.2
 python-rapidjson==1.23
@@ -394,7 +384,7 @@ rdkit==2023.9.6
 rdkit-pypi==2022.9.5
 readability-lxml==0.8.4.1
 referencing==0.37.0
-regex==2024.9.11
+regex==2023.12.25
 reportlab @ file:///Users/runner/miniforge3/conda-bld/reportlab_1766324037622/work
 requests==2.32.5
 requests-oauthlib==2.0.0
@@ -442,7 +432,6 @@ SpeechRecognition==3.14.4
 SQLAlchemy @ file:///Users/runner/miniforge3/conda-bld/sqlalchemy_1765351851149/work
 sqltrie==0.11.2
 srsly==2.5.2
-sse-starlette==3.1.2
 stack-data==0.6.3
 starlette==0.50.0
 statsmodels==0.14.5
@@ -461,10 +450,10 @@ tiledb==0.29.1
 tiledbsoma==1.11.4
 tinycss2==1.5.1
 tinyhtml5==2.0.0
-tokenizers==0.20.3
+tokenizers==0.21.4
 toml==0.10.2
-tomli==2.0.2
-tomli_w==1.1.0
+tomli==2.3.0
+tomli_w==1.2.0
 tomlkit==0.13.3
 toolz==1.1.0
 torch==2.9.1
@@ -493,7 +482,6 @@ umap-learn==0.5.9.post2
 uncertainties==3.2.3
 unicodedata2 @ file:///Users/runner/miniforge3/conda-bld/unicodedata2_1763054772701/work
 urllib3==2.6.2
-uv==0.9.21
 uvicorn==0.38.0
 uvloop==0.22.1
 vine==5.1.0

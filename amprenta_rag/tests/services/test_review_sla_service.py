@@ -1,8 +1,9 @@
 """Unit tests for review SLA and cycle services."""
 
 from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, AsyncMock, patch, ANY
 from uuid import uuid4
+import pytest
 
 from amprenta_rag.database.models import ReviewCycle, ReviewSLA
 from amprenta_rag.models.auth import EntityReview
@@ -25,7 +26,8 @@ from amprenta_rag.services.review_cycles import (
 class TestReviewSLAService:
     """Test SLA enforcement service functions."""
 
-    def test_get_default_sla_for_entity_type(self):
+    @pytest.mark.asyncio
+    async def test_get_default_sla_for_entity_type(self):
         """Test getting entity-specific default SLA."""
         mock_db = MagicMock()
 
@@ -39,10 +41,16 @@ class TestReviewSLAService:
             is_active=True,
         )
 
-        # Mock query chain
-        mock_db.query.return_value.filter.return_value.first.return_value = mock_sla
+        # Mock async query chain for SQLAlchemy 2.0
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.first.return_value = mock_sla
+        
+        # Make execute return an awaitable
+        async def mock_execute(*args, **kwargs):
+            return mock_result
+        mock_db.execute = mock_execute
 
-        result = get_default_sla("dataset", mock_db)
+        result = await get_default_sla("dataset", mock_db)
 
         assert result == mock_sla
         assert result.name == "Dataset Default SLA"
@@ -50,7 +58,8 @@ class TestReviewSLAService:
         assert result.max_review_hours == 48
         assert result.is_default is True
 
-    def test_get_default_sla_global_fallback(self):
+    @pytest.mark.asyncio
+    async def test_get_default_sla_global_fallback(self):
         """Test fallback to global default SLA when entity-specific not found."""
         mock_db = MagicMock()
 
@@ -63,17 +72,24 @@ class TestReviewSLAService:
             is_active=True,
         )
 
-        # Mock query chain: first call returns None, second returns global SLA
-        mock_db.query.return_value.filter.return_value.first.side_effect = [None, global_sla]
+        # Mock async query chain: first call returns None, second returns global SLA
+        mock_results = [MagicMock(), MagicMock()]
+        mock_results[0].scalars.return_value.first.return_value = None
+        mock_results[1].scalars.return_value.first.return_value = global_sla
+        
+        async def mock_execute(*args, **kwargs):
+            return mock_results.pop(0)
+        mock_db.execute = mock_execute
 
-        result = get_default_sla("experiment", mock_db)
+        result = await get_default_sla("experiment", mock_db)
 
         assert result == global_sla
         assert result.name == "Global Default SLA"
         assert result.entity_type is None
         assert result.max_review_hours == 120
 
-    def test_apply_sla_sets_due_date(self):
+    @pytest.mark.asyncio
+    async def test_apply_sla_sets_due_date(self):
         """Test applying SLA sets due_at and sla_id on review."""
         mock_db = MagicMock()
 
@@ -94,7 +110,11 @@ class TestReviewSLAService:
             max_review_hours=48,
         )
 
-        result = apply_sla(review, sla, mock_db)
+        # Mock async database operations
+        mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+
+        result = await apply_sla(review, sla, mock_db)
 
         assert result.sla_id == sla_id
         assert result.due_at is not None
@@ -159,7 +179,8 @@ class TestReviewSLAService:
         assert result["hours_remaining"] < 0
         assert result["pct_elapsed"] == 100  # Capped at 100% in check_sla_status
 
-    def test_escalate_review_increments_level(self):
+    @pytest.mark.asyncio
+    async def test_escalate_review_increments_level(self):
         """Test escalating review increments escalation level."""
         mock_db = MagicMock()
 
@@ -175,7 +196,11 @@ class TestReviewSLAService:
         )
         review.sla = sla
 
-        result = escalate_review(review, mock_db)
+        # Mock async database operations
+        mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+
+        result = await escalate_review(review, mock_db)
 
         assert result is True
         assert review.escalation_level == 1
@@ -188,7 +213,8 @@ class TestReviewSLAService:
         mock_db.commit.assert_called_once()
 
     @patch("amprenta_rag.services.review_sla.create_user_notification")
-    def test_send_reminder_creates_notification(self, mock_create_notification):
+    @pytest.mark.asyncio
+    async def test_send_reminder_creates_notification(self, mock_create_notification):
         """Test that send_reminder creates a user notification."""
         mock_db = MagicMock()
         
@@ -204,8 +230,12 @@ class TestReviewSLAService:
             due_at=datetime.now(timezone.utc) + timedelta(hours=24),
         )
         
+        # Mock async database operations
+        mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+        
         # Call function
-        result = send_reminder(review, mock_db)
+        result = await send_reminder(review, mock_db)
         
         # Verify notification was created
         assert result is True
@@ -227,7 +257,8 @@ class TestReviewSLAService:
         mock_db.commit.assert_called_once()
 
     @patch("amprenta_rag.services.review_sla.create_user_notification")
-    def test_escalate_review_notifies_both_reviewers(self, mock_create_notification):
+    @pytest.mark.asyncio
+    async def test_escalate_review_notifies_both_reviewers(self, mock_create_notification):
         """Test that escalate_review notifies both original and escalation target."""
         mock_db = MagicMock()
         
@@ -251,8 +282,12 @@ class TestReviewSLAService:
         )
         review.sla = sla
         
+        # Mock async database operations
+        mock_db.commit = AsyncMock()
+        mock_db.rollback = AsyncMock()
+        
         # Call function
-        result = escalate_review(review, mock_db)
+        result = await escalate_review(review, mock_db)
         
         # Verify both notifications were created
         assert result is True

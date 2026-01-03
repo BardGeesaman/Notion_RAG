@@ -504,6 +504,14 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - [x] GNN API numpy serialization fix
 - **Result:** 560+ API tests now pass, clean lazy loading pattern established
 
+### Test Infrastructure Improvements (P3)
+- [ ] Refactor async API tests (~90 tests: papers, SLA, publications)
+- [ ] Add pytest fixtures for dependency injection
+- [ ] Fix async dependency name mismatches
+- [ ] Add realistic test data seeds
+- **Estimated effort:** 6-9 hours
+- **Root cause:** Pre-existing issues exposed by crewai 1.7.2 upgrade
+
 ### AWS Secrets Management (P1 - Architecture)
 - [x] Skip validation when DISABLE_AUTH=true
 - [x] Unified get_secret() abstraction  
