@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import os
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import Any, Dict
 from uuid import UUID
 
@@ -33,10 +34,19 @@ except ImportError:
 VALID_STATUSES = {"pending", "approved", "rejected", "changes_requested"}
 
 
+@lru_cache(maxsize=1)
 def _get_secret() -> bytes:
+    """Get notebook review secret (lazy loaded, cached).
+    
+    Raises:
+        RuntimeError: If NOTEBOOK_REVIEW_SECRET not configured
+    """
     secret = (os.environ.get("NOTEBOOK_REVIEW_SECRET") or os.environ.get("REVIEW_HMAC_SECRET") or "").strip()
     if not secret:
-        raise RuntimeError("Missing NOTEBOOK_REVIEW_SECRET (or REVIEW_HMAC_SECRET)")
+        raise RuntimeError(
+            "NOTEBOOK_REVIEW_SECRET not configured. "
+            "Set environment variable or use REVIEW_HMAC_SECRET."
+        )
     return secret.encode("utf-8")
 
 

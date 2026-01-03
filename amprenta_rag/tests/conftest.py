@@ -1,9 +1,13 @@
-"""
-Pytest configuration and fixtures for all tests.
+"""Pytest configuration and fixtures for all tests.
 
 Provides common fixtures and setup for database and API tests.
 """
 
+# MUST be first - configure test environment before ANY app imports
+from amprenta_rag.test_config import configure_test_environment
+configure_test_environment()
+
+import os
 import pytest
 from pathlib import Path
 
