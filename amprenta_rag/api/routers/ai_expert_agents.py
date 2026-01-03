@@ -378,3 +378,218 @@ def submit_feedback(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ============================================================================
+# TRAINING & KNOWLEDGE MANAGEMENT
+# ============================================================================
+
+@router.post("/experts/{expert_id}/training-examples", response_model=schemas.TrainingExampleResponse, status_code=201)
+def create_training_example(
+    expert_id: UUID,
+    data: schemas.TrainingExampleCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Add training example for expert (admin only)."""
+    try:
+        example = service.create_training_example(
+            db=db,
+            expert_id=expert_id,
+            question=data.input_text,
+            ideal_answer=data.ideal_output,
+            created_by_id=current_user.id,
+            source="manual"
+        )
+        
+        return schemas.TrainingExampleResponse(
+            id=example.id,
+            expert_id=example.expert_id,
+            question=example.question,
+            ideal_answer=example.ideal_answer,
+            is_approved=example.is_approved,
+            prompt_version=example.prompt_version,
+            source=example.source,
+            created_at=example.created_at,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/experts/{expert_id}/training-examples", response_model=List[schemas.TrainingExampleResponse])
+def list_training_examples(
+    expert_id: UUID,
+    approved_only: bool = False,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List expert's training examples."""
+    from amprenta_rag.database.models import ExpertTrainingExample
+    
+    query = db.query(ExpertTrainingExample).filter(
+        ExpertTrainingExample.expert_id == expert_id
+    )
+    
+    if approved_only:
+        query = query.filter(ExpertTrainingExample.is_approved.is_(True))
+    
+    examples = query.order_by(ExpertTrainingExample.created_at.desc()).limit(limit).all()
+    
+    return [
+        schemas.TrainingExampleResponse(
+            id=example.id,
+            expert_id=example.expert_id,
+            question=example.question,
+            ideal_answer=example.ideal_answer,
+            is_approved=example.is_approved,
+            prompt_version=example.prompt_version,
+            source=example.source,
+            created_at=example.created_at,
+        )
+        for example in examples
+    ]
+
+
+@router.post("/experts/{expert_id}/knowledge", response_model=schemas.KnowledgeDocResponse, status_code=201)
+def upload_knowledge_document(
+    expert_id: UUID,
+    data: schemas.KnowledgeDocCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload knowledge document for expert (chunks and embeds automatically)."""
+    try:
+        doc = service.add_knowledge_doc(
+            db=db,
+            expert_id=expert_id,
+            title=data.title,
+            content=data.content,
+            source_type=data.source_type,
+            source_url=data.source_url,
+        )
+        
+        return schemas.KnowledgeDocResponse(
+            id=doc.id,
+            expert_id=doc.expert_id,
+            namespace=doc.namespace,
+            title=doc.title,
+            chunk_index=doc.chunk_index,
+            source_type=doc.source_type,
+            source_url=doc.source_url,
+            created_at=doc.created_at,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Knowledge upload failed: {str(e)}")
+
+
+@router.get("/experts/{expert_id}/feedback-summary", response_model=schemas.FeedbackSummary)
+def get_feedback_summary(
+    expert_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """Get aggregated feedback metrics for expert."""
+    from amprenta_rag.database.models import ExpertFeedback, ExpertMessage
+    
+    expert = service.get_expert(db, expert_id)
+    if not expert:
+        raise HTTPException(status_code=404, detail="Expert not found")
+    
+    # Get all feedback for this expert's messages
+    feedback_query = db.query(ExpertFeedback).join(ExpertMessage).filter(
+        ExpertMessage.expert_id == expert_id
+    )
+    
+    feedback_list = feedback_query.all()
+    
+    if not feedback_list:
+        return schemas.FeedbackSummary(
+            expert_id=expert_id,
+            expert_name=expert.name,
+            avg_rating=None,
+            feedback_count=0,
+            recent_corrections=[],
+            rating_distribution={},
+        )
+    
+    # Calculate metrics
+    ratings = [f.rating for f in feedback_list]
+    avg_rating = sum(ratings) / len(ratings)
+    
+    # Rating distribution
+    rating_dist = {}
+    for rating in ratings:
+        rating_dist[rating] = rating_dist.get(rating, 0) + 1
+    
+    # Recent corrections
+    recent_corrections = [
+        f.correction for f in feedback_list[-5:] 
+        if f.correction
+    ]
+    
+    return schemas.FeedbackSummary(
+        expert_id=expert_id,
+        expert_name=expert.name,
+        avg_rating=avg_rating,
+        feedback_count=len(feedback_list),
+        recent_corrections=recent_corrections,
+        rating_distribution=rating_dist,
+    )
+
+
+@router.patch("/experts/{expert_id}", response_model=schemas.ExpertAgentResponse)
+def update_expert(
+    expert_id: UUID,
+    data: schemas.ExpertUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update expert configuration (admin only)."""
+    try:
+        expert = service.update_expert(
+            db=db,
+            expert_id=expert_id,
+            system_prompt=data.system_prompt,
+            specializations=data.specializations,
+            bump_version=data.bump_version,
+        )
+        
+        if not expert:
+            raise HTTPException(status_code=404, detail="Expert not found")
+        
+        if data.is_active is not None:
+            expert.is_active = data.is_active
+            db.commit()
+            db.refresh(expert)
+        
+        return schemas.ExpertAgentResponse(
+            id=expert.id,
+            name=expert.name,
+            role=expert.role,
+            specializations=expert.specializations,
+            is_active=expert.is_active,
+            prompt_version=expert.prompt_version,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Expert update failed: {str(e)}")
+
+
+@router.post("/experts/{expert_id}/export-training", response_model=schemas.TrainingDataExport)
+def export_training_data(
+    expert_id: UUID,
+    format: str = "jsonl",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Export approved training examples for fine-tuning (admin only)."""
+    try:
+        training_data = service.export_training_data(db, expert_id=expert_id)
+        
+        return schemas.TrainingDataExport(
+            format=format,
+            expert_id=expert_id,
+            example_count=len(training_data),
+            data=training_data,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Training export failed: {str(e)}")

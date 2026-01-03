@@ -124,3 +124,79 @@ class ConversationDetail(BaseModel):
     context_entity_id: Optional[UUID]
     created_at: datetime
     last_message_at: Optional[datetime]
+
+
+# ============================================================================
+# TRAINING SCHEMAS
+# ============================================================================
+
+class TrainingExampleCreate(BaseModel):
+    """Create training example request."""
+    expert_id: UUID
+    input_text: str = Field(..., min_length=1, max_length=5000)
+    ideal_output: str = Field(..., min_length=1, max_length=10000)
+    context: Optional[str] = Field(None, max_length=2000)
+    tags: Optional[List[str]] = None
+
+
+class TrainingExampleResponse(BaseModel):
+    """Training example response."""
+    id: UUID
+    expert_id: UUID
+    question: str
+    ideal_answer: str
+    is_approved: bool
+    prompt_version: str
+    source: Optional[str]
+    created_at: datetime
+    
+    model_config = {"from_attributes": True}
+
+
+class KnowledgeDocCreate(BaseModel):
+    """Create knowledge document request."""
+    expert_id: UUID
+    title: str = Field(..., min_length=1, max_length=500)
+    content: str = Field(..., min_length=1, max_length=50000)
+    source_type: Optional[str] = Field(None, description="paper, manual, web, internal")
+    source_url: Optional[str] = Field(None, max_length=1000)
+
+
+class KnowledgeDocResponse(BaseModel):
+    """Knowledge document response."""
+    id: UUID
+    expert_id: UUID
+    namespace: str
+    title: str
+    chunk_index: int
+    source_type: Optional[str]
+    source_url: Optional[str]
+    created_at: datetime
+    
+    model_config = {"from_attributes": True}
+
+
+class ExpertUpdateRequest(BaseModel):
+    """Update expert configuration."""
+    system_prompt: Optional[str] = Field(None, min_length=1, max_length=10000)
+    specializations: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+    bump_version: bool = Field(False, description="Increment prompt version")
+
+
+class FeedbackSummary(BaseModel):
+    """Aggregated feedback metrics for expert."""
+    expert_id: UUID
+    expert_name: str
+    avg_rating: Optional[float]
+    feedback_count: int
+    recent_corrections: List[str]
+    rating_distribution: Dict[int, int]  # rating -> count
+
+
+class TrainingDataExport(BaseModel):
+    """Training data export response."""
+    format: str
+    expert_id: Optional[UUID]
+    example_count: int
+    data: List[Dict[str, Any]]
