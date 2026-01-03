@@ -1,6 +1,6 @@
 # ROADMAP (Single Source of Truth)
 
-**Last Updated**: 2025-01-03 (AI Expert Agents System, Data Catalog System, Compound Inventory System, Custom Report Builder, Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete)
+**Last Updated**: 2025-01-03 (AI Expert Agents System, Data Catalog System, Compound Inventory System, Custom Report Builder, Retrosynthesis Advisor MVP, IGV.js Genome Browser, Variant Annotation Pipeline with VEP integration, Cytoscape Network Hub, Data Lifecycle Management, GitHub Secrets Integration, Rate Limiting & Brute Force Protection, Input Validation Hardening, Security Headers, OWASP Top 10 Audit complete, Secrets Management P0 fix)
 
 Simple status legend:
 - ✅ DONE
@@ -505,11 +505,11 @@ Non-blocking improvements identified during code reviews. Low priority but valua
 - **Result:** 560+ API tests now pass, clean lazy loading pattern established
 
 ### AWS Secrets Management (P1 - Architecture)
-- [ ] **Unified secrets management for dev and prod** - Single `get_secret()` abstraction
-- [ ] **Option A: AWS Secrets Manager everywhere** (no offline/env var fallback)
-- [ ] Developers must configure AWS credentials locally (`aws configure`)
-- [ ] Implementation: `amprenta_rag/config/secrets.py` with `@lru_cache` + boto3
-- [ ] Naming convention: `amprenta/<service>/<key>` (e.g., `amprenta/api/jwt_secret`)
+- [x] Skip validation when DISABLE_AUTH=true
+- [x] Unified get_secret() abstraction  
+- [x] Production safety guard
+- [ ] AWS Secrets Manager Terraform (Phase 3 - deferred)
+- [ ] Migrate os.getenv() calls to get_secret() (deferred)
 - [ ] Migration path: Week 1 (implement) → Week 2 (populate AWS + update devs) → Week 3 (deploy)
 - [ ] Tests use `test_config.py` with mock secrets (patch `get_secret()`, NEVER hit real AWS)
 - [ ] Cost: ~$5/month for 5-10 secrets

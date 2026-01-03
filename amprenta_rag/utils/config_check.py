@@ -13,6 +13,14 @@ def validate_required_secrets() -> Tuple[bool, List[str]]:
     Returns:
         Tuple of (all_valid, list_of_missing_secrets)
     """
+    # Skip validation in dev/test mode (NEVER use in production)
+    if os.getenv("DISABLE_AUTH", "").lower() in ("1", "true"):
+        env = os.getenv("ENVIRONMENT", "dev")
+        if env == "production":
+            raise RuntimeError("DISABLE_AUTH cannot be enabled in production")
+        logger.info("DISABLE_AUTH=true - skipping secret validation (DEV MODE ONLY)")
+        return True, []
+    
     required = [
         ("SIGNATURE_SECRET_KEY", "Electronic signature HMAC key"),
         ("JWT_SECRET_KEY", "JWT authentication signing key"),

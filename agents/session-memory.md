@@ -2,6 +2,18 @@
 
 ## January 3, 2025 - AI Expert Agents & Data Governance Complete
 
+* [2025-01-03] – **Secrets Management P0 Fix** (Infrastructure):
+  - **Root Cause**: API crash on missing secrets blocked E2E tests
+  - **Phase 1**: Modified `config_check.py` to skip validation when `DISABLE_AUTH=true`
+  - **Phase 2**: New unified `get_secret()` in `amprenta_rag/config_secrets/secrets.py`
+  - **P1 Fix**: Production safety guard (RuntimeError if DISABLE_AUTH in production)
+  - **Files Modified**: config_check.py, config_secrets/secrets.py
+  - **Result**: E2E tests now run successfully in dev environment with auth disabled
+  - **Documentation**: Created `docs/SECRETS_MANAGEMENT.md` with usage patterns
+  - **Future Work**: AWS Secrets Manager Terraform integration (Phase 3 deferred)
+
+## January 3, 2025 - AI Expert Agents & Data Governance Complete
+
 * [2025-01-03] – **AI Expert Agents System** (P1 AI & Machine Learning):
   - **Feature**: Domain expert simulation with panel orchestration and training console
   - **Batches**: 5 (models, chat API, training API, chat UI, training UI)
