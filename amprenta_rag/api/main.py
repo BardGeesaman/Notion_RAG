@@ -99,6 +99,7 @@ from amprenta_rag.api.routers import (
     review_sla,
     targets,
     active_learning,
+    inventory,
 )
 from amprenta_rag.config import get_config
 
@@ -250,6 +251,7 @@ app.include_router(biophysical.router, prefix="/api/v1/biophysical", tags=["Biop
 app.include_router(versions.router, prefix="/api/v1", tags=["Versions"])
 app.include_router(targets.router, prefix="/api/v1/targets", tags=["Targets"])
 app.include_router(active_learning.router, prefix="/api/v1/active-learning", tags=["Active Learning"])
+app.include_router(inventory.router, prefix="/api/v1/inventory", tags=["Inventory"])
 app.include_router(collaboration.router, prefix="/api/v1", tags=["Collaboration"])
 app.include_router(review_threads.review_threads_router, prefix="/api/v1", tags=["Review Threads"])
 app.include_router(review_threads.thread_actions_router, prefix="/api/v1", tags=["Review Threads"])

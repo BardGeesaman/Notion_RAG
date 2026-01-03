@@ -8,7 +8,7 @@ mapping between domain models and API representations.
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple
 from uuid import UUID
 
@@ -350,6 +350,169 @@ class CreateCycleRequest(BaseSchema):
         if v not in allowed:
             raise ValueError(f"Strategy must be one of: {allowed}")
         return v
+
+
+# ============================================================================
+# COMPOUND INVENTORY SCHEMAS
+# ============================================================================
+
+class CompoundSampleCreate(BaseSchema):
+    """Create a compound sample."""
+    compound_id: UUID
+    quantity: float = Field(gt=0, description="Sample quantity")
+    quantity_unit: str = Field(default="µL", description="Quantity unit")
+    concentration: Optional[float] = Field(None, gt=0, description="Concentration value")
+    concentration_unit: Optional[str] = Field(None, description="Concentration unit (mM, µM, mg/mL)")
+    solvent: Optional[str] = Field(None, description="Storage solvent (DMSO, water, PBS)")
+    format: Optional[str] = Field(None, description="Physical format (tube, vial, plate_well)")
+    batch_lot: Optional[str] = Field(None, description="Batch/lot number")
+    expiry_date: Optional[date] = Field(None, description="Sample expiration date")
+    storage_location_id: Optional[UUID] = Field(None, description="Storage location")
+    position: Optional[str] = Field(None, description="Position within storage location")
+    plate_id: Optional[UUID] = Field(None, description="Compound plate ID")
+    well_position: Optional[str] = Field(None, description="Well position (A01, B12)")
+    barcode: Optional[str] = Field(None, description="Custom barcode (auto-generated if not provided)")
+    notes: Optional[str] = Field(None, description="Additional notes")
+
+
+class CompoundSampleUpdate(BaseSchema):
+    """Update a compound sample."""
+    quantity: Optional[float] = Field(None, ge=0, description="Updated quantity")
+    status: Optional[str] = Field(None, description="Sample status")
+    storage_location_id: Optional[UUID] = Field(None, description="New storage location")
+    position: Optional[str] = Field(None, description="New position")
+    notes: Optional[str] = Field(None, description="Updated notes")
+
+
+class CompoundSampleResponse(BaseSchema):
+    """Compound sample response."""
+    id: UUID
+    barcode: Optional[str] = None
+    compound_id: Optional[UUID] = None
+    quantity: Optional[float] = None
+    unit: Optional[str] = None
+    concentration: Optional[float] = None
+    concentration_unit: Optional[str] = None
+    solvent: Optional[str] = None
+    format: Optional[str] = None
+    batch_lot: Optional[str] = None
+    expiry_date: Optional[date] = None
+    storage_location_id: Optional[UUID] = None
+    position: Optional[str] = None
+    plate_id: Optional[UUID] = None
+    well_position: Optional[str] = None
+    status: str
+    created_at: Optional[datetime] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CompoundSampleTransfer(BaseSchema):
+    """Transfer a sample to new location."""
+    to_location_id: UUID = Field(..., description="Destination storage location")
+    new_position: Optional[str] = Field(None, description="New position within location")
+    notes: Optional[str] = Field(None, description="Transfer notes")
+
+
+class CompoundSampleDispense(BaseSchema):
+    """Record dispensing from a sample."""
+    quantity: float = Field(gt=0, description="Quantity to dispense")
+    notes: Optional[str] = Field(None, description="Dispensing notes")
+
+
+class CompoundPlateCreate(BaseSchema):
+    """Create a compound plate."""
+    barcode: str = Field(..., min_length=1, description="Plate barcode")
+    plate_format: str = Field(..., description="Plate format (96, 384, 1536)")
+    plate_type: str = Field(..., description="Plate type (mother, daughter, screening)")
+    storage_location_id: Optional[UUID] = Field(None, description="Storage location")
+    
+    @field_validator('plate_format')
+    @classmethod
+    def validate_plate_format(cls, v):
+        allowed = ["96", "384", "1536"]
+        if v not in allowed:
+            raise ValueError(f"Plate format must be one of: {allowed}")
+        return v
+    
+    @field_validator('plate_type')
+    @classmethod
+    def validate_plate_type(cls, v):
+        allowed = ["mother", "daughter", "screening"]
+        if v not in allowed:
+            raise ValueError(f"Plate type must be one of: {allowed}")
+        return v
+
+
+class CompoundPlateResponse(BaseSchema):
+    """Compound plate response."""
+    id: UUID
+    barcode: str
+    plate_format: str
+    plate_type: str
+    storage_location_id: Optional[UUID] = None
+    status: str
+    created_at: Optional[datetime] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CompoundRequestCreate(BaseSchema):
+    """Create a compound request."""
+    sample_id: Optional[UUID] = Field(None, description="Specific sample to request")
+    compound_id: Optional[UUID] = Field(None, description="Any sample of this compound")
+    requested_quantity: float = Field(gt=0, description="Quantity needed")
+    quantity_unit: str = Field(default="µL", description="Quantity unit")
+    purpose: Optional[str] = Field(None, description="Purpose (screening, assay, synthesis)")
+    priority: str = Field(default="normal", description="Request priority")
+    notes: Optional[str] = Field(None, description="Request notes")
+    
+    @field_validator('priority')
+    @classmethod
+    def validate_priority(cls, v):
+        allowed = ["low", "normal", "high", "urgent"]
+        if v not in allowed:
+            raise ValueError(f"Priority must be one of: {allowed}")
+        return v
+
+
+class CompoundRequestResponse(BaseSchema):
+    """Compound request response."""
+    id: UUID
+    sample_id: Optional[UUID] = None
+    compound_id: Optional[UUID] = None
+    requester_id: UUID
+    requested_quantity: float
+    quantity_unit: str
+    purpose: Optional[str] = None
+    priority: str
+    status: str
+    requested_at: Optional[datetime] = None
+    approved_at: Optional[datetime] = None
+    approved_by_id: Optional[UUID] = None
+    fulfilled_at: Optional[datetime] = None
+    fulfilled_by_id: Optional[UUID] = None
+    rejection_reason: Optional[str] = None
+    notes: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CompoundRequestFulfill(BaseSchema):
+    """Fulfill a compound request."""
+    sample_id: Optional[UUID] = Field(None, description="Override sample if needed")
+
+
+class CompoundRequestReject(BaseSchema):
+    """Reject a compound request."""
+    rejection_reason: str = Field(..., min_length=1, description="Reason for rejection")
+
+
+class BarcodeLookupResponse(BaseSchema):
+    """Barcode lookup response."""
+    type: Optional[str] = Field(None, description="Entity type (sample or plate)")
+    sample: Optional[CompoundSampleResponse] = None
+    plate: Optional[CompoundPlateResponse] = None
 
 
 class AnnotationCreate(BaseSchema):
