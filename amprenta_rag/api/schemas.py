@@ -515,6 +515,88 @@ class BarcodeLookupResponse(BaseSchema):
     plate: Optional[CompoundPlateResponse] = None
 
 
+# ============================================================================
+# REPORT BUILDER SCHEMAS
+# ============================================================================
+
+class SectionConfigSchema(BaseSchema):
+    """Configuration for a report section."""
+    type: str
+    config: dict = {}
+    order: int = 0
+
+
+class SectionMetadataSchema(BaseSchema):
+    """Metadata about an available section type."""
+    type: str
+    name: str
+    description: str
+    requires_entity: bool
+    entity_type: Optional[str] = None
+    icon: str
+
+
+class ReportTemplateCreate(BaseSchema):
+    """Create a report template."""
+    name: str
+    description: Optional[str] = None
+    sections: List[SectionConfigSchema]
+    is_public: bool = False
+    program_id: Optional[UUID] = None
+
+
+class ReportTemplateUpdate(BaseSchema):
+    """Update a report template."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    sections: Optional[List[SectionConfigSchema]] = None
+    is_public: Optional[bool] = None
+
+
+class ReportTemplateResponse(BaseSchema):
+    """Report template response."""
+    id: UUID
+    name: str
+    description: Optional[str]
+    sections: List[dict]
+    is_public: bool
+    program_id: Optional[UUID]
+    created_by_id: Optional[UUID]
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+
+class ReportGenerateRequest(BaseSchema):
+    """Generate a report."""
+    template_id: Optional[UUID] = None  # Use saved template
+    sections: Optional[List[SectionConfigSchema]] = None  # Or ad-hoc sections
+    format: Literal["html", "pdf"] = "html"
+    title: Optional[str] = "Report"
+
+
+class ReportGenerateResponse(BaseSchema):
+    """Generated report response."""
+    format: str
+    content: Optional[str] = None  # HTML content
+    content_base64: Optional[str] = None  # PDF as base64
+    
+
+class SectionPreviewRequest(BaseSchema):
+    """Preview a single section."""
+    type: str
+    config: dict = {}
+
+
+class SectionPreviewResponse(BaseSchema):
+    """Section preview response."""
+    html: str
+
+
+class TemplateCloneRequest(BaseSchema):
+    """Clone a template."""
+    new_name: str
+
+
 class AnnotationCreate(BaseSchema):
     """Schema for creating an annotation/note on an entity."""
 
