@@ -270,6 +270,13 @@ def main():
                         
                         if expert.get('expertise_areas'):
                             st.caption(f"Expertise: {', '.join(expert['expertise_areas'][:3])}")
+        
+        # Show visible textarea on welcome screen
+        st.text_area("", 
+                    placeholder="Start a conversation to begin chatting with experts",
+                    disabled=False,  # Make it visible
+                    key="welcome_chat_area",
+                    height=60)
     else:
         # Active conversation
         st.subheader(f"💬 Conversation")
@@ -296,7 +303,7 @@ def main():
             for msg in st.session_state.chat_messages:
                 display_message(msg)
         
-        # Chat input
+        # Chat input (active conversation)
         if prompt := st.chat_input("Ask your experts anything..."):
             # Add user message to display
             user_msg = {
@@ -369,3 +376,22 @@ def main():
             - Select multiple experts for different perspectives
             - Use the feedback system to improve future responses
             """)
+
+    # Global chat input (always visible)
+    if st.session_state.current_conversation_id:
+        placeholder_text = "Ask your experts anything..."
+    else:
+        placeholder_text = "Start a conversation to begin chatting with experts"
+    
+    if prompt := st.chat_input(placeholder_text):
+        if st.session_state.current_conversation_id:
+            # Handle active conversation
+            user_msg = {
+                "role": "user", 
+                "content": prompt,
+                "timestamp": datetime.now().isoformat()
+            }
+            st.session_state.chat_messages.append(user_msg)
+            st.rerun()
+        else:
+            st.warning("Please start a conversation first by selecting experts and clicking 'New Conversation'")

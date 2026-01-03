@@ -114,21 +114,28 @@ def main():
     experts = get_experts()
 
     if not experts:
-        st.error("No experts available. Please check the API connection.")
-        return
+        st.warning("⚠️ No experts available. Please check the API connection.")
+        # Continue with page layout even without experts
+        experts = []
 
     # Expert selection
     col1, col2 = st.columns([1, 3])
 
     with col1:
-        expert_options = {f"{exp['name']} ({', '.join(exp['specializations'][:2])})": exp for exp in experts}
+        if experts:
+            expert_options = {f"{exp['name']} ({', '.join(exp['specializations'][:2])})": exp for exp in experts}
+            options = ["All Experts"] + list(expert_options.keys())
+        else:
+            expert_options = {}
+            options = ["No Experts Available"]
+            
         selected_expert_name = st.selectbox(
             "Select Expert",
-            options=["All Experts"] + list(expert_options.keys()),
+            options=options,
             index=0
         )
         
-        if selected_expert_name != "All Experts":
+        if selected_expert_name != "All Experts" and selected_expert_name != "No Experts Available":
             st.session_state.selected_expert = expert_options[selected_expert_name]
             st.session_state.selected_expert_id = st.session_state.selected_expert['id']
         else:
@@ -170,12 +177,16 @@ def main():
                 input_text = st.text_area("User Input", placeholder="Enter user question or prompt...")
                 output_text = st.text_area("Expected Output", placeholder="Enter expert response...")
                 
-                expert_id_for_example = st.selectbox(
-                    "Target Expert",
-                    options=[exp['id'] for exp in experts],
-                    format_func=lambda x: next(exp['name'] for exp in experts if exp['id'] == x),
-                    index=0
-                )
+                if experts:
+                    expert_id_for_example = st.selectbox(
+                        "Target Expert",
+                        options=[exp['id'] for exp in experts],
+                        format_func=lambda x: next(exp['name'] for exp in experts if exp['id'] == x),
+                        index=0
+                    )
+                else:
+                    st.info("No experts available to create training examples for.")
+                    expert_id_for_example = None
                 
                 category = st.selectbox(
                     "Category",
@@ -347,23 +358,25 @@ def main():
         
         feedback_data = get_feedback_summary(st.session_state.selected_expert_id)
         
+        # Summary metrics (always show with defaults)
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total Feedback", feedback_data.get('total_feedback', 0) if feedback_data else 0)
+        
+        with col2:
+            avg_rating = feedback_data.get('avg_rating', 0) if feedback_data else 0
+            st.metric("Average Rating", f"{avg_rating:.1f}/5.0")
+        
+        with col3:
+            recent_corrections = len(feedback_data.get('recent_corrections', [])) if feedback_data else 0
+            st.metric("Recent Corrections", recent_corrections)
+        
+        with col4:
+            improvement_trend = feedback_data.get('improvement_trend', 0) if feedback_data else 0
+            st.metric("Trend", f"{improvement_trend:+.1f}%")
+        
         if feedback_data:
-            # Summary metrics
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric("Total Feedback", feedback_data.get('total_feedback', 0))
-            
-            with col2:
-                avg_rating = feedback_data.get('avg_rating', 0)
-                st.metric("Average Rating", f"{avg_rating:.1f}/5.0")
-            
-            with col3:
-                st.metric("Recent Corrections", len(feedback_data.get('recent_corrections', [])))
-            
-            with col4:
-                improvement_trend = feedback_data.get('improvement_trend', 0)
-                st.metric("Trend", f"{improvement_trend:+.1f}%")
             
             # Detailed feedback
             col1, col2 = st.columns(2)
@@ -406,13 +419,13 @@ def main():
     with tab4:
         st.header("Expert Configuration")
         
-        if st.session_state.selected_expert:
-            expert = st.session_state.selected_expert
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("Basic Configuration")
             
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("Basic Configuration")
+            if st.session_state.selected_expert:
+                expert = st.session_state.selected_expert
                 
                 with st.form("expert_config"):
                     model_name = st.selectbox(
@@ -471,21 +484,23 @@ def main():
                         else:
                             st.error("Failed to export training data")
                 
-                st.subheader("Expert Statistics")
+                if st.session_state.selected_expert:
+                    st.subheader("Expert Statistics")
+                    
+                    # Get expert-specific stats
+                    examples = get_training_examples(expert['id'])
+                    docs = get_knowledge_docs(expert['id'])
+                    feedback = get_feedback_summary(expert['id'])
+                    
+                    st.metric("Training Examples", len(examples))
+                    st.metric("Knowledge Documents", len(docs))
+                    st.metric("Total Feedback", feedback.get('total_feedback', 0))
+                    
+                    if feedback.get('avg_rating'):
+                        st.metric("Average Rating", f"{feedback['avg_rating']:.1f}/5.0")
                 
-                # Get expert-specific stats
-                examples = get_training_examples(expert['id'])
-                docs = get_knowledge_docs(expert['id'])
-                feedback = get_feedback_summary(expert['id'])
-                
-                st.metric("Training Examples", len(examples))
-                st.metric("Knowledge Documents", len(docs))
-                st.metric("Total Feedback", feedback.get('total_feedback', 0))
-                
-                if feedback.get('avg_rating'):
-                    st.metric("Average Rating", f"{feedback['avg_rating']:.1f}/5.0")
-        else:
-            st.info("Select a specific expert to configure settings")
+                else:
+                    st.info("Select a specific expert to configure settings")
             
             # Global statistics when "All Experts" is selected
             st.subheader("Global Statistics")

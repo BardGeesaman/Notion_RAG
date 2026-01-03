@@ -5,13 +5,18 @@
 * [2025-01-03] – **Secrets Management P0 Fix & Dashboard Rendering** (Infrastructure):
   - **Root Cause**: FastAPI startup failing due to mandatory secret validation blocking dashboard access
   - **Secrets Fix**: Added `DISABLE_AUTH=true` bypass in `config_check.py` + unified `get_secret()` abstraction
-  - **Dashboard Fixes**: 
+  - **Dashboard Schema Fixes**: 
     - Fixed sidebar navigation (render inside `st.sidebar` block)
     - Fixed Report Builder (`main()` wrapper, `list_templates` param, `get_section_registry`)
     - Fixed Data Catalog (`entity['name']` → `entity['display_name']`)
     - Fixed AI Expert Chat/Training (`specialization` → `specializations`)
+  - **E2E Test Fixes**: Removed `.or_()` anti-patterns, fixed emoji selectors
+  - **E2E Test Results**: 
+    - Data Catalog: 3/3 (100%) ✅
+    - Report Builder: 7/7 (100%) ✅
+    - AI Expert Agents: Partial
   - **Verification**: All 4 dashboard pages render correctly, both FastAPI and Streamlit servers start successfully
-  - **Files Modified**: config_check.py, config_secrets/secrets.py, dashboard pages
+  - **Files Modified**: config_check.py, config_secrets/secrets.py, dashboard pages, E2E test files
   - **Documentation**: Created `docs/SECRETS_MANAGEMENT.md` with usage patterns
   - **Future Work**: AWS Secrets Manager Terraform integration (Phase 3 deferred)
 

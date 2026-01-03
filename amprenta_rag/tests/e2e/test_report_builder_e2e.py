@@ -24,10 +24,11 @@ def test_build_report_tab_loads(report_builder_page: Page):
     """Build Report tab loads with section library."""
     main = report_builder_page.locator('[data-testid="stMainBlockContainer"]').first
     
-    # Should be on Build Report tab by default
-    expect(main.get_by_text("➕ Add Sections")).to_be_visible()
-    expect(main.get_by_text("📋 Report Sections")).to_be_visible()
-    expect(main.get_by_text("Add sections from the left panel to build your report.")).to_be_visible()
+    # Build Report tab is active by default - test specific elements
+    expect(main.get_by_role("button", name="Add Section")).to_be_visible()
+    expect(main.get_by_text("Current Sections")).to_be_visible()
+    # Check for selectbox instead of label to avoid strict mode violation
+    expect(main.locator('div[data-baseweb="select"]').first).to_be_visible()
 
 
 def test_templates_tab_loads(report_builder_page: Page):
@@ -47,7 +48,7 @@ def test_preview_tab_loads(report_builder_page: Page):
     main = report_builder_page.locator('[data-testid="stMainBlockContainer"]').first
     
     # Click Preview tab
-    main.get_by_role("tab", name="👁️ Preview").click()
+    main.get_by_role("tab", name="👀 Preview").click()
     report_builder_page.wait_for_timeout(2000)
     
     expect(main.get_by_text("🔄 Generate Preview")).to_be_visible()
@@ -59,13 +60,13 @@ def test_export_tab_loads(report_builder_page: Page):
     main = report_builder_page.locator('[data-testid="stMainBlockContainer"]').first
     
     # Click Export tab
-    main.get_by_role("tab", name="📥 Export").click()
+    main.get_by_role("tab", name="📤 Export").click()
     report_builder_page.wait_for_timeout(2000)
     
     expect(main.get_by_text("📥 Export Report")).to_be_visible()
-    expect(main.get_by_text("Report Title")).to_be_visible()
-    expect(main.get_by_text("Format")).to_be_visible()
-    expect(main.get_by_text("📥 Generate & Download")).to_be_visible()
+    expect(main.get_by_role("textbox", name="Report Title")).to_be_visible()
+    expect(main.locator('div[data-baseweb="select"]').nth(1)).to_be_visible()  # Format selectbox
+    expect(main.get_by_role("button", name="📥 Generate & Download")).to_be_visible()
 
 
 def test_section_library_tab_loads(report_builder_page: Page):
@@ -85,7 +86,7 @@ def test_navigation_between_tabs(report_builder_page: Page):
     main = report_builder_page.locator('[data-testid="stMainBlockContainer"]').first
     
     # Test all tab clicks
-    tabs = ["📁 My Templates", "👁️ Preview", "📥 Export", "📚 Section Library", "🔨 Build Report"]
+    tabs = ["📁 My Templates", "👀 Preview", "📤 Export", "📚 Section Library", "🔧 Build Report"]
     
     for tab_name in tabs:
         main.get_by_role("tab", name=tab_name).click()

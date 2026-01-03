@@ -314,25 +314,26 @@ def main():
         
         with col1:
             # Save current report as template
-            if st.session_state.report_sections:
-                st.subheader("Save Current Report")
-                template_name = st.text_input("Template Name")
-                template_description = st.text_area("Description")
-                is_public = st.checkbox("Make Public", help="Allow other users to use this template")
-                
-                if st.button("Save Template"):
-                    if template_name:
-                        save_template(template_name, template_description, is_public)
-                        st.success(f"Template '{template_name}' saved!")
-                        st.rerun()
-                    else:
-                        st.error("Please enter a template name")
-            else:
+            st.subheader("Save Current Report")
+            template_name = st.text_input("Template Name")
+            template_description = st.text_area("Description")
+            is_public = st.checkbox("Make Public", help="Allow other users to use this template")
+            
+            has_sections = bool(st.session_state.report_sections)
+            if st.button("💾 Save Current as Template", disabled=not has_sections):
+                if template_name:
+                    save_template(template_name, template_description, is_public)
+                    st.success(f"Template '{template_name}' saved!")
+                    st.rerun()
+                else:
+                    st.error("Please enter a template name")
+            
+            if not has_sections:
                 st.info("Add sections to your report first, then save as template")
         
         with col2:
             # Load template
-            st.subheader("Load Template")
+            st.subheader("📁 Saved Templates")
             templates = get_templates()
             
             if templates:
@@ -376,15 +377,15 @@ def main():
     # ============================================================================
 
     with tab3:
-        st.header("Report Preview")
+        st.header("👁️ Report Preview")
         
-        if st.session_state.report_sections:
-            if st.button("Generate Preview"):
-                generate_preview()
-                
-            if st.session_state.preview_html:
-                st.components.v1.html(st.session_state.preview_html, height=600, scrolling=True)
-        else:
+        has_sections = bool(st.session_state.report_sections)
+        if st.button("🔄 Generate Preview", disabled=not has_sections):
+            generate_preview()
+            
+        if st.session_state.preview_html:
+            st.components.v1.html(st.session_state.preview_html, height=600, scrolling=True)
+        elif not has_sections:
             st.info("Add sections to preview the report")
 
     # ============================================================================
@@ -392,19 +393,25 @@ def main():
     # ============================================================================
 
     with tab4:
-        st.header("Export Report")
+        st.header("📥 Export Report")
         
-        if st.session_state.report_sections:
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("Export as HTML"):
-                    export_html()
-                    
-            with col2:
-                if st.button("Export as PDF"):
-                    export_pdf()
-        else:
+        # Report Title
+        report_title = st.text_input("Report Title", value="My Report")
+        
+        # Format selection
+        format_option = st.selectbox("Format", ["HTML", "PDF", "Word"])
+        
+        # Generate & Download button
+        has_sections = bool(st.session_state.report_sections)
+        if st.button("📥 Generate & Download", disabled=not has_sections):
+            if format_option == "HTML":
+                export_html()
+            elif format_option == "PDF":
+                export_pdf()
+            else:
+                st.info("Word export coming soon!")
+        
+        if not has_sections:
             st.info("Add sections to export the report")
 
     # ============================================================================
@@ -412,7 +419,8 @@ def main():
     # ============================================================================
 
     with tab5:
-        st.header("Section Library")
+        st.header("📚 Available Section Types")
+        st.write("Browse all available section types")
         
         registry = service.get_section_registry()
         
