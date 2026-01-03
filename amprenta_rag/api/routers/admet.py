@@ -176,6 +176,28 @@ async def explain_admet_prediction(
 GNN_ENDPOINTS = ["herg", "ames", "dili", "ld50", "clintox"]
 
 
+def _to_python(val):
+    """Convert numpy types to Python types for JSON serialization."""
+    if hasattr(val, 'item'):
+        return val.item()
+    elif hasattr(val, 'tolist'):
+        return val.tolist()
+    return val
+
+
+def _sanitize_prediction_result(result: Dict[str, Any]) -> Dict[str, Any]:
+    """Ensure all values in prediction result are JSON serializable."""
+    sanitized = {}
+    for k, v in result.items():
+        if isinstance(v, dict):
+            sanitized[k] = _sanitize_prediction_result(v)
+        elif isinstance(v, list):
+            sanitized[k] = [_to_python(item) for item in v]
+        else:
+            sanitized[k] = _to_python(v)
+    return sanitized
+
+
 @router.post(
     "/predict-gnn",
     summary="Predict using GNN models",
@@ -209,9 +231,10 @@ def predict_gnn(
             
             try:
                 result = predictor.predict([smiles], with_uncertainty=with_uncertainty)[0]
-                pred["endpoints"][endpoint] = {
+                sanitized_result = _sanitize_prediction_result({
                     k: v for k, v in result.items() if k != "smiles"
-                }
+                })
+                pred["endpoints"][endpoint] = sanitized_result
             except Exception as e:
                 pred["endpoints"][endpoint] = {"error": str(e)}
         
@@ -328,7 +351,7 @@ def compare_models(
         
         # XGBoost result
         if i < len(xgb_results) and endpoint in xgb_results[i]:
-            comparison["xgboost"] = xgb_results[i][endpoint]
+            comparison["xgboost"] = _sanitize_prediction_result(xgb_results[i][endpoint])
         else:
             comparison["xgboost"] = {"error": "Not available"}
         
@@ -336,7 +359,10 @@ def compare_models(
         if gnn_predictor:
             try:
                 gnn_result = gnn_predictor.predict([smiles])[0]
-                comparison["gnn"] = {k: v for k, v in gnn_result.items() if k != "smiles"}
+                sanitized_gnn = _sanitize_prediction_result({
+                    k: v for k, v in gnn_result.items() if k != "smiles"
+                })
+                comparison["gnn"] = sanitized_gnn
             except Exception as e:
                 comparison["gnn"] = {"error": str(e)}
         else:
